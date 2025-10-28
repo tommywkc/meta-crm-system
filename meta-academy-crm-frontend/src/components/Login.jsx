@@ -4,19 +4,23 @@ import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [username, setUsername] = useState('');
-  const [role, setRole] = useState('member');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    if (username.trim()) {
-      // 設定 user
-      login(username, role);
-      // 根據角色導向對應頁面
-      if (role === 'member') navigate('/member');
-      else if (role === 'sales') navigate('/sales');
-      else if (role === 'admin') navigate('/admin');
+  const handleLogin = async () => {
+    setError(null);
+    if (!username.trim() || !password) return setError('請輸入使用者與密碼');
+    try {
+      const user = await login(username.trim(), password);
+      // 依 server 回傳的 role 導頁
+      if (user.role === 'member') navigate('/member');
+      else if (user.role === 'sales') navigate('/sales');
+      else if (user.role === 'admin') navigate('/admin');
       else navigate('/');
+    } catch (e) {
+      setError(e.message || '登入失敗');
     }
   };
 
@@ -35,24 +39,26 @@ const Login = () => {
           />
         </div>
         <div>
-          <label>角色: </label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
+          <label>密碼: </label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             style={{ margin: '5px' }}
-          >
-            <option value="member">會員</option>
-            <option value="sales">銷售</option>
-            <option value="admin">管理員</option>
-          </select>
+            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
+          />
         </div>
+        {error && <div style={{ color: 'red', margin: '8px 0' }}>{error}</div>}
         <button
           onClick={handleLogin}
           style={{ margin: '5px' }}
-          disabled={!username.trim()}
+          disabled={!username.trim() || !password}
         >
           登入
         </button>
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <small>測試帳號：member/password、sales/password、admin/adminpass</small>
       </div>
     </div>
   );

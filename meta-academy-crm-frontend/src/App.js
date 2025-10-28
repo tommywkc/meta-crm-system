@@ -8,19 +8,18 @@ import AdminPage from './pages/AdminPage';
 
 // 確保ProtectedRoute組件在AuthProvider內部
 const ProtectedRoute = ({ children, allowedRole }) => {
-  const { user } = useAuth();
-  console.log('ProtectedRoute檢查:', user, allowedRole);
-  
+  const { user, loading } = useAuth();
+  // 如果還在初始化（從 /api/me 還沒回來），顯示 loading 避免閃爍
+  if (loading) return <div style={{ padding: 20 }}>載入中…</div>;
+
   if (!user) {
-    console.log('用戶未登入，重定向到登入頁');
     return <Navigate to="/login" />;
   }
-  
+
   if (allowedRole && user.role !== allowedRole) {
-    console.log('角色不匹配，重定向到登入頁');
     return <Navigate to="/login" />;
   }
-  
+
   return children;
 };
 
