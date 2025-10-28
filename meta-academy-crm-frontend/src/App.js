@@ -5,6 +5,10 @@ import LoginPage from './pages/LoginPage';
 import MemberPage from './pages/MemberPage';
 import SalesPage from './pages/SalesPage';
 import AdminPage from './pages/AdminPage';
+import Header from './components/Header';
+import PageA from './pages/PageA';
+import PageB from './pages/PageB';
+import PageC from './pages/PageC';
 
 // 確保ProtectedRoute組件在AuthProvider內部
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -27,8 +31,24 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <Header />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/a" element={
+            <ProtectedRoute>
+              <PageA />
+            </ProtectedRoute>
+          } />
+          <Route path="/b" element={
+            <ProtectedRoute>
+              <PageB />
+            </ProtectedRoute>
+          } />
+          <Route path="/c" element={
+            <ProtectedRoute>
+              <PageC />
+            </ProtectedRoute>
+          } />
           <Route 
             path="/member" 
             element={
