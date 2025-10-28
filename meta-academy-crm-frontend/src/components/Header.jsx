@@ -1,43 +1,113 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Do not render header when no user
   if (!user) return null;
 
-  const rolePages = {
-    member: ['A', 'B'],
-    sales: ['B'],
-    admin: ['A', 'B', 'C']
+  // Define all possible pages with path and label
+  const pagesMap = {
+    customers: { path: '/customers', label: '客戶頁' },
+    approvals: { path: '/approvals', label: '批核頁' },
+    scan: { path: '/scan', label: '掃碼簽到' },
+    events: { path: '/events', label: '建立/編輯講座與課堂' },
+    download: { path: '/download', label: '下載名單' },
+    reports: { path: '/reports', label: '報表中心' },
+    notifications: { path: '/notifications', label: '通知中心' },
+    waiting: { path: '/waiting', label: '等待清單' },
+    files: { path: '/files', label: '檔案/訂閱管理' },
+
+    sales_kpi: { path: '/sales-kpi', label: '團隊&個人 KPI' },
+
+    payments: { path: '/payments', label: '付款/欠款' },
+    receipts: { path: '/receipts', label: '查看收據/證書' },
+    requests: { path: '/requests', label: '覆課/補堂/請假申請' },
+    homework: { path: '/homework', label: '交功課' }
   };
 
-  const pages = rolePages[user.role] || ['A', 'B'];
+  // Which pages each role should see (order matters)
+  // 通知中心 notifications 現在為所有角色共用
+  const rolePages = {
+    admin: ['customers','approvals','scan','events','download','reports','notifications','waiting','files'],
+    sales: ['customers','sales_kpi','notifications'],
+    member: ['payments','receipts','requests','homework','notifications']
+  };
 
-  const go = (page) => {
-    if (page === 'A') navigate('/a');
-    else if (page === 'B') navigate('/b');
-    else if (page === 'C') navigate('/c');
+  const pages = rolePages[user.role] || [];
+
+  const go = (key) => {
+    const p = pagesMap[key];
+    if (p) navigate(p.path);
   };
 
   return (
-    <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid #eee', background: '#fafafa' }}>
+    <header style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid #eee', background: '#fafafa' }}>
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ fontWeight: 'bold', marginRight: 12, cursor: 'pointer' }} onClick={() => navigate('/')}>Meta Academy</div>
+        <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <div style={{ fontWeight: 'bold', marginRight: 12 }}>Meta Academy</div>
+          {/* page title next to company name */}
+          <div>
+            {(() => {
+              const { pathname } = location;
+              const map = {
+                '/customers': '客戶頁',
+                '/approvals': '批核頁',
+                '/scan': '掃碼簽到頁',
+                '/events': '建立/編輯講座與課堂頁',
+                '/download': '下載名單頁',
+                '/reports': '報表中心',
+                '/notifications': '通知中心',
+                '/waiting': '等待清單頁',
+                '/files': '檔案/訂閱管理頁',
+
+                '/sales-kpi': '團隊&個人 KPI',
+                '/sales-customers': '客戶頁',
+
+                '/payments': '付款/欠款',
+                '/receipts': '查看收據/證書',
+                '/requests': '覆課/補堂/請假申請',
+                '/homework': '交功課',
+
+                '/member': '會員頁面',
+                '/sales': '銷售頁面',
+                '/admin': '管理員頁面',
+                '/login': '登入'
+              };
+
+              // match exact or startsWith for routes with params
+              let title = map[pathname];
+              if (!title) {
+                // fallback: try startsWith
+                for (const key of Object.keys(map)) {
+                  if (pathname.startsWith(key)) {
+                    title = map[key];
+                    break;
+                  }
+                }
+              }
+              return title ? <h1 style={{ fontSize: 18, margin: 0 }}>{title}</h1> : null;
+            })()}
+          </div>
+        </div>
       </div>
 
-      <nav style={{ display: 'flex', gap: 8 }}>
-        {pages.includes('A') && (
-          <button onClick={() => go('A')}>A 頁</button>
-        )}
-        {pages.includes('B') && (
-          <button onClick={() => go('B')}>B 頁</button>
-        )}
-        {pages.includes('C') && (
-          <button onClick={() => go('C')}>C 頁</button>
+  <nav style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'nowrap' }}>
+        {pages.length === 0 ? (
+          <div style={{ color: '#666' }}>
+            （目前此角色未設定任何按鈕）
+            <div style={{ fontSize: 12, marginTop: 8, maxWidth: 420 }}>
+              <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{JSON.stringify({ role: user.role, user }, null, 2)}</pre>
+            </div>
+          </div>
+        ) : (
+          pages.map((key) => (
+            <button key={key} onClick={() => go(key)}>{pagesMap[key].label}</button>
+          ))
         )}
       </nav>
 
