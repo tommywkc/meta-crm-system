@@ -19,98 +19,93 @@ const Calendar = ({ events = {} }) => {
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
-  const days = useMemo(() => {
-    const firstDay = new Date(year, month, 1).getDay();
+  const cells = useMemo(() => {
+    const firstDayIndex = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const prevDays = new Date(year, month, 0).getDate();
-
-    const cells = [];
-    // previous month's tail
-    for (let i = firstDay - 1; i >= 0; i--) {
-      const d = prevDays - i;
-      const date = new Date(year, month - 1, d);
-      cells.push({ date, inMonth: false });
+    // start from the Sunday of the week that contains the 1st
+    const startDate = new Date(year, month, 1 - firstDayIndex);
+    const list = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
+      list.push(d);
     }
-    // current month
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(year, month, d);
-      cells.push({ date, inMonth: true });
+    // chunk into weeks
+    const weeks = [];
+    for (let i = 0; i < 6; i++) {
+      weeks.push(list.slice(i * 7, i * 7 + 7));
     }
-    // next month's head to fill 42 cells
-    let nextDay = 1;
-    while (cells.length % 7 !== 0 || cells.length < 42) {
-      const date = new Date(year, month + 1, nextDay++);
-      cells.push({ date, inMonth: false });
-    }
-    return cells;
+    return weeks;
   }, [year, month]);
 
   const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
   const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
 
   return (
-    <div style={{ border: '1px solid #e0e0e0', borderRadius: 6, padding: 12, maxWidth: 760 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ fontWeight: 'bold' }}>{year} 年 {month + 1} 月</div>
-        <div style={{ display: 'flex', gap: 8 }}>
+    <div style={{ border: '1px solid #ddd', borderRadius: 6, padding: 12, maxWidth: 760 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>{year} 年 {month + 1} 月</div>
+        <div>
           <button onClick={prevMonth}>上個月</button>
           <button onClick={nextMonth}>下個月</button>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', marginBottom: 6 }}>
-        {Weekdays.map((w) => (
-          <div key={w} style={{ fontWeight: '600', padding: '6px 0' }}>{w}</div>
-        ))}
-      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+        <thead>
+          <tr>
+            {Weekdays.map((w) => <th key={w} style={{ padding: 6, textAlign: 'center' }}>{w}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {cells.map((week, wi) => (
+            <tr key={wi}>
+              {week.map((date) => {
+                const key = formatKey(date);
+                const inMonth = date.getMonth() === month;
+                const dayEvents = events[key];
+                return (
+                  <td
+                    key={key}
+                    onClick={() => setSelected(key)}
+                    style={{
+                      verticalAlign: 'top',
+                      padding: 6,
+                      border: '1px solid #eee',
+                      color: inMonth ? '#000' : '#999',
+                      cursor: 'pointer',
+                      minWidth: 80
+                    }}
+                  >
+                    <div>{date.getDate()}</div>
+                    {dayEvents && (
+                      Array.isArray(dayEvents) ? (
+                        <ul style={{ margin: '6px 0 0 14px', padding: 0 }}>
+                          {dayEvents.map((e, i) => <li key={i}>{e}</li>)}
+                        </ul>
+                      ) : (
+                        <div style={{ marginTop: 6 }}>{dayEvents}</div>
+                      )
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
-        {days.map(({ date, inMonth }, idx) => {
-          const key = formatKey(date);
-          const dayEvents = events[key];
-          const isToday = formatKey(new Date()) === key;
-          return (
-            <div
-              key={idx}
-              onClick={() => setSelected(key)}
-              style={{
-                minHeight: 80,
-                padding: 6,
-                borderRadius: 6,
-                background: inMonth ? '#fff' : '#f7f7f7',
-                border: isToday ? '1px solid #1976d2' : '1px solid #eee',
-                cursor: 'pointer'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <div style={{ fontSize: 12, color: inMonth ? '#000' : '#999' }}>{date.getDate()}</div>
-              </div>
-              <div style={{ fontSize: 12, color: '#333' }}>
-                {dayEvents && (
-                  Array.isArray(dayEvents) ? (
-                    dayEvents.slice(0,2).map((t, i) => <div key={i} style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>• {t}</div>)
-                  ) : (
-                    <div style={{ fontSize: 12 }}>• {dayEvents}</div>
-                  )
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ marginTop: 12 }}>
+      <div style={{ marginTop: 10 }}>
         {selected ? (
           <div>
-            <strong>詳情 — {selected}</strong>
-            <div style={{ marginTop: 8 }}>
+            <div>詳情 — {selected}</div>
+            <div>
               {(events[selected] && (Array.isArray(events[selected]) ? events[selected] : [events[selected]]))?.map((e, i) => (
-                <div key={i} style={{ padding: '6px 8px', background: '#fafafa', borderRadius: 4, marginBottom: 6 }}>{e}</div>
-              )) || <div style={{ color: '#666' }}>此日無事件</div>}
+                <div key={i}>{e}</div>
+              )) || <div>此日無事件</div>}
             </div>
           </div>
         ) : (
-          <div style={{ color: '#666' }}>按一下日期檢視詳情</div>
+          <div>按一下日期檢視詳情</div>
         )}
       </div>
     </div>

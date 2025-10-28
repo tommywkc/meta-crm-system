@@ -1,10 +1,10 @@
 import React from 'react';
 
-const AdminScan = () => (
+const Scan = () => (
 	<div style={{ padding: 20 }}>
 		<h1>掃碼簽到頁 (Admin)</h1>
 		<p>掃碼簽到功能模擬。</p>
 	</div>
 );
 
-export default AdminScan;
+export default Scan;

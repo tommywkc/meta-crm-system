@@ -2,27 +2,30 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/shared/LoginPage';
-import MemberPage from './pages/member/MemberPage';
-import SalesPage from './pages/sales/SalesPage';
-import AdminPage from './pages/admin/AdminPage';
+import MemberPage from './pages/member/Page';
+import SalesPage from './pages/sales/Page';
+import AdminPage from './pages/admin/Page';
 import Header from './components/Header';
-import AdminCustomers from './pages/admin/AdminCustomers';
-import AdminApprovals from './pages/admin/AdminApprovals';
-import AdminScan from './pages/admin/AdminScan';
-import AdminEvents from './pages/admin/AdminEvents';
-import AdminDownload from './pages/admin/AdminDownload';
-import AdminReports from './pages/admin/AdminReports';
+import CustomersList from './pages/shared/CustomersList';
+import CustomerView from './pages/shared/CustomerView';
+import CustomerEdit from './pages/admin/CustomerEdit';
+import Approvals from './pages/admin/Approvals';
+import Scan from './pages/admin/Scan';
+import Events from './pages/admin/Events';
+import EventsEdit from './pages/admin/EventsEdit';
+import Download from './pages/admin/Download';
+import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
-import AdminWaiting from './pages/admin/AdminWaiting';
-import AdminFiles from './pages/admin/AdminFiles';
+import Waiting from './pages/admin/Waiting';
+import Files from './pages/admin/Files';
 
-import SalesCustomers from './pages/sales/SalesCustomers';
-import SalesKPI from './pages/sales/SalesKPI';
+// SalesCustomers removed in favor of shared CustomersList
+import KPI from './pages/sales/KPI';
 
-import MemberPayments from './pages/member/MemberPayments';
-import MemberReceipts from './pages/member/MemberReceipts';
-import MemberRequests from './pages/member/MemberRequests';
-import MemberHomework from './pages/member/MemberHomework';
+import Payments from './pages/member/Payments';
+import Receipts from './pages/member/Receipts';
+import Requests from './pages/member/Requests';
+import Homework from './pages/member/Homework';
 
 // 確保ProtectedRoute組件在AuthProvider內部
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -54,32 +57,52 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/customers" element={
             <ProtectedRoute allowedRoles={['admin','sales']}>
-              <AdminCustomers />
+              <CustomersList />
+            </ProtectedRoute>
+          } />
+          <Route path="/customers/:id" element={
+            <ProtectedRoute allowedRoles={['admin','sales']}>
+              <CustomerView />
+            </ProtectedRoute>
+          } />
+          <Route path="/customers/:id/edit" element={
+            <ProtectedRoute allowedRole={'admin'}>
+              <CustomerEdit />
             </ProtectedRoute>
           } />
           <Route path="/approvals" element={
             <ProtectedRoute allowedRole="admin">
-              <AdminApprovals />
+              <Approvals />
             </ProtectedRoute>
           } />
           <Route path="/scan" element={
             <ProtectedRoute allowedRole="admin">
-              <AdminScan />
+              <Scan />
             </ProtectedRoute>
           } />
           <Route path="/events" element={
             <ProtectedRoute allowedRole="admin">
-              <AdminEvents />
+              <Events />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/create" element={
+            <ProtectedRoute allowedRole="admin">
+              <EventsEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id/edit" element={
+            <ProtectedRoute allowedRole="admin">
+              <EventsEdit />
             </ProtectedRoute>
           } />
           <Route path="/download" element={
             <ProtectedRoute allowedRole="admin">
-              <AdminDownload />
+              <Download />
             </ProtectedRoute>
           } />
           <Route path="/reports" element={
             <ProtectedRoute allowedRole="admin">
-              <AdminReports />
+              <Reports />
             </ProtectedRoute>
           } />
           <Route path="/notifications" element={
@@ -89,44 +112,44 @@ function App() {
           } />
           <Route path="/waiting" element={
             <ProtectedRoute allowedRole="admin">
-              <AdminWaiting />
+              <Waiting />
             </ProtectedRoute>
           } />
           <Route path="/files" element={
             <ProtectedRoute allowedRole="admin">
-              <AdminFiles />
+              <Files />
             </ProtectedRoute>
           } />
 
           <Route path="/sales-kpi" element={
             <ProtectedRoute allowedRole="sales">
-              <SalesKPI />
+              <KPI />
             </ProtectedRoute>
           } />
           <Route path="/sales-customers" element={
             <ProtectedRoute allowedRole="sales">
-              <SalesCustomers />
+              <CustomersList />
             </ProtectedRoute>
           } />
 
           <Route path="/payments" element={
             <ProtectedRoute allowedRole="member">
-              <MemberPayments />
+              <Payments />
             </ProtectedRoute>
           } />
           <Route path="/receipts" element={
             <ProtectedRoute allowedRole="member">
-              <MemberReceipts />
+              <Receipts />
             </ProtectedRoute>
           } />
           <Route path="/requests" element={
             <ProtectedRoute allowedRole="member">
-              <MemberRequests />
+              <Requests />
             </ProtectedRoute>
           } />
           <Route path="/homework" element={
             <ProtectedRoute allowedRole="member">
-              <MemberHomework />
+              <Homework />
             </ProtectedRoute>
           } />
           <Route 

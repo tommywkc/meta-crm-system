@@ -12,15 +12,15 @@ const Header = () => {
 
   // Define all possible pages with path and label
   const pagesMap = {
-    customers: { path: '/customers', label: '客戶頁' },
+    customers: { path: '/customers', label: '客戶名單頁' },
     approvals: { path: '/approvals', label: '批核頁' },
     scan: { path: '/scan', label: '掃碼簽到' },
     events: { path: '/events', label: '建立/編輯講座與課堂' },
     download: { path: '/download', label: '下載名單' },
     reports: { path: '/reports', label: '報表中心' },
-    notifications: { path: '/notifications', label: '通知中心' },
     waiting: { path: '/waiting', label: '等待清單' },
     files: { path: '/files', label: '檔案/訂閱管理' },
+    notifications: { path: '/notifications', label: '通知中心' },
 
     sales_kpi: { path: '/sales-kpi', label: '團隊&個人 KPI' },
 
@@ -31,9 +31,9 @@ const Header = () => {
   };
 
   // Which pages each role should see (order matters)
-  // 通知中心 notifications 現在為所有角色共用
   const rolePages = {
-    admin: ['customers','approvals','scan','events','download','reports','notifications','waiting','files'],
+    // new admin order requested by user
+    admin: ['customers','events','approvals','waiting','download','scan','reports','files','notifications'],
     sales: ['customers','sales_kpi','notifications'],
     member: ['payments','receipts','requests','homework','notifications']
   };
@@ -48,7 +48,15 @@ const Header = () => {
   return (
     <header style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid #eee', background: '#fafafa' }}>
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+          onClick={() => {
+            // Navigate to role-specific main page (admin/sales/member).
+            // Fallback to '/' if role is unexpected.
+            const home = user && user.role ? `/${user.role}` : '/';
+            navigate(home);
+          }}
+        >
           <div style={{ fontWeight: 'bold', marginRight: 12 }}>Meta Academy</div>
           {/* page title next to company name */}
           <div>
@@ -61,9 +69,10 @@ const Header = () => {
                 '/events': '建立/編輯講座與課堂頁',
                 '/download': '下載名單頁',
                 '/reports': '報表中心',
-                '/notifications': '通知中心',
+                
                 '/waiting': '等待清單頁',
                 '/files': '檔案/訂閱管理頁',
+                '/notifications': '通知中心',
 
                 '/sales-kpi': '團隊&個人 KPI',
                 '/sales-customers': '客戶頁',
