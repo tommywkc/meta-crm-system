@@ -30,6 +30,10 @@ cd meta-crm-system
 4. Extract the downloaded file
 5. Open terminal and navigate to the extracted folder
 
+**Note**: If you cannot access the GitHub repository (private repository), please contact the repository owner to:
+- Make the repository public, or
+- Add you as a collaborator with appropriate permissions
+
 ## Quick Start (macOS / zsh example)
 
 ### 1) Install dependencies
