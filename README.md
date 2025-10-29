@@ -14,7 +14,7 @@
 
 ## Getting Started
 
-### Option 1: Clone from GitHub
+## Clone from GitHub
 ```bash
 # Clone the repository
 git clone https://github.com/tommywkc/meta-crm-system.git
@@ -23,16 +23,7 @@ git clone https://github.com/tommywkc/meta-crm-system.git
 cd meta-crm-system
 ```
 
-### Option 2: Download ZIP
-1. Go to [https://github.com/tommywkc/meta-crm-system](https://github.com/tommywkc/meta-crm-system)
-2. Click the green "Code" button
-3. Select "Download ZIP"
-4. Extract the downloaded file
-5. Open terminal and navigate to the extracted folder
 
-**Note**: If you cannot access the GitHub repository (private repository), please contact the repository owner to:
-- Make the repository public, or
-- Add you as a collaborator with appropriate permissions
 
 ## Quick Start (macOS / zsh example)
 
