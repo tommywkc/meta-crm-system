@@ -1,16 +1,5 @@
 import React from 'react';
-
-const tableStyle = {
-  width: '100%',
-  borderCollapse: 'collapse',
-  marginTop: 12
-};
-
-const thTdStyle = {
-  border: '1px solid #ddd',
-  padding: '8px',
-  textAlign: 'left'
-};
+import { tableStyle, thTdStyle } from '../styles/TableStyles';
 
 const CustomersTable = ({ customers = [], role = 'member', onEdit, onView }) => {
   return (

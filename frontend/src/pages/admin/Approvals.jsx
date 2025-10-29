@@ -1,4 +1,5 @@
 import React from 'react';
+import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 
 const mockData = [
   {
@@ -45,20 +46,15 @@ const filterOptions = {
   statuses: ['Pending', 'Approved', 'Rejected']
 };
 
-const tableStyle = {
-  width: '100%',
-  borderCollapse: 'collapse',
-  marginTop: 12
-};
-
-const thTdStyle = {
-  border: '1px solid #ddd',
-  padding: '8px',
-  textAlign: 'left'
-};
-
 const Approvals = () => {
+  const [selectedItem, setSelectedItem] = React.useState(null);
+  const [showModal, setShowModal] = React.useState(false);
   const filtered = mockData;
+
+  const showDetailModal = (item) => {
+    setSelectedItem(item);
+    setShowModal(true);
+  };
 
   const onApprove = (id) => {
     console.log('Approve', id);

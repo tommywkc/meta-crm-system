@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 
 const mockRequests = [
 	{
@@ -25,18 +26,6 @@ const mockRequests = [
 		note: '生病請假'
 	}
 ];
-
-const tableStyle = {
-	width: '100%',
-	borderCollapse: 'collapse',
-	marginTop: 12
-};
-
-const thTdStyle = {
-	border: '1px solid #ddd',
-	padding: '8px',
-	textAlign: 'left'
-};
 
 const Requests = () => {
 		const navigate = useNavigate();

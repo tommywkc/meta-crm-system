@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 
 const mockClasses = [
 	{
@@ -21,18 +22,6 @@ const mockClasses = [
 		status: '草稿'
 	}
 ];
-
-const tableStyle = {
-	width: '100%',
-	borderCollapse: 'collapse',
-	marginTop: 12
-};
-
-const thTdStyle = {
-	border: '1px solid #ddd',
-	padding: '8px',
-	textAlign: 'left'
-};
 
 const Events = () => {
 	const navigate = useNavigate();

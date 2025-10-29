@@ -1,4 +1,5 @@
 import React from 'react';
+import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 
 const mockPayments = [
 	{
@@ -20,18 +21,6 @@ const mockPayments = [
 		status: '已退款'
 	}
 ];
-
-const tableStyle = {
-	width: '100%',
-	borderCollapse: 'collapse',
-	marginTop: 12
-};
-
-const thTdStyle = {
-	border: '1px solid #ddd',
-	padding: '8px',
-	textAlign: 'left'
-};
 
 const Payments = () => {
 	const onView = (p) => {

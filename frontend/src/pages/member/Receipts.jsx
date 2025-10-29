@@ -1,4 +1,5 @@
 import React from 'react';
+import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 
 const mockReceipts = [
 	{
@@ -18,18 +19,6 @@ const mockReceipts = [
 		issuedTo: '林美麗'
 	}
 ];
-
-const tableStyle = {
-	width: '100%',
-	borderCollapse: 'collapse',
-	marginTop: 12
-};
-
-const thTdStyle = {
-	border: '1px solid #ddd',
-	padding: '8px',
-	textAlign: 'left'
-};
 
 const Receipts = () => {
 			const onView = (r) => {

@@ -1,21 +1,10 @@
 import React, { useState } from 'react';
+import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 
 const mockHomework = [
 	{ id: 'H1001', subject: 'AI Animation 9A', assignment: 'Project 1', due: '2025-11-05', status: '未上傳', file: null },
 	{ id: 'H1002', subject: 'AI Foundations', assignment: 'Project 2', due: '2025-11-10', status: '已上傳', file: 'ai_report.pdf' }
 ];
-
-const tableStyle = {
-	width: '100%',
-	borderCollapse: 'collapse',
-	marginTop: 12
-};
-
-const thTdStyle = {
-	border: '1px solid #ddd',
-	padding: '8px',
-	textAlign: 'left'
-};
 
 const Homework = () => {
 	const [list, setList] = useState(mockHomework);

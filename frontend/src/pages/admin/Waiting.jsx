@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 
 const mockWaiting = [
 	{
@@ -25,18 +26,6 @@ const mockWaiting = [
 		submittedAt: '2025-10-22 14:30'
 	}
 ];
-
-const tableStyle = {
-	width: '100%',
-	borderCollapse: 'collapse',
-	marginTop: 12
-};
-
-const thTdStyle = {
-	border: '1px solid #ddd',
-	padding: '8px',
-	textAlign: 'left'
-};
 
 const Waiting = () => {
 	const navigate = useNavigate();
