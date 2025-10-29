@@ -32,36 +32,6 @@ async function initDatabase() {
     }
 }
 
-// 簡易查詢 helper
-async function query(text, params) {
-    const start = Date.now();
-    try {
-        const res = await pool.query(text, params);
-        const duration = Date.now() - start;
-        console.log('執行查詢:', { text, duration, rows: res.rowCount });
-        return res;
-    } catch (err) {
-        console.error('查詢失敗:', err);
-        throw err;
-    }
-}
-
-// 交易 helper
-async function transaction(callback) {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        const result = await callback(client);
-        await client.query('COMMIT');
-        return result;
-    } catch (err) {
-        await client.query('ROLLBACK');
-        throw err;
-    } finally {
-        client.release();
-    }
-}
-
 // 優雅關閉連線池
 async function closePool() {
     try {
@@ -75,8 +45,6 @@ async function closePool() {
 
 module.exports = {
     pool,
-    query,
-    transaction,
     initDatabase,
     closePool
 };
