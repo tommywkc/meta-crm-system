@@ -13,7 +13,7 @@ async function findByEventId(id) {
   return res.rows[0] || null;
 }
 
-async function updateEventById(id, fields = {}) {
+async function updateByEventId(id, fields = {}) {
   const keys = Object.keys(fields);
   if (keys.length === 0) return findByEventId(id);
   const sets = keys.map((k, i) => `${k} = $${i+1}`).join(', ');
@@ -24,14 +24,14 @@ async function updateEventById(id, fields = {}) {
   return res.rows[0] || null;
 }
 
-async function removeEventById(id) {
+async function removeByEventId(id) {
   await query('DELETE FROM events WHERE event_id = $1', [id]);
   return true;
 }
 
-async function listEvents(limit = 100, offset = 0) {
+async function listbyEventsId(limit = 100, offset = 0) {
   const res = await query('SELECT * FROM events ORDER BY event_id DESC LIMIT $1 OFFSET $2', [limit, offset]);
   return res.rows;
 }
 
-module.exports = { createEvent, findByEventId, updateEventById, removeEventById, listEvents };
+module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId };

@@ -19,7 +19,12 @@ async function findUserByEmail(email) {
   return res.rows[0] || null;
 }
 
-async function updateUserById(id, fields = {}) {
+async function findUserByMobile(mobile) {
+  const res = await query('SELECT * FROM users WHERE mobile = $1', [mobile]);
+  return res.rows[0] || null;
+}
+
+async function updateByUserId(id, fields = {}) {
   const keys = Object.keys(fields);
   if (keys.length === 0) return findByUserId(id);
   const sets = keys.map((k, i) => `${k} = $${i+1}`).join(', ');
@@ -30,14 +35,14 @@ async function updateUserById(id, fields = {}) {
   return res.rows[0] || null;
 }
 
-async function removeUserById(id) {
+async function removeByUserId(id) {
   await query('DELETE FROM users WHERE user_id = $1', [id]);
   return true;
 }
 
-async function listUsers(limit = 100, offset = 0) {
+async function listByUsersId(limit = 100, offset = 0) {
   const res = await query('SELECT * FROM users ORDER BY user_id DESC LIMIT $1 OFFSET $2', [limit, offset]);
   return res.rows;
 }
 
-module.exports = { createUser, findByUserId, findUserByEmail, updateUserById, removeUserById, listUsers };
+module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId };

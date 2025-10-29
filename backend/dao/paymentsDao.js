@@ -8,7 +8,7 @@ async function createPayment({ event_id, user_id, amount, method, status = 'PEND
   return res.rows[0];
 }
 
-async function findById(id) {
+async function findByPaymentId(id) {
   const res = await query('SELECT * FROM payments WHERE payment_id = $1', [id]);
   return res.rows[0] || null;
 }
@@ -18,9 +18,9 @@ async function listByUser(user_id) {
   return res.rows;
 }
 
-async function removePaymentById(id) {
+async function removeByPaymentId(id) {
   await query('DELETE FROM payments WHERE payment_id = $1', [id]);
   return true;
 }
 
-module.exports = { createPayment, findById, listByUser, removePaymentById };
+module.exports = { createPayment, findByPaymentId, listByUser, removeByPaymentId };

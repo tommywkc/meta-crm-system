@@ -7,19 +7,19 @@ async function createService({ service_name, description = null, price = null, c
   return res.rows[0];
 }
 
-async function findById(id) {
+async function findByServiceId(id) {
   const res = await query('SELECT * FROM services WHERE service_id = $1', [id]);
   return res.rows[0] || null;
 }
 
-async function list(limit = 100) {
+async function listByServiceId(limit = 100) {
   const res = await query('SELECT * FROM services ORDER BY service_id DESC LIMIT $1', [limit]);
   return res.rows;
 }
 
-async function removeServiceById(id) {
+async function removeByServiceId(id) {
   await query('DELETE FROM services WHERE service_id = $1', [id]);
   return true;
 }
 
-module.exports = { createService, findById, list, removeServiceById };
+module.exports = { createService, findByServiceId, listByServiceId, removeByServiceId };

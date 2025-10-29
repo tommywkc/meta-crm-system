@@ -4,6 +4,7 @@ const path = require('path');
 
 // 建立連線池
 const pool = new Pool({
+    //DATABASE_URL : 'postgresql://<username>:<password>>@localhost:<port>>/<database-name>>'
     connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/meta_academy_crm',
     max: 20,                     // 最大連線數
     idleTimeoutMillis: 30000,    // 閒置連線超時時間

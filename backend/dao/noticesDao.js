@@ -7,19 +7,19 @@ async function createNotice({ title, content, target_role = null, create_time = 
   return res.rows[0];
 }
 
-async function findById(id) {
+async function findByNoticeId(id) {
   const res = await query('SELECT * FROM notices WHERE notice_id = $1', [id]);
   return res.rows[0] || null;
 }
 
-async function list(limit = 50) {
+async function listByNoticeId(limit = 50) {
   const res = await query('SELECT * FROM notices ORDER BY notice_id DESC LIMIT $1', [limit]);
   return res.rows;
 }
 
-async function removeNoticeById(id) {
+async function removeByNoticeId(id) {
   await query('DELETE FROM notices WHERE notice_id = $1', [id]);
   return true;
 }
 
-module.exports = { createNotice, findById, list, removeNoticeById };
+module.exports = { createNotice, findByNoticeId, listByNoticeId, removeByNoticeId };

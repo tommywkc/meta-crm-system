@@ -7,14 +7,14 @@ async function createUpload({ filename, content = null, content_type = null, upl
   return res.rows[0];
 }
 
-async function findById(id) {
+async function findByUploadId(id) {
   const res = await query('SELECT * FROM uploads WHERE upload_id = $1', [id]);
   return res.rows[0] || null;
 }
 
-async function removeUploadById(id) {
+async function removeByUploadId(id) {
   await query('DELETE FROM uploads WHERE upload_id = $1', [id]);
   return true;
 }
 
-module.exports = { createUpload, findById, removeUploadById };
+module.exports = { createUpload, findByUploadId, removeByUploadId };

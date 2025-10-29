@@ -12,14 +12,14 @@ async function findByHolidayId(id) {
   return res.rows[0] || null;
 }
 
-async function listHolidays(limit = 100) {
+async function listByHolidaysId(limit = 100) {
   const res = await query('SELECT * FROM holidays ORDER BY holiday_date DESC LIMIT $1', [limit]);
   return res.rows;
 }
 
-async function removeHolidayById(id) {
+async function removeByHolidayId(id) {
   await query('DELETE FROM holidays WHERE holiday_id = $1', [id]);
   return true;
 }
 
-module.exports = { createHoliday, findByHolidayId, listHolidays, removeHolidayById };
+module.exports = { createHoliday, findByHolidayId, listByHolidaysId, removeByHolidayId };

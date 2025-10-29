@@ -7,14 +7,19 @@ async function createAssignment({ session_id, assigned_by_id, assigned_time = nu
   return res.rows[0];
 }
 
-async function findById(id) {
+async function findByAssignmentId(id) {
   const res = await query('SELECT * FROM assignments WHERE assignment_id = $1', [id]);
   return res.rows[0] || null;
 }
 
-async function removeAssignmentById(id) {
+async function listBySessionId(session_id) {
+    const res = await query('SELECT * FROM assignments WHERE session_id = $1 ORDER BY assignment_id DESC', [session_id]);
+    return res.rows;
+}
+
+async function removeByAssignmentId(id) {
   await query('DELETE FROM assignments WHERE assignment_id = $1', [id]);
   return true;
 }
 
-module.exports = { createAssignment, findById, removeAssignmentById };
+module.exports = { createAssignment, findByAssignmentId, listBySessionId, removeByAssignmentId };

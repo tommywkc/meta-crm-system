@@ -7,7 +7,7 @@ async function createSubscription({ user_id, service_id, datetime_start = null, 
   return res.rows[0];
 }
 
-async function findById(id) {
+async function findBySubscriptionId(id) {
   const res = await query('SELECT * FROM subscriptions WHERE subscription_id = $1', [id]);
   return res.rows[0] || null;
 }
@@ -17,9 +17,9 @@ async function listByUser(user_id) {
   return res.rows;
 }
 
-async function removeSubscriptionById(id) {
+async function removeBySubscriptionId(id) {
   await query('DELETE FROM subscriptions WHERE subscription_id = $1', [id]);
   return true;
 }
 
-module.exports = { createSubscription, findById, listByUser, removeSubscriptionById };
+module.exports = { createSubscription, findBySubscriptionId, listByUser, removeBySubscriptionId };

@@ -13,14 +13,19 @@ async function findByRegistrationId(id) {
   return res.rows[0] || null;
 }
 
-async function listRegistrationsBySession(session_id) {
+async function listBySessionId(session_id) {
   const res = await query('SELECT * FROM session_registrations WHERE session_id = $1 ORDER BY registration_id DESC', [session_id]);
   return res.rows;
 }
 
-async function removeRegistrationById(id) {
+async function listByUserId(user_id) {
+  const res = await query('SELECT * FROM session_registrations WHERE user_id = $1 ORDER BY registration_id DESC', [user_id]);
+  return res.rows;
+}
+
+async function removeByRegistrationId(id) {
   await query('DELETE FROM session_registrations WHERE registration_id = $1', [id]);
   return true;
 }
 
-module.exports = { createRegistration, findByRegistrationId, listRegistrationsBySession, removeRegistrationById };
+module.exports = { createRegistration, findByRegistrationId, listBySessionId, listByUserId, removeByRegistrationId };

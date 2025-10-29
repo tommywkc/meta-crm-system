@@ -12,14 +12,19 @@ async function findByEnrollmentId(id) {
   return res.rows[0] || null;
 }
 
-async function listEnrollmentsByEvent(event_id) {
+async function listByEvent(event_id) {
   const res = await query('SELECT * FROM event_enrollments WHERE event_id = $1 ORDER BY enrollment_id DESC', [event_id]);
   return res.rows;
 }
 
-async function removeEnrollmentById(id) {
+async function listByUser(user_id) {
+  const res = await query('SELECT * FROM event_enrollments WHERE user_id = $1 ORDER BY enrollment_id DESC', [user_id]);
+  return res.rows;
+}
+
+async function removeByEnrollmentId(id) {
   await query('DELETE FROM event_enrollments WHERE enrollment_id = $1', [id]);
   return true;
 }
 
-module.exports = { createEnrollment, findByEnrollmentId, listEnrollmentsByEvent, removeEnrollmentById };
+module.exports = { createEnrollment, findByEnrollmentId, listByUser, listByEvent, removeByEnrollmentId };
