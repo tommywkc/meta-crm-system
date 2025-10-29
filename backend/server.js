@@ -4,6 +4,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const { initDatabase } = require('./db/pool');
 
 const app = express();
 app.use(express.json());
@@ -79,4 +80,18 @@ app.get('/api/admin/data', authMiddleware, (req, res) => {
 });
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => console.log('Auth API running on port', port));
+
+// 啟動 server 前初始化資料庫
+async function startServer() {
+    try {
+        await initDatabase();
+        app.listen(port, () => {
+            console.log(`伺服器運行在 port ${port}`);
+        });
+    } catch (err) {
+        console.error('伺服器啟動失敗:', err);
+        process.exit(1);
+    }
+}
+
+startServer();
