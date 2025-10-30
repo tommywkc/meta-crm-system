@@ -1,27 +1,17 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { redirect, useNavigate } from 'react-router-dom';
+import { handleLogin } from '../../api/loginAPI';
 
 const LoginPage = () => {
+  console.log('LoginPage rendered'); // 確認元件有載入
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
-  const { login } = useAuth();
+  //const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    setError(null);
-    if (!username.trim() || !password) return setError('Please enter username and password');
-    try {
-      const user = await login(username.trim(), password);
-      if (user.role === 'member') navigate('/member');
-      else if (user.role === 'sales') navigate('/sales');
-      else if (user.role === 'admin') navigate('/admin');
-      else navigate('/');
-    } catch (e) {
-      setError(e.message || 'Login failed');
-    }
-  };
+  // login logic moved to `sendAPI/loginAPI.handleLogin`
 
   return (
     <div style={{ padding: '20px' }}>
@@ -34,7 +24,7 @@ const LoginPage = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={{ margin: '5px' }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError }); }}
           />
         </div>
         <div>
@@ -44,12 +34,16 @@ const LoginPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={{ margin: '5px' }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError }); }}
           />
         </div>
         {error && <div style={{ color: 'red', margin: '8px 0' }}>{error}</div>}
         <button
-          onClick={handleLogin}
+          onClick={() => {
+            console.log('Button clicked');
+            console.log('Credentials:', { username, password });
+            handleLogin(null, { username, password, navigate, setError });
+          }}
           style={{ margin: '5px' }}
           disabled={!username.trim() || !password}
         >
@@ -57,7 +51,8 @@ const LoginPage = () => {
         </button>
       </div>
       <div style={{ marginTop: 12 }}>
-        <small>Test accounts: member/password, sales/password, admin/adminpass</small>
+        <small>Old test accounts: member/password, sales/password, admin/adminpass</small>
+        <small>Test accounts: 1/password, 2/password, 3/password, 444/password</small>
       </div>
     </div>
   );

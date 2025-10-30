@@ -44,8 +44,20 @@ async function closePool() {
     }
 }
 
+// 新增一個通用的查詢函數
+async function query(text, params) {
+    const client = await pool.connect();
+    try {
+        const result = await client.query(text, params);
+        return result;
+    } finally {
+        client.release();
+    }
+}
+
 module.exports = {
     pool,
+    query,
     initDatabase,
     closePool
 };

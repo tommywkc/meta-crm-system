@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS HOLIDAYS;
 DROP TABLE IF EXISTS USERS;
 
 CREATE TABLE IF NOT EXISTS USERS (
-    user_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+    user_id BIGINT NOT NULL UNIQUE,
     password VARCHAR(50) NOT NULL,
     role VARCHAR(50) NOT NULL DEFAULT 'MEMBER',
     name VARCHAR(100) NOT NULL,
@@ -259,13 +259,13 @@ CREATE TABLE IF NOT EXISTS HOLIDAYS (
     FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
-INSERT INTO USERS (password, role, name, mobile, email) VALUES
-('password', 'ADMIN', 'Admin User', '12345678','test@gmail.com'),
-('password', 'SALES', 'Sales User', '23456789','test2@gmail.com'),
-('password', 'LEADER', 'Leader User', '34567890','test3@gmail.com'),
-('password', 'MEMBER', 'Member User', '45678901','test4@gmail.com');
+INSERT INTO USERS (user_id, password, role, name, mobile, email) VALUES
+('1','password', 'ADMIN', 'Admin User', '12345678','test@gmail.com'),
+('2','password', 'SALES', 'Sales User', '23456789','test2@gmail.com'),
+('3','password', 'LEADER', 'Leader User', '34567890','test3@gmail.com'),
+('444','password', 'MEMBER', 'Member User', '45678901','test4@gmail.com');
 
 INSERT INTO EVENTS (type, event_name, description, datetime_start, datetime_end, capacity, location, status, room_cost, speaker_id) VALUES
-('CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 'Room 101', 'SCHEDULED', 200, 2),
-('SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 'Zoom', 'SCHEDULED', 500, 3);
+('CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 'Room 101', 'SCHEDULED', 200, 1),
+('SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 'Zoom', 'SCHEDULED', 500, 2);
 

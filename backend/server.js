@@ -6,51 +6,66 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const { initDatabase } = require('./db/pool'); // Import database initialization
 
+
+
 const app = express();
+
+// Allow frontend on http://localhost:3000 to send credentials
+app.use(cors({ 
+  origin: 'http://localhost:3000', 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
+
 app.use(express.json());
 app.use(cookieParser());
 
-// Allow frontend on http://localhost:3000 to send credentials
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+// 加入請求日誌中間件
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+  next();
+});
+
+const loginRouter = require('./backAPI/login');
+console.log('Login router loaded');  // 確認路由已載入
+app.use('/api', loginRouter); // Use the login router
 
 // In-memory users for demo (plain text passwords for development only)
 // Passwords: member -> password, sales -> password, admin -> adminpass
-const users = [
-  { id: 1, username: 'member', password: 'password', role: 'member' },
-  { id: 2, username: 'sales', password: 'password', role: 'sales' },
-  { id: 3, username: 'admin', password: 'adminpass', role: 'admin' }
-];
+
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 const ACCESS_EXPIRES = '30m';
 
-function findUserByUsername(username) {
-  return users.find(u => u.username === username);
-}
+// function findUserByUsername(username) {
+//   return users.find(u => u.username === username);
+// }
 
-app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ message: 'Missing username or password' });
+// app.post('/api/login', async (req, res) => {
+//   const { username, password } = req.body;
+//   if (!username || !password) return res.status(400).json({ message: 'Missing username or password' });
 
-  const user = findUserByUsername(username);
-  if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+//   const user = findUserByUsername(username);
+//   if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
-  // Simple password comparison for development (replace with bcrypt in production)
-  const ok = password === user.password;
-  if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
+//   // Simple password comparison for development (replace with bcrypt in production)
+//   const ok = password === user.password;
+//   if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
 
-  const payload = { sub: user.id, username: user.username, role: user.role };
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_EXPIRES });
+//   const payload = { sub: user.id, username: user.username, role: user.role };
+//   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_EXPIRES });
 
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: false, // local dev; set true in production with HTTPS
-    sameSite: 'lax',
-    maxAge: 30 * 60 * 1000
-  });
+//   res.cookie('token', token, {
+//     httpOnly: true,
+//     secure: false, // local dev; set true in production with HTTPS
+//     sameSite: 'lax',
+//     maxAge: 30 * 60 * 1000
+//   });
 
-  res.json({ id: user.id, username: user.username, role: user.role });
-});
+//   res.json({ id: user.id, username: user.username, role: user.role });
+// });
+
+
 
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');
