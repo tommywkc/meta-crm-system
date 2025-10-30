@@ -4,7 +4,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const { initDatabase } = require('./db/pool');
+const { initDatabase } = require('./db/pool'); // Import database initialization
 
 const app = express();
 app.use(express.json());
