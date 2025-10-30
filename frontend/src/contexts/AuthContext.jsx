@@ -45,7 +45,8 @@ export const AuthProvider = ({ children }) => {
       throw new Error(err.message || 'Login failed');
     }
     const data = await res.json();
-    setUser(data);
+    const userData = data.user || data;
+    setUser(userData);
     return data;
   };
 

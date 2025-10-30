@@ -21,8 +21,8 @@ export async function login({ username, password }) {
 }
 
 // 將原本 LoginPage.jsx 內的 handleLogin 搬到此處，方便重用與測試。
-// 注意：此函式會呼叫上面的 `login`，並在成功時根據 role 導向。
-export async function handleLogin(e, { username, password, navigate, setError }) {
+// 注意：此函式會呼叫 AuthContext 的 login 方法，並在成功時根據 role 導向。
+export async function handleLogin(e, { username, password, navigate, setError, authLogin }) {
   console.log('handleLogin called with:', { username }); // 確認函數被呼叫
   
   if (e && typeof e.preventDefault === 'function') {
@@ -34,7 +34,8 @@ export async function handleLogin(e, { username, password, navigate, setError })
 
   try {
     console.log('Attempting login...');
-    const payload = await login({ username, password });
+    // 直接使用 AuthContext 的 login 方法，它會自動更新狀態
+    const payload = await authLogin(username, password);
     console.log('Login response:', payload);
     const user = payload.user || payload;
 
@@ -49,6 +50,7 @@ export async function handleLogin(e, { username, password, navigate, setError })
 
     return user;
   } catch (err) {
+    console.error('Login error:', err);
     if (setError) setError(err.message || 'Login failed');
     throw err;
   }

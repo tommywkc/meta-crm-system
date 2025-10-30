@@ -8,7 +8,7 @@ const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
-  //const { login } = useAuth();
+  const { login: authLogin } = useAuth();
   const navigate = useNavigate();
 
   // login logic moved to `sendAPI/loginAPI.handleLogin`
@@ -24,7 +24,7 @@ const LoginPage = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={{ margin: '5px' }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError }); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError, authLogin }); }}
           />
         </div>
         <div>
@@ -34,7 +34,7 @@ const LoginPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={{ margin: '5px' }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError }); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError, authLogin }); }}
           />
         </div>
         {error && <div style={{ color: 'red', margin: '8px 0' }}>{error}</div>}
@@ -42,7 +42,7 @@ const LoginPage = () => {
           onClick={() => {
             console.log('Button clicked');
             console.log('Credentials:', { username, password });
-            handleLogin(null, { username, password, navigate, setError });
+            handleLogin(null, { username, password, navigate, setError, authLogin });
           }}
           style={{ margin: '5px' }}
           disabled={!username.trim() || !password}

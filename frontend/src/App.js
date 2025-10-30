@@ -37,10 +37,11 @@ const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   }
 
   // support allowedRole (string) or allowedRoles (array)
-  if (allowedRole && user.role !== allowedRole) {
+  // 大小寫不敏感的角色比較
+  if (allowedRole && user.role?.toLowerCase() !== allowedRole.toLowerCase()) {
     return <Navigate to="/login" />;
   }
-  if (Array.isArray(allowedRoles) && !allowedRoles.includes(user.role)) {
+  if (Array.isArray(allowedRoles) && !allowedRoles.some(role => role.toLowerCase() === user.role?.toLowerCase())) {
     return <Navigate to="/login" />;
   }
 
@@ -167,7 +168,7 @@ function App() {
           <Route 
             path="/sales" 
             element={
-              <ProtectedRoute allowedRole="sales">
+              <ProtectedRoute allowedRoles={["sales", "leader"]}>
                 <SalesPage />
               </ProtectedRoute>
             } 
