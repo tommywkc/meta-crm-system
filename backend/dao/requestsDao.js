@@ -9,22 +9,22 @@ async function createRequest({ registration_id, user_id, action, request_by_id, 
 }
 
 async function findByRequestId(id) {
-  const res = await query('SELECT * FROM requests WHERE request_id = $1', [id]);
+  const res = await query('SELECT * FROM REQUESTS WHERE request_id = $1', [id]);
   return res.rows[0] || null;
 }
 
 async function listByRegistrationId(registration_id) {
-  const res = await query('SELECT * FROM requests WHERE registration_id = $1 ORDER BY request_id DESC', [registration_id]);
+  const res = await query('SELECT * FROM REQUESTS WHERE registration_id = $1 ORDER BY request_id DESC', [registration_id]);
   return res.rows;
 }
 
 async function listByUserId(user_id) {
-  const res = await query('SELECT * FROM requests WHERE user_id = $1 ORDER BY request_id DESC', [user_id]);
+  const res = await query('SELECT * FROM REQUESTS WHERE user_id = $1 ORDER BY request_id DESC', [user_id]);
   return res.rows;
 }
 
 async function removeByRequestId(id) {
-  await query('DELETE FROM requests WHERE request_id = $1', [id]);
+  await query('DELETE FROM REQUESTS WHERE request_id = $1', [id]);
   return true;
 }
 
