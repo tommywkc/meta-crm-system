@@ -32,8 +32,8 @@ const CustomersList = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Customer List (Admin/Sales)</h1>
-      <p>Manage customer data and operations (shared by Admin and Sales).</p>
+      <h1>Member List</h1>
+      <p>Manage member data and operations (shared by Admin and Sales).</p>
 
       <div
         style={ UpperSelectContainerStyle }
