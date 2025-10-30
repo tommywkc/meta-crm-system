@@ -18,7 +18,7 @@ const LoginPage = () => {
       <h2>Meta Academy CRM System Login</h2>
       <div>
         <div>
-          <label>Username: </label>
+          <label>UserID: </label>
           <input
             type="text"
             value={username}
