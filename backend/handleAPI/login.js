@@ -14,12 +14,12 @@ router.post('/login', async (req, res) => {
     
     if (/\D/.test(username) == true) {
       console.log('含有其他字元');
-      return null ;
+      return res.status(400).json({ message: '使用者名稱只能包含數字' });
     }
 
     if (!username || !password) {
       console.log('缺少使用者名稱或密碼');
-      return null ;
+      return res.status(400).json({ message: '缺少使用者名稱或密碼' });
     }
 
     const user = await findByUserId(username);
@@ -27,7 +27,7 @@ router.post('/login', async (req, res) => {
     
     if (!user || user.password !== password) {
       console.log('使用者名稱或密碼錯誤');
-      return null ;
+      return res.status(401).json({ message: '使用者名稱或密碼錯誤' });
     }
 
     console.log('登入成功:', { id: user.user_id, role: user.role });
@@ -49,7 +49,14 @@ router.post('/login', async (req, res) => {
 
     // 回傳不含密碼的使用者資料
     const { password: _p, ...safe } = user;
-    return res.json({ user: { id: safe.user_id || safe.id, name: safe.name, role: safe.role, username: safe.email || username } });
+    return res.json({ 
+      user: { 
+        id: safe.user_id || safe.id, 
+        name: safe.name, 
+        role: safe.role, 
+        username: safe.email || username 
+      } 
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
