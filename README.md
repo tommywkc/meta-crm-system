@@ -41,7 +41,17 @@ cd meta-crm-system/frontend
 npm install
 ```
 
-### 2) Start backend
+### 2) Setup Database
+Download PostgreSQL & Docker Desktop first
+||||||||||||||||Database Configuration|||||||||||||||||
+Username: postgres
+Password: postgres
+Port: 5432
+Database Name: meta_academy_crm
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+
+### 3) Start backend
 
 Execute in backend folder:
 
@@ -51,7 +61,7 @@ npm start
 # Default listening: http://localhost:4000
 ```
 
-### 3) Start frontend
+### 4) Start frontend
 
 Execute in frontend folder:
 
