@@ -10,7 +10,7 @@
 ## Prerequisites
 - Node.js (recommended v18+)
 - npm (comes with Node) or yarn
-- Git (if cloning)1
+- Git (if cloning)
 
 ## Getting Started
 
