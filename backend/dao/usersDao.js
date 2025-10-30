@@ -9,6 +9,7 @@ async function createUser({ password, role = 'MEMBER', name, email, qr_token = n
   const res = await query(sql, vals);
   return res.rows[0];
 }
+
 async function findByUserId(id) {
   const res = await query('SELECT * FROM USERS WHERE user_id = $1', [id]);
   return res.rows[0] || null;

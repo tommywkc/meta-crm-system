@@ -1,4 +1,4 @@
-import { redirect } from "react-router-dom";
+// keep this module framework-agnostic; navigation is passed in from components
 
 export async function login({ username, password }) {
   console.log('Sending login request to backend');
@@ -36,15 +36,24 @@ export async function handleLogin(e, { username, password, navigate, setError })
     console.log('Attempting login...');
     const payload = await login({ username, password });
     console.log('Login response:', payload);
-    const user = payload.user || payload;
+
+    // Normalize response: backend may return either { user: {...} } or a flat user object
+    const user = payload && payload.user ? payload.user : payload;
+    if (!user) throw new Error('Invalid login response');
 
     const role = (user.role || '').toUpperCase();
-    if (role === 'ADMIN') {
-      navigate('/admin');
-    } else if (role === 'SALES' || role === 'LEADER') {
-      navigate('/sales');
-    } else {
-      navigate('/member');
+    if (navigate && typeof navigate === 'function') {
+      if (role === 'ADMIN') {
+        console.log('Role is Admin');
+        navigate('/admin/Page');
+        console.log('Redirected');
+      } else if (role === 'SALES' || role === 'LEADER') {
+        navigate('/sales/Page');
+        console.log('Redirected');
+      } else {
+        navigate('/member/Page');
+        console.log('Redirected');
+      }
     }
 
     return user;
