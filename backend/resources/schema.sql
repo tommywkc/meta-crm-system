@@ -17,13 +17,13 @@ DROP TABLE IF EXISTS HOLIDAYS;
 DROP TABLE IF EXISTS USERS;
 
 CREATE TABLE IF NOT EXISTS USERS (
-    user_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+    user_id BIGINT NOT NULL UNIQUE,
     password VARCHAR(50) NOT NULL,
     role VARCHAR(50) NOT NULL DEFAULT 'MEMBER',
     name VARCHAR(100) NOT NULL,
     mobile VARCHAR(20) NOT NULL UNIQUE,
     email VARCHAR(100) UNIQUE,
-    qr_token VARCHAR(255),
+    qr_token VARCHAR(255) UNIQUE,
     source VARCHAR(100),
     owner_sales BIGINT,
     team VARCHAR(100),
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS USERS (
     note_special VARCHAR(255),
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id),
-    CONSTRAINT CHKROLE CHECK (role IN ('ADMIN', 'SALES', 'LEADER', 'MEMBER'))
+    CONSTRAINT CHKROLE CHECK (role IN ('ADMIN', 'SALES', 'LEADER', 'MEMBER', 'N/A'))
 );
 
 
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS EVENTS (
     speaker_id BIGINT,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (event_id),
-    FOREIGN KEY (speaker_id) REFERENCES USERS(user_id),
+    FOREIGN KEY (speaker_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     CONSTRAINT CHKTYPE CHECK (type IN ('CLASS', 'SEMINAR')),
     CONSTRAINT CHKSTATUS_EVENTS CHECK (status IN ('SCHEDULED', 'CANCELLED', 'OPEN'))
 );
@@ -61,9 +61,9 @@ CREATE TABLE IF NOT EXISTS EVENT_ENROLLMENTS (
     enroll_by_id BIGINT,
     enroll_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (enrollment_id),
-    FOREIGN KEY (event_id) REFERENCES EVENTS(event_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
-    FOREIGN KEY (enroll_by_id) REFERENCES USERS(user_id)
+    FOREIGN KEY (event_id) REFERENCES EVENTS(event_id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (enroll_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS EVENT_SESSIONS (
@@ -76,8 +76,8 @@ CREATE TABLE IF NOT EXISTS EVENT_SESSIONS (
     created_by_id BIGINT,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (session_id),
-    FOREIGN KEY (event_id) REFERENCES EVENTS(event_id),
-    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id)
+    FOREIGN KEY (event_id) REFERENCES EVENTS(event_id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS SESSION_REGISTRATIONS (
@@ -90,9 +90,9 @@ CREATE TABLE IF NOT EXISTS SESSION_REGISTRATIONS (
     status VARCHAR(50),
     note_special VARCHAR(255),
     PRIMARY KEY (registration_id),
-    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
-    FOREIGN KEY (registration_by_id) REFERENCES USERS(user_id),
+    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (registration_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     CONSTRAINT CHKCHANNEL_REG CHECK (channel IN ('WHATSAPP', 'SALES', 'LEADER', 'MEMBER')),
     CONSTRAINT CHKSTATUS_REG CHECK (status IN ('REGISTERED', 'WAITLIST', 'SPECIAL', 'CANCELLED', 'CHANGED'))
 );
@@ -105,9 +105,9 @@ CREATE TABLE IF NOT EXISTS WAITLIST (
     created_by_id BIGINT,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (wait_id),
-    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
-    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id)
+    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS EVENT_ATTENDANCE (
@@ -119,9 +119,9 @@ CREATE TABLE IF NOT EXISTS EVENT_ATTENDANCE (
     status VARCHAR(50),
     remarks VARCHAR(255),
     PRIMARY KEY (attendance_id),
-    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
-    FOREIGN KEY (registration_id) REFERENCES SESSION_REGISTRATIONS(registration_id),
+    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (registration_id) REFERENCES SESSION_REGISTRATIONS(registration_id) ON DELETE SET NULL,
     CONSTRAINT CHKSTATUS_ATT CHECK (status IN ('G', 'Y', 'R'))
 );
 
@@ -139,8 +139,8 @@ CREATE TABLE IF NOT EXISTS PAYMENTS (
     issued_receipt BOOLEAN DEFAULT FALSE,
     issued_certificate BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (payment_id),
-    FOREIGN KEY (event_id) REFERENCES EVENTS(event_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
+    FOREIGN KEY (event_id) REFERENCES EVENTS(event_id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     CONSTRAINT CHKMETHOD_PAYMENT CHECK (method IN ('CREDITCARD', 'FPS', 'PAYME', 'CASH')),
     CONSTRAINT CHKSTATUS_PAY CHECK (status IN ('PENDING', 'COMPLETED', 'EXPIRED'))
 );
@@ -161,8 +161,8 @@ CREATE TABLE IF NOT EXISTS ASSIGNMENTS (
     assigned_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deadline TIMESTAMP,
     PRIMARY KEY (assignment_id),
-    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id),
-    FOREIGN KEY (assigned_by_id) REFERENCES USERS(user_id)
+    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS ASSIGNMENT_SUBMISSIONS (
@@ -175,10 +175,10 @@ CREATE TABLE IF NOT EXISTS ASSIGNMENT_SUBMISSIONS (
     graded_by_id BIGINT,
     feedback TEXT,
     PRIMARY KEY (submission_id),
-    FOREIGN KEY (assignment_id) REFERENCES ASSIGNMENTS(assignment_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
-    FOREIGN KEY (upload_id) REFERENCES UPLOADS(upload_id),
-    FOREIGN KEY (graded_by_id) REFERENCES USERS(user_id)
+    FOREIGN KEY (assignment_id) REFERENCES ASSIGNMENTS(assignment_id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (upload_id) REFERENCES UPLOADS(upload_id) ON DELETE SET NULL,
+    FOREIGN KEY (graded_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS REQUESTS (
@@ -195,10 +195,10 @@ CREATE TABLE IF NOT EXISTS REQUESTS (
     under_3bday BOOLEAN,
     priority_tier INT,
     PRIMARY KEY (request_id),
-    FOREIGN KEY (registration_id) REFERENCES SESSION_REGISTRATIONS(registration_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
-    FOREIGN KEY (request_by_id) REFERENCES USERS(user_id),
-    FOREIGN KEY (determine_by_id) REFERENCES USERS(user_id),
+    FOREIGN KEY (registration_id) REFERENCES SESSION_REGISTRATIONS(registration_id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (request_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (determine_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     CONSTRAINT CHKSTATUS_REQ CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))
 );
 
@@ -210,7 +210,7 @@ CREATE TABLE IF NOT EXISTS SERVICES (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by_id BIGINT,
     PRIMARY KEY (service_id),
-    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id)
+    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS SUBSCRIPTIONS (
@@ -223,8 +223,8 @@ CREATE TABLE IF NOT EXISTS SUBSCRIPTIONS (
     password VARCHAR(100),
     status VARCHAR(20),
     PRIMARY KEY (subscription_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
-    FOREIGN KEY (service_id) REFERENCES SERVICES(service_id),
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (service_id) REFERENCES SERVICES(service_id) ON DELETE SET NULL,
     CONSTRAINT CHKSTATUS_SUBS CHECK (status IN ('ACTIVE', 'INACTIVE', 'EXPIRED'))
 );
 
@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS NOTICES (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by_id BIGINT,
     PRIMARY KEY (notice_id),
-    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id)
+    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS NOTIFICATIONS (
@@ -246,7 +246,7 @@ CREATE TABLE IF NOT EXISTS NOTIFICATIONS (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by_id BIGINT,
     PRIMARY KEY (notification_id),
-    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id)
+    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS HOLIDAYS (
@@ -254,5 +254,19 @@ CREATE TABLE IF NOT EXISTS HOLIDAYS (
     holiday_name VARCHAR(100) NOT NULL,
     holiday_date DATE NOT NULL,
     description TEXT,
-    PRIMARY KEY (holiday_id)
+    created_by_id BIGINT,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (holiday_id),
+    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
+
+INSERT INTO USERS (user_id, password, role, name, mobile, email) VALUES
+('1','password', 'ADMIN', 'Admin User', '12345678','test@gmail.com'),
+('2','password', 'SALES', 'Sales User', '23456789','test2@gmail.com'),
+('3','password', 'LEADER', 'Leader User', '34567890','test3@gmail.com'),
+('444','password', 'MEMBER', 'Member User', '45678901','test4@gmail.com');
+
+INSERT INTO EVENTS (type, event_name, description, datetime_start, datetime_end, capacity, location, status, room_cost, speaker_id) VALUES
+('CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 'Room 101', 'SCHEDULED', 200, 1),
+('SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 'Zoom', 'SCHEDULED', 500, 2);
+
