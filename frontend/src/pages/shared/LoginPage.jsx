@@ -11,7 +11,6 @@ const LoginPage = () => {
   const { login: authLogin } = useAuth();
   const navigate = useNavigate();
 
-  // login logic moved to `sendAPI/loginAPI.handleLogin`
 
   return (
     <div style={{ padding: '20px' }}>
@@ -51,7 +50,6 @@ const LoginPage = () => {
         </button>
       </div>
       <div style={{ marginTop: 12 }}>
-        <small>Old test accounts: member/password, sales/password, admin/adminpass</small>
         <small>Test accounts: 1/password, 2/password, 3/password, 444/password</small>
       </div>
     </div>

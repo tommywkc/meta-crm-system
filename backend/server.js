@@ -8,6 +8,7 @@ const { initDatabase } = require('./db/pool'); // Import database initialization
 
 
 
+
 const app = express();
 
 // Allow frontend on http://localhost:3000 to send credentials
@@ -27,43 +28,19 @@ app.use((req, res, next) => {
 });
 
 const loginRouter = require('./handleAPI/login');
-console.log('Login router loaded');  // 確認路由已載入
+console.log('Login router loaded');
 app.use('/api', loginRouter); // Use the login router
 
 // In-memory users for demo (plain text passwords for development only)
 // Passwords: member -> password, sales -> password, admin -> adminpass
 
+const customersRouter = require('./handleAPI/customersList');
+console.log('Customers router loaded');
+app.use('/api', customersRouter); // Use the customers router
 
+// JWT 設定
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 const ACCESS_EXPIRES = '30m';
-
-// function findUserByUsername(username) {
-//   return users.find(u => u.username === username);
-// }
-
-// app.post('/api/login', async (req, res) => {
-//   const { username, password } = req.body;
-//   if (!username || !password) return res.status(400).json({ message: 'Missing username or password' });
-
-//   const user = findUserByUsername(username);
-//   if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-
-//   // Simple password comparison for development (replace with bcrypt in production)
-//   const ok = password === user.password;
-//   if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
-
-//   const payload = { sub: user.id, username: user.username, role: user.role };
-//   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_EXPIRES });
-
-//   res.cookie('token', token, {
-//     httpOnly: true,
-//     secure: false, // local dev; set true in production with HTTPS
-//     sameSite: 'lax',
-//     maxAge: 30 * 60 * 1000
-//   });
-
-//   res.json({ id: user.id, username: user.username, role: user.role });
-// });
 
 
 

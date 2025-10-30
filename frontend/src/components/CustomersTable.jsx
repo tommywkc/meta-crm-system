@@ -6,7 +6,9 @@ const CustomersTable = ({ customers = [], role = 'member', onEdit, onView }) => 
     <table style={tableStyle}>
       <thead>
         <tr>
+          <th style={thTdStyle}>UserID</th>
           <th style={thTdStyle}>Name</th>
+          <th style={thTdStyle}>Role</th>
           <th style={thTdStyle}>Phone</th>
           <th style={thTdStyle}>Email</th>
           <th style={thTdStyle}>Actions</th>
@@ -15,8 +17,10 @@ const CustomersTable = ({ customers = [], role = 'member', onEdit, onView }) => 
       <tbody>
         {customers.map((c) => (
           <tr key={c.id}>
+            <td style={thTdStyle}>{c.user_id}</td>
             <td style={thTdStyle}>{c.name}</td>
-            <td style={thTdStyle}>{c.phone}</td>
+            <td style={thTdStyle}>{c.role}</td>
+            <td style={thTdStyle}>{c.mobile}</td>
             <td style={thTdStyle}>{c.email}</td>
             <td style={thTdStyle}>
               {role === 'admin' && (

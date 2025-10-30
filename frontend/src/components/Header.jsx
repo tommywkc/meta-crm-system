@@ -122,7 +122,7 @@ const Header = () => {
       </nav>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div>Hi, {user.username}</div>
+        <div>Hi, {user.name}</div>
         <button onClick={async () => { await logout(); navigate('/login'); }}>Logout</button>
       </div>
     </header>
