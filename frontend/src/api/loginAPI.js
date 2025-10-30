@@ -1,3 +1,5 @@
+import { redirect } from "react-router-dom";
+
 export async function login({ username, password }) {
   console.log('Sending login request to backend');
   const res = await fetch('http://localhost:4000/api/login', {
