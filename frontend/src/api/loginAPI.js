@@ -1,6 +1,8 @@
+import API_BASE_URL from '../config/api';
+
 export async function login({ username, password }) {
   console.log('Sending login request to backend');
-  const res = await fetch('http://localhost:4000/api/login', {
+  const res = await fetch(`${API_BASE_URL}/api/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // 讓 cookie 能跨域

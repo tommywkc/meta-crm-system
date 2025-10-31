@@ -1,5 +1,6 @@
 // src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import API_BASE_URL from '../config/api';
 
 const AuthContext = createContext();
 
@@ -12,7 +13,7 @@ export const AuthProvider = ({ children }) => {
     let mounted = true;
     async function fetchMe() {
       try {
-        const res = await fetch('http://localhost:4000/api/me', {
+        const res = await fetch(`${API_BASE_URL}/api/me`, {
           credentials: 'include'
         });
         if (!mounted) return;
@@ -34,7 +35,7 @@ export const AuthProvider = ({ children }) => {
 
   // login will call backend /api/login
   const login = async (username, password) => {
-    const res = await fetch('http://localhost:4000/api/login', {
+    const res = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await fetch('http://localhost:4000/api/logout', {
+      await fetch(`${API_BASE_URL}/api/logout`, {
         method: 'POST',
         credentials: 'include'
       });
