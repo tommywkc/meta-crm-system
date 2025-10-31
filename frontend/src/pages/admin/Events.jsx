@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 
 const mockClasses = [
@@ -25,6 +26,12 @@ const mockClasses = [
 
 const Events = () => {
 	const navigate = useNavigate();
+	const { user } = useAuth();
+	const userRole = user?.role?.toLowerCase();
+	const isAdmin = userRole === 'admin';
+	const isMember = userRole === 'member';
+	const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
+	
 	const onCreate = () => {
 		// navigate to create page
 		navigate('/events/create');
@@ -37,17 +44,27 @@ const Events = () => {
 		// navigate to view page
 		navigate(`/events/${id}`);
 	};
+	const onEnroll = (id) => {
+		// member enrollment logic
+		alert(`報名 ${id}（模擬）`);
+	};
 
 		return (
 			<div style={{ padding: 20 }}>
 				<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 					<div>
-						<h1 style={{ margin: 0 }}>建立/編輯講座與課堂 (Admin)</h1>
+						<h1 style={{ margin: 0 }}>
+							{isAdmin ? '建立/編輯講座與課堂 (Admin)' : 
+							 isSalesOrLeader ? `講座與課堂名單 (${user.role})` :
+							 '講座與課堂名單 (Member)'}
+						</h1>
 				
 					</div>
-					<div>
-						<button onClick={onCreate}>建立</button>
-					</div>
+					{isAdmin && (
+						<div>
+							<button onClick={onCreate}>建立</button>
+						</div>
+					)}
 				</div>
 
 				<table style={tableStyle}>
@@ -71,8 +88,17 @@ const Events = () => {
 							<td style={thTdStyle}>{c.status}</td>
 							<td style={thTdStyle}>
 								<button onClick={() => onView(c.id)} style={{ marginRight: 8 }}>查看</button>
-								<button onClick={() => onEdit(c.id)} style={{ marginRight: 8 }}>編輯</button>
-								<button onClick={() => alert(`刪除 ${c.id}（模擬）`)}>刪除</button>
+								{isAdmin ? (
+									<>
+										<button onClick={() => onEdit(c.id)} style={{ marginRight: 8 }}>編輯</button>
+										<button onClick={() => alert(`刪除 ${c.id}（模擬）`)}>刪除</button>
+									</>
+								) : isMember ? (
+									<button onClick={() => onEnroll(c.id)}>報名</button>
+								) : (
+									// sales/leader 只能查看，不顯示其他按鈕
+									null
+								)}
 							</td>
 						</tr>
 					))}

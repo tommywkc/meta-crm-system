@@ -34,9 +34,9 @@ const Header = () => {
   const rolePages = {
     // new admin order requested by user
     admin: ['customers','events','approvals','waiting','download','scan','reports','files','notifications'],
-    sales: ['customers','sales_kpi','notifications'],
-    leader: ['customers','sales_kpi','notifications'], // LEADER 角色與 sales 相同權限
-    member: ['payments','receipts','requests','homework','notifications']
+    sales: ['customers','events','sales_kpi','notifications'],
+    leader: ['customers','events','sales_kpi','notifications'], // LEADER 角色與 sales 相同權限
+    member: ['events','payments','receipts','requests','homework','notifications']
   };
 
   const pages = rolePages[user.role?.toLowerCase()] || [];

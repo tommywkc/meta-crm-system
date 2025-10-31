@@ -88,12 +88,12 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/events" element={
-            <ProtectedRoute allowedRole="admin">
+            <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
               <Events />
             </ProtectedRoute>
           } />
           <Route path="/events/:id" element={
-            <ProtectedRoute allowedRole="admin">
+            <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
               <EventView />
             </ProtectedRoute>
           } />
