@@ -66,9 +66,16 @@ const CustomerEdit = () => {
           <input value={customer.source} onChange={(e) => setCustomer({ ...customer, source: e.target.value })} style={{ width: '100%', padding: 2 }} />
         </div>
         <div style={{ marginBottom: 8 }}>
-          <label>Owner Sales:</label>
-          <br />
-          <input value={customer.owner_sales} onChange={(e) => setCustomer({ ...customer, owner_sales: e.target.value })} style={{ width: '100%', padding: 2 }} />
+          <label>Owner Sales:</label><br/>
+          <input
+            type="text"
+            value={customer.owner_sales ?? ''}
+            onChange={(e) => setCustomer({ ...customer, owner_sales: e.target.value })}
+            style={{ width: '100%', padding: 2, borderColor: !/^\d*$/.test(customer.owner_sales || '') ? 'red' : '' }}
+          />
+          {!/^\d*$/.test(customer.owner_sales || '') && (
+            <small style={{ color: 'red' }}>Please only enter sales ID.</small>
+          )}
         </div>
         <div style={{ marginBottom: 8 }}>
           <label>Team:</label>
