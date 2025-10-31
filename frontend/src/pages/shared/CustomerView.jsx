@@ -12,7 +12,7 @@ const CustomerView = () => {
   useEffect(() => {
     const fetchData = async () => {
       const data = await handleGetById(id);
-      setCustomer(data || {});
+      setCustomer(data.customer || {});
     };
     fetchData();
   }, [id]);
@@ -21,7 +21,7 @@ const CustomerView = () => {
     <div style={{ padding: 20 }}>
       <h1>View Customer</h1>
        <div style={{ marginTop: 20 }}>
-        <div><strong>UserID:</strong> {customer.user_id}</div>
+        <div><strong>User ID:</strong> {customer.user_id}</div>
         <div><strong>Password:</strong> {customer.password}</div>
         <div><strong>Name:</strong> {customer.name}</div>
         <div><strong>Mobile Number:</strong> {customer.mobile}</div>
@@ -32,12 +32,12 @@ const CustomerView = () => {
         <div><strong>Team:</strong> {customer.team || 'N/A'}</div>
         <div><strong>Tags:</strong> {customer.tags || 'N/A'}</div>
         <div><strong>Special Notes:</strong> {customer.note_special || 'N/A'}</div>
-        <div><strong>Created At:</strong> {customer.created_at}</div>
         <div><strong>QR Token:</strong> {customer.qr_token || 'N/A'}</div>
+        <div><strong>Created At:</strong> {customer.create_time}</div>
       </div>
       <div style={{ marginTop: 16 }}>
         <button style={{ marginRight: 8 }} onClick={() => navigate('/customers')}>Back to List</button>
-        <button onClick={() => navigate(`/customers/${customer.id}/edit`)}>Edit</button>
+        <button onClick={() => navigate(`/customers/${id}/edit`)}>Edit</button>
       </div>
     </div>
   );

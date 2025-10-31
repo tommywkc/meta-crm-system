@@ -26,8 +26,27 @@ router.get('/customers', async (req, res) => {
   }
 });
 
-//handle get User by id
+//handle get User by id in view customer detail
 router.get('/customers/:id', async (req, res) => {
+  try {
+    const user_id = req.params.id;
+    console.log('收到客戶資料請求:', user_id);
+
+    const customer = await findByUserId(user_id);
+    if (!customer) {
+      console.log('未找到客戶:', user_id);
+      return res.status(404).json({ message: '客戶不存在' });
+    }
+    console.log('取得客戶資料成功:', user_id);
+    res.json({ customer });
+  } catch (error) {
+    console.error('取得客戶資料失敗:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+//handle get User by id in edit customer detail
+router.get('/customers/:id/edit', async (req, res) => {
   try {
     const user_id = req.params.id;
     console.log('收到客戶資料請求:', user_id);
