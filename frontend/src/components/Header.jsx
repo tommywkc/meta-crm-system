@@ -15,7 +15,7 @@ const Header = () => {
     customers: { path: '/customers', label: '客戶名單' },
     approvals: { path: '/approvals', label: '批核頁' },
     scan: { path: '/scan', label: '掃碼簽到' },
-    events: { path: '/events', label: '建立/編輯講座與課堂' },
+    events: { path: '/events', label: '講座與課堂名單' },
     download: { path: '/download', label: '下載名單' },
     reports: { path: '/reports', label: '報表中心' },
     waiting: { path: '/waiting', label: '等待清單' },

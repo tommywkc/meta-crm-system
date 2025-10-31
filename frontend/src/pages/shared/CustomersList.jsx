@@ -28,7 +28,7 @@ const CustomersList = () => {
   const pagedCustomers = customers.slice(startIndex, startIndex + limit);
 
   const handleEdit = (c) => navigate(`/customers/${c.id}/edit`);
-  const handleView = (c) => navigate(`/customers/${c.id}`);
+  const handleView = (user_id) => navigate(`/customers/${user_id}`);
 
   return (
     <div style={{ padding: 20 }}>
