@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { handleGetById, handleUpdateById } from '../../api/customersListAPI';
+import { handleGetById, handleUpdateById, handleDeleteById } from '../../api/customersListAPI';
+import { redTextStyle } from '../../styles/TableStyles';
 
 
 const CustomerEdit = () => {
@@ -27,6 +28,15 @@ const CustomerEdit = () => {
       alert('更新資料失敗，請稍後再試');
     }
   };
+
+  const handleDelete = async (user_id) => {
+      if (window.confirm('Comfire to remove this User?')) {
+        await handleDeleteById(user_id);  // 從後端刪除
+        alert('User deleted successfully');
+        navigate('/customers');            // 刪除後導回客戶清單
+      }
+    };
+
 
   return (
     <div style={{ padding: 20 }}>
@@ -118,6 +128,7 @@ const CustomerEdit = () => {
           <button type="button" onClick={() => navigate(-1)}>Cancel</button>
         </div>
       </form>
+      <button style={redTextStyle} onClick={() => handleDelete(customer.user_id)}>Delete</button>
     </div>
   );
 };

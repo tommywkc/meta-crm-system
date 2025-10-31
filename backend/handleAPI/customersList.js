@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { listByUsersId, findByUserId, updateByUserId, createUser } = require('../dao/usersDao');
+const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId } = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 
 // JWT 設定
@@ -112,5 +112,25 @@ router.post('/customers', async (req, res) => {
   }
 });
 
+//handle delete User by id
+router.delete('/customers/:id', async (req, res) => {
+  try {
+    console.log('收到刪除客戶資料請求');
+    const user_id = req.params.id;
+    console.log('收到刪除客戶資料請求:', user_id);
+
+    const existing = await findByUserId(user_id);
+    if (!existing) {
+      return res.status(404).json({ message: '客戶不存在' });
+    }
+
+    await removeByUserId(user_id);
+    console.log('刪除客戶資料成功:', user_id);
+    res.json({ message: '客戶資料刪除成功' });
+  } catch (error) {
+    console.error('刪除客戶資料失敗:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
 
 module.exports = router;

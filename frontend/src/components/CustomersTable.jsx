@@ -1,7 +1,7 @@
 import React from 'react';
-import { tableStyle, thTdStyle } from '../styles/TableStyles';
+import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
 
-const CustomersTable = ({ customers = [], role, onEdit, onView }) => {
+const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete }) => {
   return (
     <table style={tableStyle}>
       <thead>
@@ -29,7 +29,11 @@ const CustomersTable = ({ customers = [], role, onEdit, onView }) => {
                   <button style={{ marginRight: 8 }} onClick={() => onEdit && onEdit(c.user_id)}>
                     Edit
                   </button>
+                  <button style={redTextStyle} onClick={() => onDelete && onDelete(c.user_id)}>
+                    Delete
+                  </button>
                 </>
+                
               )}
             </td>
           </tr>

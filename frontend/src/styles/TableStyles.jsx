@@ -14,4 +14,9 @@ export const thTdStyle = {
   verticalAlign: 'middle'
 };
 
+export const redTextStyle = {
+  color: '#ff0000ff',
+  marginRight: 8
+};
+
 export default null;

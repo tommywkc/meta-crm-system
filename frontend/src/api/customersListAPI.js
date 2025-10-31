@@ -123,3 +123,34 @@ export async function handleCreate(data) {
     throw err;
   }
 }
+
+export async function deleteUserById(user_id) {
+  console.log(`Deleting customer ${user_id} on backend`);
+  const res = await fetch(`http://localhost:4000/api/customers/${user_id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // 讓 cookie 能跨域
+  });
+  if (!res.ok) {
+    // 嘗試讀取後端錯誤訊息
+    try {
+      const err = await res.json();
+      throw new Error(err.message || `Failed to delete customer ${user_id}`);
+    } catch (e) {
+      throw new Error(res.statusText || `Failed to delete customer ${user_id}`);
+    }
+  }
+  return await res.json();
+}
+
+export async function handleDeleteById(user_id) {
+  try {
+    console.log(`Attempting to delete customer ${user_id}...`);
+    const payload = await deleteUserById(user_id);
+    console.log(`Customer ${user_id} deletion response:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Delete customer ${user_id} error:`, err);
+    throw err;
+  }
+}
