@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CustomersTable from '../../components/CustomersTable';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { handleList } from '../../api/customersListAPI';
+import { handleList, handleDeleteById } from '../../api/customersListAPI';
 import {UpperSelectContainerStyle, LowerSelectContainerStyle} from '../../styles/SelectStyles';
 
 const CustomersList = () => {
@@ -23,6 +23,19 @@ const CustomersList = () => {
     fetchData();
   }, []);
 
+  const fetchCustomers = async () => {
+    const payload = await handleList(100, 0);
+    setCustomers(payload.customers || []);
+  };
+
+  const handleDelete = async (user_id) => {
+    if (window.confirm('Comfire to remove this User?')) {
+      await handleDeleteById(user_id);  // 從後端刪除
+      alert('User deleted successfully');
+      await fetchCustomers();            // 再次拉取後端最新資料
+    }
+  };
+
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
@@ -40,7 +53,7 @@ const CustomersList = () => {
 
       {authRole === 'ADMIN' && (
         <button onClick={() => navigate('/customers/create')}>
-          Create User
+          Create New User
         </button>
       )}
 
@@ -74,6 +87,7 @@ const CustomersList = () => {
         role={authRole}
         onEdit={handleEdit}
         onView={handleView}
+        onDelete={handleDelete}
       />
 
       <div

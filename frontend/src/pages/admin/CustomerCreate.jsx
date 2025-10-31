@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { handleCreate } from '../../api/customersListAPI';
 
 const CustomerCreate = () => {
   const navigate = useNavigate();
 
-  const [userID, setUserID] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -16,12 +16,32 @@ const CustomerCreate = () => {
   const [tags, setTags] = useState('');
   const [specialNotes, setSpecialNotes] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // For now, just log the values and navigate back
-    console.log('Create customer (mock):', { userID, password, name, mobile, email, role, source, ownerSales, team, tags, specialNotes });
-    alert('已模擬新增（不會真的送出）');
-    navigate('/customers');
+    const newCustomer = {
+      password,
+      name,
+      mobile,
+      email,
+      role,
+      source,
+      owner_sales: ownerSales,
+      team,
+      tags,
+      note_special: specialNotes,
+    };
+    console.log('Creating customer:', newCustomer);
+    try {
+      console.log('Creating new customer...', newCustomer);
+      const res = await handleCreate(newCustomer); // 呼叫 API 建立新客戶
+      console.log('Create success:', res);
+
+      alert('客戶新增成功！');
+      navigate('/customers');  // 建立完導回客戶清單
+    } catch (err) {
+      console.error('Create failed:', err);
+      alert('新增客戶失敗，請稍後再試');
+    }
   };
 
   return (
@@ -29,12 +49,21 @@ const CustomerCreate = () => {
       <h1>新增客戶(Admin)</h1>
       <form onSubmit={handleSubmit} style={{ marginTop: 12, maxWidth: 600 }}>
         <div style={{ marginBottom: 8 }}>
-          <label>UserID:</label>
+          <label>Name:</label>
           <br />
           <input 
-            value={userID} 
-            onChange={(e) => setUserID(e.target.value)} 
-            style={{ width: '100%', padding: 8 }} 
+            value={name} 
+            onChange={(e) => setName(e.target.value)} 
+            style={{ width: '100%', padding: 8 }} required
+          />
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <label>Mobile Number:</label>
+          <br />
+          <input 
+            value={mobile} 
+            onChange={(e) => setMobile(e.target.value)} 
+            style={{ width: '100%', padding: 8 }} required
           />
         </div>
         <div style={{ marginBottom: 8 }}>
@@ -44,24 +73,6 @@ const CustomerCreate = () => {
             type="password"
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
-            style={{ width: '100%', padding: 8 }} 
-          />
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>Name:</label>
-          <br />
-          <input 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
-            style={{ width: '100%', padding: 8 }} 
-          />
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>Mobile Number:</label>
-          <br />
-          <input 
-            value={mobile} 
-            onChange={(e) => setMobile(e.target.value)} 
             style={{ width: '100%', padding: 8 }} 
           />
         </div>
@@ -81,13 +92,13 @@ const CustomerCreate = () => {
           <select 
             value={role} 
             onChange={(e) => setRole(e.target.value)} 
-            style={{ width: '100%', padding: 8 }}
+            style={{ width: '103%', padding: 8 }}
           >
             <option value="MEMBER">MEMBER</option>
             <option value="SALES">SALES</option>
             <option value="LEADER">LEADER</option>
             <option value="ADMIN">ADMIN</option>
-          </select>
+          </select> required
         </div>
         <div style={{ marginBottom: 8 }}>
           <label>Source:</label>
@@ -99,13 +110,16 @@ const CustomerCreate = () => {
           />
         </div>
         <div style={{ marginBottom: 8 }}>
-          <label>Owner Sales:</label>
-          <br />
-          <input 
-            value={ownerSales} 
-            onChange={(e) => setOwnerSales(e.target.value)} 
-            style={{ width: '100%', padding: 8 }} 
+          <label>Owner Sales:</label><br/>
+          <input
+            type="text"
+            value={ownerSales}
+            onChange={(e) => setOwnerSales(e.target.value)}
+            style={{ width: '100%', padding: 8, borderColor: !/^\d*$/.test(ownerSales || '') ? 'red' : '' }}
           />
+          {!/^\d*$/.test(ownerSales || '') && (
+            <small style={{ color: 'red' }}>Please only enter sales ID.</small>
+          )}
         </div>
         <div style={{ marginBottom: 8 }}>
           <label>Team:</label>
@@ -136,8 +150,8 @@ const CustomerCreate = () => {
           />
         </div>
         <div style={{ marginTop: 12 }}>
-          <button type="submit" style={{ marginRight: 8 }}>新增</button>
-          <button type="button" onClick={() => navigate(-1)}>取消</button>
+          <button type="submit" style={{ marginRight: 8 }}>Create</button>
+          <button type="button" onClick={() => navigate(-1)}>Cancel</button>
         </div>
       </form>
     </div>
