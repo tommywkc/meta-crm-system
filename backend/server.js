@@ -27,6 +27,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// 健康檢查端點
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Meta CRM Backend API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 const loginRouter = require('./handleAPI/login');
 console.log('Login router loaded');
 app.use('/api', loginRouter); // Use the login router
@@ -76,13 +85,27 @@ const port = process.env.PORT || 4000;
 // 啟動 server 前初始化資料庫
 async function startServer() {
     try {
-        await initDatabase();
+        // 如果沒有設定 DATABASE_URL，則跳過資料庫初始化
+        if (process.env.DATABASE_URL) {
+            await initDatabase();
+            console.log('資料庫初始化成功');
+        } else {
+            console.log('跳過資料庫初始化 (未設定 DATABASE_URL)');
+        }
         app.listen(port, () => {
             console.log(`伺服器運行在 port ${port}`);
         });
     } catch (err) {
         console.error('伺服器啟動失敗:', err);
-        process.exit(1);
+        // 在測試環境下，即使資料庫失敗也繼續啟動
+        if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
+            process.exit(1);
+        } else {
+            console.log('忽略資料庫錯誤，繼續啟動伺服器...');
+            app.listen(port, () => {
+                console.log(`伺服器運行在 port ${port} (無資料庫)`);
+            });
+        }
     }
 }
 
