@@ -14,6 +14,7 @@ import Approvals from './pages/admin/Approvals';
 import Scan from './pages/admin/Scan';
 import Events from './pages/admin/Events';
 import EventsEdit from './pages/admin/EventsEdit';
+import EventView from './pages/admin/EventView';
 import Download from './pages/admin/Download';
 import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
@@ -89,6 +90,11 @@ function App() {
           <Route path="/events" element={
             <ProtectedRoute allowedRole="admin">
               <Events />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id" element={
+            <ProtectedRoute allowedRole="admin">
+              <EventView />
             </ProtectedRoute>
           } />
           <Route path="/events/create" element={

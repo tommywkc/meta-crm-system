@@ -101,15 +101,15 @@ const Approvals = () => {
                 <td style={thTdStyle}>{r.salesName} / {r.salesTeam}</td>
                 <td style={thTdStyle}>{r.paymentStatus}</td>
                 <td style={thTdStyle}>
-                  {r.priority && <span style={{ marginRight: 6, padding: '2px 6px', background: '#eef', borderRadius: 4 }}>{r.priority}</span>}
+                  {r.priority && <span>{r.priority}</span>}
                 </td>
                 <td style={thTdStyle}>{r.remainingSeats != null ? `${r.remainingSeats} left` : ''}</td>
                 <td style={thTdStyle}>{r.within3Days ? '!' : ''}</td>
                 <td style={thTdStyle}>{r.timeConflict ? '!' : ''}</td>
                 <td style={thTdStyle}>{r.status}</td>
                 <td style={thTdStyle}>
-                  <button onClick={() => onApprove(r.id)} style={{ marginRight: 6 }}>Approve</button>
-                  <button onClick={() => onReject(r.id)} style={{ marginRight: 6 }}>Reject</button>
+                  <button onClick={() => onApprove(r.id)}>Approve</button>
+                  <button onClick={() => onReject(r.id)}>Reject</button>
                   {r.type === 'Join' && r.remainingSeats != null && (
                     <button onClick={() => onAddWaitlist(r.id)}>Add to Waiting List</button>
                   )}
@@ -118,7 +118,7 @@ const Approvals = () => {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={12} style={{ padding: 12, textAlign: 'center', color: '#666' }}>No matching requests</td>
+                <td colSpan={12}>No matching requests</td>
               </tr>
             )}
           </tbody>
