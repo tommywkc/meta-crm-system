@@ -30,7 +30,7 @@ const CustomersList = () => {
   const startIndex = (page - 1) * limit;
   const pagedCustomers = customers.slice(startIndex, startIndex + limit);
 
-  const handleEdit = (c) => navigate(`/customers/${c.id}/edit`);
+  const handleEdit = (user_id) => navigate(`/customers/${user_id}/edit`);
   const handleView = (user_id) => navigate(`/customers/${user_id}`);
 
   return (

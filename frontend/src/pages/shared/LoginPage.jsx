@@ -50,7 +50,7 @@ const LoginPage = () => {
         </button>
       </div>
       <div style={{ marginTop: 12 }}>
-        <small>Test accounts: 1/password, 2/password, 3/password, 444/password</small>
+        <small>Test accounts: 50000/password, 50001/password, 50002/password, 50003/password</small>
       </div>
     </div>
   );
