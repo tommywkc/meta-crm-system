@@ -43,12 +43,13 @@ npm install
 
 ### 2) Setup Database
 Download PostgreSQL & Docker Desktop first
-||||||||||||||||Database Configuration|||||||||||||||||
+===Database Configuration===
+```bash
 Username: postgres
 Password: postgres
 Port: 5432
 Database Name: meta_academy_crm
-|||||||||||||||||||||||||||||||||||||||||||||||||||||||
+```
 
 
 ### 3) Start backend
