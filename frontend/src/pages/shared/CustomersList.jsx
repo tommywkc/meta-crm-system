@@ -44,6 +44,8 @@ const CustomersList = () => {
         </button>
       )}
 
+      <input type="text" placeholder="search..." />
+
       <div
         style={ UpperSelectContainerStyle }
       >
