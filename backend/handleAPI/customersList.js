@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { listByUsersId, findByUserId, updateByUserId } = require('../dao/usersDao');
+const { listByUsersId, findByUserId, updateByUserId, createUser } = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 
 // JWT 設定
@@ -86,6 +86,28 @@ router.put('/customers/:id', async (req, res) => {
     res.json({ message: '客戶資料更新成功', customer: updated });
   } catch (error) {
     console.error('更新客戶資料失敗:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+//handle create new customer
+router.post('/customers', async (req, res) => {
+  try {
+    const newCustomer = emptyToNull(req.body);   // ✅ 先宣告
+    console.log('收到新增客戶資料請求:', newCustomer);
+
+    if (!newCustomer.name || !newCustomer.mobile) {
+      return res.status(400).json({ message: '缺少必要的客戶資料' });
+    }
+    if (newCustomer.password == null) {
+      newCustomer.password = newCustomer.mobile;
+    }
+
+    const createdCustomer = await createUser(newCustomer);
+    console.log('新增客戶資料成功:', createdCustomer.user_id);
+    res.status(201).json({ message: '客戶新增成功', customer: createdCustomer });
+  } catch (error) {
+    console.error('新增客戶資料失敗:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });

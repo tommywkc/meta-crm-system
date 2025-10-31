@@ -21,8 +21,9 @@ const CustomersTable = ({ customers = [], role, onEdit, onView }) => {
             <td style={thTdStyle}>{c.name}</td>
             <td style={thTdStyle}>{c.role}</td>
             <td style={thTdStyle}>{c.mobile}</td>
-            <td style={thTdStyle}>{c.email}</td>
+            <td style={thTdStyle}>{c.email ? c.email : 'N/A'}</td>
             <td style={thTdStyle}>
+              <button onClick={() => onView && onView(c.user_id)}>Details</button>
               {role === 'ADMIN' && (
                 <>
                   <button style={{ marginRight: 8 }} onClick={() => onEdit && onEdit(c.user_id)}>
@@ -30,7 +31,6 @@ const CustomersTable = ({ customers = [], role, onEdit, onView }) => {
                   </button>
                 </>
               )}
-              <button onClick={() => onView && onView(c.user_id)}>Details</button>
             </td>
           </tr>
         ))}

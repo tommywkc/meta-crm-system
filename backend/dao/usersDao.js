@@ -2,10 +2,42 @@ const { query } = require('../db/pool');
 
 // usersDao: basic CRUD helpers for USERS table
 
-async function createUser({ password, role = 'MEMBER', name, email, qr_token = null, source = null, owner_sales = null, team = null, tags = null, note_special = null }) {
-  const sql = `INSERT INTO USERS (password, role, name, email, qr_token, source, owner_sales, team, tags, note_special)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`;
-  const vals = [password, role, name, email, qr_token, source, owner_sales, team, tags, note_special];
+async function createUser({
+  password,
+  role,
+  name,
+  mobile,
+  email,
+  qr_token = null,
+  source = null,
+  owner_sales = null,
+  team = null,
+  tags = null,
+  note_special = null
+}) {
+  const sql = `
+    INSERT INTO USERS (
+      password, role, name, mobile, email, qr_token, source,
+      owner_sales, team, tags, note_special
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+    RETURNING *;
+  `;
+
+  const vals = [
+    password,
+    role,
+    name,
+    mobile,
+    email,
+    qr_token,
+    source,
+    owner_sales,
+    team,
+    tags,
+    note_special
+  ];
+
   const res = await query(sql, vals);
   return res.rows[0];
 }

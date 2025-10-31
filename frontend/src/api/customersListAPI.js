@@ -91,3 +91,35 @@ export async function handleUpdateById(user_id, data) {
     throw err;
   }
 }
+
+export async function createUser(data) {
+  console.log('Creating new customer on backend', data);
+  const res = await fetch('http://localhost:4000/api/customers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // 讓 cookie 能跨域
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    // 嘗試讀取後端錯誤訊息
+    try {
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to create customer');
+    } catch (e) {
+      throw new Error(res.statusText || 'Failed to create customer');
+    }
+  }
+  return await res.json();
+}
+
+export async function handleCreate(data) {
+  try {
+    console.log('Attempting to create new customer...', data);
+    const payload = await createUser(data);
+    console.log('New customer creation response:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Create customer error:', err);
+    throw err;
+  }
+}

@@ -58,7 +58,17 @@ const CustomerEdit = () => {
         <div style={{ marginBottom: 8 }}>
           <label>Role:</label>
           <br />
-          <input value={customer.role} onChange={(e) => setCustomer({ ...customer, role: e.target.value })} style={{ width: '100%', padding: 2 }} required/>
+          <select 
+            value={customer.role} 
+            onChange={(e) => setCustomer({ ...customer, role: e.target.value })} 
+            style={{ width: '101%', padding: 8 }}
+          >
+            <option value="MEMBER">MEMBER</option>
+            <option value="SALES">SALES</option>
+            <option value="LEADER">LEADER</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="N/A">N/A</option>
+          </select>
         </div>
         <div style={{ marginBottom: 8 }}>
           <label>Source:</label>
@@ -90,7 +100,12 @@ const CustomerEdit = () => {
         <div style={{ marginBottom: 8 }}>
           <label>Special Notes:</label>
           <br />
-          <input value={customer.note_special} onChange={(e) => setCustomer({ ...customer, note_special: e.target.value })} style={{ width: '100%', padding: 2 }} />
+          <textarea 
+            value={customer.note_special} 
+            onChange={(e) => setCustomer({ ...customer, note_special: e.target.value })}
+            style={{ width: '100%', padding: 8, minHeight: 80 }} 
+            rows={3}
+          />
         </div>
         <div>
           <p>QR Token: <br /><u>{customer.qr_token}</u></p>
