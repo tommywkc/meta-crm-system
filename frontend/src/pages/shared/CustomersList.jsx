@@ -9,6 +9,9 @@ const CustomersList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const authRole = (user && user.role) ? user.role : 'member';
+  
+  console.log('Current user:', user);
+  console.log('Current authRole:', authRole);
 
   const [customers, setCustomers] = useState([]);
 
@@ -20,7 +23,7 @@ const CustomersList = () => {
     fetchData();
   }, []);
 
-  // 🔹 分頁控制
+
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
 
@@ -34,6 +37,14 @@ const CustomersList = () => {
     <div style={{ padding: 20 }}>
       <h1>Member List</h1>
       <p>Manage member data and operations (shared by Admin and Sales).</p>
+
+      {authRole === 'ADMIN' && (
+        <button onClick={() => navigate('/customers/create')}>
+          Create User
+        </button>
+      )}
+
+      <input type="text" placeholder="search..." />
 
       <div
         style={ UpperSelectContainerStyle }
