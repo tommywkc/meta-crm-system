@@ -43,8 +43,8 @@ npm install
 
 ### 2) Setup Database
 Download PostgreSQL & Docker Desktop first
-===Database Configuration===
 ```bash
+===Database Configuration===
 Username: postgres
 Password: postgres
 Port: 5432
