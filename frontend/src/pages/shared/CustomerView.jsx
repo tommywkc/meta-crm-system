@@ -28,7 +28,7 @@ const CustomerView = () => {
         <div><strong>Email:</strong> {customer.email || 'N/A'}</div>
         <div><strong>Role:</strong> {customer.role}</div>
         <div><strong>Source:</strong> {customer.source || 'N/A'}</div>
-        <div><strong>Owner Sales:</strong> {customer.owner_sales || 'N/A'}</div>
+        <div><strong>Owner Sales ID:</strong> {customer.owner_sales || 'N/A'}</div>
         <div><strong>Team:</strong> {customer.team || 'N/A'}</div>
         <div><strong>Tags:</strong> {customer.tags || 'N/A'}</div>
         <div><strong>Special Notes:</strong> {customer.note_special || 'N/A'}</div>

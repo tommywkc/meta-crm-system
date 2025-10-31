@@ -2,9 +2,12 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { listByUsersId, findByUserId, updateByUserId } = require('../dao/usersDao');
+const { emptyToNull } = require('../function/dataSanitizer');
 
 // JWT 設定
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
+
+
 
 
 //handle get customers list
@@ -69,7 +72,7 @@ router.get('/customers/:id/edit', async (req, res) => {
 router.put('/customers/:id', async (req, res) => {
   try {
     const user_id = req.params.id;
-    const updateData = req.body;
+    const updateData = emptyToNull(req.body);
     console.log('收到更新客戶資料請求:', user_id, updateData);
 
     const existing = await findByUserId(user_id);

@@ -38,17 +38,17 @@ const CustomerEdit = () => {
         <div style={{ marginBottom: 8 }}>
           <label>Name:</label>
           <br />
-          <input value={customer.name || ''} onChange={(e) => setCustomer({ ...customer, name: e.target.value })} style={{ width: '100%', padding: 2 }} />
+          <input value={customer.name || ''} onChange={(e) => setCustomer({ ...customer, name: e.target.value })} style={{ width: '100%', padding: 2 }} required/>
         </div>
         <div style={{ marginBottom: 8 }}>
           <label>Password:</label>
           <br />
-          <input value={customer.password} onChange={(e) => setCustomer({ ...customer, password: e.target.value })} style={{ width: '100%', padding: 2 }} />
+          <input value={customer.password} onChange={(e) => setCustomer({ ...customer, password: e.target.value })} style={{ width: '100%', padding: 2 }} required/>
         </div>
         <div style={{ marginBottom: 8 }}>
           <label>Mobile:</label>
           <br />
-          <input value={customer.mobile} onChange={(e) => setCustomer({ ...customer, mobile: e.target.value })} style={{ width: '100%', padding: 2 }} />
+          <input value={customer.mobile} onChange={(e) => setCustomer({ ...customer, mobile: e.target.value })} style={{ width: '100%', padding: 2 }} required/>
         </div>
         <div style={{ marginBottom: 8 }}>
           <label>Email:</label>
@@ -58,7 +58,7 @@ const CustomerEdit = () => {
         <div style={{ marginBottom: 8 }}>
           <label>Role:</label>
           <br />
-          <input value={customer.role} onChange={(e) => setCustomer({ ...customer, role: e.target.value })} style={{ width: '100%', padding: 2 }} />
+          <input value={customer.role} onChange={(e) => setCustomer({ ...customer, role: e.target.value })} style={{ width: '100%', padding: 2 }} required/>
         </div>
         <div style={{ marginBottom: 8 }}>
           <label>Source:</label>
