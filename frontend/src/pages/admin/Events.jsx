@@ -33,6 +33,10 @@ const Events = () => {
 		// navigate to edit page
 		navigate(`/events/${id}/edit`);
 	};
+	const onView = (id) => {
+		// navigate to view page
+		navigate(`/events/${id}`);
+	};
 
 		return (
 			<div style={{ padding: 20 }}>
@@ -66,6 +70,7 @@ const Events = () => {
 							<td style={thTdStyle}>{c.remainingSeats != null ? `餘 ${c.remainingSeats}` : ''}</td>
 							<td style={thTdStyle}>{c.status}</td>
 							<td style={thTdStyle}>
+								<button onClick={() => onView(c.id)} style={{ marginRight: 8 }}>查看</button>
 								<button onClick={() => onEdit(c.id)} style={{ marginRight: 8 }}>編輯</button>
 								<button onClick={() => alert(`刪除 ${c.id}（模擬）`)}>刪除</button>
 							</td>
