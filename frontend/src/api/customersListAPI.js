@@ -59,3 +59,35 @@ export async function handleGetById(user_id) {
     throw err;
   }
 }
+
+export async function updateUserById(user_id, data) {
+  console.log(`Updating customer ${user_id} on backend`, data);
+  const res = await fetch(`http://localhost:4000/api/customers/${user_id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // 讓 cookie 能跨域
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    // 嘗試讀取後端錯誤訊息
+    try {
+      const err = await res.json();
+      throw new Error(err.message || `Failed to update customer ${user_id}`);
+    } catch (e) {
+      throw new Error(res.statusText || `Failed to update customer ${user_id}`);
+    }
+  }
+  return await res.json();
+}
+
+export async function handleUpdateById(user_id, data) {
+  try {
+    console.log(`Attempting to update customer ${user_id}...`, data);
+    const payload = await updateUserById(user_id, data);
+    console.log(`Customer ${user_id} update response:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Update customer ${user_id} error:`, err);
+    throw err;
+  }
+}

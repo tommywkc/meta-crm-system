@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { handleGetById } from '../../api/customersListAPI';
+import { handleGetById, handleUpdateById } from '../../api/customersListAPI';
 
 
 const CustomerEdit = () => {
@@ -16,12 +16,16 @@ const CustomerEdit = () => {
     fetchData();
   }, [id]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // For now, just log the values and navigate back
-    console.log('Save customer (mock):', customer);
-    alert('已模擬儲存（不會真的送出）');
-    navigate('/customers');
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // 防止表單重新整理
+    try {
+      await handleUpdateById(id, customer);
+      alert('更新成功');
+      navigate('/customers/' + id);
+    } catch (error) {
+      console.error('更新失敗:', error);
+      alert('更新資料失敗，請稍後再試');
+    }
   };
 
   return (
