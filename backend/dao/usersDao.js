@@ -41,7 +41,7 @@ async function removeByUserId(id) {
 }
 
 async function listByUsersId(limit = 100, offset = 0) {
-  const res = await query('SELECT * FROM USERS ORDER BY user_id DESC LIMIT $1 OFFSET $2', [limit, offset]);
+  const res = await query('SELECT * FROM USERS ORDER BY user_id ASC LIMIT $1 OFFSET $2', [limit, offset]);
   return res.rows;
 }
 

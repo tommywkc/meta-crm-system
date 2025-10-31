@@ -1,34 +1,82 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import CustomersTable from '../../components/CustomersTable';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-
-const mockCustomers = [
-  { id: 1, name: 'John Chen', phone: '9123-4567', email: 'xiaoming.chen@example.com' },
-  { id: 2, name: 'Mary Lin', phone: '9876-5432', email: 'meili.lin@example.com' },
-  { id: 3, name: 'David Zhang', phone: '9120-3344', email: 'zhiqiang.zhang@example.com' }
-];
+import { handleList } from '../../api/customersListAPI';
+import {UpperSelectContainerStyle, LowerSelectContainerStyle} from '../../styles/SelectStyles';
 
 const CustomersList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const authRole = (user && user.role) ? user.role : 'member';
 
-  const handleEdit = (c) => {
-    // admin edit route
-    navigate(`/customers/${c.id}/edit`);
-  };
+  const [customers, setCustomers] = useState([]);
 
-  const handleView = (c) => {
-    navigate(`/customers/${c.id}`);
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      const payload = await handleList(100, 0);
+      setCustomers(payload.customers || []);
+    };
+    fetchData();
+  }, []);
+
+  // 🔹 分頁控制
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+
+  const startIndex = (page - 1) * limit;
+  const pagedCustomers = customers.slice(startIndex, startIndex + limit);
+
+  const handleEdit = (c) => navigate(`/customers/${c.id}/edit`);
+  const handleView = (user_id) => navigate(`/customers/${user_id}`);
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Customer List (Admin/Sales)</h1>
-      <p>Manage customer data and operations (shared by Admin and Sales).</p>
+      <h1>Member List</h1>
+      <p>Manage member data and operations (shared by Admin and Sales).</p>
 
-      <CustomersTable customers={mockCustomers} role={authRole} onEdit={handleEdit} onView={handleView} />
+      <div
+        style={ UpperSelectContainerStyle }
+      >
+        <label>
+          Page:&nbsp;
+          <select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+            {Array.from({ length: Math.max(1, Math.ceil(customers.length / limit)) }, (_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Items per page:&nbsp;
+          <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </label>
+      </div>
+
+      {/* 📋 客戶清單表格 */}
+      <CustomersTable
+        customers={pagedCustomers}
+        role={authRole}
+        onEdit={handleEdit}
+        onView={handleView}
+      />
+
+      <div
+        style={ LowerSelectContainerStyle }
+      >
+        <label>
+          Page:&nbsp;
+          <select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+            {Array.from({ length: Math.max(1, Math.ceil(customers.length / limit)) }, (_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1}</option>
+            ))}
+          </select>
+        </label>
+      </div>
     </div>
   );
 };

@@ -1,5 +1,3 @@
-import { redirect } from "react-router-dom";
-
 export async function login({ username, password }) {
   console.log('Sending login request to backend');
   const res = await fetch('http://localhost:4000/api/login', {
@@ -20,7 +18,6 @@ export async function login({ username, password }) {
   return await res.json();
 }
 
-// 將原本 LoginPage.jsx 內的 handleLogin 搬到此處，方便重用與測試。
 // 注意：此函式會呼叫 AuthContext 的 login 方法，並在成功時根據 role 導向。
 export async function handleLogin(e, { username, password, navigate, setError, authLogin }) {
   console.log('handleLogin called with:', { username }); // 確認函數被呼叫
