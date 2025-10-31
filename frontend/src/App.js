@@ -9,6 +9,7 @@ import Header from './components/Header';
 import CustomersList from './pages/shared/CustomersList';
 import CustomerView from './pages/shared/CustomerView';
 import CustomerEdit from './pages/admin/CustomerEdit';
+import CustomerCreate from './pages/admin/CustomerCreate';
 import Approvals from './pages/admin/Approvals';
 import Scan from './pages/admin/Scan';
 import Events from './pages/admin/Events';
@@ -68,6 +69,11 @@ function App() {
           <Route path="/customers/:id/edit" element={
             <ProtectedRoute allowedRole={'admin'}>
               <CustomerEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="/customers/create" element={
+            <ProtectedRoute allowedRole={'admin'}>
+              <CustomerCreate />
             </ProtectedRoute>
           } />
           <Route path="/approvals" element={
