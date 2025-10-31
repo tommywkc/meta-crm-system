@@ -40,7 +40,7 @@ const CustomersList = () => {
 
       {authRole === 'ADMIN' && (
         <button onClick={() => navigate('/customers/create')}>
-          Create Member
+          Create User
         </button>
       )}
 
