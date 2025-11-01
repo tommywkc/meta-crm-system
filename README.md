@@ -74,10 +74,6 @@ npm start
 
 Open browser and go to http://localhost:3000
 
-## Built-in test accounts (can login directly)
-- member / password
-- sales  / password
-- admin  / adminpass
 
 ## Important routes (commonly used in development)
 - `/login`: Login page
