@@ -75,21 +75,4 @@ npm start
 Open browser and go to http://localhost:3000
 
 
-## Important routes (commonly used in development)
-- `/login`: Login page
-- `/member`: Member homepage (member role)
-- `/admin`: Admin homepage (admin role)
-- `/sales`: Sales homepage (sales role)
-- `/customers`: Customer list (admin / sales)
-- `/notifications`: Notification center (visible to admin/sales/member)
-
-## Key file descriptions
-- Frontend (`frontend/src`)
-  - `App.js`: Routing and `ProtectedRoute` (requests `AuthContext` to determine role)
-  - `contexts/AuthContext.jsx`: Handles communication with backend `/api/me`, `/api/login`, `/api/logout` and manages user state
-  - `pages/`: Pages categorized by role (`admin/`, `member/`, `sales/`, `shared/`)
-  - `components/`: Shared components (Header, table components, etc.)
-
-- Backend (`backend`)
-  - `server.js`: Simple Express server; uses cookie (httpOnly) to save token by default and implements `authMiddleware`
 
