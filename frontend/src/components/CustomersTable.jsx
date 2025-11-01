@@ -26,10 +26,10 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete }) => {
               <button onClick={() => onView && onView(c.user_id)}>Details</button>
               {role === 'ADMIN' && (
                 <>
-                  <button style={{ marginRight: 8 }} onClick={() => onEdit && onEdit(c.user_id)}>
+                  <button style={{ marginLeft: 8 }} onClick={() => onEdit && onEdit(c.user_id)}>
                     Edit
                   </button>
-                  <button style={redTextStyle} onClick={() => onDelete && onDelete(c.user_id)}>
+                  <button style={{ ...redTextStyle, marginLeft: 8 }} onClick={() => onDelete && onDelete(c.user_id)}>
                     Delete
                   </button>
                 </>
