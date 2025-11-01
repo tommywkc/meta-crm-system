@@ -2,10 +2,15 @@ const { Pool } = require('pg');
 const fs = require('fs').promises;
 const path = require('path');
 
+require('dotenv').config();
+
 // 建立連線池
 const pool = new Pool({
-    //DATABASE_URL : 'postgresql://<username>:<password>>@localhost:<port>>/<database-name>>'
-    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/meta_academy_crm',
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_NAME || 'meta_academy_crm',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
     max: 20,                     // 最大連線數
     idleTimeoutMillis: 30000,    // 閒置連線超時時間
     connectionTimeoutMillis: 2000 // 連線嘗試超時時間
