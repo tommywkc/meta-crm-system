@@ -12,9 +12,9 @@ import CustomerEdit from './pages/admin/CustomerEdit';
 import CustomerCreate from './pages/admin/CustomerCreate';
 import Approvals from './pages/admin/Approvals';
 import Scan from './pages/admin/Scan';
-import Events from './pages/admin/Events';
+import EventList from './pages/shared/EventList';
 import EventsEdit from './pages/admin/EventsEdit';
-import EventView from './pages/admin/EventView';
+import EventView from './pages/shared/EventView';
 import Download from './pages/admin/Download';
 import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
@@ -89,7 +89,7 @@ function App() {
           } />
           <Route path="/events" element={
             <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
-              <Events />
+              <EventList />
             </ProtectedRoute>
           } />
           <Route path="/events/:id" element={

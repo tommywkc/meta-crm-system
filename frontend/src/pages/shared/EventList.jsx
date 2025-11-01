@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { tableStyle, thTdStyle } from '../../styles/TableStyles';
+import EventsTable from '../../components/EventsTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
 
 const mockClasses = [
@@ -25,7 +25,7 @@ const mockClasses = [
 	}
 ];
 
-const Events = () => {
+const EventList = () => {
 	const navigate = useNavigate();
 	const { user } = useAuth();
 	const userRole = user?.role?.toLowerCase();
@@ -63,6 +63,9 @@ const Events = () => {
 	const onEnroll = (id) => {
 		// member enrollment logic
 		alert(`報名 ${id}（模擬）`);
+	};
+	const onDelete = (id) => {
+		alert(`刪除 ${id}（模擬）`);
 	};
 
 		return (
@@ -110,43 +113,15 @@ const Events = () => {
 					</label>
 				</div>
 
-				<table style={tableStyle}>
-				<thead>
-					<tr>
-						<th style={thTdStyle}>名稱</th>
-						<th style={thTdStyle}>類別</th>
-						<th style={thTdStyle}>場次/時間</th>
-						<th style={thTdStyle}>剩餘名額</th>
-						<th style={thTdStyle}>狀態</th>
-						<th style={thTdStyle}>動作</th>
-					</tr>
-				</thead>
-				<tbody>
-					{pagedEvents.map((c) => (
-						<tr key={c.id}>
-							<td style={thTdStyle}>{c.name}</td>
-							<td style={thTdStyle}>{c.category}</td>
-							<td style={thTdStyle}>{c.schedule}</td>
-							<td style={thTdStyle}>{c.remainingSeats != null ? `餘 ${c.remainingSeats}` : ''}</td>
-							<td style={thTdStyle}>{c.status}</td>
-							<td style={thTdStyle}>
-								<button onClick={() => onView(c.id)}>Details</button>
-								{isAdmin ? (
-									<>
-										<button onClick={() => onEdit(c.id)} style={{ marginLeft: 8 }}>Edit</button>
-										<button onClick={() => alert(`刪除 ${c.id}（模擬）`)} style={{ marginLeft: 8 }}>Delete</button>
-									</>
-								) : isMember ? (
-									<button onClick={() => onEnroll(c.id)} style={{ marginLeft: 8 }}>報名</button>
-								) : (
-									// sales/leader 只能查看，不顯示其他按鈕
-									null
-								)}
-							</td>
-						</tr>
-					))}
-				</tbody>
-					</table>
+				{/* 📋 講座與課堂清單表格 */}
+				<EventsTable
+					events={pagedEvents}
+					role={user?.role}
+					onView={onView}
+					onEdit={onEdit}
+					onDelete={onDelete}
+					onEnroll={onEnroll}
+				/>
 
 				<div style={LowerSelectContainerStyle}>
 					<label>
@@ -162,4 +137,4 @@ const Events = () => {
 	);
 };
 
-export default Events;
+export default EventList;
