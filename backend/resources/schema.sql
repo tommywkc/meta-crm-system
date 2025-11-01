@@ -41,13 +41,13 @@ CREATE TABLE IF NOT EXISTS USERS (
 
 
 CREATE TABLE IF NOT EXISTS EVENTS (
-    event_id BIGINT DEFAULT nextval('user_id_seq') NOT NULL UNIQUE,
+    event_id BIGINT DEFAULT nextval('event_id_seq') NOT NULL UNIQUE,
     type VARCHAR(50) NOT NULL,
     event_name VARCHAR(100) NOT NULL,
     description TEXT,
     datetime_start TIMESTAMP,
     datetime_end TIMESTAMP,
-    capacity INT DEFAULT 60,
+    capacity INT,
     remaining_seats INT,
     location VARCHAR(100),
     status VARCHAR(50) DEFAULT 'SCHEDULED',

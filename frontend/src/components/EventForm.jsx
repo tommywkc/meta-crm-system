@@ -66,7 +66,6 @@ const EventForm = ({
     room_cost: roomCost ? parseInt(roomCost, 10) : null,
     speaker_id: speakerId ? parseInt(speakerId, 10) : null
   };
-
   onSubmit(formData);
 };
 
