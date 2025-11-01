@@ -8,7 +8,8 @@ const CustomerEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [customer, setCustomer] = useState([]);
+
+  const [customer, setCustomer] = useState({});
   useEffect(() => {
     const fetchData = async () => {
       const data = await handleGetById(id);
@@ -126,9 +127,9 @@ const CustomerEdit = () => {
         <div style={{ marginTop: 12 }}>
           <button type="submit" style={{ marginRight: 8 }}>Save</button>
           <button type="button" onClick={() => navigate(-1)}>Cancel</button>
+          <button style={{ ...redTextStyle, marginLeft: 8 }} type="button" onClick={() => handleDelete(customer.user_id)}>Delete</button>
         </div>
       </form>
-      <button style={redTextStyle} onClick={() => handleDelete(customer.user_id)}>Delete</button>
     </div>
   );
 };
