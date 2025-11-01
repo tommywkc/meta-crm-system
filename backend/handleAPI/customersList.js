@@ -3,9 +3,12 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId } = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
+const { formatDateTime } = require('../function/dateFormatter');
 
 // JWT 設定
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
+
+
 
 
 
@@ -40,6 +43,9 @@ router.get('/customers/:id', async (req, res) => {
       console.log('未找到客戶:', user_id);
       return res.status(404).json({ message: '客戶不存在' });
     }
+    if (customer.create_time) {
+      customer.create_time = formatDateTime(customer.create_time);
+    }
     console.log('取得客戶資料成功:', user_id);
     res.json({ customer });
   } catch (error) {
@@ -58,6 +64,9 @@ router.get('/customers/:id/edit', async (req, res) => {
     if (!customer) {
       console.log('未找到客戶:', user_id);
       return res.status(404).json({ message: '客戶不存在' });
+    }
+    if (customer.create_time) {
+      customer.create_time = formatDateTime(customer.create_time);
     }
     console.log('取得客戶資料成功:', user_id);
     res.json({ customer });
