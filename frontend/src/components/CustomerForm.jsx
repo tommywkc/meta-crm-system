@@ -64,6 +64,22 @@ const CustomerForm = ({
           </div>
         )}
 
+
+        <div style={{ marginBottom: 8 }}>
+          <label><strong>Role:</strong></label>
+          <br />
+          <select 
+            value={role} 
+            onChange={(e) => setRole(e.target.value)} 
+            style={{ width: '20%', padding: 8 }}
+          >
+            <option value="MEMBER">MEMBER</option>
+            <option value="SALES">SALES</option>
+            <option value="LEADER">LEADER</option>
+            <option value="ADMIN">ADMIN</option>
+          </select>
+        </div>
+
         <div style={{ marginBottom: 8 }}>
           <label>Name:</label>
           <br />
@@ -110,21 +126,6 @@ const CustomerForm = ({
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Role:</label>
-          <br />
-          <select 
-            value={role} 
-            onChange={(e) => setRole(e.target.value)} 
-            style={{ width: '100%', padding: 8 }}
-          >
-            <option value="MEMBER">MEMBER</option>
-            <option value="SALES">SALES</option>
-            <option value="LEADER">LEADER</option>
-            <option value="ADMIN">ADMIN</option>
-          </select>
-        </div>
-
-        <div style={{ marginBottom: 8 }}>
           <label>Source:</label>
           <br />
           <input 
@@ -136,14 +137,16 @@ const CustomerForm = ({
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Owner Sales:</label>
-          <br />
-          <input 
-            value={ownerSales} 
-            onChange={(e) => setOwnerSales(e.target.value)} 
-            style={{ width: '100%', padding: 8 }} 
-            placeholder="負責業務員"
+          <label>Owner Sales:</label><br/>
+          <input
+            type="text"
+            value={ownerSales ?? ''}
+            onChange={(e) => setOwnerSales(e.target.value)}
+            style={{ width: '100%', padding: 8, borderColor: !/^\d*$/.test(ownerSales || '') ? 'red' : '' }}
           />
+          {!/^\d*$/.test(ownerSales || '') && (
+            <small style={{ color: 'red' }}>Please only enter sales ID.</small>
+          )}
         </div>
 
         <div style={{ marginBottom: 8 }}>

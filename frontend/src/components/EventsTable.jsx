@@ -11,21 +11,23 @@ const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) 
     <table style={tableStyle}>
       <thead>
         <tr>
-          <th style={thTdStyle}>名稱</th>
-          <th style={thTdStyle}>類別</th>
-          <th style={thTdStyle}>場次/時間</th>
-          <th style={thTdStyle}>剩餘名額</th>
-          <th style={thTdStyle}>狀態</th>
-          <th style={thTdStyle}>動作</th>
+          <th style={thTdStyle}>Event ID</th>
+          <th style={thTdStyle}>Event Name</th>
+          <th style={thTdStyle}>Type</th>
+          <th style={thTdStyle}>Date Start</th>
+          <th style={thTdStyle}>Capacity</th>
+          <th style={thTdStyle}>Status</th>
+          <th style={thTdStyle}>Action</th>
         </tr>
       </thead>
       <tbody>
         {events.map((event) => (
           <tr key={event.id}>
+            <td style={thTdStyle}>{event.event_id}</td>
             <td style={thTdStyle}>{event.name}</td>
-            <td style={thTdStyle}>{event.category}</td>
-            <td style={thTdStyle}>{event.schedule}</td>
-            <td style={thTdStyle}>{event.remainingSeats != null ? `餘 ${event.remainingSeats}` : ''}</td>
+            <td style={thTdStyle}>{event.type}</td>
+            <td style={thTdStyle}>{event.datetime_start}</td>
+            <td style={thTdStyle}>{event.capacity != null ? `餘 ${event.remainingSeats}` : ''}</td>
             <td style={thTdStyle}>{event.status}</td>
             <td style={thTdStyle}>
               <button onClick={() => onView && onView(event.id)}>Details</button>

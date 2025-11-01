@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS EVENTS (
     datetime_start TIMESTAMP,
     datetime_end TIMESTAMP,
     capacity INT DEFAULT 60,
+    remaining_seats INT,
     location VARCHAR(100),
     status VARCHAR(50) DEFAULT 'SCHEDULED',
     room_cost INT,
@@ -271,7 +272,7 @@ INSERT INTO USERS (password, role, name, mobile, email) VALUES
 ('password', 'LEADER', 'Leader User', '34567890','test3@gmail.com'),
 ('password', 'MEMBER', 'Member User', '45678901','test4@gmail.com');
 
-INSERT INTO EVENTS (type, event_name, description, datetime_start, datetime_end, capacity, location, status, room_cost, speaker_id) VALUES
-('CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 'Room 101', 'SCHEDULED', 200, 50000),
-('SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 'Zoom', 'SCHEDULED', 500, 50001);
+INSERT INTO EVENTS (type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
+('CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 20, 'Room 101', 'SCHEDULED', 200, 50000),
+('SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 100, 'Zoom', 'SCHEDULED', 500, 50001);
 
