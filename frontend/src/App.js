@@ -13,6 +13,7 @@ import CustomerCreate from './pages/admin/CustomerCreate';
 import Approvals from './pages/admin/Approvals';
 import Scan from './pages/admin/Scan';
 import EventList from './pages/shared/EventList';
+import EventCreate from './pages/admin/EventCreate';
 import EventsEdit from './pages/admin/EventsEdit';
 import EventView from './pages/shared/EventView';
 import Download from './pages/admin/Download';
@@ -99,7 +100,7 @@ function App() {
           } />
           <Route path="/events/create" element={
             <ProtectedRoute allowedRole="admin">
-              <EventsEdit />
+              <EventCreate />
             </ProtectedRoute>
           } />
           <Route path="/events/:id/edit" element={
