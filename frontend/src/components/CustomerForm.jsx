@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { redTextStyle } from '../styles/TableStyles';
+
 
 const CustomerForm = ({ 
   title, 
@@ -15,11 +17,22 @@ const CustomerForm = ({
   const [mobile, setMobile] = useState(initialData.mobile || '');
   const [email, setEmail] = useState(initialData.email || '');
   const [role, setRole] = useState(initialData.role || 'MEMBER');
-  const [source, setSource] = useState(initialData.source || '');
   const [ownerSales, setOwnerSales] = useState(initialData.owner_sales || '');
   const [team, setTeam] = useState(initialData.team || '');
   const [tags, setTags] = useState(initialData.tags || '');
   const [specialNotes, setSpecialNotes] = useState(initialData.note_special || '');
+  const location = useLocation();
+  const isCreatePage = location.pathname === '/customers/create';
+  const [source, setSource] = useState(
+    isCreatePage ? 'Web' : (initialData.source || '')
+  );
+
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length > 0) {
+      setSource(initialData.source || (isCreatePage ? 'Web' : ''));
+    }
+  }, [initialData, isCreatePage]);
+  
 
   // Update form when initialData changes (for edit mode)
   useEffect(() => {
@@ -199,7 +212,7 @@ const CustomerForm = ({
             {submitButtonText}
           </button>
           <button type="button" onClick={onCancel} style={{ marginRight: 8 }}>
-            取消
+            Cancel
           </button>
           {onDelete && (
             <button 
@@ -207,7 +220,7 @@ const CustomerForm = ({
               onClick={() => onDelete(initialData.user_id)} 
               style={{ ...redTextStyle, marginLeft: 8 }}
             >
-              刪除用戶
+              Delete
             </button>
           )}
         </div>

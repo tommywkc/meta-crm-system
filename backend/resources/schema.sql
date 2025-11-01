@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS USERS (
     mobile VARCHAR(20) NOT NULL UNIQUE,
     email VARCHAR(100) UNIQUE,
     qr_token VARCHAR(255) UNIQUE,
-    source VARCHAR(100),
+    source VARCHAR(100) DEFAULT 'WhatsApp',
     owner_sales BIGINT,
     team VARCHAR(100),
     tags VARCHAR(100),
