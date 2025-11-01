@@ -1,4 +1,5 @@
 // Minimal Express auth server for local development
+require('dotenv').config();
 const express = require('express');
 // const bcrypt = require('bcrypt'); // Temporarily disabled due to installation issues
 const jwt = require('jsonwebtoken');
@@ -37,6 +38,10 @@ app.use('/api', loginRouter); // Use the login router
 const customersRouter = require('./handleAPI/customersList');
 console.log('Customers router loaded');
 app.use('/api', customersRouter); // Use the customers router
+
+const homeworkRouter = require('./handleAPI/homework');
+console.log('Homework router loaded');
+app.use('/api', homeworkRouter); // Use the homework router
 
 // JWT 設定
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';

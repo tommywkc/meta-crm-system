@@ -9,27 +9,65 @@ const mockHomework = [
 const Homework = () => {
 	const [list, setList] = useState(mockHomework);
 	const [uploading, setUploading] = useState({});
+	const [error, setError] = useState('');
 
-	const handleFileChange = (e, item) => {
+	const handleFileChange = async (e, item) => {
 		const file = e.target.files && e.target.files[0];
 		if (!file) return;
-		// simulate upload
+
+		// 開始上傳
 		setUploading((s) => ({ ...s, [item.id]: true }));
-		setTimeout(() => {
-			setList((prev) => prev.map((h) => (h.id === item.id ? { ...h, status: '已上傳', file: file.name } : h)));
+		setError('');
+
+		try {
+			const formData = new FormData();
+			formData.append('file', file);
+			formData.append('assignmentId', item.id);
+
+			const response = await fetch('http://localhost:4000/api/homework/upload', {
+				method: 'POST',
+				body: formData,
+				credentials: 'include' // 包含 cookies
+			});
+
+			const result = await response.json();
+
+			if (result.success) {
+				// 更新列表狀態
+				setList((prev) => prev.map((h) => (
+					h.id === item.id 
+						? { ...h, status: '已上傳', file: result.data.originalName, fileUrl: result.data.url } 
+						: h
+				)));
+				alert(`成功上傳 ${result.data.originalName} 到 ${item.assignment}`);
+			} else {
+				setError(result.error || '上傳失敗');
+				alert(`上傳失敗: ${result.error || '未知錯誤'}`);
+			}
+		} catch (error) {
+			console.error('上傳錯誤:', error);
+			setError('網路錯誤或伺服器無回應');
+			alert('上傳失敗: 網路錯誤或伺服器無回應');
+		} finally {
+			// 結束上傳狀態
 			setUploading((s) => {
 				const n = { ...s };
 				delete n[item.id];
 				return n;
 			});
-			alert(`已模擬上傳 ${file.name} 到 ${item.assignment}`);
-		}, 800);
+		}
 	};
 
 	return (
 		<div style={{ padding: 20 }}>
 			<h1>作業 / 任務 (Member)</h1>
-			<p>在此上傳你的 Assignment。</p>
+			<p>在此上傳你的 Assignment 到 Azure Blob Storage。</p>
+			
+			{error && (
+				<div>
+					錯誤: {error}
+				</div>
+			)}
 
 			<table style={tableStyle}>
 				<thead>
@@ -47,12 +85,34 @@ const Homework = () => {
 							<td style={thTdStyle}>{h.subject}</td>
 							<td style={thTdStyle}>{h.assignment}</td>
 							<td style={thTdStyle}>{h.due}</td>
-							<td style={thTdStyle}>{h.status}{h.file ? ` (${h.file})` : ''}</td>
 							<td style={thTdStyle}>
-								<label style={{ cursor: 'pointer' }}>
-									<input type="file" style={{ display: 'none' }} onChange={(e) => handleFileChange(e, h)} />
-									<button disabled={!!uploading[h.id]}>{uploading[h.id] ? '上傳中…' : '上傳'}</button>
-								</label>
+								{h.status}
+								{h.file && (
+									<div>
+										檔案: {h.file}
+										{h.fileUrl && (
+											<a 
+												href={h.fileUrl} 
+												target="_blank" 
+												rel="noopener noreferrer"
+											>
+												查看
+											</a>
+										)}
+									</div>
+								)}
+							</td>
+							<td style={thTdStyle}>
+								<input 
+									type="file" 
+									onChange={(e) => handleFileChange(e, h)}
+									disabled={!!uploading[h.id]}
+									accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
+								/>
+								{uploading[h.id] && <div>上傳中…</div>}
+								<div>
+									支援: PDF, DOC, DOCX, JPG, PNG, GIF, TXT (最大 10MB)
+								</div>
 							</td>
 						</tr>
 					))}
