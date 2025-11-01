@@ -23,7 +23,7 @@ const CustomerForm = ({
 
   // Update form when initialData changes (for edit mode)
   useEffect(() => {
-    if (initialData) {
+    if (initialData && Object.keys(initialData).length > 0) {
       setPassword(initialData.password || '');
       setName(initialData.name || '');
       setMobile(initialData.mobile || '');
