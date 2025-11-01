@@ -84,7 +84,7 @@ const CustomerForm = ({
           <select 
             value={role} 
             onChange={(e) => setRole(e.target.value)} 
-            style={{ width: '20%', padding: 8 }}
+            style={{ width: '103%', padding: 8 }}
           >
             <option value="MEMBER">MEMBER</option>
             <option value="SALES">SALES</option>
@@ -134,7 +134,6 @@ const CustomerForm = ({
             value={email} 
             onChange={(e) => setEmail(e.target.value)} 
             style={{ width: '100%', padding: 8 }} 
-            required
           />
         </div>
 
