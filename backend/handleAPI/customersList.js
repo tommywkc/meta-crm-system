@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId } = require('../dao/usersDao');
+const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile } = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
 
@@ -102,7 +102,7 @@ router.put('/customers/:id', async (req, res) => {
 //handle create new customer
 router.post('/customers', async (req, res) => {
   try {
-    const newCustomer = emptyToNull(req.body);   // ✅ 先宣告
+    const newCustomer = emptyToNull(req.body);
     console.log('收到新增客戶資料請求:', newCustomer);
 
     if (!newCustomer.name || !newCustomer.mobile) {
@@ -114,7 +114,12 @@ router.post('/customers', async (req, res) => {
 
     const createdCustomer = await createUser(newCustomer);
     console.log('新增客戶資料成功:', createdCustomer.user_id);
-    res.status(201).json({ message: '客戶新增成功', customer: createdCustomer });
+    newId = createdCustomer.user_id;
+    //return new customer id to frontend for redirecting to customer detail page
+    res.status(201).json({
+      message: '客戶新增成功',
+      newId: createdCustomer.user_id
+    });
   } catch (error) {
     console.error('新增客戶資料失敗:', error);
     res.status(500).json({ message: '伺服器錯誤' });
