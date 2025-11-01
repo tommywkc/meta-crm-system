@@ -1,4 +1,5 @@
-export const formatDateTime = (dbTimeString) => {
+const formatDateTime = (dbTimeString) => {
+  // 時間格式轉換邏輯
   if (!dbTimeString) return '';
   const dateObj = new Date(dbTimeString);
   const yyyy = dateObj.getFullYear();
@@ -8,3 +9,6 @@ export const formatDateTime = (dbTimeString) => {
   const min = String(dateObj.getMinutes()).padStart(2, '0');
   return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
 };
+
+
+module.exports = { formatDateTime };

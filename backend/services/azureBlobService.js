@@ -1,5 +1,5 @@
 const { BlobServiceClient } = require('@azure/storage-blob');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 require('dotenv').config();
 
 class AzureBlobService {
@@ -19,7 +19,7 @@ class AzureBlobService {
         try {
             // 生成唯一的檔案名稱
             const fileExtension = file.originalname.split('.').pop();
-            const fileName = `${userId}/${resourceId}/${uuidv4()}.${fileExtension}`;
+            const fileName = `${userId}/${resourceId}/${randomUUID()}.${fileExtension}`;
             
             // 獲取容器客戶端
             const containerName = this.containers[containerType];
