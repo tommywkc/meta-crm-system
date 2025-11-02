@@ -119,7 +119,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/notifications" element={
-            <ProtectedRoute allowedRoles={["admin","sales","member"]}>
+            <ProtectedRoute allowedRoles={["admin","sales","member","leader"]}>
               <Notifications />
             </ProtectedRoute>
           } />
@@ -135,7 +135,7 @@ function App() {
           } />
 
           <Route path="/sales-kpi" element={
-            <ProtectedRoute allowedRole="sales">
+            <ProtectedRoute allowedRoles={["sales","leader"]}>
               <KPI />
             </ProtectedRoute>
           } />
