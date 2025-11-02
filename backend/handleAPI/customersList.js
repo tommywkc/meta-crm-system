@@ -4,11 +4,11 @@ const jwt = require('jsonwebtoken');
 const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findLatestId } = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
+const crypto = require('crypto');
+
 
 // JWT 設定
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
-
-
 
 
 
@@ -99,6 +99,15 @@ router.put('/customers/:id', async (req, res) => {
   }
 });
 
+
+function generateQrToken(mobile) {
+  const timestamp = Date.now().toString();
+  const uniqueSource = `${mobile}-${timestamp}-${Math.random()}`;
+  const hash = crypto.createHash('sha256').update(uniqueSource).digest('hex');
+  // 可選：縮短為 16～24 位以便 QR 顯示
+  return hash.substring(0, 24);
+}
+
 //handle create new customer
 router.post('/customers', async (req, res) => {
   try {
@@ -111,6 +120,9 @@ router.post('/customers', async (req, res) => {
     if (newCustomer.password == null) {
       newCustomer.password = newCustomer.mobile;
     }
+
+    const qr_token = generateQrToken(newCustomer.mobile);
+    newCustomer.qr_token = qr_token;
 
     const latestId = parseInt(await findLatestId());
     newCustomer.user_id = (latestId || 49999) + 1;

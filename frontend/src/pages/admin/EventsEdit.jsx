@@ -1,65 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { handleGetById, handleUpdateById, handleDeleteById } from '../../api/eventListAPI';
 import EventForm from '../../components/EventForm';
 
-const mockClasses = {
-  E1: {
-    id: 'E1',
-    name: 'AI Animation 9A',
-    category: '課堂',
-    schedule: '2025-11-12 19:00',
-    seatsLimit: 60,
-    remainingSeats: 4,
-    status: '公開',
-    instructor: '王老師',
-    location: 'A教室'
-  },
-  E2: {
-    id: 'E2',
-    name: 'Seminar-SEP-03',
-    category: '講座',
-    schedule: '2025-09-03 14:00',
-    seatsLimit: null,
-    remainingSeats: null,
-    status: '草稿',
-    instructor: 'Guest',
-    location: '大廳'
-  }
-};
 
 const EventsEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const eventData = mockClasses[id] || { 
-    id, 
-    name: '', 
-    category: '', 
-    schedule: '', 
-    seatsLimit: '', 
-    status: '草稿', 
-    instructor: '', 
-    location: '' 
+  const [event, setEvent] = useState([]);
+      useEffect(() => {
+        const fetchData = async () => {
+          const data = await handleGetById(id);
+          setEvent(data.event || {});
+        };
+        fetchData();
+      }, [id]);
+  
+  const handleSubmit = async (formData) => {
+    try{
+      await handleUpdateById(id, formData);
+      alert('更新成功');
+      navigate('/events/'+id);
+    }catch (error) {
+      console.error('更新失敗:', error);
+      alert('更新資料失敗，請稍後再試');
+    }
   };
 
-  const handleSubmit = (formData) => {
-    // For now, just log and navigate back to events list
-    console.log('Update event (mock):', { id, ...formData });
-    alert('已模擬更新（不會真的送出）');
-    navigate('/events');
-  };
+
 
   const handleCancel = () => {
-    navigate(-1);
+    navigate('/events/'+id);
+  };
+
+  const handleDelete = async (event_id) => {
+    if (window.confirm('Comfire to remove this event?')) {
+      await handleDeleteById(event_id);  // 從後端刪除
+      alert('User deleted successfully');         // 刪除後導回客戶清單
+      navigate('/events');
+    }
   };
 
   return (
     <EventForm
       title="編輯課堂/講座"
       submitButtonText="更新"
-      initialData={eventData}
+      initialData={event}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
+      onDelete={handleDelete}
+      showEventId={true}
     />
   );
 };
