@@ -8,6 +8,8 @@ const router = express.Router();
 // JWT 設定
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 
+console.log('[HOMEWORK ROUTER] 正在初始化...');
+
 // 身份驗證中間件
 function authMiddleware(req, res, next) {
     const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
@@ -46,6 +48,16 @@ const upload = multer({
     limits: {
         fileSize: 10 * 1024 * 1024 // 10MB 限制
     }
+});
+
+// 健康檢查端點 - 確認路由是否被加載
+router.get('/homework/health', (req, res) => {
+    console.log('[HOMEWORK ROUTER] Health check received');
+    res.json({ 
+        status: 'ok',
+        message: 'Homework router is working',
+        timestamp: new Date().toISOString()
+    });
 });
 
 // 上傳作業檔案
@@ -98,6 +110,35 @@ router.post('/homework/upload', authMiddleware, upload.single('file'), async (re
     }
 });
 
+// 獲取所有功課檔案（Admin only）- 放在前面以便優先匹配
+router.get('/homework/files/admin/all', authMiddleware, async (req, res) => {
+    try {
+        // 檢查是否為 admin（支持大寫和小寫）
+        const userRole = req.user.role?.toUpperCase?.() || '';
+        if (userRole !== 'ADMIN') {
+            return res.status(403).json({ error: '只有管理員可以存取此資源' });
+        }
+
+        const filesResult = await azureBlobService.listAllFiles('homework');
+        
+        if (filesResult.success) {
+            res.json({
+                success: true,
+                files: filesResult.files
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: '獲取檔案列表失敗',
+                details: filesResult.error
+            });
+        }
+    } catch (error) {
+        console.error('獲取所有功課檔案錯誤:', error);
+        res.status(500).json({ error: '伺服器錯誤', details: error.message });
+    }
+});
+
 // 獲取學生的作業檔案列表
 router.get('/homework/files', authMiddleware, async (req, res) => {
     try {
@@ -145,6 +186,30 @@ router.delete('/homework/file/:fileName', authMiddleware, async (req, res) => {
         }
     } catch (error) {
         console.error('刪除檔案錯誤:', error);
+        res.status(500).json({ error: '伺服器錯誤' });
+    }
+});
+
+// 下載檔案
+router.get('/homework/download/:fileName', authMiddleware, async (req, res) => {
+    try {
+        const { fileName } = req.params;
+        
+        const fileContent = await azureBlobService.downloadFile(fileName, 'homework');
+        
+        if (fileContent.success) {
+            res.setHeader('Content-Type', fileContent.contentType || 'application/octet-stream');
+            res.setHeader('Content-Disposition', `attachment; filename="${fileContent.originalName}"`);
+            res.send(fileContent.data);
+        } else {
+            res.status(500).json({
+                success: false,
+                error: '下載檔案失敗',
+                details: fileContent.error
+            });
+        }
+    } catch (error) {
+        console.error('下載檔案錯誤:', error);
         res.status(500).json({ error: '伺服器錯誤' });
     }
 });

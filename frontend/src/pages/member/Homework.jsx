@@ -58,6 +58,50 @@ const Homework = () => {
 		}
 	};
 
+	const handleDownloadFile = async (fileUrl) => {
+		try {
+			// 從 URL 中提取檔案名稱（去掉域名部分）
+			// 例如: https://metaacademyfiles.blob.core.windows.net/homework-files/50003/H1001/xxx.jpg
+			// 提取: 50003/H1001/xxx.jpg
+			const urlParts = fileUrl.split('/homework-files/');
+			const fileName = urlParts[1] || fileUrl.split('/').pop();
+			
+			const encodedFileName = encodeURIComponent(fileName);
+			const response = await fetch(`http://localhost:4000/api/homework/download/${encodedFileName}`, {
+				method: 'GET',
+				credentials: 'include'
+			});
+
+			if (!response.ok) {
+				const error = await response.json().catch(() => ({ error: '下載失敗' }));
+				alert(`下載失敗: ${error.error || '未知錯誤'}`);
+				return;
+			}
+
+			// 從 Response Header 中獲取檔案名稱
+			const contentDisposition = response.headers.get('content-disposition');
+			let fileName_download = fileName.split('/').pop();
+			
+			if (contentDisposition && contentDisposition.includes('filename=')) {
+				fileName_download = contentDisposition.split('filename=')[1].replace(/"/g, '');
+			}
+
+			// 下載檔案
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = fileName_download;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			window.URL.revokeObjectURL(url);
+		} catch (err) {
+			console.error('下載檔案失敗:', err);
+			alert(`下載失敗: ${err.message}`);
+		}
+	};
+
 	return (
 		<div style={{ padding: 20 }}>
 			<h1>作業 / 任務 (Member)</h1>
@@ -91,13 +135,12 @@ const Homework = () => {
 									<div>
 										檔案: {h.file}
 										{h.fileUrl && (
-											<a 
-												href={h.fileUrl} 
-												target="_blank" 
-												rel="noopener noreferrer"
+											<button 
+												onClick={() => handleDownloadFile(h.fileUrl)}
+												style={{ marginLeft: '8px', padding: '4px 8px' }}
 											>
-												查看
-											</a>
+												下載
+											</button>
 										)}
 									</div>
 								)}
@@ -110,9 +153,6 @@ const Homework = () => {
 									accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
 								/>
 								{uploading[h.id] && <div>上傳中…</div>}
-								<div>
-									支援: PDF, DOC, DOCX, JPG, PNG, GIF, TXT (最大 10MB)
-								</div>
 							</td>
 						</tr>
 					))}

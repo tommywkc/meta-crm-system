@@ -10,7 +10,7 @@
 ## Prerequisites
 - Node.js (recommended v18+)
 - npm (comes with Node) or yarn
-- Git (if cloning)
+- Git
 
 ## Getting Started
 
@@ -134,15 +134,6 @@ Open browser and go to http://localhost:3000
    - Use `simple.env` as a template only
    - Generate strong, unique values for production
 
-### Azure Blob Storage Setup (Optional)
-
-For file upload functionality (homework submissions):
-
-1. Create an Azure Storage Account
-2. Create containers: `homework-files`, `portfolio-files`, `certificate-files`
-3. Copy the connection string to your `.env` file
-
-Without Azure configuration, file upload features will not work.
 
 
 
