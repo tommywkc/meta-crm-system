@@ -1,5 +1,5 @@
 import React from 'react';
-import { tableStyle, thTdStyle } from '../styles/TableStyles';
+import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
 
 const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) => {
   const userRole = role?.toLowerCase();
@@ -32,14 +32,14 @@ const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) 
             <td style={thTdStyle}>{event.capacity != null ? `餘 ${event.remaining_seats}\/${event.capacity}` : ''}</td>
             <td style={thTdStyle}>{event.status}</td>
             <td style={thTdStyle}>
-              <button onClick={() => onView && onView(event.id)}>Details</button>
+              <button onClick={() => onView && onView(event.event_id)}>Details</button>
               {isAdmin ? (
                 <>
-                  <button onClick={() => onEdit && onEdit(event.id)} style={{ marginLeft: 8 }}>Edit</button>
-                  <button onClick={() => onDelete && onDelete(event.id)} style={{ marginLeft: 8 }}>Delete</button>
+                  <button onClick={() => onEdit && onEdit(event.event_id)} style={{ marginLeft: 8 }}>Edit</button>
+                  <button onClick={() => onDelete && onDelete(event.event_id)} style={{ ...redTextStyle, marginLeft: 8 }}>Delete</button>
                 </>
               ) : isMember ? (
-                <button onClick={() => onEnroll && onEnroll(event.id)} style={{ marginLeft: 8 }}>報名</button>
+                <button onClick={() => onEnroll && onEnroll(event.event_id)} style={{ marginLeft: 8 }}>報名</button>
               ) : (
                 // sales/leader 只能查看，不顯示其他按鈕
                 null

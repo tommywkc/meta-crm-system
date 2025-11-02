@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS EVENTS (
     description TEXT,
     datetime_start TIMESTAMP,
     datetime_end TIMESTAMP,
+    price INT,
     capacity INT,
     remaining_seats INT,
     location VARCHAR(100),
@@ -270,7 +271,7 @@ INSERT INTO USERS (user_id, password, role, name, mobile, email) VALUES
 ('50002', 'password', 'LEADER', 'Leader User', '34567890','test3@gmail.com'),
 ('50003', 'password', 'MEMBER', 'Member User', '45678901','test4@gmail.com');
 
-INSERT INTO EVENTS (event_id, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
-('101', 'CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 20, 'Room 101', 'OPEN', 200, 50000),
-('102', 'SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 100, 'Zoom', 'SCHEDULED', 500, 50001);
+INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
+('101', '10000', 'CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 20, 'Room 101', 'OPEN', 200, 50000),
+('102', NULL, 'SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 100, 'Zoom', 'SCHEDULED', 500, 50001);
 

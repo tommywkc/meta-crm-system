@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { formatForDisplay } from '../styles/dateFormatter';
-
+import { redTextStyle } from '../styles/TableStyles';
 
 const EventForm = ({
   initialData = {},
   onSubmit,
   onCancel,
   submitButtonText = "提交",
-  title = "事件表單"
+  title = "事件表單",
+  showEventId = false,
+  onDelete = null
 }) => {
   const [name, setName] = useState(initialData.event_name || '');
   const [type, setType] = useState(initialData.type || '');
@@ -23,6 +25,7 @@ const EventForm = ({
   const [description, setDescription] = useState(initialData.description || '');
   const [roomCost, setRoomCost] = useState(initialData.room_cost || '');
   const [speakerId, setSpeakerId] = useState(initialData.speaker_id || '');
+  const [price, setPrice] = useState(initialData.price || '');
 
   // 當 Edit 模式切換或載入新資料時，同步表單
   useEffect(() => {
@@ -41,6 +44,7 @@ const EventForm = ({
       setDescription(initialData.description || '');
       setRoomCost(initialData.room_cost || '');
       setSpeakerId(initialData.speaker_id || '');
+      setPrice(initialData.price || '');
     }
   }, [initialData]);
 
@@ -64,7 +68,8 @@ const EventForm = ({
     location,
     description,
     room_cost: roomCost ? parseInt(roomCost, 10) : null,
-    speaker_id: speakerId ? parseInt(speakerId, 10) : null
+    speaker_id: speakerId ? parseInt(speakerId, 10) : null,
+    price: price ? parseInt(price, 10) : null
   };
   onSubmit(formData);
 };
@@ -73,7 +78,15 @@ const EventForm = ({
     <div style={{ padding: 20 }}>
       <h1>{title}</h1>
       <form onSubmit={handleSubmit} style={{ marginTop: 12, maxWidth: 700 }}>
-        {/* 基本資訊 */}
+        {showEventId && initialData.event_id && (
+          <div style={{ marginBottom: 16 }}>
+            <p>
+              <strong>Editing Event ID: </strong><br />
+              <u>{initialData.event_id}</u>
+            </p>
+          </div>
+        )}
+
         <div style={{ marginBottom: 12 }}>
           <label>事件名稱:</label><br />
           <input
@@ -135,6 +148,15 @@ const EventForm = ({
         </div>
 
         <div style={{ marginBottom: 12 }}>
+          <label>價格:</label><br />
+          <input
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            style={{ width: '100%', padding: 8 }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
           <label>描述:</label><br />
           <textarea
             value={description}
@@ -184,14 +206,21 @@ const EventForm = ({
 
         {/* 狀態與場地費 */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-          <div style={{ flex: 1 }}>
-            <label>場地費用:</label><br />
+          <div style={{ flex: 1, marginBottom: 8 }}>
+            <label>場地費用:</label><br/>
             <input
-              type="number"
-              value={roomCost}
+              type="text"
+              value={roomCost ?? ''}
               onChange={(e) => setRoomCost(e.target.value)}
-              style={{ width: '100%', padding: 8 }}
+              style={{
+                width: '100%',
+                padding: 8,
+                borderColor: !/^\d*$/.test(roomCost || '') ? 'red' : ''
+              }}
             />
+            {!/^\d*$/.test(roomCost || '') && (
+              <small style={{ color: 'red' }}>請輸入有效的金額（僅限數字）。</small>
+            )}
           </div>
 
           <div style={{ flex: 1 }}>
@@ -212,6 +241,15 @@ const EventForm = ({
         <div style={{ marginTop: 16 }}>
           <button type="submit" style={{ marginRight: 8 }}>{submitButtonText}</button>
           <button type="button" onClick={onCancel}>取消</button>
+          {onDelete && (
+            <button 
+              type="button" 
+              onClick={() => onDelete(initialData.event_id)} 
+              style={{ ...redTextStyle, marginLeft: 8 }}
+            >
+              Delete
+            </button>
+          )}
         </div>
       </form>
     </div>

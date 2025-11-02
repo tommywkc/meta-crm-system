@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import EventsTable from '../../components/EventsTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
-import { handleListEvents } from '../../api/eventListAPI';
+import { handleListEvents, handleDeleteById } from '../../api/eventListAPI';
 
 const mockClasses = [
 	{
@@ -51,7 +51,7 @@ const EventList = () => {
 	
 	const fetchEvents = async () => {
 		const payload = await handleListEvents(100, 0);
-		setEvents(payload.customers || []);
+		setEvents(payload.events || []);
 	};
 
 	// 過濾講座數據
@@ -72,16 +72,20 @@ const EventList = () => {
 		// navigate to edit page
 		navigate(`/events/${id}/edit`);
 	};
-	const onView = (id) => {
-		// navigate to view page
-		navigate(`/events/${id}`);
-	};
+
+	const handleView = (event_id) => navigate(`/events/${event_id}`);
+
 	const onEnroll = (id) => {
 		// member enrollment logic
 		alert(`報名 ${id}（模擬）`);
 	};
-	const onDelete = (id) => {
-		alert(`刪除 ${id}（模擬）`);
+
+	const onDelete = async (event_id) => {
+		if (window.confirm('Comfire to remove this event?')) {
+		  await handleDeleteById(event_id);  // 從後端刪除
+		  alert('User deleted successfully');
+		  await fetchEvents();            // 再次拉取後端最新資料
+		}
 	};
 
 		return (
@@ -133,7 +137,7 @@ const EventList = () => {
 				<EventsTable
 					events={pagedEvents}
 					role={user?.role}
-					onView={onView}
+					onView={handleView}
 					onEdit={onEdit}
 					onDelete={onDelete}
 					onEnroll={onEnroll}

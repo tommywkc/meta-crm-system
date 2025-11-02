@@ -3,6 +3,7 @@ const { query } = require('../db/pool');
 async function createEvent({
   event_id = null,
   type,
+  price = null,
   event_name,
   description = null,
   datetime_start = null,
@@ -15,11 +16,11 @@ async function createEvent({
   speaker_id = null
 }) {
   const sql = `
-    INSERT INTO EVENTS (event_id, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
     RETURNING *;
   `;
-  const vals = [event_id, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id];
+  const vals = [event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id];
   try {
     const res = await query(sql, vals);
     return res.rows[0];
