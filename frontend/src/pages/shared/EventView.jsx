@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { handleGetById } from '../../api/eventListAPI';
 
 const EventView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  const userRole = user?.role?.toLowerCase();
+  const isAdmin = userRole === 'admin';
+  const isMember = userRole === 'member';
+  const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
   
   const [event, setEvent] = useState([]);
+  const [isEnrolling, setIsEnrolling] = useState(false);
     useEffect(() => {
       const fetchData = async () => {
         const data = await handleGetById(id);
@@ -14,6 +22,13 @@ const EventView = () => {
       };
       fetchData();
     }, [id]);
+
+  const handleEnroll = () => {
+    setIsEnrolling(true);
+    // 模擬報名邏輯
+    alert(`報名 ${event.event_name}（模擬）`);
+    setIsEnrolling(false);
+  };
 
 
   if (!event || !event.event_id) {
@@ -56,7 +71,13 @@ const EventView = () => {
       
       <div>
         <button onClick={() => navigate('/events')}>返回列表</button>
-        <button onClick={() => navigate(`/events/${id}/edit`)}>編輯</button>
+        {isAdmin ? (
+          <button onClick={() => navigate(`/events/${id}/edit`)} style={{ marginLeft: 8 }}>編輯</button>
+        ) : isMember || isSalesOrLeader ? (
+          <button onClick={handleEnroll} disabled={isEnrolling} style={{ marginLeft: 8}}>
+            {isEnrolling ? '報名中...' : '報名'}
+          </button>
+        ) : null}
       </div>
     </div>
   );
