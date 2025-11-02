@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { handleGetById, handleUpdateById } from '../../api/eventListAPI';
+import { handleGetById, handleUpdateById, handleDeleteById } from '../../api/eventListAPI';
 import EventForm from '../../components/EventForm';
 
 
@@ -34,8 +34,12 @@ const EventsEdit = () => {
     navigate('/events/'+id);
   };
 
-  const handleDelete = () => {
-    navigate('/events/'+id);
+  const handleDelete = async (event_id) => {
+    if (window.confirm('Comfire to remove this event?')) {
+      await handleDeleteById(event_id);  // 從後端刪除
+      alert('User deleted successfully');         // 刪除後導回客戶清單
+      navigate('/events');
+    }
   };
 
   return (
