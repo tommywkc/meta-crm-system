@@ -30,6 +30,7 @@ import Receipts from './pages/member/Receipts';
 import Requests from './pages/member/Requests';
 import RequestsForm from './pages/member/RequestsForm';
 import Homework from './pages/member/Homework';
+import MyQRcode from './pages/member/MyQRcode';
 import Apply from './pages/shared/Apply';
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -174,6 +175,11 @@ function App() {
           <Route path="/homework" element={
             <ProtectedRoute allowedRole="member">
               <Homework />
+            </ProtectedRoute>
+          } />
+          <Route path="/myqrcode" element={
+            <ProtectedRoute allowedRole="member">
+              <MyQRcode />
             </ProtectedRoute>
           } />
           <Route 
