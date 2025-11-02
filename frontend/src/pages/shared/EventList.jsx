@@ -76,8 +76,7 @@ const EventList = () => {
 	const handleView = (event_id) => navigate(`/events/${event_id}`);
 
 	const onEnroll = (id) => {
-		// member enrollment logic
-		alert(`報名 ${id}（模擬）`);
+		navigate(`/events/${id}/apply`);
 	};
 
 	const onDelete = async (event_id) => {

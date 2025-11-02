@@ -30,6 +30,8 @@ import Receipts from './pages/member/Receipts';
 import Requests from './pages/member/Requests';
 import RequestsForm from './pages/member/RequestsForm';
 import Homework from './pages/member/Homework';
+import MyQRcode from './pages/member/MyQRcode';
+import Apply from './pages/shared/Apply';
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -98,6 +100,11 @@ function App() {
               <EventView />
             </ProtectedRoute>
           } />
+          <Route path="/events/:id/apply" element={
+            <ProtectedRoute allowedRoles={["member","sales","leader"]}>
+              <Apply />
+            </ProtectedRoute>
+          } />
           <Route path="/events/create" element={
             <ProtectedRoute allowedRole="admin">
               <EventCreate />
@@ -119,7 +126,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/notifications" element={
-            <ProtectedRoute allowedRoles={["admin","sales","member"]}>
+            <ProtectedRoute allowedRoles={["admin","sales","member","leader"]}>
               <Notifications />
             </ProtectedRoute>
           } />
@@ -135,7 +142,7 @@ function App() {
           } />
 
           <Route path="/sales-kpi" element={
-            <ProtectedRoute allowedRole="sales">
+            <ProtectedRoute allowedRoles={["sales","leader"]}>
               <KPI />
             </ProtectedRoute>
           } />
@@ -168,6 +175,11 @@ function App() {
           <Route path="/homework" element={
             <ProtectedRoute allowedRole="member">
               <Homework />
+            </ProtectedRoute>
+          } />
+          <Route path="/myqrcode" element={
+            <ProtectedRoute allowedRole="member">
+              <MyQRcode />
             </ProtectedRoute>
           } />
           <Route 
