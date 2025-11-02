@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import EventsTable from '../../components/EventsTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
+import { handleListEvents } from '../../api/eventListAPI';
 
 const mockClasses = [
 	{
@@ -37,16 +38,31 @@ const EventList = () => {
 	const [page, setPage] = useState(1);
 	const [limit, setLimit] = useState(25);
 	const [searchTerm, setSearchTerm] = useState('');
+
+	const [events, setEvents] = useState([]);
+
+	useEffect(() => {
+		const fetchData = async () => {
+		  const payload = await handleListEvents(100, 0);
+		  setEvents(payload.events || []);
+		};
+		fetchData();
+	}, []);
 	
+	const fetchEvents = async () => {
+		const payload = await handleListEvents(100, 0);
+		setEvents(payload.customers || []);
+	};
+
 	// 過濾講座數據
-	const filteredEvents = mockClasses.filter(event => 
-		event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-		event.category.toLowerCase().includes(searchTerm.toLowerCase())
-	);
+	// const filteredEvents = mockClasses.filter(event => 
+	// 	event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+	// 	event.category.toLowerCase().includes(searchTerm.toLowerCase())
+	// );
 	
 	// 分頁計算
 	const startIndex = (page - 1) * limit;
-	const pagedEvents = filteredEvents.slice(startIndex, startIndex + limit);
+	const pagedEvents = events.slice(startIndex, startIndex + limit);
 	
 	const onCreate = () => {
 		// navigate to create page
@@ -97,7 +113,7 @@ const EventList = () => {
 					<label>
 						Page:&nbsp;
 						<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
-							{Array.from({ length: Math.max(1, Math.ceil(filteredEvents.length / limit)) }, (_, i) => (
+							{Array.from({ length: Math.max(1, Math.ceil(events.length / limit)) }, (_, i) => (
 								<option key={i + 1} value={i + 1}>{i + 1}</option>
 							))}
 						</select>
@@ -127,7 +143,7 @@ const EventList = () => {
 					<label>
 						Page:&nbsp;
 						<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
-							{Array.from({ length: Math.max(1, Math.ceil(filteredEvents.length / limit)) }, (_, i) => (
+							{Array.from({ length: Math.max(1, Math.ceil(events.length / limit)) }, (_, i) => (
 								<option key={i + 1} value={i + 1}>{i + 1}</option>
 							))}
 						</select>

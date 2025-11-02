@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+
 export async function listUsers(limit, offset) {
   console.log('Fetching customers list from backend');
   const res = await fetch('http://localhost:4000/api/customers', {

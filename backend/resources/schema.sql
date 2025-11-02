@@ -18,11 +18,9 @@ DROP TABLE IF EXISTS USERS;
 DROP SEQUENCE IF EXISTS user_id_seq;
 DROP SEQUENCE IF EXISTS event_id_seq;
 
-CREATE SEQUENCE user_id_seq START 50000;
-CREATE SEQUENCE event_id_seq START 100;
 
 CREATE TABLE IF NOT EXISTS USERS (
-    user_id BIGINT DEFAULT nextval('user_id_seq') NOT NULL UNIQUE,
+    user_id BIGINT NOT NULL UNIQUE,
     password VARCHAR(50) NOT NULL,
     role VARCHAR(50) NOT NULL DEFAULT 'MEMBER',
     name VARCHAR(100) NOT NULL,
@@ -41,13 +39,13 @@ CREATE TABLE IF NOT EXISTS USERS (
 
 
 CREATE TABLE IF NOT EXISTS EVENTS (
-    event_id BIGINT DEFAULT nextval('user_id_seq') NOT NULL UNIQUE,
+    event_id BIGINT NOT NULL UNIQUE,
     type VARCHAR(50) NOT NULL,
     event_name VARCHAR(100) NOT NULL,
     description TEXT,
     datetime_start TIMESTAMP,
     datetime_end TIMESTAMP,
-    capacity INT DEFAULT 60,
+    capacity INT,
     remaining_seats INT,
     location VARCHAR(100),
     status VARCHAR(50) DEFAULT 'SCHEDULED',
@@ -266,13 +264,13 @@ CREATE TABLE IF NOT EXISTS HOLIDAYS (
     FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
-INSERT INTO USERS (password, role, name, mobile, email) VALUES
-('password', 'ADMIN', 'Admin User', '12345678','test@gmail.com'),
-('password', 'SALES', 'Sales User', '23456789','test2@gmail.com'),
-('password', 'LEADER', 'Leader User', '34567890','test3@gmail.com'),
-('password', 'MEMBER', 'Member User', '45678901','test4@gmail.com');
+INSERT INTO USERS (user_id, password, role, name, mobile, email) VALUES
+('50000', 'password', 'ADMIN', 'Admin User', '12345678','test@gmail.com'),
+('50001', 'password', 'SALES', 'Sales User', '23456789','test2@gmail.com'),
+('50002', 'password', 'LEADER', 'Leader User', '34567890','test3@gmail.com'),
+('50003', 'password', 'MEMBER', 'Member User', '45678901','test4@gmail.com');
 
-INSERT INTO EVENTS (type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
-('CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 20, 'Room 101', 'SCHEDULED', 200, 50000),
-('SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 100, 'Zoom', 'SCHEDULED', 500, 50001);
+INSERT INTO EVENTS (event_id, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
+('101', 'CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 20, 'Room 101', 'OPEN', 200, 50000),
+('102', 'SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 100, 'Zoom', 'SCHEDULED', 500, 50001);
 

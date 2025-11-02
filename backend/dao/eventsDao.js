@@ -1,11 +1,32 @@
 const { query } = require('../db/pool');
 
-async function createEvent({ type, event_name, description = null, datetime_start = null, datetime_end = null, capacity = 60, location = null, status = 'SCHEDULED', room_cost = null, speaker_id = null }) {
-  const sql = `INSERT INTO EVENTS (type, event_name, description, datetime_start, datetime_end, capacity, location, status, room_cost, speaker_id)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`;
-  const vals = [type, event_name, description, datetime_start, datetime_end, capacity, location, status, room_cost, speaker_id];
-  const res = await query(sql, vals);
-  return res.rows[0];
+async function createEvent({
+  event_id = null,
+  type,
+  event_name,
+  description = null,
+  datetime_start = null,
+  datetime_end = null,
+  capacity = 60,
+  remaining_seats = null,
+  location = null,
+  status = 'SCHEDULED',
+  room_cost = null,
+  speaker_id = null
+}) {
+  const sql = `
+    INSERT INTO EVENTS (event_id, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    RETURNING *;
+  `;
+  const vals = [event_id, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id];
+  try {
+    const res = await query(sql, vals);
+    return res.rows[0];
+  } catch (err) {
+    console.error('DB insert failed:', err);
+    throw err;
+  }
 }
 
 async function findByEventId(id) {
@@ -30,8 +51,19 @@ async function removeByEventId(id) {
 }
 
 async function listbyEventsId(limit = 100, offset = 0) {
-  const res = await query('SELECT * FROM EVENTS ORDER BY event_id DESC LIMIT $1 OFFSET $2', [limit, offset]);
+  const res = await query('SELECT * FROM EVENTS ORDER BY event_id ASC LIMIT $1 OFFSET $2', [limit, offset]);
   return res.rows;
 }
 
-module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId };
+async function findLatestEventId() {
+  try {
+    const sql = `SELECT MAX(event_id) AS latest_id FROM EVENTS;`;
+    const { rows } = await query(sql);
+    return rows[0]?.latest_id || null;
+  } catch (err) {
+    console.error(`Error finding latest ID in EVENTS:`, err);
+    throw err;
+  }
+}
+
+module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId, findLatestEventId };

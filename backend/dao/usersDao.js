@@ -1,8 +1,7 @@
 const { query } = require('../db/pool');
 
-// usersDao: basic CRUD helpers for USERS table
-
 async function createUser({
+  user_id = null,
   password,
   role,
   name,
@@ -17,14 +16,15 @@ async function createUser({
 }) {
   const sql = `
     INSERT INTO USERS (
-      password, role, name, mobile, email, qr_token, source,
+      user_id, password, role, name, mobile, email, qr_token, source,
       owner_sales, team, tags, note_special
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     RETURNING *;
   `;
 
   const vals = [
+    user_id,
     password,
     role,
     name,
@@ -77,4 +77,15 @@ async function listByUsersId(limit = 100, offset = 0) {
   return res.rows;
 }
 
-module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId };
+async function findLatestId() {
+  try {
+    const sql = `SELECT MAX(user_id) AS latest_id FROM USERS;`;
+    const { rows } = await query(sql);
+    return rows[0]?.latest_id || null;
+  } catch (err) {
+    console.error(`Error finding latest ID in USERS:`, err);
+    throw err;
+  }
+}
+
+module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId, findLatestId };
