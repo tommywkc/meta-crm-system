@@ -51,10 +51,7 @@ const EventView = () => {
     }, [id]);
 
   const handleEnroll = () => {
-    setIsEnrolling(true);
-    // 模擬報名邏輯
-    alert(`報名 ${event.event_name}（模擬）`);
-    setIsEnrolling(false);
+    navigate(`/events/${id}/apply`);
   };
 
   const handleApprove = (row) => {

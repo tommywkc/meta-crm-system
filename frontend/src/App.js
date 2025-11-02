@@ -30,6 +30,7 @@ import Receipts from './pages/member/Receipts';
 import Requests from './pages/member/Requests';
 import RequestsForm from './pages/member/RequestsForm';
 import Homework from './pages/member/Homework';
+import Apply from './pages/shared/Apply';
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -96,6 +97,11 @@ function App() {
           <Route path="/events/:id" element={
             <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
               <EventView />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id/apply" element={
+            <ProtectedRoute allowedRoles={["member","sales","leader"]}>
+              <Apply />
             </ProtectedRoute>
           } />
           <Route path="/events/create" element={
