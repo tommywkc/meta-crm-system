@@ -38,12 +38,11 @@ const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) 
                   <button onClick={() => onEdit && onEdit(event.event_id)} style={{ marginLeft: 8 }}>Edit</button>
                   <button onClick={() => onDelete && onDelete(event.event_id)} style={{ ...redTextStyle, marginLeft: 8 }}>Delete</button>
                 </>
-              ) : isMember ? (
-                <button onClick={() => onEnroll && onEnroll(event.event_id)} style={{ marginLeft: 8 }}>報名</button>
-              ) : (
-                // sales/leader 只能查看，不顯示其他按鈕
-                null
-              )}
+              ) : isMember || isSalesOrLeader ? (
+                <button onClick={() => onEnroll && onEnroll(event.event_id)} style={{ marginLeft: 8 }}>
+                  {isMember ? '報名' : '報名'}
+                </button>
+              ) : null}
             </td>
           </tr>
         ))}
