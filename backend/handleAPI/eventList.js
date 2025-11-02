@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { createEvent, listbyEventsId } = require('../dao/eventsDao');
+const { createEvent, listbyEventsId, findLatestEventId } = require('../dao/eventsDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
 
@@ -25,6 +25,8 @@ router.post('/events', async (req, res) => {
       newEvent.remaining_seats = null;
     }
 
+    const latestId = parseInt(await findLatestEventId());
+    newEvent.event_id = (latestId || 100) + 1;
 
 
     const createdEvent = await createEvent(newEvent);

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile } = require('../dao/usersDao');
+const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findLatestId } = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
 
@@ -111,6 +111,9 @@ router.post('/customers', async (req, res) => {
     if (newCustomer.password == null) {
       newCustomer.password = newCustomer.mobile;
     }
+
+    const latestId = parseInt(await findLatestId());
+    newCustomer.user_id = (latestId || 49999) + 1;
 
     const createdCustomer = await createUser(newCustomer);
     console.log('新增客戶資料成功:', createdCustomer.user_id);
