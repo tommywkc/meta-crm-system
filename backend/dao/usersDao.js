@@ -56,6 +56,7 @@ async function findUserByMobile(mobile) {
   return res.rows[0] || null;
 }
 
+
 async function updateByUserId(id, fields = {}) {
   const keys = Object.keys(fields);
   if (keys.length === 0) return findByUserId(id);
