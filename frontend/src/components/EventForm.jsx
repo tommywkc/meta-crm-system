@@ -27,7 +27,7 @@ const EventForm = ({
   const [speakerId, setSpeakerId] = useState(initialData.speaker_id || '');
   const [price, setPrice] = useState(initialData.price || '');
 
-  // 當 Edit 模式切換或載入新資料時，同步表單
+  // Sync form when switching to Edit mode or when new data is loaded
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
       setName(initialData.event_name || '');
@@ -48,14 +48,14 @@ const EventForm = ({
     }
   }, [initialData]);
 
-  // 提交事件表單時序列化時間
+  // Serialize datetimes when submitting the event form
   const handleSubmit = (e) => {
   e.preventDefault();
 
   // 驗證：結束時間不得早於開始時間
   if (datetimeStart && datetimeEnd && new Date(datetimeEnd) < new Date(datetimeStart)) {
     alert("結束時間不能早於開始時間，請重新選擇。");
-    return; // 阻止提交
+    return; // prevent submission
   }
 
   const formData = {
@@ -111,7 +111,7 @@ const EventForm = ({
           </select>
         </div>
 
-        {/* 時間設定 */}
+  {/* Date/time inputs */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
           <div style={{ flex: 1 }}>
             <label>開始時間:</label><br />
@@ -137,7 +137,7 @@ const EventForm = ({
             <small style={{ color: 'red' }}>結束時間不得早於開始時間。</small>
         )}
 
-        {/* 地點及內容 */}
+  {/* Location and description */}
         <div style={{ marginBottom: 12 }}>
           <label>地點:</label><br />
           <input
@@ -173,9 +173,9 @@ const EventForm = ({
           />
         </div>
 
-        {/* 講者與設定 */}
+  {/* Speaker and settings */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
-          {/* 講者 ID 欄位 */}
+          {/* Speaker ID field */}
           <div style={{ flex: 1, marginBottom: 8 }}>
             <label>講者 ID:</label><br/>
             <input
@@ -193,7 +193,7 @@ const EventForm = ({
             )}
           </div>
 
-          {/* 可容納人數欄位 */}
+          {/* Capacity field */}
           <div style={{ flex: 1, marginBottom: 8 }}>
             <label>可容納人數:</label><br/>
             <input
@@ -212,7 +212,7 @@ const EventForm = ({
           </div>
         </div>
 
-        {/* 狀態與場地費 */}
+  {/* Status and room cost */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
           <div style={{ flex: 1, marginBottom: 8 }}>
             <label>場地費用:</label><br/>
@@ -245,7 +245,7 @@ const EventForm = ({
           </div>
         </div>
 
-        {/* 操作按鈕 */}
+  {/* Action buttons */}
         <div style={{ marginTop: 16 }}>
           <button type="submit" style={{ marginRight: 8 }}>{submitButtonText}</button>
           <button type="button" onClick={onCancel}>取消</button>

@@ -1,3 +1,4 @@
+// Event attendance DAO — helpers for recording and querying attendance
 const { query } = require('../db/pool');
 
 async function createAttendance({ session_id, user_id, registration_id = null, attend_time = null, status = null, remarks = null }) {

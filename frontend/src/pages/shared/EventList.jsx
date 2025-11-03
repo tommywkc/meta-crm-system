@@ -34,7 +34,7 @@ const EventList = () => {
 	const isMember = userRole === 'member';
 	const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
 	
-	// 分頁和搜尋狀態
+	// Pagination and search state
 	const [page, setPage] = useState(1);
 	const [limit, setLimit] = useState(25);
 	const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +54,7 @@ const EventList = () => {
 		setEvents(payload.events || []);
 	};
 
-	// 過濾講座數據
+	// Filter events data (example filter commented out)
 	// const filteredEvents = mockClasses.filter(event => 
 	// 	event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
 	// 	event.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -81,9 +81,9 @@ const EventList = () => {
 
 	const onDelete = async (event_id) => {
 		if (window.confirm('Comfire to remove this event?')) {
-		  await handleDeleteById(event_id);  // 從後端刪除
+		  await handleDeleteById(event_id);  // remove from backend
 		  alert('User deleted successfully');
-		  await fetchEvents();            // 再次拉取後端最新資料
+		  await fetchEvents();            // fetch latest data from backend
 		}
 	};
 
@@ -132,7 +132,7 @@ const EventList = () => {
 					</label>
 				</div>
 
-				{/* 📋 講座與課堂清單表格 */}
+				{/* 📋 Events table */}
 				<EventsTable
 					events={pagedEvents}
 					role={user?.role}

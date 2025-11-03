@@ -5,15 +5,15 @@ const { createEvent, listbyEventsId, findLatestEventId, findByEventId, updateByE
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
 
-// JWT 設定
+// JWT configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 
 //handle create new event
 router.post('/events', async (req, res) => {
   try {
-    console.log('收到建立活動請求:', req.body);
+  console.log('Received create event request:', req.body);
 
-    const newEvent = emptyToNull(req.body);
+  const newEvent = emptyToNull(req.body);
 
     if (!newEvent.event_name || !newEvent.type) {
       return res.status(400).json({ message: '缺少必要的活動資料' });
@@ -30,10 +30,10 @@ router.post('/events', async (req, res) => {
 
 
     const createdEvent = await createEvent(newEvent);
-    console.log('活動建立成功:');
+    console.log('Event created successfully:');
     res.status(201).json({ message: '活動建立成功', event: createdEvent });
   } catch (error) {
-    console.error('建立活動失敗:', error);
+    console.error('Create event failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
@@ -41,13 +41,13 @@ router.post('/events', async (req, res) => {
 //handle get events list
 router.get('/events', async (req, res) => {
   try {
-    console.log('收到Events列表請求');
+  console.log('Received events list request');
 
-    const limit = parseInt(req.query.limit) || 100;
-    const offset = parseInt(req.query.offset) || 0;
+  const limit = parseInt(req.query.limit) || 100;
+  const offset = parseInt(req.query.offset) || 0;
 
-    const events = await listbyEventsId(limit, offset);
-    console.log(`取得 ${events.length} 筆活動資料`);
+  const events = await listbyEventsId(limit, offset);
+  console.log(`Retrieved ${events.length} events`);
 
     // 使用 formatDateTime 格式化每筆活動的日期欄位
     const formattedEvents = events.map(e => ({
@@ -58,7 +58,7 @@ router.get('/events', async (req, res) => {
 
     res.json({ events: formattedEvents });
   } catch (error) {
-    console.error('取得活動列表失敗:', error);
+    console.error('Get events list failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
@@ -66,8 +66,8 @@ router.get('/events', async (req, res) => {
 //handle get event detail in view
 router.get('/events/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    console.log('收到 event 資料請求:', id);
+  const id = parseInt(req.params.id, 10);
+  console.log('Received event data request:', id);
 
     if (isNaN(id)) {
       return res.status(400).json({ message: '無效的事件 ID' });
@@ -75,7 +75,7 @@ router.get('/events/:id', async (req, res) => {
 
     const event = await findByEventId(id);
     if (!event) {
-      console.log('未找到 event:', id);
+      console.log('Event not found:', id);
       return res.status(404).json({ message: 'event 不存在' });
     }
 
@@ -90,12 +90,12 @@ router.get('/events/:id', async (req, res) => {
     }
     
 
-    console.log('取得 event 資料成功:', id);
-    console.log(event);
+  console.log('Successfully retrieved event data:', id);
+  console.log(event);
     res.json({ event });
 
   } catch (error) {
-    console.error('取得 event 資料失敗:', error);
+    console.error('Get event data failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
@@ -104,9 +104,9 @@ router.get('/events/:id', async (req, res) => {
 //handle update event details
 router.put('/events/:id', async (req, res) => {
   try {
-    const event_id = req.params.id;
-    const updateData = emptyToNull(req.body);
-    console.log('收到更新event資料請求:', event_id, updateData);
+  const event_id = req.params.id;
+  const updateData = emptyToNull(req.body);
+  console.log('Received update event request:', event_id, updateData);
 
     const existing = await findByEventId(event_id);
     if (!existing) {
@@ -115,10 +115,10 @@ router.put('/events/:id', async (req, res) => {
 
     const updated = await updateByEventId(event_id, updateData);
 
-    console.log('更新event資料成功:', event_id);
+    console.log('Update event data successful:', event_id);
     res.json({ message: 'event資料更新成功', event: updated });
   } catch (error) {
-    console.error('更新event資料失敗:', error);
+    console.error('Update event data failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
@@ -127,9 +127,9 @@ router.put('/events/:id', async (req, res) => {
 //handle delete Event by id
 router.delete('/events/:id', async (req, res) => {
   try {
-    console.log('收到刪除event資料請求');
-    const event_id = req.params.id;
-    console.log('收到刪除event資料請求:', event_id);
+  console.log('Received delete event request');
+  const event_id = req.params.id;
+  console.log('Received delete event request:', event_id);
 
     const existing = await findByEventId(event_id);
     if (!existing) {
@@ -137,10 +137,10 @@ router.delete('/events/:id', async (req, res) => {
     }
 
     await removeByEventId(event_id);
-    console.log('刪除event資料成功:', event_id);
+    console.log('Event deleted successfully:', event_id);
     res.json({ message: 'event資料刪除成功' });
   } catch (error) {
-    console.error('刪除event資料失敗:', error);
+    console.error('Delete event failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });

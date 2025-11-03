@@ -1,3 +1,4 @@
+// Notifications DAO — helpers for notification templates and records
 const { query } = require('../db/pool');
 
 async function createNotification({ description, template, create_time = null, created_by_id = null }) {

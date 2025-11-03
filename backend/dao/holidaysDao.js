@@ -1,3 +1,4 @@
+// Holidays DAO — manages holiday records used by the application
 const { query } = require('../db/pool');
 
 async function createHoliday({ holiday_name, holiday_date, description = null }) {

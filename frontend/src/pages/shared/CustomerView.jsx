@@ -19,7 +19,7 @@ const CustomerView = () => {
     fetchData();
   }, [id]);
 
-  // 模擬該客戶的日曆事件數據
+  // Mock calendar events for this customer
   const customerEvents = {
     '2025-11-05': ['課堂: AI Animation 9A'],
     '2025-11-12': ['講座: Seminar-SEP-03'],
@@ -33,7 +33,7 @@ const CustomerView = () => {
       <h1>View Customer</h1>
       
       <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
-        {/* 左邊：客戶資訊 */}
+  {/* Left: customer information */}
         <div style={{ flex: isMember ? 1 : 'none', maxWidth: isMember ? 'none' : '600px' }}>
           <h2>Customer Information</h2>
           <div style={{ marginTop: 20 }}>
@@ -66,7 +66,7 @@ const CustomerView = () => {
           </div>
         </div>
 
-        {/* 右邊：日曆 (只有 MEMBER 才顯示) */}
+  {/* Right: calendar (visible to MEMBER only) */}
         {isMember && (
           <div style={{ flex: 1 }}>
             <h2>Member Calendar</h2>

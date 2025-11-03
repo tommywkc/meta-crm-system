@@ -2,12 +2,14 @@ const { BlobServiceClient } = require('@azure/storage-blob');
 const { randomUUID } = require('crypto');
 require('dotenv').config();
 
+// Azure Blob Storage helper: upload, delete, download and list files with metadata
+
 class AzureBlobService {
     constructor() {
         this.blobServiceClient = BlobServiceClient.fromConnectionString(
             process.env.AZURE_STORAGE_CONNECTION_STRING
         );
-        // 定義容器配置
+        // Define container configuration
         this.containers = {
             homework: 'homework-files',
             portfolio: 'portfolio-files',
@@ -17,18 +19,18 @@ class AzureBlobService {
 
     async uploadFile(file, userId, resourceId, containerType = 'homework') {
         try {
-            // 生成唯一的檔案名稱
+            // generate a unique file name
             const fileExtension = file.originalname.split('.').pop();
             const fileName = `${userId}/${resourceId}/${randomUUID()}.${fileExtension}`;
             
-            // 獲取容器客戶端
+            // get container client
             const containerName = this.containers[containerType];
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
             
-            // 獲取 blob 客戶端
+            // get block blob client
             const blobClient = containerClient.getBlockBlobClient(fileName);
             
-            // 上傳檔案
+            // upload file
             const uploadResponse = await blobClient.upload(file.buffer, file.size, {
                 blobHTTPHeaders: {
                     blobContentType: file.mimetype
@@ -105,18 +107,18 @@ class AzureBlobService {
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
             const blobClient = containerClient.getBlockBlobClient(fileName);
             
-            // 下載檔案內容
+            // download file content
             const downloadResponse = await blobClient.download();
             
-            // 讀取流中的所有數據
+            // read all data from the stream
             const chunks = [];
             if (downloadResponse.readableStreamBody) {
-                // Node.js 環境中的 Readable 流
+                // Readable stream in Node.js
                 for await (const chunk of downloadResponse.readableStreamBody) {
                     chunks.push(chunk);
                 }
             } else {
-                // 如果沒有 readableStreamBody，直接使用 blobBody
+                // If there's no readableStreamBody, use blobBody directly
                 chunks.push(downloadResponse.blobBody);
             }
             
@@ -175,7 +177,7 @@ class AzureBlobService {
             
             const files = [];
             for await (const blob of containerClient.listBlobsFlat()) {
-                // 獲取 blob 的完整屬性，包括 metadata
+                // get full properties for the blob, including metadata
                 const blobClient = containerClient.getBlockBlobClient(blob.name);
                 const properties = await blobClient.getProperties();
                 

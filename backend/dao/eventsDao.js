@@ -1,3 +1,4 @@
+// Events data access object (DAO)
 const { query } = require('../db/pool');
 
 async function createEvent({

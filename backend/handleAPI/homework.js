@@ -5,12 +5,12 @@ const azureBlobService = require('../services/azureBlobService');
 
 const router = express.Router();
 
-// JWT 設定
+// JWT configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 
-console.log('[HOMEWORK ROUTER] 正在初始化...');
+console.log('[HOMEWORK ROUTER] Initializing...');
 
-// 身份驗證中間件
+// Authentication middleware
 function authMiddleware(req, res, next) {
     const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
     if (!token) return res.status(401).json({ message: 'Not authenticated' });
@@ -23,12 +23,12 @@ function authMiddleware(req, res, next) {
     }
 }
 
-// 配置 multer 使用記憶體儲存
+// Configure multer to use memory storage
 const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
     fileFilter: (req, file, cb) => {
-        // 允許的檔案類型
+        // allowed MIME types
         const allowedTypes = [
             'application/pdf',
             'image/jpeg',
@@ -42,15 +42,16 @@ const upload = multer({
         if (allowedTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
+            // keep the original message string because the code later compares error.message
             cb(new Error('不支援的檔案類型'), false);
         }
     },
     limits: {
-        fileSize: 10 * 1024 * 1024 // 10MB 限制
+        fileSize: 10 * 1024 * 1024 // 10MB limit
     }
 });
 
-// 健康檢查端點 - 確認路由是否被加載
+// Health check endpoint — verify router is loaded
 router.get('/homework/health', (req, res) => {
     console.log('[HOMEWORK ROUTER] Health check received');
     res.json({ 
@@ -60,22 +61,22 @@ router.get('/homework/health', (req, res) => {
     });
 });
 
-// 上傳作業檔案
+// Upload a homework file
 router.post('/homework/upload', authMiddleware, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: '未選擇檔案' });
         }
 
-        const { assignmentId } = req.body;
-        const studentId = req.user.sub; // 從 JWT token 中獲取用戶 ID (sub 欄位)
+    const { assignmentId } = req.body;
+    const studentId = req.user.sub; // Get user ID from JWT token (sub field)
         
         if (!assignmentId) {
             return res.status(400).json({ error: '缺少必要參數: assignmentId' });
         }
 
-        // 使用 Azure Blob Storage 服務上傳檔案
-        const uploadResult = await azureBlobService.uploadFile(req.file, studentId, assignmentId, 'homework');
+    // Upload file using Azure Blob Storage service
+    const uploadResult = await azureBlobService.uploadFile(req.file, studentId, assignmentId, 'homework');
         
         if (uploadResult.success) {
             res.json({
@@ -96,25 +97,27 @@ router.post('/homework/upload', authMiddleware, upload.single('file'), async (re
             });
         }
     } catch (error) {
-        console.error('上傳作業錯誤:', error);
-        
+        console.error('Upload homework error:', error);
+
+        // Preserve the original error string used in logic checks elsewhere
         if (error.message === '不支援的檔案類型') {
             return res.status(400).json({ error: '不支援的檔案類型' });
         }
-        
+
         if (error.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({ error: '檔案大小超過限制 (10MB)' });
         }
-        
+
         res.status(500).json({ error: '伺服器錯誤' });
     }
 });
 
-// 獲取所有功課檔案（Admin only）- 放在前面以便優先匹配
+// Get all homework files (Admin only)
+// This endpoint is prioritized earlier in routing for convenience
 router.get('/homework/files/admin/all', authMiddleware, async (req, res) => {
     try {
-        // 檢查是否為 admin（支持大寫和小寫）
-        const userRole = req.user.role?.toUpperCase?.() || '';
+    // Check for admin role (case-insensitive)
+    const userRole = req.user.role?.toUpperCase?.() || '';
         if (userRole !== 'ADMIN') {
             return res.status(403).json({ error: '只有管理員可以存取此資源' });
         }
@@ -133,13 +136,13 @@ router.get('/homework/files/admin/all', authMiddleware, async (req, res) => {
                 details: filesResult.error
             });
         }
-    } catch (error) {
-        console.error('獲取所有功課檔案錯誤:', error);
+        } catch (error) {
+        console.error('Get all homework files error:', error);
         res.status(500).json({ error: '伺服器錯誤', details: error.message });
     }
 });
 
-// 獲取學生的作業檔案列表
+// Get a student's homework files
 router.get('/homework/files', authMiddleware, async (req, res) => {
     try {
         const studentId = req.user.sub; // 從 JWT token 中獲取用戶 ID (sub 欄位)
@@ -160,12 +163,12 @@ router.get('/homework/files', authMiddleware, async (req, res) => {
             });
         }
     } catch (error) {
-        console.error('獲取檔案列表錯誤:', error);
+        console.error('Get file list error:', error);
         res.status(500).json({ error: '伺服器錯誤' });
     }
 });
 
-// 刪除作業檔案
+// Delete a homework file
 router.delete('/homework/file/:fileName', authMiddleware, async (req, res) => {
     try {
         const { fileName } = req.params;
@@ -185,12 +188,12 @@ router.delete('/homework/file/:fileName', authMiddleware, async (req, res) => {
             });
         }
     } catch (error) {
-        console.error('刪除檔案錯誤:', error);
+        console.error('Delete file error:', error);
         res.status(500).json({ error: '伺服器錯誤' });
     }
 });
 
-// 下載檔案
+// Download a file
 router.get('/homework/download/:fileName', authMiddleware, async (req, res) => {
     try {
         const { fileName } = req.params;
@@ -209,12 +212,12 @@ router.get('/homework/download/:fileName', authMiddleware, async (req, res) => {
             });
         }
     } catch (error) {
-        console.error('下載檔案錯誤:', error);
+        console.error('Download file error:', error);
         res.status(500).json({ error: '伺服器錯誤' });
     }
 });
 
-// 獲取檔案 URL
+// Get a file URL
 router.get('/homework/file-url/:fileName', authMiddleware, async (req, res) => {
     try {
         const { fileName } = req.params;
@@ -234,7 +237,7 @@ router.get('/homework/file-url/:fileName', authMiddleware, async (req, res) => {
             });
         }
     } catch (error) {
-        console.error('獲取檔案 URL 錯誤:', error);
+        console.error('Get file URL error:', error);
         res.status(500).json({ error: '伺服器錯誤' });
     }
 });

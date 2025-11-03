@@ -1,3 +1,4 @@
+// Waitlist DAO — helpers for managing session waitlists and ranks
 const { query } = require('../db/pool');
 
 async function createWaitlist({ session_id, user_id, rank, created_by_id, create_time = null }) {

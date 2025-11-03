@@ -42,7 +42,8 @@ const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   }
 
   // support allowedRole (string) or allowedRoles (array)
-  // 大小寫不敏感的角色比較
+  // support allowedRole (string) or allowedRoles (array)
+  // Case-insensitive role comparison
   if (allowedRole && user.role?.toLowerCase() !== allowedRole.toLowerCase()) {
     return <Navigate to="/login" />;
   }

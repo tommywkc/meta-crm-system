@@ -22,7 +22,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// 加入請求日誌中間件
+// request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
   next();
@@ -47,7 +47,7 @@ const eventRouter = require('./handleAPI/eventList');
 console.log('Event router loaded');
 app.use('/api', eventRouter); // Use the event router
 
-// JWT 設定
+// JWT configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 const ACCESS_EXPIRES = '30m';
 
@@ -84,15 +84,15 @@ const port = process.env.PORT || 4000;
 
 // 啟動 server 前初始化資料庫
 async function startServer() {
-    try {
-        await initDatabase();
-        app.listen(port, () => {
-            console.log(`伺服器運行在 port ${port}`);
-        });
-    } catch (err) {
-        console.error('伺服器啟動失敗:', err);
-        process.exit(1);
-    }
+  try {
+    await initDatabase();
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  } catch (err) {
+    console.error('Server start failed:', err);
+    process.exit(1);
+  }
 }
 
 startServer();

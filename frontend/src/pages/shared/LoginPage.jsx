@@ -4,7 +4,7 @@ import { redirect, useNavigate } from 'react-router-dom';
 import { handleLogin } from '../../api/loginAPI';
 
 const LoginPage = () => {
-  console.log('LoginPage rendered'); // 確認元件有載入
+  console.log('LoginPage rendered'); // confirm component loaded
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);

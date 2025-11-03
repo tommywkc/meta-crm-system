@@ -1,5 +1,5 @@
 const formatDateTime = (dbTimeString) => {
-  // 時間格式轉換邏輯
+  // Time format conversion logic
   if (!dbTimeString) return '';
   const dateObj = new Date(dbTimeString);
   const yyyy = dateObj.getFullYear();

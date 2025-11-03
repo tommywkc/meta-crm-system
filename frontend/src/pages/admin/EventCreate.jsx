@@ -9,7 +9,7 @@ const EventCreate = () => {
   const handleSubmit = async (formData) => {
     console.log('Creating event:', formData);
     try {
-      console.log('Creating new customer...', formData);
+      console.log('Creating new event...', formData);
       const res = await handleCreateEvent(formData);
       console.log('Create success:', res);
       alert('Event新增成功！');

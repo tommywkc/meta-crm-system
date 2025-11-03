@@ -23,7 +23,7 @@ const EventsEdit = () => {
       alert('更新成功');
       navigate('/events/'+id);
     }catch (error) {
-      console.error('更新失敗:', error);
+      console.error('Update failed:', error);
       alert('更新資料失敗，請稍後再試');
     }
   };
@@ -36,8 +36,8 @@ const EventsEdit = () => {
 
   const handleDelete = async (event_id) => {
     if (window.confirm('Comfire to remove this event?')) {
-      await handleDeleteById(event_id);  // 從後端刪除
-      alert('User deleted successfully');         // 刪除後導回客戶清單
+      await handleDeleteById(event_id);  // remove on the backend
+      alert('User deleted successfully');         // after delete, navigate back to events list
       navigate('/events');
     }
   };

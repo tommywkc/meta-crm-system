@@ -17,7 +17,7 @@ const EventView = () => {
   const [event, setEvent] = useState([]);
   const [isEnrolling, setIsEnrolling] = useState(false);
   
-  // 等待清單 mock 數據
+  // Mock waiting list data
   const mockWaiting = [
     {
       id: 'W1',
@@ -119,7 +119,7 @@ const EventView = () => {
         ) : null}
       </div>
 
-      {/* 等待清單 Table - 只有 Admin 可見 */}
+  {/* Waiting list table - Admin only */}
       {isAdmin && (
         <div style={{ marginTop: 40 }}>
           <h2>等待清單</h2>
