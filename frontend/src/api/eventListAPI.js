@@ -81,11 +81,11 @@ export async function updateEventById(event_id, data) {
   const res = await fetch(`http://localhost:4000/api/events/${event_id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // 讓 cookie 能跨域
+    credentials: 'include', // allow cookies to be sent across origins
     body: JSON.stringify(data)
   });
   if (!res.ok) {
-    // 嘗試讀取後端錯誤訊息
+    // try to read backend error message
     try {
       const err = await res.json();
       throw new Error(err.message || `Failed to update event ${event_id}`);
@@ -114,10 +114,10 @@ export async function deleteEventById(event_id) {
   const res = await fetch(`http://localhost:4000/api/events/${event_id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // 讓 cookie 能跨域
+    credentials: 'include', // allow cookies to be sent across origins
   });
   if (!res.ok) {
-    // 嘗試讀取後端錯誤訊息
+    // try to read backend error message
     try {
       const err = await res.json();
       throw new Error(err.message || `Failed to delete event ${event_id}`);
