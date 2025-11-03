@@ -47,10 +47,10 @@ export async function getEventById(event_id) {
   const res = await fetch(`http://localhost:4000/api/events/${event_id}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // 讓 cookie 能跨域
+    credentials: 'include', // allow cookies to be sent across origins
   });
   if (!res.ok) {
-    // 嘗試讀取後端錯誤訊息
+    // try to read backend error message
     try {
       const err = await res.json();
       throw new Error(err.message || `Failed to fetch event ${event_id}`);
