@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { createEvent, listbyEventsId, findLatestEventId, findByEventId, updateByEventId, removeByEventId } = require('../dao/eventsDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
@@ -9,9 +10,9 @@ const { formatDateTime } = require('../function/dateFormatter');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 
 //handle create new event
-router.post('/events', async (req, res) => {
+router.post('/events', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
-  console.log('Received create event request:', req.body);
+  console.log('Received create event request from user:', req.user.sub, 'with data:', req.body);
 
   const newEvent = emptyToNull(req.body);
 
@@ -39,9 +40,9 @@ router.post('/events', async (req, res) => {
 });
 
 //handle get events list
-router.get('/events', async (req, res) => {
+router.get('/events', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
   try {
-  console.log('Received events list request');
+  console.log('Received events list request from user:', req.user.sub);
 
   const limit = parseInt(req.query.limit) || 100;
   const offset = parseInt(req.query.offset) || 0;
@@ -64,10 +65,10 @@ router.get('/events', async (req, res) => {
 });
 
 //handle get event detail in view
-router.get('/events/:id', async (req, res) => {
+router.get('/events/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
   try {
   const id = parseInt(req.params.id, 10);
-  console.log('Received event data request:', id);
+  console.log('Received event data request:', id, 'from user:', req.user.sub);
 
     if (isNaN(id)) {
       return res.status(400).json({ message: '無效的事件 ID' });
@@ -102,11 +103,11 @@ router.get('/events/:id', async (req, res) => {
 
 
 //handle update event details
-router.put('/events/:id', async (req, res) => {
+router.put('/events/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
   const event_id = req.params.id;
   const updateData = emptyToNull(req.body);
-  console.log('Received update event request:', event_id, updateData);
+  console.log('Received update event request from user:', req.user.sub, 'for event:', event_id);
 
     const existing = await findByEventId(event_id);
     if (!existing) {
@@ -125,11 +126,11 @@ router.put('/events/:id', async (req, res) => {
 
 
 //handle delete Event by id
-router.delete('/events/:id', async (req, res) => {
+router.delete('/events/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
-  console.log('Received delete event request');
+  console.log('Received delete event request from user:', req.user.sub);
   const event_id = req.params.id;
-  console.log('Received delete event request:', event_id);
+  console.log('Deleting event:', event_id);
 
     const existing = await findByEventId(event_id);
     if (!existing) {

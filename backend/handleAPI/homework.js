@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
+const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const azureBlobService = require('../services/azureBlobService');
 
 const router = express.Router();
@@ -9,19 +10,6 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 
 console.log('[HOMEWORK ROUTER] Initializing...');
-
-// Authentication middleware
-function authMiddleware(req, res, next) {
-    const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
-    if (!token) return res.status(401).json({ message: 'Not authenticated' });
-    try {
-        const payload = jwt.verify(token, JWT_SECRET);
-        req.user = payload;
-        next();
-    } catch (err) {
-        return res.status(401).json({ message: 'Invalid token' });
-    }
-}
 
 // Configure multer to use memory storage
 const storage = multer.memoryStorage();
@@ -114,14 +102,8 @@ router.post('/homework/upload', authMiddleware, upload.single('file'), async (re
 
 // Get all homework files (Admin only)
 // This endpoint is prioritized earlier in routing for convenience
-router.get('/homework/files/admin/all', authMiddleware, async (req, res) => {
+router.get('/homework/files/admin/all', authMiddleware, roleMiddleware('admin'), async (req, res) => {
     try {
-    // Check for admin role (case-insensitive)
-    const userRole = req.user.role?.toUpperCase?.() || '';
-        if (userRole !== 'ADMIN') {
-            return res.status(403).json({ error: '只有管理員可以存取此資源' });
-        }
-
         const filesResult = await azureBlobService.listAllFiles('homework');
         
         if (filesResult.success) {

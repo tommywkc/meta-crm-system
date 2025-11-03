@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findLatestId } = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
@@ -12,10 +13,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 
 
 
-router.get('/customers/myqrcode', async (req, res) => {
+router.get('/customers/myqrcode', authMiddleware, async (req, res) => {
   try {
-    const user_id = req.params.id;
-    console.log('Received customer QR code request:', user_id);
+    // User can only view their own QR code
+    const user_id = req.user.sub; // Use authenticated user's ID
+    console.log('Received customer QR code request for user:', user_id);
 
     const customer = await findByUserId(user_id);
     if (!customer) {
@@ -35,9 +37,9 @@ router.get('/customers/myqrcode', async (req, res) => {
 
 
 //handle get customers list
-router.get('/customers', async (req, res) => {
+router.get('/customers', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
   try {
-    console.log('Received customers list request');
+    console.log('Received customers list request from user:', req.user.sub);
 
     // Implement pagination as needed
     const limit = parseInt(req.query.limit) || 100;
@@ -54,10 +56,10 @@ router.get('/customers', async (req, res) => {
 });
 
 //handle get User by id in view customer detail
-router.get('/customers/:id', async (req, res) => {
+router.get('/customers/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
   try {
     const user_id = req.params.id;
-    console.log('Received customer data request:', user_id);
+    console.log('Received customer data request:', user_id, 'from user:', req.user.sub);
 
     const customer = await findByUserId(user_id);
     if (!customer) {
@@ -76,10 +78,10 @@ router.get('/customers/:id', async (req, res) => {
 });
 
 //handle get User by id in edit customer detail
-router.get('/customers/:id/edit', async (req, res) => {
+router.get('/customers/:id/edit', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
     const user_id = req.params.id;
-    console.log('Received customer data (edit) request:', user_id);
+    console.log('Received customer data (edit) request:', user_id, 'from user:', req.user.sub);
 
     const customer = await findByUserId(user_id);
     if (!customer) {
@@ -99,11 +101,11 @@ router.get('/customers/:id/edit', async (req, res) => {
 
 
 //handle update User by id in edit customer detail
-router.put('/customers/:id', async (req, res) => {
+router.put('/customers/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
     const user_id = req.params.id;
     const updateData = emptyToNull(req.body);
-    console.log('Received customer update request:', user_id, updateData);
+    console.log('Received customer update request:', user_id, 'from user:', req.user.sub);
 
     const existing = await findByUserId(user_id);
     if (!existing) {
@@ -130,10 +132,10 @@ function generateQrToken(mobile) {
 }
 
 // Create a new customer
-router.post('/customers', async (req, res) => {
+router.post('/customers', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
     const newCustomer = emptyToNull(req.body);
-    console.log('Received create-customer request:', newCustomer);
+    console.log('Received create-customer request from user:', req.user.sub, 'with data:', newCustomer);
 
     if (!newCustomer.name || !newCustomer.mobile) {
       return res.status(400).json({ message: '缺少必要的客戶資料' });
@@ -163,11 +165,11 @@ router.post('/customers', async (req, res) => {
 });
 
 //handle delete User by id
-router.delete('/customers/:id', async (req, res) => {
+router.delete('/customers/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
-    console.log('Received delete-customer request');
+    console.log('Received delete-customer request from user:', req.user.sub);
     const user_id = req.params.id;
-    console.log('Received delete-customer request for:', user_id);
+    console.log('Deleting customer:', user_id);
 
     const existing = await findByUserId(user_id);
     if (!existing) {

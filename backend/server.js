@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const { initDatabase } = require('./db/pool'); // Import database initialization
+const { authMiddleware, roleMiddleware } = require('./middleware/auth'); // Import auth middleware
 
 
 
@@ -51,32 +52,19 @@ app.use('/api', eventRouter); // Use the event router
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 const ACCESS_EXPIRES = '30m';
 
-
-
+// Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ ok: true });
 });
 
-function authMiddleware(req, res, next) {
-  const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
-  if (!token) return res.status(401).json({ message: 'Not authenticated' });
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
-    next();
-  } catch (err) {
-    return res.status(401).json({ message: 'Invalid token' });
-  }
-}
-
+// Get current user info (protected)
 app.get('/api/me', authMiddleware, (req, res) => {
   res.json({ id: req.user.sub, username: req.user.username, role: req.user.role });
 });
 
 // Example protected admin route
-app.get('/api/admin/data', authMiddleware, (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+app.get('/api/admin/data', authMiddleware, roleMiddleware('admin'), (req, res) => {
   res.json({ secret: 'only admins see this' });
 });
 

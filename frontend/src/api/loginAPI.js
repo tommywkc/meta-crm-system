@@ -37,10 +37,11 @@ export async function handleLogin(e, { username, password, navigate, setError, a
     console.log('Login response:', payload);
     const user = payload.user || payload;
 
-    const role = (user.role || '').toUpperCase();
-    if (role === 'ADMIN') {
+    // 使用小寫角色名稱進行比較（與 backend 統一）
+    const role = (user.role || '').toLowerCase();
+    if (role === 'admin') {
       navigate('/admin');
-    } else if (role === 'SALES' || role === 'LEADER') {
+    } else if (role === 'sales' || role === 'leader') {
       navigate('/sales');
     } else {
       navigate('/member');
