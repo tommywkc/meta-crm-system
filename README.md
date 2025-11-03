@@ -122,8 +122,6 @@ Open browser and go to http://localhost:3000
    DB_USER=postgres
    DB_PASSWORD=your_postgres_password
    
-   # JWT Configuration
-   JWT_SECRET=your_secure_random_string
    
    # Azure Storage Configuration (for file uploads)
    AZURE_STORAGE_CONNECTION_STRING=your_azure_connection_string
