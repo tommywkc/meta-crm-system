@@ -61,12 +61,12 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/customers" element={
-            <ProtectedRoute allowedRoles={['admin','sales']}>
+            <ProtectedRoute allowedRoles={['admin','sales','leader']}>
               <CustomersList />
             </ProtectedRoute>
           } />
           <Route path="/customers/:id" element={
-            <ProtectedRoute allowedRoles={['admin','sales']}>
+            <ProtectedRoute allowedRoles={['admin','sales','leader']}>
               <CustomerView />
             </ProtectedRoute>
           } />
