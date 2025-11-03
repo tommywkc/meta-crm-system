@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { handleGetById } from '../../api/customersListAPI';
 import Calendar from '../../components/Calendar';
+import { QRCodeCanvas } from 'qrcode.react';
 
 
 
@@ -48,6 +49,14 @@ const CustomerView = () => {
             <div><strong>Tags:</strong> {customer.tags || 'N/A'}</div>
             <div><strong>Special Notes:</strong> {customer.note_special || 'N/A'}</div>
             <div><strong>QR Token:</strong> {customer.qr_token || 'N/A'}</div>
+            <div style={{ marginTop: 20 }}>
+              <strong>QR Code:</strong><br/>
+              {customer.qr_token ? (
+                <QRCodeCanvas value={customer.qr_token} size={100} />
+              ) : (
+                <div>N/A</div>
+              )}
+            </div>
             <div><strong>Created At:</strong> {customer.create_time}</div>
           </div>
           

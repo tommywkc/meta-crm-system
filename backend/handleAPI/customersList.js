@@ -12,6 +12,27 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 
 
 
+router.get('/customers/myqrcode', async (req, res) => {
+  try {
+    const user_id = req.params.id;
+    console.log('收到客戶QRcode請求:', user_id);
+
+    const customer = await findByUserId(user_id);
+    if (!customer) {
+      console.log('未找到客戶:', user_id);
+      return res.status(404).json({ message: '客戶不存在' });
+    }
+    if (customer.create_time) {
+      customer.create_time = formatDateTime(customer.create_time);
+    }
+    console.log('取得客戶QRcode成功:', user_id);
+    res.json({ customer });
+  } catch (error) {
+    console.error('取得客戶資料失敗:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
 
 //handle get customers list
 router.get('/customers', async (req, res) => {

@@ -156,3 +156,7 @@ export async function handleDeleteById(user_id) {
     throw err;
   }
 }
+
+
+//handle get user detail in myqrcode
+
