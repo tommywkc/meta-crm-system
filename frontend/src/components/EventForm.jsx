@@ -150,10 +150,18 @@ const EventForm = ({
         <div style={{ marginBottom: 12 }}>
           <label>價格:</label><br />
           <input
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            style={{ width: '100%', padding: 8 }}
-          />
+              type="text"
+              value={price ?? ''}
+              onChange={(e) => setPrice(e.target.value)}
+              style={{
+                width: '100%',
+                padding: 8,
+                borderColor: !/^\d*$/.test(price || '') ? 'red' : ''
+              }}
+            />
+            {!/^\d*$/.test(price || '') && (
+              <small style={{ color: 'red' }}>請輸入有效的金額（僅限數字）。</small>
+            )}
         </div>
 
         <div style={{ marginBottom: 12 }}>
