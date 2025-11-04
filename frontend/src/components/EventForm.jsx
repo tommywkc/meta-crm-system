@@ -149,19 +149,33 @@ const EventForm = ({
 
         <div style={{ marginBottom: 12 }}>
           <label>價格:</label><br />
-          <input
+          <div style={{ position: 'relative' }}>
+            <span
+              style={{
+                position: 'absolute',
+                left: 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#666'
+              }}
+            >
+              $
+            </span>
+            <input
               type="text"
+              inputMode="numeric"
               value={price ?? ''}
               onChange={(e) => setPrice(e.target.value)}
               style={{
                 width: '100%',
-                padding: 8,
+                padding: '8px 8px 8px 20px', 
                 borderColor: !/^\d*$/.test(price || '') ? 'red' : ''
               }}
             />
-            {!/^\d*$/.test(price || '') && (
-              <small style={{ color: 'red' }}>請輸入有效的金額（僅限數字）。</small>
-            )}
+          </div>
+          {!/^\d*$/.test(price || '') && (
+            <small style={{ color: 'red' }}>請輸入有效的金額（僅限數字）。</small>
+          )}
         </div>
 
         <div style={{ marginBottom: 12 }}>
@@ -213,25 +227,39 @@ const EventForm = ({
         </div>
 
         {/* 狀態與場地費 */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
           <div style={{ flex: 1, marginBottom: 8 }}>
             <label>場地費用:</label><br/>
-            <input
-              type="text"
-              value={roomCost ?? ''}
-              onChange={(e) => setRoomCost(e.target.value)}
-              style={{
-                width: '100%',
-                padding: 8,
-                borderColor: !/^\d*$/.test(roomCost || '') ? 'red' : ''
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <span
+                style={{
+                  position: 'absolute',
+                  left: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#666'
+                }}
+              >
+                $
+              </span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={roomCost ?? ''}
+                onChange={(e) => setRoomCost(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 8px 8px 20px',
+                  borderColor: !/^\d*$/.test(roomCost || '') ? 'red' : ''
+                }}
+              />
+            </div>
             {!/^\d*$/.test(roomCost || '') && (
               <small style={{ color: 'red' }}>請輸入有效的金額（僅限數字）。</small>
             )}
           </div>
 
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, marginBottom: 8 }}>
             <label>狀態:</label><br />
             <select
               value={status}

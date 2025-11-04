@@ -101,7 +101,7 @@ const EventView = () => {
         <div><strong>描述:</strong> {event.description || 'N/A'}</div>
         <div><strong>導師:</strong> {event.speaker_id || 'N/A'}</div>
         <div><strong>地點:</strong> {event.location || 'N/A'}</div>
-        <div><strong>價格:</strong> {event.price || '免費'}</div>
+        <div><strong>價格:</strong> {event.price === null || event.price === undefined ? '免費' : `$ ${event.price}`}</div>
         <div><strong>要求:</strong> {event.requirements || 'N/A'}</div>
         <div><strong>教材:</strong> {event.materials || 'N/A'}</div>
         <div><strong>建立時間:</strong> {event.created_at}</div>
