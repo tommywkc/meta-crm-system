@@ -15,6 +15,9 @@ DROP TABLE IF EXISTS NOTIFICATIONS;
 DROP TABLE IF EXISTS NOTICES;
 DROP TABLE IF EXISTS HOLIDAYS;
 DROP TABLE IF EXISTS USERS;
+DROP SEQUENCE IF EXISTS user_id_seq;
+DROP SEQUENCE IF EXISTS event_id_seq;
+
 
 CREATE TABLE IF NOT EXISTS USERS (
     user_id BIGINT NOT NULL UNIQUE,
@@ -24,7 +27,7 @@ CREATE TABLE IF NOT EXISTS USERS (
     mobile VARCHAR(20) NOT NULL UNIQUE,
     email VARCHAR(100) UNIQUE,
     qr_token VARCHAR(255) UNIQUE,
-    source VARCHAR(100),
+    source VARCHAR(100) DEFAULT 'WhatsApp',
     owner_sales BIGINT,
     team VARCHAR(100),
     tags VARCHAR(100),
@@ -36,13 +39,15 @@ CREATE TABLE IF NOT EXISTS USERS (
 
 
 CREATE TABLE IF NOT EXISTS EVENTS (
-    event_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+    event_id BIGINT NOT NULL UNIQUE,
     type VARCHAR(50) NOT NULL,
     event_name VARCHAR(100) NOT NULL,
     description TEXT,
     datetime_start TIMESTAMP,
     datetime_end TIMESTAMP,
-    capacity INT DEFAULT 60,
+    price INT,
+    capacity INT,
+    remaining_seats INT,
     location VARCHAR(100),
     status VARCHAR(50) DEFAULT 'SCHEDULED',
     room_cost INT,
@@ -148,7 +153,7 @@ CREATE TABLE IF NOT EXISTS PAYMENTS (
 CREATE TABLE IF NOT EXISTS UPLOADS (
     upload_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
     filename VARCHAR(255) NOT NULL,
-    content BYTEA,
+    file_link VARCHAR(500),
     content_type VARCHAR(100),
     upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (upload_id)
@@ -260,13 +265,13 @@ CREATE TABLE IF NOT EXISTS HOLIDAYS (
     FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
-INSERT INTO USERS (user_id, password, role, name, mobile, email) VALUES
-('1','password', 'ADMIN', 'Admin User', '12345678','test@gmail.com'),
-('2','password', 'SALES', 'Sales User', '23456789','test2@gmail.com'),
-('3','password', 'LEADER', 'Leader User', '34567890','test3@gmail.com'),
-('444','password', 'MEMBER', 'Member User', '45678901','test4@gmail.com');
+INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token) VALUES
+('50000', 'password', 'ADMIN', 'Admin User', '12345678','test@gmail.com', 'hewr2ur2kb2kf3f3'),
+('50001', 'password', 'SALES', 'Sales User', '23456789','test2@gmail.com', 'djqw3ji32nl23'),
+('50002', 'password', 'LEADER', 'Leader User', '34567890','test3@gmail.com', '3h2oj2fekjbwfbjk ew'),
+('50003', 'password', 'MEMBER', 'Member User', '45678901','test4@gmail.com', 'ehoi2dho3fnoen');
 
-INSERT INTO EVENTS (type, event_name, description, datetime_start, datetime_end, capacity, location, status, room_cost, speaker_id) VALUES
-('CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 'Room 101', 'SCHEDULED', 200, 1),
-('SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 'Zoom', 'SCHEDULED', 500, 2);
+INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
+('101', '10000', 'CLASS', 'Intro to CRM', 'An introductory class on CRM systems.', '2024-07-01 10:00:00', '2024-07-01 12:00:00', 60, 20, 'Room 101', 'OPEN', 200, 50000),
+('102', NULL, 'SEMINAR', 'Advanced Sales Techniques', 'A seminar on advanced sales strategies.', '2024-07-05 14:00:00', '2024-07-05 16:00:00', 100, 100, 'Zoom', 'SCHEDULED', 500, 50001);
 

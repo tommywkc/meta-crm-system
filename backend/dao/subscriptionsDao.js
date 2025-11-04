@@ -1,3 +1,4 @@
+// Subscriptions DAO — manage user subscriptions to services
 const { query } = require('../db/pool');
 
 async function createSubscription({ user_id, service_id, datetime_start = null, datetime_end = null, account = null, password = null, status = null }) {

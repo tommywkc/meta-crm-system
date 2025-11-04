@@ -1,10 +1,13 @@
 // Minimal Express auth server for local development
+require('dotenv').config();
 const express = require('express');
 // const bcrypt = require('bcrypt'); // Temporarily disabled due to installation issues
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const { initDatabase } = require('./db/pool'); // Import database initialization
+const { authMiddleware, roleMiddleware } = require('./middleware/auth'); // Import auth middleware
+
 
 
 
@@ -20,93 +23,60 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// 加入請求日誌中間件
+// request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
   next();
 });
 
 const loginRouter = require('./handleAPI/login');
-console.log('Login router loaded');  // 確認路由已載入
+console.log('Login router loaded');
 app.use('/api', loginRouter); // Use the login router
 
 // In-memory users for demo (plain text passwords for development only)
 // Passwords: member -> password, sales -> password, admin -> adminpass
 
+const customersRouter = require('./handleAPI/customersList');
+console.log('Customers router loaded');
+app.use('/api', customersRouter); // Use the customers router
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
-const ACCESS_EXPIRES = '30m';
+const homeworkRouter = require('./handleAPI/homework');
+console.log('Homework router loaded');
+app.use('/api', homeworkRouter); // Use the homework router
 
-// function findUserByUsername(username) {
-//   return users.find(u => u.username === username);
-// }
+const eventRouter = require('./handleAPI/eventList');
+console.log('Event router loaded');
+app.use('/api', eventRouter); // Use the event router
 
-// app.post('/api/login', async (req, res) => {
-//   const { username, password } = req.body;
-//   if (!username || !password) return res.status(400).json({ message: 'Missing username or password' });
-
-//   const user = findUserByUsername(username);
-//   if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-
-//   // Simple password comparison for development (replace with bcrypt in production)
-//   const ok = password === user.password;
-//   if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
-
-//   const payload = { sub: user.id, username: user.username, role: user.role };
-//   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_EXPIRES });
-
-//   res.cookie('token', token, {
-//     httpOnly: true,
-//     secure: false, // local dev; set true in production with HTTPS
-//     sameSite: 'lax',
-//     maxAge: 30 * 60 * 1000
-//   });
-
-//   res.json({ id: user.id, username: user.username, role: user.role });
-// });
-
-
-
+// Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ ok: true });
 });
 
-function authMiddleware(req, res, next) {
-  const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
-  if (!token) return res.status(401).json({ message: 'Not authenticated' });
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
-    next();
-  } catch (err) {
-    return res.status(401).json({ message: 'Invalid token' });
-  }
-}
-
+// Get current user info (protected)
 app.get('/api/me', authMiddleware, (req, res) => {
   res.json({ id: req.user.sub, username: req.user.username, role: req.user.role });
 });
 
 // Example protected admin route
-app.get('/api/admin/data', authMiddleware, (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+app.get('/api/admin/data', authMiddleware, roleMiddleware('admin'), (req, res) => {
   res.json({ secret: 'only admins see this' });
 });
 
 const port = process.env.PORT || 4000;
 
-// 啟動 server 前初始化資料庫
+// Initialize the database before starting the server
 async function startServer() {
-    try {
-        await initDatabase();
-        app.listen(port, () => {
-            console.log(`伺服器運行在 port ${port}`);
-        });
-    } catch (err) {
-        console.error('伺服器啟動失敗:', err);
-        process.exit(1);
-    }
+  try {
+    await initDatabase();
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  } catch (err) {
+    console.error('Server start failed:', err);
+    process.exit(1);
+  }
 }
 
 startServer();

@@ -1,3 +1,4 @@
+// Event sessions DAO — helpers for creating and managing event sessions
 const { query } = require('../db/pool');
 
 async function createSession({ event_id, session_name, description = null, datetime_start = null, datetime_end = null, created_by_id }) {

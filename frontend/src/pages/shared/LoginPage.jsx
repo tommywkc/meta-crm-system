@@ -4,14 +4,13 @@ import { redirect, useNavigate } from 'react-router-dom';
 import { handleLogin } from '../../api/loginAPI';
 
 const LoginPage = () => {
-  console.log('LoginPage rendered'); // 確認元件有載入
+  console.log('LoginPage rendered'); // confirm component loaded
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
-  //const { login } = useAuth();
+  const { login: authLogin } = useAuth();
   const navigate = useNavigate();
 
-  // login logic moved to `sendAPI/loginAPI.handleLogin`
 
   return (
     <div style={{ padding: '20px' }}>
@@ -24,7 +23,7 @@ const LoginPage = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={{ margin: '5px' }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError }); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError, authLogin }); }}
           />
         </div>
         <div>
@@ -34,7 +33,7 @@ const LoginPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={{ margin: '5px' }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError }); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError, authLogin }); }}
           />
         </div>
         {error && <div style={{ color: 'red', margin: '8px 0' }}>{error}</div>}
@@ -42,7 +41,7 @@ const LoginPage = () => {
           onClick={() => {
             console.log('Button clicked');
             console.log('Credentials:', { username, password });
-            handleLogin(null, { username, password, navigate, setError });
+            handleLogin(null, { username, password, navigate, setError, authLogin });
           }}
           style={{ margin: '5px' }}
           disabled={!username.trim() || !password}
@@ -51,8 +50,7 @@ const LoginPage = () => {
         </button>
       </div>
       <div style={{ marginTop: 12 }}>
-        <small>Old test accounts: member/password, sales/password, admin/adminpass</small>
-        <small>Test accounts: 1/password, 2/password, 3/password, 444/password</small>
+        <small>Test accounts: 50000/password [admin], 50001/password [sales], 50002/password [leader], 50003/password [member]</small>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+// Session registrations DAO — manage session sign-ups and queries
 const { query } = require('../db/pool');
 
 async function createRegistration({ session_id, user_id, channel = 'MEMBER', registration_by_id, registration_time = null, status = 'REGISTERED', note_special = null, attendance_id = null }) {

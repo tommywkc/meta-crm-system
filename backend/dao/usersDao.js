@@ -1,11 +1,44 @@
+// Users data access object (DAO)
 const { query } = require('../db/pool');
 
-// usersDao: basic CRUD helpers for USERS table
+async function createUser({
+  user_id = null,
+  password,
+  role,
+  name,
+  mobile,
+  email,
+  qr_token = null,
+  source = null,
+  owner_sales = null,
+  team = null,
+  tags = null,
+  note_special = null
+}) {
+  const sql = `
+    INSERT INTO USERS (
+      user_id, password, role, name, mobile, email, qr_token, source,
+      owner_sales, team, tags, note_special
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    RETURNING *;
+  `;
 
-async function createUser({ password, role = 'MEMBER', name, email, qr_token = null, source = null, owner_sales = null, team = null, tags = null, note_special = null }) {
-  const sql = `INSERT INTO USERS (password, role, name, email, qr_token, source, owner_sales, team, tags, note_special)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`;
-  const vals = [password, role, name, email, qr_token, source, owner_sales, team, tags, note_special];
+  const vals = [
+    user_id,
+    password,
+    role,
+    name,
+    mobile,
+    email,
+    qr_token,
+    source,
+    owner_sales,
+    team,
+    tags,
+    note_special
+  ];
+
   const res = await query(sql, vals);
   return res.rows[0];
 }
@@ -25,6 +58,7 @@ async function findUserByMobile(mobile) {
   return res.rows[0] || null;
 }
 
+
 async function updateByUserId(id, fields = {}) {
   const keys = Object.keys(fields);
   if (keys.length === 0) return findByUserId(id);
@@ -42,8 +76,19 @@ async function removeByUserId(id) {
 }
 
 async function listByUsersId(limit = 100, offset = 0) {
-  const res = await query('SELECT * FROM USERS ORDER BY user_id DESC LIMIT $1 OFFSET $2', [limit, offset]);
+  const res = await query('SELECT * FROM USERS ORDER BY user_id ASC LIMIT $1 OFFSET $2', [limit, offset]);
   return res.rows;
 }
 
-module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId };
+async function findLatestId() {
+  try {
+    const sql = `SELECT MAX(user_id) AS latest_id FROM USERS;`;
+    const { rows } = await query(sql);
+    return rows[0]?.latest_id || null;
+  } catch (err) {
+    console.error(`Error finding latest ID in USERS:`, err);
+    throw err;
+  }
+}
+
+module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId, findLatestId };

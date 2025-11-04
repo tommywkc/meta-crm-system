@@ -1,3 +1,4 @@
+// Assignment submissions DAO — database helpers for assignment submissions
 const { query } = require('../db/pool');
 
 async function createSubmission({ assignment_id, user_id, submission_time = null, upload_id, status = 'SUBMITTED', graded_by_id = null, feedback = null }) {

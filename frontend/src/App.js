@@ -9,10 +9,13 @@ import Header from './components/Header';
 import CustomersList from './pages/shared/CustomersList';
 import CustomerView from './pages/shared/CustomerView';
 import CustomerEdit from './pages/admin/CustomerEdit';
+import CustomerCreate from './pages/admin/CustomerCreate';
 import Approvals from './pages/admin/Approvals';
 import Scan from './pages/admin/Scan';
-import Events from './pages/admin/Events';
+import EventList from './pages/shared/EventList';
+import EventCreate from './pages/admin/EventCreate';
 import EventsEdit from './pages/admin/EventsEdit';
+import EventView from './pages/shared/EventView';
 import Download from './pages/admin/Download';
 import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
@@ -27,6 +30,8 @@ import Receipts from './pages/member/Receipts';
 import Requests from './pages/member/Requests';
 import RequestsForm from './pages/member/RequestsForm';
 import Homework from './pages/member/Homework';
+import MyQRcode from './pages/member/MyQRcode';
+import Apply from './pages/shared/Apply';
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -37,10 +42,11 @@ const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   }
 
   // support allowedRole (string) or allowedRoles (array)
-  if (allowedRole && user.role !== allowedRole) {
+  // Case-insensitive role comparison
+  if (allowedRole && user.role?.toLowerCase() !== allowedRole.toLowerCase()) {
     return <Navigate to="/login" />;
   }
-  if (Array.isArray(allowedRoles) && !allowedRoles.includes(user.role)) {
+  if (Array.isArray(allowedRoles) && !allowedRoles.some(role => role.toLowerCase() === user.role?.toLowerCase())) {
     return <Navigate to="/login" />;
   }
 
@@ -55,18 +61,23 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/customers" element={
-            <ProtectedRoute allowedRoles={['admin','sales']}>
+            <ProtectedRoute allowedRoles={['admin','sales','leader']}>
               <CustomersList />
             </ProtectedRoute>
           } />
           <Route path="/customers/:id" element={
-            <ProtectedRoute allowedRoles={['admin','sales']}>
+            <ProtectedRoute allowedRoles={['admin','sales','leader']}>
               <CustomerView />
             </ProtectedRoute>
           } />
           <Route path="/customers/:id/edit" element={
             <ProtectedRoute allowedRole={'admin'}>
               <CustomerEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="/customers/create" element={
+            <ProtectedRoute allowedRole={'admin'}>
+              <CustomerCreate />
             </ProtectedRoute>
           } />
           <Route path="/approvals" element={
@@ -80,13 +91,23 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/events" element={
-            <ProtectedRoute allowedRole="admin">
-              <Events />
+            <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
+              <EventList />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id" element={
+            <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
+              <EventView />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id/apply" element={
+            <ProtectedRoute allowedRoles={["member","sales","leader"]}>
+              <Apply />
             </ProtectedRoute>
           } />
           <Route path="/events/create" element={
             <ProtectedRoute allowedRole="admin">
-              <EventsEdit />
+              <EventCreate />
             </ProtectedRoute>
           } />
           <Route path="/events/:id/edit" element={
@@ -105,7 +126,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/notifications" element={
-            <ProtectedRoute allowedRoles={["admin","sales","member"]}>
+            <ProtectedRoute allowedRoles={["admin","sales","member","leader"]}>
               <Notifications />
             </ProtectedRoute>
           } />
@@ -121,7 +142,7 @@ function App() {
           } />
 
           <Route path="/sales-kpi" element={
-            <ProtectedRoute allowedRole="sales">
+            <ProtectedRoute allowedRoles={["sales","leader"]}>
               <KPI />
             </ProtectedRoute>
           } />
@@ -156,6 +177,11 @@ function App() {
               <Homework />
             </ProtectedRoute>
           } />
+          <Route path="/myqrcode" element={
+            <ProtectedRoute allowedRole="member">
+              <MyQRcode />
+            </ProtectedRoute>
+          } />
           <Route 
             path="/member" 
             element={
@@ -167,7 +193,7 @@ function App() {
           <Route 
             path="/sales" 
             element={
-              <ProtectedRoute allowedRole="sales">
+              <ProtectedRoute allowedRoles={["sales", "leader"]}>
                 <SalesPage />
               </ProtectedRoute>
             } 

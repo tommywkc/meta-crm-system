@@ -1,3 +1,4 @@
+// Requests DAO — handles user/registration requests and workflow
 const { query } = require('../db/pool');
 
 async function createRequest({ registration_id, user_id, action, request_by_id, request_time = null, status = 'PENDING', determine_by_id = null, determine_time = null, remarks = null, under_3bday = null, priority_tier = null }) {

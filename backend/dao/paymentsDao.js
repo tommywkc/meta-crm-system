@@ -1,3 +1,4 @@
+// Payments DAO — handles payment records and queries
 const { query } = require('../db/pool');
 
 async function createPayment({ event_id, user_id, amount, method, status = 'PENDING', paid_time = null, expire_time = null, receipt_number = null, issued_receipt = false, issued_certificate = false }) {

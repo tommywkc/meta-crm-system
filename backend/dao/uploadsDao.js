@@ -1,9 +1,11 @@
+// Uploads data access object (DAO)
 const { query } = require('../db/pool');
 
-async function createUpload({ filename, content = null, content_type = null, upload_time = null }) {
-  const sql = `INSERT INTO UPLOADS (filename, content, content_type, upload_time) VALUES ($1,$2,$3,$4) RETURNING *`;
-  const vals = [filename, content, content_type, upload_time];
-  const res = await query(sql, vals);
+async function createUpload(filename, fileLink, contentType) {
+  const res = await query(
+    'INSERT INTO UPLOADS (filename, file_link, content_type) VALUES ($1, $2, $3) RETURNING *',
+    [filename, fileLink, contentType]
+  );
   return res.rows[0];
 }
 

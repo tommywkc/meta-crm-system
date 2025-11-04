@@ -10,7 +10,7 @@
 ## Prerequisites
 - Node.js (recommended v18+)
 - npm (comes with Node) or yarn
-- Git (if cloning)
+- Git
 
 ## Getting Started
 
@@ -41,17 +41,42 @@ cd meta-crm-system/frontend
 npm install
 ```
 
-### 2) Setup Database
+### 2) Environment Configuration
+
+Copy the environment template and configure your settings:
+
+```bash
+# Navigate to backend folder
+cd meta-crm-system/backend
+
+# Copy the template file
+cp simple.env .env
+
+# Edit .env with your actual configuration
+nano .env  # or use your preferred editor
+```
+
+**Required Environment Variables:**
+- `PORT`: Server port (default: 4000)
+- `DB_HOST`: Database host (default: localhost)
+- `DB_PORT`: Database port (default: 5432)
+- `DB_NAME`: Database name
+- `DB_USER`: Database username
+- `DB_PASSWORD`: Database password
+- `AZURE_STORAGE_CONNECTION_STRING`: Azure Blob Storage connection string
+
+### 3) Setup Database
 Download PostgreSQL & Docker Desktop first
-||||||||||||||||Database Configuration|||||||||||||||||
+```bash
+===Database Configuration===
 Username: postgres
 Password: postgres
 Port: 5432
 Database Name: meta_academy_crm
-|||||||||||||||||||||||||||||||||||||||||||||||||||||||
+```
 
 
-### 3) Start backend
+### 4) Start backend
 
 Execute in backend folder:
 
@@ -61,7 +86,7 @@ npm start
 # Default listening: http://localhost:4000
 ```
 
-### 4) Start frontend
+### 5) Start frontend
 
 Execute in frontend folder:
 
@@ -73,26 +98,40 @@ npm start
 
 Open browser and go to http://localhost:3000
 
-## Built-in test accounts (can login directly)
-- member / password
-- sales  / password
-- admin  / adminpass
+## Environment Configuration Details
 
-## Important routes (commonly used in development)
-- `/login`: Login page
-- `/member`: Member homepage (member role)
-- `/admin`: Admin homepage (admin role)
-- `/sales`: Sales homepage (sales role)
-- `/customers`: Customer list (admin / sales)
-- `/notifications`: Notification center (visible to admin/sales/member)
+### Setting up .env file
 
-## Key file descriptions
-- Frontend (`frontend/src`)
-  - `App.js`: Routing and `ProtectedRoute` (requests `AuthContext` to determine role)
-  - `contexts/AuthContext.jsx`: Handles communication with backend `/api/me`, `/api/login`, `/api/logout` and manages user state
-  - `pages/`: Pages categorized by role (`admin/`, `member/`, `sales/`, `shared/`)
-  - `components/`: Shared components (Header, table components, etc.)
+1. **Copy the template:**
+   ```bash
+   cp backend/simple.env backend/.env
+   ```
 
-- Backend (`backend`)
-  - `server.js`: Simple Express server; uses cookie (httpOnly) to save token by default and implements `authMiddleware`
+2. **Configure your settings:**
+   Edit `backend/.env` with your actual values:
+   
+   ```env
+   # Server Configuration
+   PORT=4000
+   NODE_ENV=development
+   
+   # Database Configuration
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=meta_academy_crm
+   DB_USER=postgres
+   DB_PASSWORD=your_postgres_password
+   
+   
+   # Azure Storage Configuration (for file uploads)
+   AZURE_STORAGE_CONNECTION_STRING=your_azure_connection_string
+   ```
+
+3. **Security Note:**
+   - Never commit `.env` files to version control
+   - Use `simple.env` as a template only
+   - Generate strong, unique values for production
+
+
+
 
