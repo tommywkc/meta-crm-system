@@ -70,7 +70,7 @@ app.get('/api/admin/data', authMiddleware, roleMiddleware('admin'), (req, res) =
 
 const port = process.env.PORT || 4000;
 
-// 啟動 server 前初始化資料庫
+// Initialize the database before starting the server
 async function startServer() {
   try {
     await initDatabase();
