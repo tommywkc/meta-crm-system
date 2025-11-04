@@ -5,33 +5,11 @@ import EventsTable from '../../components/EventsTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
 import { handleListEvents, handleDeleteById } from '../../api/eventListAPI';
 
-const mockClasses = [
-	{
-		id: 'E1',
-		name: 'AI Animation 9A',
-		category: '課堂',
-		schedule: '2025-11-12 19:00',
-		seatsLimit: 60,
-		remainingSeats: 4,
-		status: '公開'
-	},
-	{
-		id: 'E2',
-		name: 'Seminar-SEP-03',
-		category: '講座',
-		schedule: '2025-09-03 14:00',
-		seatsLimit: null,
-		remainingSeats: null,
-		status: '草稿'
-	}
-];
-
 const EventList = () => {
 	const navigate = useNavigate();
 	const { user } = useAuth();
 	const userRole = user?.role?.toLowerCase();
 	const isAdmin = userRole === 'admin';
-	const isMember = userRole === 'member';
 	const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
 	
 	// Pagination and search state

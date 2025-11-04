@@ -2,6 +2,7 @@ export async function createEvent(data) {
   const response = await fetch('http://localhost:4000/api/events', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // allow cookies to be sent across origins
     body: JSON.stringify(data),
   });
   return response.json();
@@ -24,6 +25,7 @@ export async function listEvents() {
     const response = await fetch('http://localhost:4000/api/events', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // allow cookies to be sent across origins
     });
     return response.json();
 }
