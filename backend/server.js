@@ -48,10 +48,6 @@ const eventRouter = require('./handleAPI/eventList');
 console.log('Event router loaded');
 app.use('/api', eventRouter); // Use the event router
 
-// JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
-const ACCESS_EXPIRES = '30m';
-
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');

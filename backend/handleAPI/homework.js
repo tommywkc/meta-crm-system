@@ -1,13 +1,9 @@
 const express = require('express');
 const multer = require('multer');
-const jwt = require('jsonwebtoken');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const azureBlobService = require('../services/azureBlobService');
 
 const router = express.Router();
-
-// JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 
 console.log('[HOMEWORK ROUTER] Initializing...');
 

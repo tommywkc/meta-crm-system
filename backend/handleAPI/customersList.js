@@ -1,15 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findLatestId } = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
 const crypto = require('crypto');
-
-
-// JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 
 
 

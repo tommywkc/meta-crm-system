@@ -36,7 +36,7 @@ export async function handleLogin(e, { username, password, navigate, setError, a
     console.log('Login response:', payload);
     const user = payload.user || payload;
 
-    // Use lowercase role names for comparison (unified with backend)
+    // Use lowercase role names for comparison
     const role = (user.role || '').toLowerCase();
     if (role === 'admin') {
       navigate('/admin');
