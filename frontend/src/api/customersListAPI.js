@@ -5,10 +5,10 @@ export async function listUsers(limit, offset) {
   const res = await fetch('http://localhost:4000/api/customers', {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // 讓 cookie 能跨域
+    credentials: 'include', // allow cookies to be sent across origins
   });
   if (!res.ok) {
-    // 嘗試讀取後端錯誤訊息
+    // try to read backend error message
     try {
       const err = await res.json();
       throw new Error(err.message || 'Failed to fetch customers list');
@@ -36,10 +36,10 @@ export async function getUserById(user_id) {
   const res = await fetch(`http://localhost:4000/api/customers/${user_id}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // 讓 cookie 能跨域
+    credentials: 'include', // allow cookies to be sent across origins
   });
   if (!res.ok) {
-    // 嘗試讀取後端錯誤訊息
+    // try to read backend error message
     try {
       const err = await res.json();
       throw new Error(err.message || `Failed to fetch customer ${user_id}`);
@@ -67,11 +67,11 @@ export async function updateUserById(user_id, data) {
   const res = await fetch(`http://localhost:4000/api/customers/${user_id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // 讓 cookie 能跨域
+    credentials: 'include', // allow cookies to be sent across origins
     body: JSON.stringify(data)
   });
   if (!res.ok) {
-    // 嘗試讀取後端錯誤訊息
+    // try to read backend error message
     try {
       const err = await res.json();
       throw new Error(err.message || `Failed to update customer ${user_id}`);
@@ -99,11 +99,11 @@ export async function createUser(data) {
   const res = await fetch('http://localhost:4000/api/customers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // 讓 cookie 能跨域
+    credentials: 'include', // allow cookies to be sent across origins
     body: JSON.stringify(data)
   });
   if (!res.ok) {
-    // 嘗試讀取後端錯誤訊息
+    // try to read backend error message
     try {
       const err = await res.json();
       throw new Error(err.message || 'Failed to create customer');
@@ -131,10 +131,10 @@ export async function deleteUserById(user_id) {
   const res = await fetch(`http://localhost:4000/api/customers/${user_id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // 讓 cookie 能跨域
+    credentials: 'include', // allow cookies to be sent across origins
   });
   if (!res.ok) {
-    // 嘗試讀取後端錯誤訊息
+    // try to read backend error message
     try {
       const err = await res.json();
       throw new Error(err.message || `Failed to delete customer ${user_id}`);

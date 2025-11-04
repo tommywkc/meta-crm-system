@@ -30,9 +30,9 @@ const CustomersList = () => {
 
   const handleDelete = async (user_id) => {
     if (window.confirm('Comfire to remove this User?')) {
-      await handleDeleteById(user_id);  // 從後端刪除
+      await handleDeleteById(user_id);  // remove from backend
       alert('User deleted successfully');
-      await fetchCustomers();            // 再次拉取後端最新資料
+      await fetchCustomers();            // fetch latest data from backend
     }
   };
 
@@ -81,7 +81,7 @@ const CustomersList = () => {
         </label>
       </div>
 
-      {/* 📋 客戶清單表格 */}
+  {/* 📋 Customers table */}
       <CustomersTable
         customers={pagedCustomers}
         role={authRole}

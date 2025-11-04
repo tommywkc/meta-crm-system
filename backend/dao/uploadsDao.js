@@ -1,3 +1,4 @@
+// Uploads data access object (DAO)
 const { query } = require('../db/pool');
 
 async function createUpload(filename, fileLink, contentType) {

@@ -1,3 +1,4 @@
+// Services DAO — CRUD helpers for service catalog entries
 const { query } = require('../db/pool');
 
 async function createService({ service_name, description = null, price = null, create_time = null, created_by_id = null }) {

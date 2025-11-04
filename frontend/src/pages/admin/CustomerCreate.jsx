@@ -10,10 +10,10 @@ const CustomerCreate = () => {
     console.log('Creating customer:', formData);
     try {
       console.log('Creating new customer...', formData);
-      const res = await handleCreate(formData); // 呼叫 API 建立新客戶
+  const res = await handleCreate(formData); // call API to create a new customer
       console.log('Create success:', res);
-      alert('客戶新增成功！');
-      navigate(`/customers/${res.newId}`);  // 建立完導回new客戶清單
+  alert('客戶新增成功！');
+  navigate(`/customers/${res.newId}`);  // after creation, navigate to the new customer's page
     } catch (err) {
       console.error('Create failed:', err);
       alert('新增客戶失敗，請稍後再試');

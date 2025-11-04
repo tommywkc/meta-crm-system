@@ -1,3 +1,4 @@
+// DAO index — consolidated exports for data access objects
 module.exports = {
   usersDao: require('./usersDao'),
   eventsDao: require('./eventsDao'),

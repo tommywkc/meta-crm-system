@@ -1,109 +1,106 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
+const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findLatestId } = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
 const crypto = require('crypto');
 
 
-// JWT 設定
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 
-
-
-router.get('/customers/myqrcode', async (req, res) => {
+router.get('/customers/myqrcode', authMiddleware, async (req, res) => {
   try {
-    const user_id = req.params.id;
-    console.log('收到客戶QRcode請求:', user_id);
+    // User can only view their own QR code
+    const user_id = req.user.sub; // Use authenticated user's ID
+    console.log('Received customer QR code request for user:', user_id);
 
     const customer = await findByUserId(user_id);
     if (!customer) {
-      console.log('未找到客戶:', user_id);
+      console.log('Customer not found:', user_id);
       return res.status(404).json({ message: '客戶不存在' });
     }
     if (customer.create_time) {
       customer.create_time = formatDateTime(customer.create_time);
     }
-    console.log('取得客戶QRcode成功:', user_id);
+    console.log('Successfully retrieved customer QR code:', user_id);
     res.json({ customer });
   } catch (error) {
-    console.error('取得客戶資料失敗:', error);
+    console.error('Failed to retrieve customer data:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
 
 
 //handle get customers list
-router.get('/customers', async (req, res) => {
+router.get('/customers', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
   try {
-    console.log('收到客戶列表請求');
+    console.log('Received customers list request from user:', req.user.sub);
 
-    // 根據需要實現分頁
+    // Implement pagination as needed
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
 
     const customers = await listByUsersId(limit, offset);
-    console.log(`取得 ${customers.length} 筆客戶資料`);
+    console.log(`Retrieved ${customers.length} customer records`);
 
     res.json({ customers });
   } catch (error) {
-    console.error('取得客戶列表失敗:', error);
+    console.error('Failed to retrieve customers list:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
 
 //handle get User by id in view customer detail
-router.get('/customers/:id', async (req, res) => {
+router.get('/customers/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
   try {
     const user_id = req.params.id;
-    console.log('收到客戶資料請求:', user_id);
+    console.log('Received customer data request:', user_id, 'from user:', req.user.sub);
 
     const customer = await findByUserId(user_id);
     if (!customer) {
-      console.log('未找到客戶:', user_id);
+      console.log('Customer not found:', user_id);
       return res.status(404).json({ message: '客戶不存在' });
     }
     if (customer.create_time) {
       customer.create_time = formatDateTime(customer.create_time);
     }
-    console.log('取得客戶資料成功:', user_id);
+    console.log('Successfully retrieved customer data:', user_id);
     res.json({ customer });
   } catch (error) {
-    console.error('取得客戶資料失敗:', error);
+    console.error('Failed to retrieve customer data:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
 
 //handle get User by id in edit customer detail
-router.get('/customers/:id/edit', async (req, res) => {
+router.get('/customers/:id/edit', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
     const user_id = req.params.id;
-    console.log('收到客戶資料請求:', user_id);
+    console.log('Received customer data (edit) request:', user_id, 'from user:', req.user.sub);
 
     const customer = await findByUserId(user_id);
     if (!customer) {
-      console.log('未找到客戶:', user_id);
+      console.log('Customer not found:', user_id);
       return res.status(404).json({ message: '客戶不存在' });
     }
     if (customer.create_time) {
       customer.create_time = formatDateTime(customer.create_time);
     }
-    console.log('取得客戶資料成功:', user_id);
+    console.log('Successfully retrieved customer data for edit:', user_id);
     res.json({ customer });
   } catch (error) {
-    console.error('取得客戶資料失敗:', error);
+    console.error('Failed to retrieve customer data:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
 
 
 //handle update User by id in edit customer detail
-router.put('/customers/:id', async (req, res) => {
+router.put('/customers/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
     const user_id = req.params.id;
     const updateData = emptyToNull(req.body);
-    console.log('收到更新客戶資料請求:', user_id, updateData);
+    console.log('Received customer update request:', user_id, 'from user:', req.user.sub);
 
     const existing = await findByUserId(user_id);
     if (!existing) {
@@ -112,10 +109,10 @@ router.put('/customers/:id', async (req, res) => {
 
     const updated = await updateByUserId(user_id, updateData);
 
-    console.log('更新客戶資料成功:', user_id);
+    console.log('Successfully updated customer data:', user_id);
     res.json({ message: '客戶資料更新成功', customer: updated });
   } catch (error) {
-    console.error('更新客戶資料失敗:', error);
+    console.error('Failed to update customer data:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
@@ -125,15 +122,15 @@ function generateQrToken(mobile) {
   const timestamp = Date.now().toString();
   const uniqueSource = `${mobile}-${timestamp}-${Math.random()}`;
   const hash = crypto.createHash('sha256').update(uniqueSource).digest('hex');
-  // 可選：縮短為 16～24 位以便 QR 顯示
+  // Optional: shorten to 16–24 chars for QR display convenience
   return hash.substring(0, 24);
 }
 
-//handle create new customer
-router.post('/customers', async (req, res) => {
+// Create a new customer
+router.post('/customers', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
     const newCustomer = emptyToNull(req.body);
-    console.log('收到新增客戶資料請求:', newCustomer);
+    console.log('Received create-customer request from user:', req.user.sub, 'with data:', newCustomer);
 
     if (!newCustomer.name || !newCustomer.mobile) {
       return res.status(400).json({ message: '缺少必要的客戶資料' });
@@ -149,25 +146,25 @@ router.post('/customers', async (req, res) => {
     newCustomer.user_id = (latestId || 49999) + 1;
 
     const createdCustomer = await createUser(newCustomer);
-    console.log('新增客戶資料成功:', createdCustomer.user_id);
+    console.log('Successfully created customer:', createdCustomer.user_id);
     newId = createdCustomer.user_id;
-    //return new customer id to frontend for redirecting to customer detail page
+    // Return the new customer id to frontend for redirecting to customer detail page
     res.status(201).json({
       message: '客戶新增成功',
       newId: createdCustomer.user_id
     });
   } catch (error) {
-    console.error('新增客戶資料失敗:', error);
+    console.error('Failed to create customer:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
 
 //handle delete User by id
-router.delete('/customers/:id', async (req, res) => {
+router.delete('/customers/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
-    console.log('收到刪除客戶資料請求');
+    console.log('Received delete-customer request from user:', req.user.sub);
     const user_id = req.params.id;
-    console.log('收到刪除客戶資料請求:', user_id);
+    console.log('Deleting customer:', user_id);
 
     const existing = await findByUserId(user_id);
     if (!existing) {
@@ -175,10 +172,10 @@ router.delete('/customers/:id', async (req, res) => {
     }
 
     await removeByUserId(user_id);
-    console.log('刪除客戶資料成功:', user_id);
+    console.log('Successfully deleted customer:', user_id);
     res.json({ message: '客戶資料刪除成功' });
   } catch (error) {
-    console.error('刪除客戶資料失敗:', error);
+    console.error('Failed to delete customer data:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });

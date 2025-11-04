@@ -12,25 +12,25 @@ const Files = () => {
 
 	const fetchFiles = async () => {
 		setLoading(true);
-		setError('');
+            setError('');
 		try {
-			// 獲取所有功課檔案（Admin API）
+            	// Fetch all homework files (Admin API)
 			const homeworkRes = await fetch('http://localhost:4000/api/homework/files/admin/all', {
 				method: 'GET',
 				credentials: 'include'
 			});
 			const homeworkData = await homeworkRes.json();
 			
-			if (homeworkData.success) {
-				setHomeworkFiles(homeworkData.files || []);
-			} else {
-				setError(homeworkData.error || '無法獲取功課檔案');
-			}
+				if (homeworkData.success) {
+					setHomeworkFiles(homeworkData.files || []);
+				} else {
+					setError(homeworkData.error || '無法獲取功課檔案');
+				}
 
-			// 可以後續添加證書檔案的 API 調用
-			// const certificateRes = await fetch('http://localhost:4000/api/certificates/files', {...});
+				// Certificate files API call can be added here if needed
+				// const certificateRes = await fetch('http://localhost:4000/api/certificates/files', {...});
 		} catch (err) {
-			console.error('獲取檔案列表失敗:', err);
+			console.error('Failed to fetch file list:', err);
 			setError(`無法獲取檔案列表: ${err.message}`);
 		} finally {
 			setLoading(false);
@@ -51,7 +51,7 @@ const Files = () => {
 				return;
 			}
 
-			// 從 Response Header 中獲取檔案名稱
+			// Get filename from the Response header (if provided)
 			const contentDisposition = response.headers.get('content-disposition');
 			let fileName_download = file.metadata?.originalName || file.name.split('/').pop();
 			
@@ -59,7 +59,7 @@ const Files = () => {
 				fileName_download = contentDisposition.split('filename=')[1].replace(/"/g, '');
 			}
 
-			// 下載檔案
+			// Download the file
 			const blob = await response.blob();
 			const url = window.URL.createObjectURL(blob);
 			const link = document.createElement('a');
@@ -70,7 +70,7 @@ const Files = () => {
 			document.body.removeChild(link);
 			window.URL.revokeObjectURL(url);
 		} catch (err) {
-			console.error('下載檔案失敗:', err);
+			console.error('Download file failed:', err);
 			alert(`下載失敗: ${err.message}`);
 		}
 	};
@@ -89,12 +89,12 @@ const Files = () => {
 			const result = await response.json();
 			if (result.success || response.ok) {
 				alert('檔案已刪除');
-				fetchFiles(); // 重新獲取列表
+				fetchFiles(); // refresh the list
 			} else {
 				alert(`刪除失敗: ${result.error || '未知錯誤'}`);
 			}
 		} catch (err) {
-			console.error('刪除檔案失敗:', err);
+			console.error('Delete file failed:', err);
 			alert(`刪除失敗: ${err.message}`);
 		}
 	};

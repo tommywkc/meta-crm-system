@@ -23,14 +23,14 @@ const Apply = () => {
   const [event, setEvent] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 載入事件信息
+  // Load event information
   useEffect(() => {
     const fetchEvent = async () => {
       try {
         const eventData = await getEventById(id);
         setEvent(eventData.event || null);
       } catch (error) {
-        console.error('取得事件信息失敗:', error);
+        console.error('Failed to load event information:', error);
       }
     };
     if (id) {
@@ -38,7 +38,7 @@ const Apply = () => {
     }
   }, [id]);
 
-  // Member 時自動填入自己的資訊
+  // Auto-fill form with current user info when role is Member
   useEffect(() => {
     if (isMember && user) {
       console.log('User object:', user);
@@ -50,17 +50,17 @@ const Apply = () => {
     }
   }, [isMember, user]);
 
-  // Sales/Leader 時載入 Member 列表
+  // Load member list when role is Sales or Leader
   useEffect(() => {
     if (isSalesOrLeader) {
       const fetchMembers = async () => {
         try {
           const response = await handleList(1000, 0);
-          // 過濾出角色為 member 的用戶
+          // filter users whose role is 'member'
           const memberList = response.customers?.filter(u => u.role?.toLowerCase() === 'member') || [];
           setMembers(memberList);
         } catch (error) {
-          console.error('取得成員列表失敗:', error);
+          console.error('Failed to load members list:', error);
         }
       };
       fetchMembers();
@@ -97,7 +97,7 @@ const Apply = () => {
     setIsSubmitting(true);
 
     try {
-      console.log('報名數據:', {
+      console.log('Registration payload:', {
         eventId: id,
         studentId: formData.studentId,
         studentName: formData.studentName,
@@ -109,7 +109,7 @@ const Apply = () => {
       alert('報名成功！感謝你的參與。');
       navigate('/events');
     } catch (error) {
-      console.error('報名失敗:', error);
+      console.error('Registration failed:', error);
       alert('報名失敗，請稍後重試');
     } finally {
       setIsSubmitting(false);

@@ -15,9 +15,10 @@ const EventView = () => {
   const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
   
   const [event, setEvent] = useState([]);
-  const [isEnrolling, setIsEnrolling] = useState(false);
+  // Note: isEnrolling is for future enrollment loading state
+  const [isEnrolling] = useState(false);
   
-  // 等待清單 mock 數據
+  // Mock waiting list data
   const mockWaiting = [
     {
       id: 'W1',
@@ -85,11 +86,11 @@ const EventView = () => {
       
       <div>
         <div><strong>ID:</strong> {event.event_id}</div>
-        <div><strong>名稱:</strong> {event.name}</div>
-        <div><strong>類別:</strong> {event.category}</div>
-        <div><strong>Start Date:</strong> {event.datetime_start}</div>
-        <div><strong>End Date:</strong> {event.datetime_end}</div>
-        <div><strong>狀態:</strong> {event.status}</div>
+        <div><strong>名稱:</strong> {event.event_name || 'N/A'}</div>
+        <div><strong>類別:</strong> {event.type || 'N/A'}</div>
+        <div><strong>開始時間:</strong> {event.datetime_start || 'N/A'}</div>
+        <div><strong>結束時間:</strong> {event.datetime_end || 'N/A'}</div>
+        <div><strong>狀態:</strong> {event.status || 'N/A'}</div>
         
         {event.capacity && (
           <>
@@ -99,13 +100,11 @@ const EventView = () => {
         )}
         
         <div><strong>描述:</strong> {event.description || 'N/A'}</div>
-        <div><strong>導師:</strong> {event.speaker_id || 'N/A'}</div>
+        <div><strong>講者 ID:</strong> {event.speaker_id || 'N/A'}</div>
         <div><strong>地點:</strong> {event.location || 'N/A'}</div>
-        <div><strong>價格:</strong> {event.price === null || event.price === undefined ? '免費' : `$ ${event.price}`}</div>
-        <div><strong>要求:</strong> {event.requirements || 'N/A'}</div>
-        <div><strong>教材:</strong> {event.materials || 'N/A'}</div>
-        <div><strong>建立時間:</strong> {event.created_at}</div>
-        <div><strong>最後更新:</strong> {event.updated_at}</div>
+        <div><strong>價格:</strong> {event.price ? `$${event.price}` : '免費'}</div>
+        <div><strong>房間費用:</strong> {event.room_cost || 'N/A'}</div>
+        <div><strong>建立時間:</strong> {event.create_time || 'N/A'}</div>
       </div>
       
       <div>
@@ -119,7 +118,7 @@ const EventView = () => {
         ) : null}
       </div>
 
-      {/* 等待清單 Table - 只有 Admin 可見 */}
+  {/* Waiting list table - Admin only */}
       {isAdmin && (
         <div style={{ marginTop: 40 }}>
           <h2>等待清單</h2>

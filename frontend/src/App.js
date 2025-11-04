@@ -42,7 +42,7 @@ const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   }
 
   // support allowedRole (string) or allowedRoles (array)
-  // 大小寫不敏感的角色比較
+  // Case-insensitive role comparison
   if (allowedRole && user.role?.toLowerCase() !== allowedRole.toLowerCase()) {
     return <Navigate to="/login" />;
   }
@@ -61,12 +61,12 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/customers" element={
-            <ProtectedRoute allowedRoles={['admin','sales']}>
+            <ProtectedRoute allowedRoles={['admin','sales','leader']}>
               <CustomersList />
             </ProtectedRoute>
           } />
           <Route path="/customers/:id" element={
-            <ProtectedRoute allowedRoles={['admin','sales']}>
+            <ProtectedRoute allowedRoles={['admin','sales','leader']}>
               <CustomerView />
             </ProtectedRoute>
           } />

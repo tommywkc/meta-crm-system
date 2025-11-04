@@ -1,3 +1,4 @@
+// Assignments data access object (DAO)
 const { query } = require('../db/pool');
 
 async function createAssignment({ session_id, assigned_by_id, assigned_time = null, deadline = null }) {

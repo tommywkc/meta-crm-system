@@ -27,13 +27,13 @@ const Homework = () => {
 			const response = await fetch('http://localhost:4000/api/homework/upload', {
 				method: 'POST',
 				body: formData,
-				credentials: 'include' // 包含 cookies
+				credentials: 'include' // include cookies
 			});
 
 			const result = await response.json();
 
 			if (result.success) {
-				// 更新列表狀態
+				// update list status
 				setList((prev) => prev.map((h) => (
 					h.id === item.id 
 						? { ...h, status: '已上傳', file: result.data.originalName, fileUrl: result.data.url } 
@@ -45,11 +45,11 @@ const Homework = () => {
 				alert(`上傳失敗: ${result.error || '未知錯誤'}`);
 			}
 		} catch (error) {
-			console.error('上傳錯誤:', error);
+			console.error('Upload error:', error);
 			setError('網路錯誤或伺服器無回應');
 			alert('上傳失敗: 網路錯誤或伺服器無回應');
 		} finally {
-			// 結束上傳狀態
+			// end upload state
 			setUploading((s) => {
 				const n = { ...s };
 				delete n[item.id];
@@ -60,9 +60,9 @@ const Homework = () => {
 
 	const handleDownloadFile = async (fileUrl) => {
 		try {
-			// 從 URL 中提取檔案名稱（去掉域名部分）
-			// 例如: https://metaacademyfiles.blob.core.windows.net/homework-files/50003/H1001/xxx.jpg
-			// 提取: 50003/H1001/xxx.jpg
+			// extract file name from URL (remove domain portion)
+			// example: https://metaacademyfiles.blob.core.windows.net/homework-files/50003/H1001/xxx.jpg
+			// extract: 50003/H1001/xxx.jpg
 			const urlParts = fileUrl.split('/homework-files/');
 			const fileName = urlParts[1] || fileUrl.split('/').pop();
 			

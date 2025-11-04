@@ -1,3 +1,4 @@
+// Notices DAO — create and retrieve notice records
 const { query } = require('../db/pool');
 
 async function createNotice({ title, content, target_role = null, create_time = null, created_by_id }) {
