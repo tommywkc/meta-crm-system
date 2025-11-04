@@ -11,8 +11,10 @@ function formatKey(date) {
 const MemberPage = () => {
 	const today = new Date();
 	const todayKey = formatKey(today);
+	
+	// Generate mock events for the calendar
 	const events = {
-		[todayKey]: ['會議：團隊同步 10:00', '提醒：本週作業截止'],
+		[todayKey]: ['課堂: XXXXX', '課堂: XXXXXX'],
 	};
 
 	return (
