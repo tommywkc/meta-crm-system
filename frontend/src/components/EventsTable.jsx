@@ -27,9 +27,9 @@ const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) 
             <td style={thTdStyle}>{event.event_id}</td>
             <td style={thTdStyle}>{event.event_name}</td>
             <td style={thTdStyle}>{event.type}</td>
-            <td style={thTdStyle}>{event.datetime_start}</td>
-            <td style={thTdStyle}>{event.datetime_end}</td>
-            <td style={thTdStyle}>{event.capacity != null ? `餘 ${event.remaining_seats}\/${event.capacity}` : ''}</td>
+            <td style={thTdStyle}>{event.datetime_start != null ? event.datetime_start : 'N/A'}</td>
+            <td style={thTdStyle}>{event.datetime_end != null ? event.datetime_end : 'N/A'}</td>
+            <td style={thTdStyle}>{event.capacity != null ? `餘 ${event.remaining_seats}\/${event.capacity}` : '無限制'}</td>
             <td style={thTdStyle}>{event.status}</td>
             <td style={thTdStyle}>
               <button onClick={() => onView && onView(event.event_id)}>Details</button>
