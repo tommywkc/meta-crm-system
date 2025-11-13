@@ -3,7 +3,8 @@ import CustomersTable from '../../components/CustomersTable';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleList, handleDeleteById } from '../../api/customersListAPI';
-import {UpperSelectContainerStyle, LowerSelectContainerStyle} from '../../styles/SelectStyles';
+import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
+import { searchInputStyle } from '../../styles/TableStyles';
 
 const CustomersList = () => {
   const navigate = useNavigate();
@@ -39,12 +40,18 @@ const CustomersList = () => {
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const startIndex = (page - 1) * limit;
   const pagedCustomers = customers.slice(startIndex, startIndex + limit);
 
   const handleEdit = (user_id) => navigate(`/customers/${user_id}/edit`);
   const handleView = (user_id) => navigate(`/customers/${user_id}`);
+
+  const handleSearch = () => {
+    console.log('Searching for:', searchTerm);
+    // TODO: 實作搜尋邏輯
+  };
 
   return (
     <div style={{ padding: 20 }}>
@@ -57,7 +64,19 @@ const CustomersList = () => {
         </button>
       )}
 
-      <input type="text" placeholder="search..." />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
+        <input 
+          type="text" 
+          placeholder="Input [User ID / Name / Mobile / Email] to search..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+          style={searchInputStyle}
+        />
+        <button onClick={handleSearch}>
+          Search
+        </button>
+      </div>
 
       <div
         style={ UpperSelectContainerStyle }

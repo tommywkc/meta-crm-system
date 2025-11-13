@@ -19,4 +19,13 @@ export const redTextStyle = {
   marginRight: 8
 };
 
+// Search bar styles
+export const searchInputStyle = {
+  flex: 1,
+  padding: '8px 12px',
+  fontSize: '14px',
+  border: '1px solid #ccc',
+  borderRadius: '4px'
+};
+
 export default null;
