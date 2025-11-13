@@ -21,9 +21,9 @@ const CustomerView = () => {
 
   // Mock calendar events for this customer
   const customerEvents = {
-    '2025-11-05': ['課堂: AI Animation 9A'],
-    '2025-11-12': ['講座: Seminar-SEP-03'],
-    '2025-11-20': ['補課: Web Development'],
+    '2025-11-05': ['課堂: XXXXX'],
+    '2025-11-12': ['課堂: XXXX'],
+    '2025-11-20': ['課堂: XXX'],
   };
 
   const isMember = customer.role?.toLowerCase() === 'member';
