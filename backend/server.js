@@ -48,6 +48,10 @@ const eventRouter = require('./handleAPI/eventList');
 console.log('Event router loaded');
 app.use('/api', eventRouter); // Use the event router
 
+const userProfileRouter = require('./handleAPI/userProfile');
+console.log('User profile router loaded');
+app.use('/api', userProfileRouter); // Use the user profile router
+
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');
