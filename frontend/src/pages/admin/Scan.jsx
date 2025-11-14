@@ -64,15 +64,20 @@ const Scan = () => {
 
   useEffect(() => {
     return () => {
-      if (qrRef.current) {
-        qrRef.current.stop().catch(() => {}).finally(() => {
-          qrRef.current.clear().catch(() => {});
-          qrRef.current = null;
-        });
+      if (qrRef?.current?.stop) {
+        Promise.resolve(qrRef.current.stop())
+          .catch(err => console.error('Stop failed:', err))
+          .finally(() => {
+            if (qrRef?.current?.clear) {
+              Promise.resolve(qrRef.current.clear())
+                .catch(err => console.error('Clear failed:', err));
+            }
+            qrRef.current = null;
+          });
       }
     };
   }, []);
-
+  
   return (
     <div style={{ padding: 20 }}>
       <h1>QR Code Scanner</h1>

@@ -412,7 +412,7 @@ const EventForm = ({
               </div>
             )}
 
-            <div className="batch-input-grid">
+            <div style={{ marginBottom: 12 }}>
               <div className="batch-input-group">
                 <label className="batch-input-label">場次名稱（選填）</label>
                 <input
@@ -423,6 +423,9 @@ const EventForm = ({
                   className="batch-input-field"
                 />
               </div>
+            </div>
+
+            <div className="batch-input-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
               <div className="batch-input-group">
                 <label className="batch-input-label">開始時間</label>
                 <input
