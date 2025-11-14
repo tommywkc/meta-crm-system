@@ -89,7 +89,7 @@ const EventList = () => {
 				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
 					<input 
 						type="text" 
-						placeholder="Input [User ID / Name / Mobile / Email] to search..." 
+						placeholder="Input [Event ID / Name] to search..." 
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 						onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
