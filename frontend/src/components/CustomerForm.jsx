@@ -13,6 +13,7 @@ const CustomerForm = ({
   showUserId = false 
 }) => {
   const [password, setPassword] = useState(initialData.password || '');
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState(initialData.name || '');
   const [mobile, setMobile] = useState(initialData.mobile || '');
   const [email, setEmail] = useState(initialData.email || '');
@@ -118,12 +119,20 @@ const CustomerForm = ({
         <div style={{ marginBottom: 8 }}>
           <label>Password:</label>
           <br />
-          <input 
-            type="password"
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            style={{ width: '100%', padding: 8 }} 
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <input 
+              type={showPassword ? "text" : "password"}
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              style={{ flex: 1, padding: 8 }} 
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? 'Hide Password' : 'Show Password'}
+            </button>
+          </div>
         </div>
 
         <div style={{ marginBottom: 8 }}>

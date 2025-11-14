@@ -7,6 +7,7 @@ const LoginPage = () => {
   console.log('LoginPage rendered'); // confirm component loaded
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const { login: authLogin } = useAuth();
   const navigate = useNavigate();
@@ -28,13 +29,21 @@ const LoginPage = () => {
         </div>
         <div>
           <label>Password: </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ margin: '5px' }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError, authLogin }); }}
-          />
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ margin: '5px' }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e, { username, password, navigate, setError, authLogin }); }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? 'Hide Password' : 'Show Password'}
+            </button>
+          </div>
         </div>
         {error && <div style={{ color: 'red', margin: '8px 0' }}>{error}</div>}
         <button

@@ -6,7 +6,7 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete }) => {
     <table style={tableStyle}>
       <thead>
         <tr>
-          <th style={thTdStyle}>UserID</th>
+          <th style={thTdStyle}>User ID</th>
           <th style={thTdStyle}>Name</th>
           <th style={thTdStyle}>Role</th>
           <th style={thTdStyle}>Phone</th>

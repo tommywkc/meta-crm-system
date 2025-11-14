@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import EventsTable from '../../components/EventsTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
+import { searchInputStyle } from '../../styles/TableStyles';
 import { handleListEvents, handleDeleteById } from '../../api/eventListAPI';
 
 const EventList = () => {
@@ -65,6 +66,11 @@ const EventList = () => {
 		}
 	};
 
+	const handleSearch = () => {
+		console.log('Searching for:', searchTerm);
+		// TODO: 實作搜尋邏輯
+	};
+
 		return (
 			<div style={{ padding: 20 }}>
 				<h1>
@@ -80,15 +86,19 @@ const EventList = () => {
 					</button>
 				)}
 
-				<input 
-					type="text" 
-					placeholder="search..." 
-					value={searchTerm}
-					onChange={(e) => {
-						setSearchTerm(e.target.value);
-						setPage(1); // 重置到第一頁
-					}}
-				/>
+				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
+					<input 
+						type="text" 
+						placeholder="Input [Event ID / Name] to search..." 
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+						style={searchInputStyle}
+					/>
+					<button onClick={handleSearch}>
+						Search
+					</button>
+				</div>
 
 				<div style={UpperSelectContainerStyle}>
 					<label>
