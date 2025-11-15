@@ -254,15 +254,12 @@ CREATE TABLE IF NOT EXISTS NOTIFICATIONS (
     FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS HOLIDAYS (
-    holiday_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
-    holiday_name VARCHAR(100) NOT NULL,
-    holiday_date DATE NOT NULL,
-    description TEXT,
-    created_by_id BIGINT,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (holiday_id),
-    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
+CREATE TABLE holidays (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  holiday_date DATE UNIQUE,
+  name_tc VARCHAR(100),
+  uid VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token) VALUES

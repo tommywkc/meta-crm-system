@@ -5,7 +5,8 @@
   "license": "MIT",
   "type": "commonjs",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "import:holidays": "node scripts/import-holidays.js"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.29.1",
@@ -19,6 +20,7 @@
     "uuid": "^13.0.0",
     "qrcode.react": "^3.1.0",
     "html5-qrcode": "^2.3.8",
-    "jwt-decode": "^4.0.0"
+    "jwt-decode": "^4.0.0",
+    "node-fetch": "^2.7.0"
   }
 }
