@@ -78,11 +78,11 @@ const EventList = () => {
 					 isSalesOrLeader ? `講座與課堂名單 (${user.role})` :
 					 '講座與課堂名單 (Member)'}
 				</h1>
-				<p>管理講座與課堂數據和操作。</p>
+		
 
 				{isAdmin && (
 					<button onClick={onCreate}>
-						Create New Event
+						新增講座與課堂
 					</button>
 				)}
 

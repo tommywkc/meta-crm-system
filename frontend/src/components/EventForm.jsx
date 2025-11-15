@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { formatForDisplay } from '../styles/dateFormatter';
+import { formatForDisplay } from '../utils/dateFormatter';
 import { redTextStyle } from '../styles/TableStyles';
 import '../styles/BatchSessionStyles.css';
 
@@ -10,7 +10,7 @@ const EventForm = ({
   onSubmit,
   onCancel,
   submitButtonText = "提交",
-  title = "事件表單",
+  title = "活動表單",
   showEventId = false,
   onDelete = null
 }) => {
@@ -23,7 +23,7 @@ const EventForm = ({
     initialData.datetime_end ? formatForDisplay(initialData.datetime_end) : ''
   );
   const [capacity, setCapacity] = useState(initialData.capacity || 60);
-  const [status, setStatus] = useState(initialData.status || 'SCHEDULED');
+  const [status, setStatus] = useState(initialData.status || '已排程');
   const [location, setLocation] = useState(initialData.location || '');
   const [description, setDescription] = useState(initialData.description || '');
   const [roomCost, setRoomCost] = useState(initialData.room_cost || '');
@@ -50,14 +50,10 @@ const EventForm = ({
     if (initialData && Object.keys(initialData).length > 0) {
       setName(initialData.event_name || '');
       setType(initialData.type || '');
-      setDatetimeStart(
-        initialData.datetime_start ? new Date(initialData.datetime_start).toISOString().slice(0, 16) : ''
-      );
-      setDatetimeEnd(
-        initialData.datetime_end ? new Date(initialData.datetime_end).toISOString().slice(0, 16) : ''
-      );
+      setDatetimeStart(initialData.datetime_start ? formatForDisplay(initialData.datetime_start) : '');
+      setDatetimeEnd(initialData.datetime_end ? formatForDisplay(initialData.datetime_end) : '');
       setCapacity(initialData.capacity || 60);
-      setStatus(initialData.status || 'SCHEDULED');
+      setStatus(initialData.status || '已排程');
       setLocation(initialData.location || '');
       setDescription(initialData.description || '');
       setRoomCost(initialData.room_cost || '');
@@ -171,14 +167,14 @@ const EventForm = ({
         {showEventId && initialData.event_id && (
           <div style={{ marginBottom: 16 }}>
             <p>
-              <strong>Editing Event ID: </strong><br />
+              <strong>編輯活動 ID: </strong><br />
               <u>{initialData.event_id}</u>
             </p>
           </div>
         )}
 
         <div style={{ marginBottom: 12 }}>
-          <label>事件名稱:</label><br />
+          <label>活動名稱:</label><br />
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -356,9 +352,9 @@ const EventForm = ({
               onChange={(e) => setStatus(e.target.value)}
               style={{ width: '100%', padding: 8 }}
             >
-              <option value="SCHEDULED">SCHEDULED</option>
-              <option value="CANCELLED">CANCELLED</option>
-              <option value="OPEN">OPEN</option>
+              <option value="已排程">已排程</option>
+              <option value="進行中">進行中</option>
+              <option value="已完成">已完成</option>
             </select>
           </div>
           
@@ -512,7 +508,7 @@ const EventForm = ({
               onClick={() => onDelete(initialData.event_id)} 
               style={{ ...redTextStyle, marginLeft: 8 }}
             >
-              Delete
+              刪除
             </button>
           )}
         </div>

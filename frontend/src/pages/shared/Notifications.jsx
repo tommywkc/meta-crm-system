@@ -2,9 +2,9 @@ import React from 'react';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 
 const mockNotifications = [
-	{ id: 'N1001', date: '2025-10-28 09:00', title: '系統維護', level: '重要', message: '系統將於 10/30 02:00-04:00 進行維護，屆時可能短暫無法使用。' },
-	{ id: 'N1002', date: '2025-10-20 14:30', title: '新課開班：AI Animation', level: '一般', message: 'AI Animation 9A 班已開班，歡迎報名。' },
-	{ id: 'N1003', date: '2025-09-15 11:20', title: '發票通知', level: '一般', message: '您的電子發票已上傳，可於收據頁下載。' }
+	{ id: 'XXX', date: 'XXX', title: 'XXX', level: 'XXX', message: 'XXX' },
+	{ id: 'XXX', date: 'XXX', title: 'XXX', level: 'XXX', message: 'XXX' },
+	{ id: 'XXX', date: 'XXX', title: 'XXX', level: 'XXX', message: 'XXX' }
 ];
 
 const Notifications = () => {

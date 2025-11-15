@@ -55,12 +55,12 @@ const CustomersList = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Member List</h1>
-      <p>Manage member data and operations (shared by Admin and Sales).</p>
+      <h1>客戶名單</h1>
+      
 
       {authRole === 'ADMIN' && (
         <button onClick={() => navigate('/customers/create')}>
-          Create New User
+          新增客戶
         </button>
       )}
 

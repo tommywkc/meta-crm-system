@@ -101,7 +101,7 @@ const Files = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>Files/Subscription Management (Admin)</h1>
+			<h1>檔案/訂閱管理(Admin)</h1>
 			
 			{error && <p style={{ color: 'red' }}>{error}</p>}
 			{loading && <p>加載中...</p>}

@@ -31,6 +31,7 @@ import Requests from './pages/member/Requests';
 import RequestsForm from './pages/member/RequestsForm';
 import Homework from './pages/member/Homework';
 import MyQRcode from './pages/member/MyQRcode';
+import MemberCalendarPage from './pages/member/Calendar';
 import Apply from './pages/shared/Apply';
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -180,6 +181,11 @@ function App() {
           <Route path="/myqrcode" element={
             <ProtectedRoute allowedRole="member">
               <MyQRcode />
+            </ProtectedRoute>
+          } />
+          <Route path="/mycalendar" element={
+            <ProtectedRoute allowedRole="member">
+              <MemberCalendarPage />
             </ProtectedRoute>
           } />
           <Route 

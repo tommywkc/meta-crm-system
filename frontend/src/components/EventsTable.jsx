@@ -11,14 +11,14 @@ const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) 
     <table style={tableStyle}>
       <thead>
         <tr>
-          <th style={thTdStyle}>Event ID</th>
-          <th style={thTdStyle}>Event Name</th>
-          <th style={thTdStyle}>Type</th>
-          <th style={thTdStyle}>Start Date</th>
-          <th style={thTdStyle}>End Date</th>
-          <th style={thTdStyle}>Capacity</th>
-          <th style={thTdStyle}>Status</th>
-          <th style={thTdStyle}>Action</th>
+          <th style={thTdStyle}>活動編號</th>
+          <th style={thTdStyle}>活動名稱</th>
+          <th style={thTdStyle}>類型</th>
+          <th style={thTdStyle}>開始日期</th>
+          <th style={thTdStyle}>結束日期</th>
+          <th style={thTdStyle}>名額</th>
+          <th style={thTdStyle}>狀態</th>
+          <th style={thTdStyle}>操作</th>
         </tr>
       </thead>
       <tbody>
@@ -27,20 +27,20 @@ const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) 
             <td style={thTdStyle}>{event.event_id}</td>
             <td style={thTdStyle}>{event.event_name}</td>
             <td style={thTdStyle}>{event.type}</td>
-            <td style={thTdStyle}>{event.datetime_start != null ? event.datetime_start : 'N/A'}</td>
-            <td style={thTdStyle}>{event.datetime_end != null ? event.datetime_end : 'N/A'}</td>
-            <td style={thTdStyle}>{event.capacity != null ? `餘 ${event.remaining_seats}\/${event.capacity}` : '無限制'}</td>
+            <td style={thTdStyle}>{event.datetime_start != null ? event.datetime_start : '無'}</td>
+            <td style={thTdStyle}>{event.datetime_end != null ? event.datetime_end : '無'}</td>
+            <td style={thTdStyle}>{event.capacity != null ? `剩餘 ${event.remaining_seats}/${event.capacity}` : '無限制'}</td>
             <td style={thTdStyle}>{event.status}</td>
             <td style={thTdStyle}>
-              <button onClick={() => onView && onView(event.event_id)}>Details</button>
+              <button onClick={() => onView && onView(event.event_id)}>詳情</button>
               {isAdmin ? (
                 <>
-                  <button onClick={() => onEdit && onEdit(event.event_id)} style={{ marginLeft: 8 }}>Edit</button>
-                  <button onClick={() => onDelete && onDelete(event.event_id)} style={{ ...redTextStyle, marginLeft: 8 }}>Delete</button>
+                  <button onClick={() => onEdit && onEdit(event.event_id)} style={{ marginLeft: 8 }}>編輯</button>
+                  <button onClick={() => onDelete && onDelete(event.event_id)} style={{ ...redTextStyle, marginLeft: 8 }}>刪除</button>
                 </>
               ) : isMember || isSalesOrLeader ? (
                 <button onClick={() => onEnroll && onEnroll(event.event_id)} style={{ marginLeft: 8 }}>
-                  {isMember ? '報名' : '報名'}
+                  報名
                 </button>
               ) : null}
             </td>
