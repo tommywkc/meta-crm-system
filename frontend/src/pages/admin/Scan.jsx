@@ -21,7 +21,15 @@ const Scan = () => {
     if (decodedText === lastResult) return;
     console.log('Scanned:', decodedText);
     setLastResult(decodedText);
-  }, [lastResult]);
+    
+    // Show popup for demo with event details
+    const selectedEvent = events.find(ev => String(ev.event_id) === String(selectedEventId));
+    const eventInfo = selectedEvent 
+      ? `${selectedEvent.type} ${selectedEvent.event_id} ${selectedEvent.event_name} (${selectedEvent.datetime_start || ''})`
+      : `活動 ID: ${selectedEventId}`;
+    
+    alert(`簽到成功！\n${eventInfo}\nQR Token: ${decodedText}`);
+  }, [lastResult, selectedEventId, events]);
 
 
   const handleScanFailure = useCallback((err) => {
