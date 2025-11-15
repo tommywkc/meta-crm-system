@@ -51,6 +51,10 @@ app.use('/api', eventRouter); // Use the event router
 const userProfileRouter = require('./handleAPI/userProfile');
 console.log('User profile router loaded');
 app.use('/api', userProfileRouter); // Use the user profile router
+ 
+const eventSessionsRouter = require('./handleAPI/session');
+console.log('Event sessions router loaded');
+app.use('/api', eventSessionsRouter); // Use the event sessions router
 
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
