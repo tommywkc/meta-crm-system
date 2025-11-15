@@ -1,14 +1,19 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { handleListEvents } from '../../api/eventListAPI';
+import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 
 
 
 const Scan = () => {
+  const navigate = useNavigate();
   const qrRef = useRef(null);          
   const hasStartedRef = useRef(false);
   const [scanning, setScanning] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [selectedEventId, setSelectedEventId] = useState('');
 
  
   const handleScanSuccess = useCallback((decodedText) => {
@@ -21,9 +26,25 @@ const Scan = () => {
   const handleScanFailure = useCallback((err) => {
   }, []);
 
+  // 載入活動列表供選擇
+  useEffect(() => {
+    (async () => {
+      try {
+        const payload = await handleListEvents();
+        setEvents(payload?.events || []);
+      } catch (err) {
+        console.error('載入活動清單失敗:', err);
+      }
+    })();
+  }, []);
+
   const startScanning = async () => {
     if (scanning || hasStartedRef.current) return;
     setErrorMsg(null);
+    if (!selectedEventId) {
+      setErrorMsg('請先選擇要簽到的活動');
+      return;
+    }
     try {
       if (!qrRef.current) {
         qrRef.current = new Html5Qrcode('reader');
@@ -62,6 +83,26 @@ const Scan = () => {
     }
   };
 
+  // 現場快速登記：停止掃描並導向到建立客戶頁
+  const handleQuickRegister = async () => {
+    try {
+      await stopScanning();
+    } catch (_) {}
+
+    // 將所選活動資訊一併帶到建立頁，供「來源」欄位預填
+    const ev = events.find((e) => String(e.event_id) === String(selectedEventId));
+    const sourceEvent = ev
+      ? {
+          event_id: ev.event_id,
+          event_name: ev.event_name,
+          datetime_start: ev.datetime_start,
+          type: ev.type,
+        }
+      : null;
+
+    navigate('/customers/create', { state: { from: 'scan', sourceEvent } });
+  };
+
   useEffect(() => {
     return () => {
       if (qrRef?.current?.stop) {
@@ -82,18 +123,49 @@ const Scan = () => {
     <div style={{ padding: 20 }}>
       <h1>QR Code Scanner</h1>
 
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
-        <button type="button" onClick={startScanning} disabled={scanning}>
+      {/* Event select bar */}
+      <div style={{ marginBottom: 12 }}>
+        <label style={{ marginRight: 8 }}>
+          選擇簽到活動：
+        </label>
+        <select
+          value={selectedEventId}
+          onChange={(e) => setSelectedEventId(e.target.value)}
+          style={{ padding: 6, minWidth: 260 }}
+        >
+          <option value="">請選擇活動</option>
+          {events.map((ev) => (
+            <option key={ev.event_id} value={ev.event_id}>
+              {ev.event_id} - {ev.event_name} {ev.datetime_start ? `(${ev.datetime_start})` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button type="button" onClick={startScanning} disabled={scanning || !selectedEventId}>
           {scanning ? 'Scanning...' : 'Start Scanning'}
         </button>
         <button type="button" onClick={stopScanning} disabled={!scanning}>
           Stop Scanning
+        </button>
+        <button
+          type="button"
+          onClick={handleQuickRegister}
+          style={{ marginLeft: 8 }}
+        >
+          現場快速登記
         </button>
       </div>
 
       <div id="reader" style={{ width: 320, minHeight: 240, background: '#00000008', border: '1px solid #ccc' }} />
 
       <div style={{ marginTop: 16 }}>
+        {selectedEventId && (
+          <div style={{ marginBottom: 8, color: '#555' }}>
+            目前簽到活動 ID：<strong>{selectedEventId}</strong>
+          </div>
+        )}
         <strong>Last Result:</strong> {lastResult ? <span style={{ color: 'green' }}>{lastResult}</span> : '---'}
       </div>
       {errorMsg && <div style={{ color: 'red', marginTop: 8 }}>{errorMsg}</div>}
