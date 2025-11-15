@@ -38,7 +38,7 @@ const Header = () => {
     admin: ['customers','events','approvals','waiting','download','scan','reports','files','notifications'],
     sales: ['customers','events','sales_kpi','notifications'],
     leader: ['customers','events','sales_kpi','notifications'], // LEADER 角色與 sales 相同權限
-    member: ['events','payments','receipts','requests','homework','notifications','myqrcode','mycalendar']
+    member: ['mycalendar','events','payments','receipts','requests','homework','notifications','myqrcode']
   };
 
   const pages = rolePages[user.role?.toLowerCase()] || [];
