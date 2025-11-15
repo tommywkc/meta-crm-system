@@ -14,6 +14,7 @@ const Scan = () => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [events, setEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
  
   const handleScanSuccess = useCallback((decodedText) => {
@@ -123,23 +124,37 @@ const Scan = () => {
     <div style={{ padding: 20 }}>
       <h1>QR Code Scanner</h1>
 
-      {/* Event select bar */}
+      {/* Event select bar with type-to-search */}
       <div style={{ marginBottom: 12 }}>
         <label style={{ marginRight: 8 }}>
           選擇簽到活動：
         </label>
-        <select
-          value={selectedEventId}
-          onChange={(e) => setSelectedEventId(e.target.value)}
-          style={{ padding: 6, minWidth: 260 }}
-        >
-          <option value="">請選擇活動</option>
+        <input
+          list="events-list"
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            const match = events.find(ev => 
+              `${ev.event_id} - ${ev.event_name} ${ev.datetime_start ? `(${ev.datetime_start})` : ''}` === e.target.value
+            );
+            if (match) {
+              setSelectedEventId(match.event_id);
+            } else {
+              setSelectedEventId('');
+            }
+          }}
+          onFocus={(e) => {
+            setSearchTerm('');
+            setSelectedEventId('');
+          }}
+          placeholder="輸入或選擇活動..."
+          style={{ padding: 6, minWidth: 400 }}
+        />
+        <datalist id="events-list">
           {events.map((ev) => (
-            <option key={ev.event_id} value={ev.event_id}>
-              {ev.event_id} - {ev.event_name} {ev.datetime_start ? `(${ev.datetime_start})` : ''}
-            </option>
+            <option key={ev.event_id} value={`${ev.event_id} - ${ev.event_name} ${ev.datetime_start ? `(${ev.datetime_start})` : ''}`} />
           ))}
-        </select>
+        </datalist>
       </div>
 
       <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
