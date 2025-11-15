@@ -72,14 +72,14 @@ const CustomersList = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
         <input 
           type="text" 
-          placeholder="Input [User ID / Name / Mobile / Email] to search..." 
+          placeholder="輸入[用戶編號/姓名/角色/電話/電子郵件]來搜尋..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
           style={searchInputStyle}
         />
         <button onClick={handleSearch}>
-          Search
+          搜尋
         </button>
       </div>
 

@@ -54,7 +54,8 @@ router.post('/login', async (req, res) => {
         id: safe.user_id || safe.id, 
         name: safe.name, 
         role: safe.role, 
-        username: safe.email || username 
+        username: safe.email || username,
+        qr_token: user.qr_token
       } 
     });
   } catch (error) {

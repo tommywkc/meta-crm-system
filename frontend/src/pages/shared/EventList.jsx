@@ -89,14 +89,14 @@ const EventList = () => {
 				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
 					<input 
 						type="text" 
-						placeholder="Input [Event ID / Name] to search..." 
+						placeholder="輸入[活動編號/名稱/類型/狀態]來搜尋." 
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 						onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
 						style={searchInputStyle}
 					/>
 					<button onClick={handleSearch}>
-						Search
+						搜尋
 					</button>
 				</div>
 
