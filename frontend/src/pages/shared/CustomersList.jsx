@@ -96,7 +96,7 @@ const CustomersList = () => {
         </label>
 
         <label>
-          Items per page:&nbsp;
+          Users per page:&nbsp;
           <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
             <option value={25}>25</option>
             <option value={50}>50</option>
