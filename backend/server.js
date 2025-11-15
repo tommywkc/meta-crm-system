@@ -82,6 +82,13 @@ const port = process.env.PORT || 4000;
 async function startServer() {
   try {
     await initDatabase();
+    // Start holidays scheduler after DB is ready
+    try {
+      const { startHolidaySchedules } = require('./services/holidayScheduler');
+      startHolidaySchedules();
+    } catch (e) {
+      console.error('Failed to start Holidays Scheduler:', e);
+    }
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
     });
