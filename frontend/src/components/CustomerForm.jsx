@@ -17,7 +17,7 @@ const CustomerForm = ({
   const [name, setName] = useState(initialData.name || '');
   const [mobile, setMobile] = useState(initialData.mobile || '');
   const [email, setEmail] = useState(initialData.email || '');
-  const [role, setRole] = useState(initialData.role || '會員');
+  const [role, setRole] = useState(initialData.role || 'MEMBER');
   const [ownerSales, setOwnerSales] = useState(initialData.owner_sales || '');
   const [team, setTeam] = useState(initialData.team || '');
   const [tags, setTags] = useState(initialData.tags || '');
@@ -42,7 +42,7 @@ const CustomerForm = ({
       setName(initialData.name || '');
       setMobile(initialData.mobile || '');
       setEmail(initialData.email || '');
-      setRole(initialData.role || '會員');
+      setRole(initialData.role || 'MEMBER');
       setSource(initialData.source || '');
       setOwnerSales(initialData.owner_sales || '');
       setTeam(initialData.team || '');

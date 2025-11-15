@@ -27,7 +27,7 @@ const CustomerCreate = () => {
   return (
     <CustomerForm
       title="Create User(Admin)"
-      submitButtonText="Create"
+      submitButtonText="新增"
       onSubmit={handleSubmit}
       onCancel={handleCancel}
     />

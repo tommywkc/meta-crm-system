@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { formatForDisplay } from '../utils/dateFormatter';
+import { formatForDisplay, getTypeDisplay } from '../utils/dateFormatter';
 import { redTextStyle } from '../styles/TableStyles';
 import '../styles/BatchSessionStyles.css';
 
@@ -23,7 +23,7 @@ const EventForm = ({
     initialData.datetime_end ? formatForDisplay(initialData.datetime_end) : ''
   );
   const [capacity, setCapacity] = useState(initialData.capacity || 60);
-  const [status, setStatus] = useState(initialData.status || '已排程');
+  const [status, setStatus] = useState(initialData.status || 'SCHEDULED');
   const [location, setLocation] = useState(initialData.location || '');
   const [description, setDescription] = useState(initialData.description || '');
   const [roomCost, setRoomCost] = useState(initialData.room_cost || '');
@@ -53,7 +53,7 @@ const EventForm = ({
       setDatetimeStart(initialData.datetime_start ? formatForDisplay(initialData.datetime_start) : '');
       setDatetimeEnd(initialData.datetime_end ? formatForDisplay(initialData.datetime_end) : '');
       setCapacity(initialData.capacity || 60);
-      setStatus(initialData.status || '已排程');
+      setStatus(initialData.status || 'SCHEDULED');
       setLocation(initialData.location || '');
       setDescription(initialData.description || '');
       setRoomCost(initialData.room_cost || '');
@@ -74,6 +74,16 @@ const EventForm = ({
   // Serialize datetimes when submitting the event form
   const handleSubmit = (e) => {
   e.preventDefault();
+
+  // 驗證：必填欄位
+  if (!name.trim()) {
+    alert("請輸入活動名稱。");
+    return;
+  }
+  if (!type || type.trim() === '') {
+    alert("請選擇活動類型（課程或講座）。");
+    return;
+  }
 
   // 驗證：結束時間不得早於開始時間
   if (datetimeStart && datetimeEnd && new Date(datetimeEnd) < new Date(datetimeStart)) {
@@ -183,19 +193,18 @@ const EventForm = ({
           />
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <label>類型 (CLASS / SEMINAR):</label><br />
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            style={{ width: '103%', padding: 8 }}
-            required
-          >
-            <option value="">請選擇</option>
-            <option value="CLASS">CLASS</option>
-            <option value="SEMINAR">SEMINAR</option>
-          </select>
-        </div>
+          <div style={{ flex: 1, marginBottom: 8 }}>
+            <label>類型:</label><br />
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              style={{ width: '100%', padding: 8 }}
+            >
+              <option value="">-- 請選擇 --</option>
+              <option value="CLASS">課程</option>
+              <option value="SEMINAR">講座</option>
+            </select>
+          </div>
 
   {/* Date/time inputs */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
@@ -352,9 +361,9 @@ const EventForm = ({
               onChange={(e) => setStatus(e.target.value)}
               style={{ width: '100%', padding: 8 }}
             >
-              <option value="已排程">已排程</option>
-              <option value="進行中">進行中</option>
-              <option value="已完成">已完成</option>
+              <option value="SCHEDULED">已排程</option>
+              <option value="CANCELLED">已取消</option>
+              <option value="OPEN">開放中</option>
             </select>
           </div>
           

@@ -43,7 +43,7 @@ const CustomerEdit = () => {
   return (
     <CustomerForm
       title="Edit User: (Admin)"
-      submitButtonText="Update"
+      submitButtonText="更新"
       initialData={customer}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
