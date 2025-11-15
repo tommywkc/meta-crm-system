@@ -11,6 +11,8 @@ const CustomerView = () => {
   const navigate = useNavigate();
   
   const [customer, setCustomer] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
+  
   useEffect(() => {
     const fetchData = async () => {
       const data = await handleGetById(id);
@@ -38,7 +40,15 @@ const CustomerView = () => {
           <h2>客戶資訊</h2>
           <div style={{ marginTop: 20 }}>
             <div><strong>用戶 ID:</strong> {customer.user_id}</div>
-            <div><strong>密碼:</strong> {customer.password}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <strong>密碼:</strong> 
+              <span>{showPassword ? customer.password : '••••••••'}</span>
+              <button 
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? '隱藏密碼' : '顯示密碼'}
+              </button>
+            </div>
             <div><strong>姓名:</strong> {customer.name}</div>
             <div><strong>手機號碼:</strong> {customer.mobile}</div>
             <div><strong>Email:</strong> {customer.email || 'N/A'}</div>

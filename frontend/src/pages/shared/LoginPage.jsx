@@ -15,10 +15,10 @@ const LoginPage = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h2>Meta Academy CRM System Login</h2>
+      <h2>Meta Academy CRM System 登入</h2>
       <div>
         <div>
-          <label>UserID: </label>
+          <label>用戶編號: </label>
           <input
             type="text"
             value={username}
@@ -28,7 +28,7 @@ const LoginPage = () => {
           />
         </div>
         <div>
-          <label>Password: </label>
+          <label>密碼: </label>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <input
               type={showPassword ? "text" : "password"}
@@ -41,7 +41,7 @@ const LoginPage = () => {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? 'Hide Password' : 'Show Password'}
+              {showPassword ? '隱藏密碼' : '顯示密碼'}
             </button>
           </div>
         </div>
