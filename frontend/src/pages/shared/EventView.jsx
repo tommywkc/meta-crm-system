@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { handleGetById } from '../../api/eventListAPI';
+import { getStatusDisplay, getTypeDisplay } from '../../utils/dateFormatter';
 import WaitingListTable from '../../components/WaitingListTable';
 
 const EventView = () => {
@@ -73,10 +74,10 @@ const EventView = () => {
       <div>
         <div><strong>ID:</strong> {event.event_id}</div>
         <div><strong>名稱:</strong> {event.event_name || 'N/A'}</div>
-        <div><strong>類別:</strong> {event.type || 'N/A'}</div>
+        <div><strong>類別:</strong> {getTypeDisplay(event.type) || 'N/A'}</div>
         <div><strong>開始時間:</strong> {event.datetime_start || 'N/A'}</div>
         <div><strong>結束時間:</strong> {event.datetime_end || 'N/A'}</div>
-        <div><strong>狀態:</strong> {event.status || 'N/A'}</div>
+        <div><strong>狀態:</strong> {getStatusDisplay(event.status) || 'N/A'}</div>
         
         {event.capacity && (
           <>
