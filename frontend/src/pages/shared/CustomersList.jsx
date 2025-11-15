@@ -59,9 +59,14 @@ const CustomersList = () => {
       
 
       {authRole === 'ADMIN' && (
-        <button onClick={() => navigate('/customers/create')}>
-          新增客戶
-        </button>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button onClick={() => navigate('/customers/create')}>
+            新增客戶
+          </button>
+          <button onClick={() => alert('匯入功能開發中')}>
+            匯入客戶Excel
+          </button>
+        </div>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
