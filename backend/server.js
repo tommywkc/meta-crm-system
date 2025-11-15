@@ -56,6 +56,10 @@ const eventSessionsRouter = require('./handleAPI/session');
 console.log('Event sessions router loaded');
 app.use('/api', eventSessionsRouter); // Use the event sessions router
 
+const holidaysRouter = require('./handleAPI/holidays');
+console.log('Holidays router loaded');
+app.use('/api', holidaysRouter); // Use the holidays router
+
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');
@@ -78,6 +82,13 @@ const port = process.env.PORT || 4000;
 async function startServer() {
   try {
     await initDatabase();
+    // Start holidays scheduler after DB is ready
+    try {
+      const { startHolidaySchedules } = require('./services/holidayScheduler');
+      startHolidaySchedules();
+    } catch (e) {
+      console.error('Failed to start Holidays Scheduler:', e);
+    }
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
     });

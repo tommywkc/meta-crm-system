@@ -1,10 +1,17 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { handleCreate } from '../../api/customersListAPI';
 import CustomerForm from '../../components/CustomerForm';
 
 const CustomerCreate = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // 從掃描頁帶入的來源活動，用於預填「來源」欄位（不影響標籤/備註）
+  const sourceEvent = location?.state?.sourceEvent;
+  const formattedSource = sourceEvent
+    ? `現場登記 - ${sourceEvent.type} ${sourceEvent.event_id} ${sourceEvent.event_name || ''}${sourceEvent.datetime_start ? ` (${sourceEvent.datetime_start})` : ''}`.trim()
+    : undefined;
 
   const handleSubmit = async (formData) => {
     console.log('Creating customer:', formData);
@@ -28,6 +35,7 @@ const CustomerCreate = () => {
     <CustomerForm
       title="Create User(Admin)"
       submitButtonText="新增"
+      initialData={{ ...(formattedSource ? { source: formattedSource } : {}) }}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
     />
