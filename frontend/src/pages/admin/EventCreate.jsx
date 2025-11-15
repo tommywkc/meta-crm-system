@@ -1,22 +1,23 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import EventForm from '../../components/EventForm';
-import { handleCreateEvent } from '../../api/eventListAPI';
+import { createEventThenSessions } from '../../api/sessionAPI';
 
 const EventCreate = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (formData) => {
-    console.log('Creating event:', formData);
+    console.log('Creating event with sessions:', formData);
     try {
-      console.log('Creating new event...', formData);
-      const res = await handleCreateEvent(formData);
+      const { sessions = [], ...eventData } = formData || {};
+      // Create event first, then bulk create sessions
+      const res = await createEventThenSessions(eventData, sessions);
       console.log('Create success:', res);
-      alert('Event新增成功！');
-      navigate('/events');// Navigate back to events/:id after "submission"
+      alert('Event 與 場次新增成功！');
+      navigate('/events');
     } catch (err) {
       console.error('Create failed:', err);
-      alert('Event新增失敗，請稍後再試');
+      alert(`新增失敗：${err.message || '請稍後再試'}`);
     }
   };
 
