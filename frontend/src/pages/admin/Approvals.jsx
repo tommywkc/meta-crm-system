@@ -3,40 +3,40 @@ import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 
 const mockData = [
   {
-    id: 'A1',
-    customerName: 'John Chen',
-    customerId: 'C1001',
-    eventName: 'AI Animation',
-    classLabel: '9A',
-    current: '—',
-    applied: '9/19',
-    type: 'Join',
-    salesName: 'Sales Lin',
-    salesTeam: 'Team Alpha',
-    paymentStatus: 'Paid',
-    remainingSeats: 5,
+    id: 'XXX',
+    customerName: 'XXX',
+    customerId: 'XXX',
+    eventName: 'XXX',
+    classLabel: 'XXX',
+    current: 'XXX',
+    applied: 'XXX',
+    type: 'XXX',
+    salesName: 'XXX',
+    salesTeam: 'XXX',
+    paymentStatus: 'XXX',
+    remainingSeats: 'XXX',
     within3Days: false,
     timeConflict: false,
-    priority: 'Makeup',
-    status: 'Pending'
+    priority: 'XXX',
+    status: 'XXX'
   },
   {
-    id: 'B2',
-    customerName: 'Mary Li',
-    customerId: 'C1002',
-    eventName: 'Seminar-SEP-03',
-    classLabel: 'N/A',
-    current: '9/12 19:00',
-    applied: '9/19 19:00',
-    type: 'Reschedule',
-    salesName: 'Manager Zhang',
-    salesTeam: 'Team Beta',
-    paymentStatus: 'Outstanding',
-    remainingSeats: null,
+    id: 'XXX',
+    customerName: 'XXX',
+    customerId: 'XXX',
+    eventName: 'XXX',
+    classLabel: 'XXX',
+    current: 'XXX',
+    applied: 'XXX',
+    type: 'XXX',
+    salesName: 'XXX',
+    salesTeam: 'XXX',
+    paymentStatus: 'XXX',
+    remainingSeats: 'XXX',
     within3Days: true,
     timeConflict: true,
-    priority: 'Retake 1',
-    status: 'Pending'
+    priority: 'XXX',
+    status: 'XXX'
   }
 ];
 
@@ -71,24 +71,25 @@ const Approvals = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>Approval Tasks (Admin)</h1>
+      <h1>審批頁 (Admin)</h1>
 
       <section>
         <table style={tableStyle}>
           <thead>
             <tr>
-              <th style={thTdStyle}>Customer Name</th>
-              <th style={thTdStyle}>Event</th>
-              <th style={thTdStyle}>Current → Applied</th>
-              <th style={thTdStyle}>Request Type</th>
-              <th style={thTdStyle}>Sales</th>
-              <th style={thTdStyle}>Payment Status</th>
-              <th style={thTdStyle}>Check</th>
-              <th style={thTdStyle}>Remaining Seats</th>
-              <th style={thTdStyle}>Within 3 Days</th>
-              <th style={thTdStyle}>Time Conflict</th>
-              <th style={thTdStyle}>Status</th>
-              <th style={thTdStyle}>Actions</th>
+              <th style={thTdStyle}>會員名稱</th>
+              <th style={thTdStyle}>講座/課堂</th>
+              <th style={thTdStyle}>現在時間</th>
+              <th style={thTdStyle}>申請時間</th>
+              <th style={thTdStyle}>申請類型</th>
+              <th style={thTdStyle}>銷售</th>
+              <th style={thTdStyle}>付款狀態</th>
+              <th style={thTdStyle}>檢查</th>
+              <th style={thTdStyle}>剩餘座位</th>
+              <th style={thTdStyle}>三日內</th>
+              <th style={thTdStyle}>時間衝突</th>
+              <th style={thTdStyle}>狀態</th>
+              <th style={thTdStyle}>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -96,7 +97,8 @@ const Approvals = () => {
               <tr key={r.id}>
                 <td style={thTdStyle}>{r.customerName}</td>
                 <td style={thTdStyle}>{r.eventName} {r.classLabel !== 'N/A' ? ` / ${r.classLabel}` : ''}</td>
-                <td style={thTdStyle}>{r.current} → {r.applied}</td>
+                <td style={thTdStyle}>{r.current}</td>
+                <td style={thTdStyle}>{r.applied}</td>
                 <td style={thTdStyle}>{r.type}</td>
                 <td style={thTdStyle}>{r.salesName} / {r.salesTeam}</td>
                 <td style={thTdStyle}>{r.paymentStatus}</td>
@@ -108,17 +110,17 @@ const Approvals = () => {
                 <td style={thTdStyle}>{r.timeConflict ? '!' : ''}</td>
                 <td style={thTdStyle}>{r.status}</td>
                 <td style={thTdStyle}>
-                  <button onClick={() => onApprove(r.id)}>Approve</button>
-                  <button onClick={() => onReject(r.id)}>Reject</button>
+                  <button onClick={() => onApprove(r.id)}>批准</button>
+                  <button onClick={() => onReject(r.id)}>拒絕</button>
                   {r.type === 'Join' && r.remainingSeats != null && (
-                    <button onClick={() => onAddWaitlist(r.id)}>Add to Waiting List</button>
+                    <button onClick={() => onAddWaitlist(r.id)}>加入等待名單</button>
                   )}
                 </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={12}>No matching requests</td>
+                <td colSpan={13}>沒有匹配的申請</td>
               </tr>
             )}
           </tbody>

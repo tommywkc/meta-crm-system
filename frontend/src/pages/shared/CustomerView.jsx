@@ -30,24 +30,24 @@ const CustomerView = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>View Customer</h1>
+      <h1>查看客戶</h1>
       
       <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
   {/* Left: customer information */}
         <div style={{ flex: isMember ? 1 : 'none', maxWidth: isMember ? 'none' : '600px' }}>
-          <h2>Customer Information</h2>
+          <h2>客戶資訊</h2>
           <div style={{ marginTop: 20 }}>
-            <div><strong>User ID:</strong> {customer.user_id}</div>
-            <div><strong>Password:</strong> {customer.password}</div>
-            <div><strong>Name:</strong> {customer.name}</div>
-            <div><strong>Mobile Number:</strong> {customer.mobile}</div>
+            <div><strong>用戶 ID:</strong> {customer.user_id}</div>
+            <div><strong>密碼:</strong> {customer.password}</div>
+            <div><strong>姓名:</strong> {customer.name}</div>
+            <div><strong>手機號碼:</strong> {customer.mobile}</div>
             <div><strong>Email:</strong> {customer.email || 'N/A'}</div>
-            <div><strong>Role:</strong> {customer.role}</div>
-            <div><strong>Source:</strong> {customer.source || 'N/A'}</div>
-            <div><strong>Owner Sales ID:</strong> {customer.owner_sales || 'N/A'}</div>
-            <div><strong>Team:</strong> {customer.team || 'N/A'}</div>
-            <div><strong>Tags:</strong> {customer.tags || 'N/A'}</div>
-            <div><strong>Special Notes:</strong> {customer.note_special || 'N/A'}</div>
+            <div><strong>角色:</strong> {customer.role}</div>
+            <div><strong>來源:</strong> {customer.source || 'N/A'}</div>
+            <div><strong>負責銷售:</strong> {customer.owner_sales || 'N/A'}</div>
+            <div><strong>團隊:</strong> {customer.team || 'N/A'}</div>
+            <div><strong>標籤:</strong> {customer.tags || 'N/A'}</div>
+            <div><strong>特殊備註:</strong> {customer.note_special || 'N/A'}</div>
             <div><strong>QR Token:</strong> {customer.qr_token || 'N/A'}</div>
             <div style={{ marginTop: 20 }}>
               <strong>QR Code:</strong><br/>
@@ -57,19 +57,19 @@ const CustomerView = () => {
                 <div>N/A</div>
               )}
             </div>
-            <div><strong>Created At:</strong> {customer.create_time}</div>
+            <div><strong>建立時間:</strong> {customer.create_time}</div>
           </div>
           
           <div style={{ marginTop: 16 }}>
-            <button style={{ marginRight: 8 }} onClick={() => navigate('/customers')}>Back to List</button>
-            <button onClick={() => navigate(`/customers/${id}/edit`)}>Edit</button>
+            <button style={{ marginRight: 8 }} onClick={() => navigate('/customers')}>返回列表</button>
+            <button onClick={() => navigate(`/customers/${id}/edit`)}>編輯</button>
           </div>
         </div>
 
   {/* Right: calendar (visible to MEMBER only) */}
         {isMember && (
           <div style={{ flex: 1 }}>
-            <h2>Member Calendar</h2>
+            <h2>會員日曆</h2>
             <Calendar events={customerEvents} />
           </div>
         )}

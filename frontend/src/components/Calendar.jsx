@@ -7,7 +7,7 @@ function formatKey(date) {
   return `${y}-${m}-${d}`;
 }
 
-const Weekdays = ['日','一','二','三','四','五','六'];
+const Weekdays = ['日', '一', '二', '三', '四', '五', '六'];
 
 const Calendar = ({ events = {} }) => {
   const [viewDate, setViewDate] = useState(() => {
@@ -50,42 +50,35 @@ const Calendar = ({ events = {} }) => {
         </div>
       </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+      <table style={{ width: '100%', marginTop: 12 }}>
         <thead>
           <tr>
-            {Weekdays.map((w) => <th key={w} style={{ padding: 6, textAlign: 'center' }}>{w}</th>)}
+            {Weekdays.map((day) => (
+              <th key={day} style={{ textAlign: 'center' }}>{day}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {cells.map((week, wi) => (
-            <tr key={wi}>
+          {cells.map((week, i) => (
+            <tr key={i}>
               {week.map((date) => {
                 const key = formatKey(date);
-                const inMonth = date.getMonth() === month;
-                const dayEvents = events[key];
+                const isCurrentMonth = date.getMonth() === month;
+                const isSelected = selected === key;
+                const hasEvent = events[key]?.length > 0;
                 return (
                   <td
                     key={key}
-                    onClick={() => setSelected(key)}
                     style={{
-                      verticalAlign: 'top',
-                      padding: 6,
-                      border: '1px solid #eee',
-                      color: inMonth ? '#000' : '#999',
-                      cursor: 'pointer',
-                      minWidth: 80
+                      textAlign: 'center',
+                      padding: 4,
+                      backgroundColor: isSelected ? '#007bff' : hasEvent ? '#d4edda' : 'transparent',
+                      color: isCurrentMonth ? '#000' : '#ccc',
+                      cursor: 'pointer'
                     }}
+                    onClick={() => setSelected(key)}
                   >
-                    <div>{date.getDate()}</div>
-                    {dayEvents && (
-                      Array.isArray(dayEvents) ? (
-                        <ul style={{ margin: '6px 0 0 14px', padding: 0 }}>
-                          {dayEvents.map((e, i) => <li key={i}>{e}</li>)}
-                        </ul>
-                      ) : (
-                        <div style={{ marginTop: 6 }}>{dayEvents}</div>
-                      )
-                    )}
+                    {date.getDate()}
                   </td>
                 );
               })}
@@ -93,21 +86,6 @@ const Calendar = ({ events = {} }) => {
           ))}
         </tbody>
       </table>
-
-      <div style={{ marginTop: 10 }}>
-        {selected ? (
-          <div>
-            <div>詳情 — {selected}</div>
-            <div>
-              {(events[selected] && (Array.isArray(events[selected]) ? events[selected] : [events[selected]]))?.map((e, i) => (
-                <div key={i}>{e}</div>
-              )) || <div>此日無事件</div>}
-            </div>
-          </div>
-        ) : (
-          <div>按一下日期檢視詳情</div>
-        )}
-      </div>
     </div>
   );
 };

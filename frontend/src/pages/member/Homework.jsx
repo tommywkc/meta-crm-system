@@ -105,7 +105,7 @@ const Homework = () => {
 	return (
 		<div style={{ padding: 20 }}>
 			<h1>作業 / 任務 (Member)</h1>
-			<p>在此上傳你的 Assignment 到 Azure Blob Storage。</p>
+		
 			
 			{error && (
 				<div>

@@ -13,7 +13,7 @@ const Header = () => {
   // Define all possible pages with path and label
   const pagesMap = {
     customers: { path: '/customers', label: '客戶名單' },
-    approvals: { path: '/approvals', label: '批核頁' },
+    approvals: { path: '/approvals', label: '審批頁' },
     scan: { path: '/scan', label: '掃碼簽到' },
     events: { path: '/events', label: '講座與課堂名單' },
     download: { path: '/download', label: '下載名單' },
@@ -72,30 +72,30 @@ const Header = () => {
             {(() => {
               const { pathname } = location;
               const map = {
-                '/customers': 'Customers',
-                '/approvals': 'Approvals',
-                '/scan': 'QR Check-in',
-                '/events': 'Create/Edit Events',
-                '/download': 'Download Lists',
-                '/reports': 'Reports Center',
+                '/customers': '客戶名單',
+                '/approvals': '審批頁',
+                '/scan': '掃碼簽到',
+                '/events': '講座與課堂名單',
+                '/download': '下載名單',
+                '/reports': '報表中心',
                 
-                '/waiting': 'Waiting List',
-                '/files': 'Files/Subscription Management',
-                '/notifications': 'Notification Center',
+                '/waiting': '等待清單',
+                '/files': '檔案/訂閱管理',
+                '/notifications': '通知中心',
 
-                '/sales-kpi': 'Team & Personal KPI',
-                '/sales-customers': 'Customers',
+                '/sales-kpi': '團隊&個人 KPI',
+                '/sales-customers': '客戶名單',
 
-                '/payments': 'Payments/Outstanding',
-                '/receipts': 'View Receipts/Certificates',
-                '/requests': 'Makeup/Reschedule/Leave Requests',
-                '/homework': 'Submit Homework',
-                '/myqrcode': 'My QR Code',
+                '/payments': '付款/欠款',
+                '/receipts': '查看收據/證書',
+                '/requests': '覆課/補堂/請假申請',
+                '/homework': '交功課',
+                '/myqrcode': '我的QR code',
 
-                '/member': 'Member Page',
-                '/sales': 'Sales Page',
-                '/admin': 'Admin Page',
-                '/login': 'Login'
+                '/member': '成員頁面',
+                '/sales': '銷售頁面',
+                '/admin': '管理員頁面',
+                '/login': '登入'
               };
 
               // match exact or startsWith for routes with params
@@ -118,7 +118,7 @@ const Header = () => {
   <nav style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'nowrap' }}>
         {pages.length === 0 ? (
           <div style={{ color: '#666' }}>
-            (No buttons configured for this role)
+            (此角色未配置任何按鈕)
             <div style={{ fontSize: 12, marginTop: 8, maxWidth: 420 }}>
               <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{JSON.stringify({ role: user.role, user }, null, 2)}</pre>
             </div>
@@ -132,7 +132,7 @@ const Header = () => {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div>Hi, {user.name}</div>
-        <button onClick={async () => { await logout(); navigate('/login'); }}>Logout</button>
+        <button onClick={async () => { await logout(); navigate('/login'); }}>登出</button>
       </div>
     </header>
   );

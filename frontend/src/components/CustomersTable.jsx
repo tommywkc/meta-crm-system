@@ -6,12 +6,12 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete }) => {
     <table style={tableStyle}>
       <thead>
         <tr>
-          <th style={thTdStyle}>User ID</th>
-          <th style={thTdStyle}>Name</th>
-          <th style={thTdStyle}>Role</th>
-          <th style={thTdStyle}>Phone</th>
-          <th style={thTdStyle}>Email</th>
-          <th style={thTdStyle}>Actions</th>
+          <th style={thTdStyle}>用戶編號</th>
+          <th style={thTdStyle}>姓名</th>
+          <th style={thTdStyle}>角色</th>
+          <th style={thTdStyle}>電話</th>
+          <th style={thTdStyle}>電子郵件</th>
+          <th style={thTdStyle}>操作</th>
         </tr>
       </thead>
       <tbody>
@@ -21,19 +21,18 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete }) => {
             <td style={thTdStyle}>{c.name}</td>
             <td style={thTdStyle}>{c.role}</td>
             <td style={thTdStyle}>{c.mobile}</td>
-            <td style={thTdStyle}>{c.email ? c.email : 'N/A'}</td>
+            <td style={thTdStyle}>{c.email ? c.email : '無'}</td>
             <td style={thTdStyle}>
-              <button onClick={() => onView && onView(c.user_id)}>Details</button>
+              <button onClick={() => onView && onView(c.user_id)}>詳情</button>
               {role === 'ADMIN' && (
                 <>
                   <button style={{ marginLeft: 8 }} onClick={() => onEdit && onEdit(c.user_id)}>
-                    Edit
+                    編輯
                   </button>
                   <button style={{ ...redTextStyle, marginLeft: 8 }} onClick={() => onDelete && onDelete(c.user_id)}>
-                    Delete
+                    刪除
                   </button>
                 </>
-                
               )}
             </td>
           </tr>

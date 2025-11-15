@@ -4,8 +4,8 @@ import { redTextStyle } from '../styles/TableStyles';
 
 
 const CustomerForm = ({ 
-  title, 
-  submitButtonText, 
+  title = "客戶表單", 
+  submitButtonText = "提交", 
   initialData = {}, 
   onSubmit, 
   onCancel, 
@@ -17,7 +17,7 @@ const CustomerForm = ({
   const [name, setName] = useState(initialData.name || '');
   const [mobile, setMobile] = useState(initialData.mobile || '');
   const [email, setEmail] = useState(initialData.email || '');
-  const [role, setRole] = useState(initialData.role || 'MEMBER');
+  const [role, setRole] = useState(initialData.role || '會員');
   const [ownerSales, setOwnerSales] = useState(initialData.owner_sales || '');
   const [team, setTeam] = useState(initialData.team || '');
   const [tags, setTags] = useState(initialData.tags || '');
@@ -25,12 +25,12 @@ const CustomerForm = ({
   const location = useLocation();
   const isCreatePage = location.pathname === '/customers/create';
   const [source, setSource] = useState(
-    isCreatePage ? 'Web' : (initialData.source || '')
+    isCreatePage ? '網頁' : (initialData.source || '')
   );
 
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
-      setSource(initialData.source || (isCreatePage ? 'Web' : ''));
+      setSource(initialData.source || (isCreatePage ? '網頁' : ''));
     }
   }, [initialData, isCreatePage]);
   
@@ -42,7 +42,7 @@ const CustomerForm = ({
       setName(initialData.name || '');
       setMobile(initialData.mobile || '');
       setEmail(initialData.email || '');
-      setRole(initialData.role || 'MEMBER');
+      setRole(initialData.role || '會員');
       setSource(initialData.source || '');
       setOwnerSales(initialData.owner_sales || '');
       setTeam(initialData.team || '');
@@ -74,28 +74,28 @@ const CustomerForm = ({
       <form onSubmit={handleSubmit} style={{ marginTop: 12, maxWidth: 600 }}>
         {showUserId && initialData.user_id && (
           <div>
-            <p><strong>Editing User ID: </strong><br /><u>{initialData.user_id}</u></p>
+            <p><strong>編輯用戶 ID: </strong><br /><u>{initialData.user_id}</u></p>
           </div>
         )}
 
 
         <div style={{ marginBottom: 8 }}>
-          <label><strong>Role:</strong></label>
+          <label><strong>角色:</strong></label>
           <br />
           <select 
             value={role} 
             onChange={(e) => setRole(e.target.value)} 
             style={{ width: '103%', padding: 8 }}
           >
-            <option value="MEMBER">MEMBER</option>
-            <option value="SALES">SALES</option>
-            <option value="LEADER">LEADER</option>
-            <option value="ADMIN">ADMIN</option>
+            <option value="MEMBER">會員</option>
+            <option value="SALES">銷售</option>
+            <option value="LEADER">領導</option>
+            <option value="ADMIN">管理員</option>
           </select>
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Name:</label>
+          <label>姓名:</label>
           <br />
           <input 
             value={name} 
@@ -106,7 +106,7 @@ const CustomerForm = ({
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Mobile Number:</label>
+          <label>手機號碼:</label>
           <br />
           <input 
             value={mobile} 
@@ -117,7 +117,7 @@ const CustomerForm = ({
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Password:</label>
+          <label>密碼:</label>
           <br />
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <input 
@@ -130,13 +130,13 @@ const CustomerForm = ({
               type="button"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? 'Hide Password' : 'Show Password'}
+              {showPassword ? '隱藏密碼' : '顯示密碼'}
             </button>
           </div>
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Email:</label>
+          <label>電子郵件:</label>
           <br />
           <input 
             type="email"
@@ -147,7 +147,7 @@ const CustomerForm = ({
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Source:</label>
+          <label>來源:</label>
           <br />
           <input 
             value={source} 
@@ -158,7 +158,7 @@ const CustomerForm = ({
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Owner Sales:</label><br/>
+          <label>負責銷售:</label><br/>
           <input
             type="text"
             value={ownerSales ?? ''}
@@ -166,12 +166,12 @@ const CustomerForm = ({
             style={{ width: '100%', padding: 8, borderColor: !/^\d*$/.test(ownerSales || '') ? 'red' : '' }}
           />
           {!/^\d*$/.test(ownerSales || '') && (
-            <small style={{ color: 'red' }}>Please only enter sales ID.</small>
+            <small style={{ color: 'red' }}>請只輸入銷售 ID。</small>
           )}
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Team:</label>
+          <label>團隊:</label>
           <br />
           <input 
             value={team} 
@@ -182,7 +182,7 @@ const CustomerForm = ({
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Tags:</label>
+          <label>標籤:</label>
           <br />
           <input 
             value={tags} 
@@ -193,7 +193,7 @@ const CustomerForm = ({
         </div>
 
         <div style={{ marginBottom: 8 }}>
-          <label>Special Notes:</label>
+          <label>特別備註:</label>
           <br />
           <textarea 
             value={specialNotes} 
@@ -211,7 +211,7 @@ const CustomerForm = ({
 
         {showUserId && initialData.create_time && (
           <div style={{ marginBottom: 8 }}>
-            <p><strong>Create Time:</strong><br /><u>{initialData.create_time}</u></p>
+            <p><strong>創建時間:</strong><br /><u>{initialData.create_time}</u></p>
           </div>
         )}
 
@@ -220,7 +220,7 @@ const CustomerForm = ({
             {submitButtonText}
           </button>
           <button type="button" onClick={onCancel} style={{ marginRight: 8 }}>
-            Cancel
+            取消
           </button>
           {onDelete && (
             <button 
@@ -228,7 +228,7 @@ const CustomerForm = ({
               onClick={() => onDelete(initialData.user_id)} 
               style={{ ...redTextStyle, marginLeft: 8 }}
             >
-              Delete
+              刪除
             </button>
           )}
         </div>
