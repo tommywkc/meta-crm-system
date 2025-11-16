@@ -18,14 +18,17 @@ const EventList = () => {
 	const [page, setPage] = useState(1);
 	const [limit, setLimit] = useState(25);
 	const [searchTerm, setSearchTerm] = useState('');
+	const [isSearching, setIsSearching] = useState(false);
 
 	const [events, setEvents] = useState([]);
+	const [filteredEvents, setFilteredEvents] = useState([]);
 
 	useEffect(() => {
 		const fetchData = async () => {
 			// 後端已針對角色處理可見性（member 只回 OPEN）
 			const payload = await handleListEvents(100, 0);
 			setEvents(payload.events || []);
+			setFilteredEvents(payload.events || []);
 		};
 		fetchData();
 	}, []);
@@ -33,14 +36,53 @@ const EventList = () => {
 	const fetchEvents = async () => {
 		const payload = await handleListEvents(100, 0);
 		setEvents(payload.events || []);
+		setFilteredEvents(payload.events || []);
 	};
 
-	// 分頁計算
+	// 搜尋邏輯 - 搜尋活動編號、名稱、類型、狀態
+	const performSearch = (term) => {
+		if (!term.trim()) {
+			setFilteredEvents(events);
+			setIsSearching(false);
+			setPage(1);
+			return;
+		}
+
+		const searchLower = term.toLowerCase();
+		const results = events.filter(event => 
+			(event.event_id && event.event_id.toLowerCase().includes(searchLower)) ||
+			(event.event_name && event.event_name.toLowerCase().includes(searchLower)) ||
+			(event.type && event.type.toLowerCase().includes(searchLower)) ||
+			(event.status && event.status.toLowerCase().includes(searchLower))
+		);
+
+		setFilteredEvents(results);
+		setIsSearching(true);
+		setPage(1);
+	};
+
+	const handleSearch = () => {
+		performSearch(searchTerm);
+	};
+
+	const handleSearchInputChange = (e) => {
+		setSearchTerm(e.target.value);
+	};
+
+	const handleSearchKeyDown = (e) => {
+		if (e.key === 'Enter') {
+			handleSearch();
+		}
+	};
+
+	// 分頁計算 - 基於過濾後的活動
+	const displayedEvents = isSearching ? filteredEvents : events;
 	const startIndex = (page - 1) * limit;
-	const pagedEvents = events.slice(startIndex, startIndex + limit);
-	const totalPages = Math.max(1, Math.ceil(events.length / limit));
+	const pagedEvents = displayedEvents.slice(startIndex, startIndex + limit);
+	const totalPages = Math.max(1, Math.ceil(displayedEvents.length / limit));
 	const canPrev = page > 1;
 	const canNext = page < totalPages;
+	const totalResults = displayedEvents.length;
 	
 	const onCreate = () => {
 		// navigate to create page
@@ -70,11 +112,6 @@ const EventList = () => {
 		}
 	};
 
-	const handleSearch = () => {
-		console.log('Searching for:', searchTerm);
-		// TODO: 實作搜尋邏輯
-	};
-
 		return (
 			<div style={{ padding: 20 }}>
 				<h1>
@@ -90,39 +127,48 @@ const EventList = () => {
 					</button>
 				)}
 
-				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
-					<input 
-						type="text" 
-						placeholder="輸入[活動編號/名稱/類型/狀態]來搜尋." 
-						value={searchTerm}
-						onChange={(e) => setSearchTerm(e.target.value)}
-						onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-						style={searchInputStyle}
-					/>
-					<button onClick={handleSearch}>
-						搜尋
-					</button>
-				</div>
+			<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
+				<input 
+					type="text" 
+					placeholder="輸入[活動編號/名稱/類型/狀態]來搜尋." 
+					value={searchTerm}
+					onChange={handleSearchInputChange}
+					onKeyDown={handleSearchKeyDown}
+					style={searchInputStyle}
+				/>
+				<button onClick={handleSearch}>
+					搜尋
+				</button>
+				{isSearching && (
+					<span style={{ color: '#666', fontSize: '14px' }}>
+						找到 {totalResults} 筆結果
+					</span>
+				)}
+			</div>
 
-				<div style={UpperSelectContainerStyle}>
-					<label>
-						頁數:&nbsp;
-						<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
-							{Array.from({ length: Math.max(1, Math.ceil(events.length / limit)) }, (_, i) => (
-								<option key={i + 1} value={i + 1}>{i + 1}</option>
-							))}
-						</select>
-					</label>
+			<div style={UpperSelectContainerStyle}>
+				<label>
+					頁數:&nbsp;
+					<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+						{Array.from({ length: totalPages }, (_, i) => (
+							<option key={i + 1} value={i + 1}>{i + 1}</option>
+						))}
+					</select>
+				</label>
 
-					<label>
-						每頁活動數量:&nbsp;
-						<select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
-							<option value={25}>25</option>
-							<option value={50}>50</option>
-							<option value={100}>100</option>
-						</select>
-					</label>
-				</div>
+				<label>
+					每頁活動數量:&nbsp;
+					<select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+						<option value={25}>25</option>
+						<option value={50}>50</option>
+						<option value={100}>100</option>
+					</select>
+				</label>
+
+				<span style={{ marginLeft: '20px', color: '#666', fontSize: '14px' }}>
+					顯示 {Math.min(startIndex + 1, totalResults)}-{Math.min(startIndex + limit, totalResults)} / 共 {totalResults} 筆
+				</span>
+			</div>
 
 				{/* 📋 Events table */}
 				<EventsTable
