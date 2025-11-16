@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { handleListEvents } from '../../api/eventListAPI';
+import { handleGetUserByQRToken } from '../../api/customersListAPI';
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 
@@ -9,6 +10,7 @@ const Scan = () => {
   const navigate = useNavigate();
   const qrRef = useRef(null);          
   const hasStartedRef = useRef(false);
+  const lastResultRef = useRef(null);
   const [scanning, setScanning] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -17,31 +19,48 @@ const Scan = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
  
-  const handleScanSuccess = useCallback((decodedText) => {
+  const handleScanSuccess = useCallback(async (decodedText) => {
     console.log('Scanned:', decodedText);
-    
-    // Check if already scanned
-    if (decodedText === lastResult) {
-      alert(`此 QR Code 已簽到過！\n\nQR Token: ${decodedText}`);
+
+    // 先以 QR Token 從後端查詢用戶
+    let customer = null;
+    try {
+      const payload = await handleGetUserByQRToken(decodedText);
+      customer = payload?.customer || null;
+    } catch (err) {
+      console.error('Invalid QR token or fetch failed:', err);
+      alert('無效的 QR Code，請確認後再試。');
       return;
     }
-    
+
+    // 重複掃描檢查
+    if (decodedText === lastResultRef.current) {
+      const userName = customer?.name || '未知用戶';
+      const userId = customer?.user_id ? `（${customer.user_id}）` : '';
+      alert(`此 QR Code 已成功簽到過！\n\n用戶: ${userName}${userId}\nQR Token: ${decodedText}`);
+      return;
+    }
+
+    // 記錄最後一次掃描結果
+    lastResultRef.current = decodedText;
     setLastResult(decodedText);
-    
-    // Show popup for demo with event details
+
+    // 顯示活動資訊 + 用戶名稱
     const selectedEvent = events.find(ev => String(ev.event_id) === String(selectedEventId));
     const eventInfo = selectedEvent 
       ? `${selectedEvent.type} ${selectedEvent.event_id} ${selectedEvent.event_name} (${selectedEvent.datetime_start || ''})`
       : `活動 ID: ${selectedEventId}`;
-    
-    alert(`簽到成功！\n${eventInfo}\nQR Token: ${decodedText}`);
-  }, [lastResult, selectedEventId, events]);
+
+    const userName = customer?.name || '未知用戶';
+    const userId = customer?.user_id ? `（${customer.user_id}）` : '';
+    alert(`簽到成功！\n${eventInfo}\n用戶: ${userName}${userId}\nQR Token: ${decodedText}`);
+  }, [selectedEventId, events]);
 
 
   const handleScanFailure = useCallback((err) => {
   }, []);
 
-  // 載入活動列表供選擇
+
   useEffect(() => {
     (async () => {
       try {
@@ -98,13 +117,12 @@ const Scan = () => {
     }
   };
 
-  // 現場快速登記：停止掃描並導向到建立客戶頁
+  // redirect to quick register page
   const handleQuickRegister = async () => {
     try {
       await stopScanning();
     } catch (_) {}
 
-    // 將所選活動資訊一併帶到建立頁，供「來源」欄位預填
     const ev = events.find((e) => String(e.event_id) === String(selectedEventId));
     const sourceEvent = ev
       ? {
@@ -192,7 +210,12 @@ const Scan = () => {
       <div style={{ marginTop: 16 }}>
         {selectedEventId && (
           <div style={{ marginBottom: 8, color: '#555' }}>
-            目前簽到活動 ID：<strong>{selectedEventId}</strong>
+            目前簽到活動：<strong>
+              {(() => {
+                const ev = events.find(e => String(e.event_id) === String(selectedEventId));
+                return ev ? `${ev.type || ''} ${ev.event_id} ${ev.event_name || ''} ${ev.datetime_start ? `(${ev.datetime_start})` : ''}` : selectedEventId;
+              })()}
+            </strong>
           </div>
         )}
         <strong>Last Result:</strong> {lastResult ? <span style={{ color: 'green' }}>{lastResult}</span> : '---'}

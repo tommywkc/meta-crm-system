@@ -29,9 +29,9 @@ const CustomerEdit = () => {
   };
 
   const handleDelete = async (user_id) => {
-    if (window.confirm('Comfire to remove this User?')) {
+    if (window.confirm('確認要刪除此用戶？')) {
       await handleDeleteById(user_id);  // remove on the backend
-      alert('User deleted successfully');
+      alert('用戶刪除成功');
       navigate('/customers');            // after delete, navigate back to customers list
     }
   };

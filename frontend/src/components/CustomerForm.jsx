@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { redTextStyle } from '../styles/TableStyles';
+import { handleFindUsersByRoles } from '../api/customersListAPI';
 
 
 const CustomerForm = ({ 
@@ -22,6 +23,9 @@ const CustomerForm = ({
   const [team, setTeam] = useState(initialData.team || '');
   const [tags, setTags] = useState(initialData.tags || '');
   const [specialNotes, setSpecialNotes] = useState(initialData.note_special || '');
+  const [salesLeaders, setSalesLeaders] = useState([]);
+  const [salesInput, setSalesInput] = useState('');
+  const [ownerSalesError, setOwnerSalesError] = useState(null);
   const location = useLocation();
   const isCreatePage = location.pathname === '/customers/create';
   const [source, setSource] = useState(
@@ -51,8 +55,43 @@ const CustomerForm = ({
     }
   }, [initialData]);
 
+  // 載入 SALES/LEADER 清單
+  useEffect(() => {
+    (async () => {
+      try {
+        const payload = await handleFindUsersByRoles(['ADMIN', 'SALES', 'LEADER']);
+        setSalesLeaders(payload.customers || []);
+      } catch (err) {
+        console.error('載入銷售/領導清單失敗:', err);
+      }
+    })();
+  }, []);
+
+  // 根據 ownerSales（id）決定顯示文字
+  useEffect(() => {
+    if (!ownerSales) {
+      setSalesInput('');
+      setOwnerSalesError(null);
+      return;
+    }
+    const u = salesLeaders.find(x => String(x.user_id) === String(ownerSales));
+    if (u) {
+      setSalesInput(`${u.user_id} - ${u.name} (${u.role})`);
+      setOwnerSalesError(null);
+    } else {
+      setSalesInput(String(ownerSales));
+      // 若 ownerSales 有值但不在清單中，提示錯誤
+      setOwnerSalesError('此負責銷售 ID 不在銷售/領導清單');
+    }
+  }, [ownerSales, salesLeaders]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    // 驗證負責銷售是否有效（若有輸入）
+    if (ownerSalesError) {
+      alert(ownerSalesError);
+      return;
+    }
     const formData = {
       password,
       name,
@@ -160,13 +199,43 @@ const CustomerForm = ({
         <div style={{ marginBottom: 8 }}>
           <label>負責銷售:</label><br/>
           <input
-            type="text"
-            value={ownerSales ?? ''}
-            onChange={(e) => setOwnerSales(e.target.value)}
-            style={{ width: '100%', padding: 8, borderColor: !/^\d*$/.test(ownerSales || '') ? 'red' : '' }}
+            list="sales-leaders"
+            value={salesInput}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSalesInput(val);
+              const match = salesLeaders.find(u => `${u.user_id} - ${u.name} (${u.role})` === val);
+              if (match) {
+                setOwnerSales(String(match.user_id));
+                setOwnerSalesError(null);
+              } else {
+                const trimmed = val.trim();
+                if (trimmed === '') {
+                  setOwnerSales('');
+                  setOwnerSalesError(null);
+                  return;
+                }
+                if (/^\d+$/.test(trimmed)) {
+                  // 允許直接輸入數字 ID，但需驗證是否存在於清單
+                  setOwnerSales(trimmed);
+                  const exists = salesLeaders.some(u => String(u.user_id) === trimmed);
+                  setOwnerSalesError(exists ? null : '此 ID 不在銷售/領導清單');
+                } else {
+                  setOwnerSales('');
+                  setOwnerSalesError('請輸入銷售 ID（數字），或從清單選擇');
+                }
+              }
+            }}
+            placeholder="輸入銷售ID或從清單選擇"
+            style={{ width: '100%', padding: 8, borderColor: ownerSalesError ? 'red' : '' }}
           />
-          {!/^\d*$/.test(ownerSales || '') && (
-            <small style={{ color: 'red' }}>請只輸入銷售 ID。</small>
+          <datalist id="sales-leaders">
+            {salesLeaders.map(u => (
+              <option key={u.user_id} value={`${u.user_id} - ${u.name} (${u.role})`} />
+            ))}
+          </datalist>
+          {ownerSalesError && (
+            <small style={{ color: 'red' }}>{ownerSalesError}</small>
           )}
         </div>
 

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findLatestId } = require('../dao/usersDao');
+const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findLatestId, findUserByQrToken, findUserByRole} = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
 const crypto = require('crypto');
@@ -179,5 +179,44 @@ router.delete('/customers/:id', authMiddleware, roleMiddleware('admin'), async (
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
+
+//handle get user detail in scan
+router.get('/customers/scan/:qr_token', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+  try {
+    const qr_token = req.params.qr_token;
+    console.log('Received customer scan request with QR token:', qr_token, 'from user:', req.user.sub);
+
+    const customer = await findUserByQrToken(qr_token);
+    if (!customer) {
+      console.log('Customer not found for QR token:', qr_token);
+      return res.status(404).json({ message: '客戶不存在' });
+    }
+    if (customer.create_time) {
+      customer.create_time = formatDateTime(customer.create_time);
+    }
+    console.log('Successfully retrieved customer data from QR token');
+    res.json({ customer });
+  } catch (error) {
+    console.error('Failed to retrieve customer data from QR token:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+//handle find users by role
+router.get('/customers/role/:role', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+  try {
+    const role = req.params.role;
+    console.log('Received find-users-by-role request for role:', role, 'from user:', req.user.sub);
+
+    const customers = await findUserByRole(role);
+    console.log(`Retrieved ${customers.length} users with role ${role}`);
+
+    res.json({ customers });
+  } catch (error) {
+    console.error('Failed to retrieve users by role:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
 
 module.exports = router;

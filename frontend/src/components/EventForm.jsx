@@ -4,6 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { formatForDisplay, getTypeDisplay } from '../utils/dateFormatter';
 import { redTextStyle } from '../styles/TableStyles';
 import '../styles/BatchSessionStyles.css';
+import { handleFindUsersByRoles } from '../api/customersListAPI';
 
 const EventForm = ({
   initialData = {},
@@ -28,6 +29,9 @@ const EventForm = ({
   const [description, setDescription] = useState(initialData.description || '');
   const [roomCost, setRoomCost] = useState(initialData.room_cost || '');
   const [speakerId, setSpeakerId] = useState(initialData.speaker_id || '');
+  const [speakerInput, setSpeakerInput] = useState('');
+  const [speakerError, setSpeakerError] = useState(null);
+  const [speakerCandidates, setSpeakerCandidates] = useState([]);
   const [price, setPrice] = useState(initialData.price || '');
   const [sessions, setSessions] = useState(
     Array.isArray(initialData.sessions)
@@ -71,6 +75,35 @@ const EventForm = ({
     }
   }, [initialData]);
 
+  // 載入可當講者的名單（ADMIN/LEADER/SALES）
+  useEffect(() => {
+    (async () => {
+      try {
+        const { customers } = await handleFindUsersByRoles(['ADMIN', 'LEADER', 'SALES']);
+        setSpeakerCandidates(customers || []);
+      } catch (err) {
+        console.error('載入講者清單失敗:', err);
+      }
+    })();
+  }, []);
+
+  // 根據 speakerId（id）決定顯示文字
+  useEffect(() => {
+    if (!speakerId) {
+      setSpeakerInput('');
+      setSpeakerError(null);
+      return;
+    }
+    const u = speakerCandidates.find(x => String(x.user_id) === String(speakerId));
+    if (u) {
+      setSpeakerInput(`${u.user_id} - ${u.name} (${u.role})`);
+      setSpeakerError(null);
+    } else {
+      setSpeakerInput(String(speakerId));
+      setSpeakerError('此講者 ID 不在講者清單');
+    }
+  }, [speakerId, speakerCandidates]);
+
   // Serialize datetimes when submitting the event form
   const handleSubmit = (e) => {
   e.preventDefault();
@@ -92,6 +125,10 @@ const EventForm = ({
   }
 
   // 轉換多場次資料
+  if (speakerError) {
+    alert(speakerError);
+    return;
+  }
   const sessionsPayload = sessions
     .filter(s => s.datetime_start)
     .map(s => {
@@ -288,17 +325,42 @@ const EventForm = ({
           <div style={{ flex: 1, marginBottom: 8 }}>
             <label>講者 ID:</label><br/>
             <input
-              type="text"
-              value={speakerId ?? ''}
-              onChange={(e) => setSpeakerId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: 8,
-                borderColor: !/^\d*$/.test(speakerId || '') ? 'red' : ''
+              list="speaker-candidates"
+              value={speakerInput}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSpeakerInput(val);
+                const match = speakerCandidates.find(u => `${u.user_id} - ${u.name} (${u.role})` === val);
+                if (match) {
+                  setSpeakerId(String(match.user_id));
+                  setSpeakerError(null);
+                } else {
+                  const trimmed = val.trim();
+                  if (trimmed === '') {
+                    setSpeakerId('');
+                    setSpeakerError(null);
+                    return;
+                  }
+                  if (/^\d+$/.test(trimmed)) {
+                    setSpeakerId(trimmed);
+                    const exists = speakerCandidates.some(u => String(u.user_id) === trimmed);
+                    setSpeakerError(exists ? null : '此 ID 不在講者清單');
+                  } else {
+                    setSpeakerId('');
+                    setSpeakerError('請輸入講者 ID（數字），或從清單選擇');
+                  }
+                }
               }}
+              placeholder="輸入講者ID或從清單選擇"
+              style={{ width: '100%', padding: 8, borderColor: speakerError ? 'red' : '' }}
             />
-            {!/^\d*$/.test(speakerId || '') && (
-              <small style={{ color: 'red' }}>請輸入有效的講者編號（僅限數字）。</small>
+            <datalist id="speaker-candidates">
+              {speakerCandidates.map(u => (
+                <option key={u.user_id} value={`${u.user_id} - ${u.name} (${u.role})`} />
+              ))}
+            </datalist>
+            {speakerError && (
+              <small style={{ color: 'red' }}>{speakerError}</small>
             )}
           </div>
 

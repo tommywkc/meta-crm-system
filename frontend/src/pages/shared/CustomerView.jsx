@@ -12,6 +12,7 @@ const CustomerView = () => {
   
   const [customer, setCustomer] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
+  const [ownerSalesName, setOwnerSalesName] = useState('');
   
   useEffect(() => {
     const fetchData = async () => {
@@ -20,6 +21,25 @@ const CustomerView = () => {
     };
     fetchData();
   }, [id]);
+
+  // Fetch responsible sales/leader name by owner_sales id
+  useEffect(() => {
+    (async () => {
+      const ownerId = customer?.owner_sales;
+      if (!ownerId) {
+        setOwnerSalesName('');
+        return;
+      }
+      try {
+        const data = await handleGetById(ownerId);
+        const name = data?.customer?.name || '';
+        setOwnerSalesName(name);
+      } catch (err) {
+        console.error('Failed to fetch owner sales name:', err);
+        setOwnerSalesName('');
+      }
+    })();
+  }, [customer?.owner_sales]);
 
   // Mock calendar events for this customer
   const customerEvents = {
@@ -54,7 +74,17 @@ const CustomerView = () => {
             <div><strong>Email:</strong> {customer.email || 'N/A'}</div>
             <div><strong>角色:</strong> {customer.role}</div>
             <div><strong>來源:</strong> {customer.source || 'N/A'}</div>
-            <div><strong>負責銷售:</strong> {customer.owner_sales || 'N/A'}</div>
+            <div>
+              <strong>負責銷售:</strong>{' '}
+              {customer.owner_sales
+                ? (
+                  <>
+                    {customer.owner_sales}
+                    {ownerSalesName ? ` - ${ownerSalesName}` : ' (載入中...)'}
+                  </>
+                )
+                : 'N/A'}
+            </div>
             <div><strong>團隊:</strong> {customer.team || 'N/A'}</div>
             <div><strong>標籤:</strong> {customer.tags || 'N/A'}</div>
             <div><strong>特殊備註:</strong> {customer.note_special || 'N/A'}</div>

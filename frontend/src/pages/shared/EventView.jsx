@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { handleGetById } from '../../api/eventListAPI';
+import { handleGetById as handleGetUserById } from '../../api/customersListAPI';
 import { getStatusDisplay, getTypeDisplay } from '../../utils/dateFormatter';
 import WaitingListTable from '../../components/WaitingListTable';
 
@@ -17,6 +18,7 @@ const EventView = () => {
   const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
   
   const [event, setEvent] = useState([]);
+  const [speakerName, setSpeakerName] = useState('');
   // Note: isEnrolling is for future enrollment loading state
   const [isEnrolling] = useState(false);
   
@@ -53,6 +55,25 @@ const EventView = () => {
       fetchData();
     }, [id]);
 
+  // Fetch speaker name by speaker_id
+  useEffect(() => {
+    (async () => {
+      const speakerId = event?.speaker_id;
+      if (!speakerId) {
+        setSpeakerName('');
+        return;
+      }
+      try {
+        const data = await handleGetUserById(speakerId);
+        const name = data?.customer?.name || '';
+        setSpeakerName(name);
+      } catch (err) {
+        console.error('Failed to fetch speaker name:', err);
+        setSpeakerName('');
+      }
+    })();
+  }, [event?.speaker_id]);
+
   const handleEnroll = () => {
     navigate(`/events/${id}/apply`);
   };
@@ -87,7 +108,17 @@ const EventView = () => {
         )}
         
         <div><strong>描述:</strong> {event.description || 'N/A'}</div>
-        <div><strong>講者 ID:</strong> {event.speaker_id || 'N/A'}</div>
+        <div>
+          <strong>講者:</strong>{' '}
+          {event.speaker_id
+            ? (
+              <>
+                {event.speaker_id}
+                {speakerName ? ` - ${speakerName}` : ' (載入中...)'}
+              </>
+            )
+            : 'N/A'}
+        </div>
         <div><strong>地點:</strong> {event.location || 'N/A'}</div>
         <div><strong>價格:</strong> {event.price ? `$ ${event.price}` : '免費'}</div>
         <div><strong>房間費用:</strong> {event.room_cost || 'N/A'}</div>

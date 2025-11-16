@@ -36,6 +36,11 @@ async function findByEventId(id) {
   return res.rows[0] || null;
 }
 
+async function findEventByStatus(status) {
+  const res = await query('SELECT * FROM EVENTS WHERE status = $1', [status]);
+  return res.rows;
+}
+
 async function updateByEventId(id, fields = {}) {
   const keys = Object.keys(fields);
   if (keys.length === 0) return findByEventId(id);
@@ -46,6 +51,7 @@ async function updateByEventId(id, fields = {}) {
   const res = await query(sql, vals);
   return res.rows[0] || null;
 }
+
 
 async function removeByEventId(id) {
   await query('DELETE FROM EVENTS WHERE event_id = $1', [id]);
@@ -68,4 +74,4 @@ async function findLatestEventId() {
   }
 }
 
-module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId, findLatestEventId };
+module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId, findLatestEventId, findEventByStatus };

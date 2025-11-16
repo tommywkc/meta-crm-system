@@ -43,7 +43,6 @@ export async function handleListEvents() {
 }
 
 
-
 export async function getEventById(event_id) {
   console.log(`Fetching event ${event_id} from backend`);
   const res = await fetch(`http://localhost:4000/api/events/${event_id}`, {
