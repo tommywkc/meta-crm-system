@@ -57,7 +57,15 @@ async function findUserByMobile(mobile) {
   const res = await query('SELECT * FROM USERS WHERE mobile = $1', [mobile]);
   return res.rows[0] || null;
 }
+async function findUserByQrToken(qr_token) {
+  const res = await query('SELECT * FROM USERS WHERE qr_token = $1', [qr_token]);
+  return res.rows[0] || null;
+}
 
+async function findUserByRole(role) {
+  const res = await query('SELECT * FROM USERS WHERE role = $1', [role]);
+  return res.rows;
+}
 
 async function updateByUserId(id, fields = {}) {
   const keys = Object.keys(fields);
@@ -91,4 +99,4 @@ async function findLatestId() {
   }
 }
 
-module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId, findLatestId };
+module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId, findLatestId, findUserByQrToken, findUserByRole };

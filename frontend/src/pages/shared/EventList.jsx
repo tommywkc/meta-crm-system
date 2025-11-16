@@ -42,6 +42,9 @@ const EventList = () => {
 	// 分頁計算
 	const startIndex = (page - 1) * limit;
 	const pagedEvents = events.slice(startIndex, startIndex + limit);
+	const totalPages = Math.max(1, Math.ceil(events.length / limit));
+	const canPrev = page > 1;
+	const canNext = page < totalPages;
 	
 	const onCreate = () => {
 		// navigate to create page
@@ -136,14 +139,22 @@ const EventList = () => {
 				/>
 
 				<div style={LowerSelectContainerStyle}>
-					<label>
-						Page:&nbsp;
-						<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
-							{Array.from({ length: Math.max(1, Math.ceil(events.length / limit)) }, (_, i) => (
-								<option key={i + 1} value={i + 1}>{i + 1}</option>
-							))}
-						</select>
-					</label>
+					<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+						<label>
+							Page:&nbsp;
+							<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+								{Array.from({ length: totalPages }, (_, i) => (
+									<option key={i + 1} value={i + 1}>{i + 1}</option>
+								))}
+							</select>
+						</label>
+						<button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={!canPrev}>
+							上一頁
+						</button>
+						<button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={!canNext}>
+							下一頁
+						</button>
+					</div>
 				</div>
 			</div>
 	);
