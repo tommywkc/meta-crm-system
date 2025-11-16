@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const { initDatabase } = require('./db/pool'); // Import database initialization
 const { authMiddleware, roleMiddleware } = require('./middleware/auth'); // Import auth middleware
+const { findByUserId } = require('./dao/usersDao');
 
 
 
@@ -67,8 +68,25 @@ app.post('/api/logout', (req, res) => {
 });
 
 // Get current user info (protected)
-app.get('/api/me', authMiddleware, (req, res) => {
-  res.json({ id: req.user.sub, username: req.user.username, role: req.user.role });
+app.get('/api/me', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const user = await findByUserId(userId);
+    if (!user) {
+      return res.status(404).json({ message: '找不到使用者' });
+    }
+    const profile = {
+      id: user.user_id || user.id,
+      name: user.name,
+      role: user.role,
+      username: user.email || req.user.username,
+      qr_token: user.qr_token || null
+    };
+    return res.json(profile);
+  } catch (e) {
+    console.error('Error in /api/me:', e);
+    return res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Example protected admin route
