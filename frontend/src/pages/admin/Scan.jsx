@@ -18,8 +18,14 @@ const Scan = () => {
 
  
   const handleScanSuccess = useCallback((decodedText) => {
-    if (decodedText === lastResult) return;
     console.log('Scanned:', decodedText);
+    
+    // Check if already scanned
+    if (decodedText === lastResult) {
+      alert(`此 QR Code 已簽到過！\n\nQR Token: ${decodedText}`);
+      return;
+    }
+    
     setLastResult(decodedText);
     
     // Show popup for demo with event details
