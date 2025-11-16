@@ -19,7 +19,9 @@ const EventsEdit = () => {
   
   const handleSubmit = async (formData) => {
     try{
-      await handleUpdateById(id, formData);
+      // Remove sessions from formData, only update event
+      const { sessions, ...eventData } = formData || {};
+      await handleUpdateById(id, eventData);
       alert('更新成功');
       navigate('/events/'+id);
     }catch (error) {

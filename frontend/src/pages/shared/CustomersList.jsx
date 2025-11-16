@@ -30,9 +30,14 @@ const CustomersList = () => {
   };
 
   const handleDelete = async (user_id) => {
-    if (window.confirm('Comfire to remove this User?')) {
+    const customer = customers.find(c => c.user_id === user_id);
+    const userInfo = customer
+      ? `${customer.user_id} - ${customer.role || ''} ${customer.name || ''} ${customer.mobile ? `(${customer.mobile})` : ''}`
+      : `用戶 ID: ${user_id}`;
+    
+    if (window.confirm(`確認要刪除此用戶？\n\n${userInfo}`)) {
       await handleDeleteById(user_id);  // remove from backend
-      alert('User deleted successfully');
+      alert('用戶刪除成功！');
       await fetchCustomers();            // fetch latest data from backend
     }
   };

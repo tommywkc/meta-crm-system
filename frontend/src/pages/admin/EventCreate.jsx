@@ -1,19 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import EventForm from '../../components/EventForm';
-import { createEventThenSessions } from '../../api/sessionAPI';
+import { handleCreateEvent } from '../../api/eventListAPI';
 
 const EventCreate = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (formData) => {
-    console.log('Creating event with sessions:', formData);
+    console.log('Creating event:', formData);
     try {
-      const { sessions = [], ...eventData } = formData || {};
-      // Create event first, then bulk create sessions
-      const res = await createEventThenSessions(eventData, sessions);
+      // Remove sessions from formData, only create event
+      const { sessions, ...eventData } = formData || {};
+      const res = await handleCreateEvent(eventData);
       console.log('Create success:', res);
-      alert('Event 與 場次新增成功！');
+      alert('活動新增成功！');
       navigate('/events');
     } catch (err) {
       console.error('Create failed:', err);

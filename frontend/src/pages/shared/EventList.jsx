@@ -59,9 +59,14 @@ const EventList = () => {
 	};
 
 	const onDelete = async (event_id) => {
-		if (window.confirm('Comfire to remove this event?')) {
+		const event = events.find(e => e.event_id === event_id);
+		const eventInfo = event 
+			? `${event.type || ''} ${event.event_id} ${event.event_name || ''} ${event.datetime_start ? `(${event.datetime_start})` : ''}`
+			: `活動 ID: ${event_id}`;
+		
+		if (window.confirm(`確認要刪除此活動？\n\n${eventInfo}`)) {
 		  await handleDeleteById(event_id);  // remove from backend
-		  alert('User deleted successfully');
+		  alert('活動刪除成功！');
 		  await fetchEvents();            // fetch latest data from backend
 		}
 	};
