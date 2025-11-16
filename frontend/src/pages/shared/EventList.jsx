@@ -12,6 +12,7 @@ const EventList = () => {
 	const userRole = user?.role?.toLowerCase();
 	const isAdmin = userRole === 'admin';
 	const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
+	const isMember = userRole === 'member';
 	
 	// Pagination and search state
 	const [page, setPage] = useState(1);
@@ -22,8 +23,9 @@ const EventList = () => {
 
 	useEffect(() => {
 		const fetchData = async () => {
-		  const payload = await handleListEvents(100, 0);
-		  setEvents(payload.events || []);
+			// 後端已針對角色處理可見性（member 只回 OPEN）
+			const payload = await handleListEvents(100, 0);
+			setEvents(payload.events || []);
 		};
 		fetchData();
 	}, []);
@@ -33,12 +35,6 @@ const EventList = () => {
 		setEvents(payload.events || []);
 	};
 
-	// Filter events data (example filter commented out)
-	// const filteredEvents = mockClasses.filter(event => 
-	// 	event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-	// 	event.category.toLowerCase().includes(searchTerm.toLowerCase())
-	// );
-	
 	// 分頁計算
 	const startIndex = (page - 1) * limit;
 	const pagedEvents = events.slice(startIndex, startIndex + limit);
@@ -110,7 +106,7 @@ const EventList = () => {
 
 				<div style={UpperSelectContainerStyle}>
 					<label>
-						Page:&nbsp;
+						頁數:&nbsp;
 						<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
 							{Array.from({ length: Math.max(1, Math.ceil(events.length / limit)) }, (_, i) => (
 								<option key={i + 1} value={i + 1}>{i + 1}</option>
@@ -119,7 +115,7 @@ const EventList = () => {
 					</label>
 
 					<label>
-						Items per page:&nbsp;
+						每頁活動數量:&nbsp;
 						<select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
 							<option value={25}>25</option>
 							<option value={50}>50</option>
@@ -141,7 +137,7 @@ const EventList = () => {
 				<div style={LowerSelectContainerStyle}>
 					<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 						<label>
-							Page:&nbsp;
+							頁數:&nbsp;
 							<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
 								{Array.from({ length: totalPages }, (_, i) => (
 									<option key={i + 1} value={i + 1}>{i + 1}</option>

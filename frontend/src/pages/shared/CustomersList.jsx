@@ -95,7 +95,7 @@ const CustomersList = () => {
         style={ UpperSelectContainerStyle }
       >
         <label>
-          Page:&nbsp;
+          頁數:&nbsp;
           <select value={page} onChange={(e) => setPage(Number(e.target.value))}>
             {Array.from({ length: Math.max(1, Math.ceil(customers.length / limit)) }, (_, i) => (
               <option key={i + 1} value={i + 1}>{i + 1}</option>
@@ -104,7 +104,7 @@ const CustomersList = () => {
         </label>
 
         <label>
-          Users per page:&nbsp;
+          每頁用戶數量:&nbsp;
           <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
             <option value={25}>25</option>
             <option value={50}>50</option>
@@ -125,7 +125,7 @@ const CustomersList = () => {
       <div style={ LowerSelectContainerStyle }>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <label>
-            Page:&nbsp;
+            頁數:&nbsp;
             <select value={page} onChange={(e) => setPage(Number(e.target.value))}>
               {Array.from({ length: totalPages }, (_, i) => (
                 <option key={i + 1} value={i + 1}>{i + 1}</option>

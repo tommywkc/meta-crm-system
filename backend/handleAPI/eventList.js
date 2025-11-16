@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { createEvent, listbyEventsId, findLatestEventId, findByEventId, updateByEventId, removeByEventId } = require('../dao/eventsDao');
+const { createEvent, listbyEventsId, findLatestEventId, findByEventId, updateByEventId, removeByEventId, findEventByStatus } = require('../dao/eventsDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
 
@@ -38,13 +38,25 @@ router.post('/events', authMiddleware, roleMiddleware('admin'), async (req, res)
 //handle get events list
 router.get('/events', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
   try {
-  console.log('Received events list request from user:', req.user.sub);
+    console.log('Received events list request from user:', req.user.sub, 'role:', req.user.role);
 
-  const limit = parseInt(req.query.limit) || 100;
-  const offset = parseInt(req.query.offset) || 0;
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
 
-  const events = await listbyEventsId(limit, offset);
-  console.log(`Retrieved ${events.length} events`);
+    const role = (req.user.role || '').toLowerCase();
+    let events = [];
+
+    if (role === 'member') {
+      // 會員只能看到 OPEN 的活動
+      events = await findEventByStatus('OPEN');
+      // 套用分頁（簡單在應用層分頁，若資料量大建議改為 DB 層處理）
+      events = events.slice(offset, offset + limit);
+      console.log(`Member role - returning only OPEN events: ${events.length}`);
+    } else {
+      // 其他角色維持原行為
+      events = await listbyEventsId(limit, offset);
+      console.log(`Non-member role - returning events: ${events.length}`);
+    }
 
     // 使用 formatDateTime 格式化每筆活動的日期欄位
     const formattedEvents = events.map(e => ({
@@ -76,6 +88,13 @@ router.get('/events/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'lea
       return res.status(404).json({ message: 'event 不存在' });
     }
 
+    // 會員不可存取非 OPEN 活動
+    const role = (req.user.role || '').toLowerCase();
+    if (role === 'member' && event.status !== 'OPEN') {
+      console.log('Forbidden for member to access non-OPEN event:', { id, status: event.status });
+      return res.status(403).json({ message: '禁止存取' });
+    }
+
     if (event.create_time) {
       event.create_time = formatDateTime(event.create_time);
     }
@@ -88,7 +107,6 @@ router.get('/events/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'lea
     
 
   console.log('Successfully retrieved event data:', id);
-  console.log(event);
     res.json({ event });
 
   } catch (error) {
@@ -142,5 +160,28 @@ router.delete('/events/:id', authMiddleware, roleMiddleware('admin'), async (req
   }
 });
 
+
+//handle get event by status
+router.get('/events/status/:status', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
+  try {
+  const status = req.params.status;
+  console.log('Received event by status request:', status, 'from user:', req.user.sub);
+
+    const events = await findEventByStatus(status);
+    console.log(`Retrieved ${events.length} events with status:`, status);
+
+    // 使用 formatDateTime 格式化每筆活動的日期欄位
+    const formattedEvents = events.map(e => ({
+      ...e,
+      datetime_start: e.datetime_start ? formatDateTime(e.datetime_start) : null,
+      datetime_end: e.datetime_end ? formatDateTime(e.datetime_end) : null
+    }));
+
+    res.json({ events: formattedEvents });
+  } catch (error) {
+    console.error('Get events by status failed:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
 
 module.exports = router;
