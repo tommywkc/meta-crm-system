@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS EVENT_SESSIONS (
     event_id BIGINT,
     session_name VARCHAR(50) NOT NULL,
     description TEXT,
+    capacity INT,
     datetime_start TIMESTAMP,
     datetime_end TIMESTAMP,
     created_by_id BIGINT,

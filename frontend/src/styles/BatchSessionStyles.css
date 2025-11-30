@@ -222,3 +222,84 @@
     padding: 5px 10px;
   }
 }
+
+/* EventForm specific styles */
+.session-card {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+.session-number {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+.session-name-block,
+.session-desc-block,
+.session-capacity-block {
+  margin-bottom: 8px;
+}
+.session-name-label {
+  font-size: 12px;
+  color: #555;
+}
+.session-description {
+  width: 100%;
+  padding: 8px;
+  min-height: 60px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.session-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.datepicker-container {
+  border: 1px solid #eee;
+  padding: 8px;
+  border-radius: 4px;
+}
+.time-duration-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.time-input-wrap {
+  flex: 1;
+}
+.duration-wrapper {
+  width: 120px;
+  position: relative;
+}
+.duration-input {
+  width: 100%;
+  padding: 8px 36px 8px 8px;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.duration-suffix {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 13px;
+  pointer-events: none;
+}
+.session-actions { margin-top: 12px; }
+.session-delete-button {
+  padding: 8px 12px;
+}
+
+@media (max-width: 768px) {
+  .session-grid {
+    grid-template-columns: 1fr;
+  }
+  .duration-wrapper { width: 100%; }
+}
