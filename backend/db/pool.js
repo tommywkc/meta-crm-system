@@ -15,7 +15,8 @@ const pool = new Pool({
     password: process.env.DB_PASSWORD || 'postgres',
     max: 20,                     // maximum number of clients in the pool
     idleTimeoutMillis: 30000,    // how long a client is allowed to remain idle before being closed
-    connectionTimeoutMillis: 2000 // number of ms to wait before timing out when connecting a new client
+    connectionTimeoutMillis: 2000, // number of ms to wait before timing out when connecting a new client
+    options: '-c timezone=Asia/Hong_Kong' // Set timezone to Hong Kong (UTC+8)
 });
 
 // Listen for unexpected errors on idle clients

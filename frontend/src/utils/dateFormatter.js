@@ -7,6 +7,18 @@ export const formatForDisplay = (isoString) => {
   return `${dd}/${mm}/${yyyy}`;
 };
 
+// Format ISO datetime with date and time for display
+export const formatDateTimeForDisplay = (isoString) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+};
+
 // Map event status from English to Chinese display
 export const getStatusDisplay = (status) => {
   const statusMap = {
@@ -24,4 +36,15 @@ export const getTypeDisplay = (type) => {
     'SEMINAR': '講座'
   };
   return typeMap[type] || type;
+};
+
+// Combine date object and time string into ISO datetime string
+export const toISODateTime = (dateObj, timeStr) => {
+  // dateObj: Date (only date portion used), timeStr: "HH:mm"
+  // Returns ISO string in local time (no timezone conversion on backend expected)
+  if (!dateObj || !timeStr) return null;
+  const [hh, mm] = timeStr.split(':').map((v) => parseInt(v, 10));
+  const d = new Date(dateObj);
+  d.setHours(hh || 0, mm || 0, 0, 0);
+  return d.toISOString();
 };

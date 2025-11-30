@@ -3,7 +3,6 @@ const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { createEvent, listbyEventsId, findLatestEventId, findByEventId, updateByEventId, removeByEventId, findEventByStatus } = require('../dao/eventsDao');
 const { emptyToNull } = require('../function/dataSanitizer');
-const { formatDateTime } = require('../function/dateFormatter');
 
 //handle create new event
 router.post('/events', authMiddleware, roleMiddleware('admin'), async (req, res) => {
@@ -27,8 +26,13 @@ router.post('/events', authMiddleware, roleMiddleware('admin'), async (req, res)
 
 
     const createdEvent = await createEvent(newEvent);
-    console.log('Event created successfully:');
-    res.status(201).json({ message: '活動建立成功', event: createdEvent });
+    console.log('Event created successfully:', createdEvent);
+    res.status(201).json({ 
+      message: '活動建立成功', 
+      event: createdEvent,
+      event_id: createdEvent.event_id,
+      id: createdEvent.event_id 
+    });
   } catch (error) {
     console.error('Create event failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });
@@ -58,14 +62,8 @@ router.get('/events', authMiddleware, roleMiddleware(['admin', 'sales', 'leader'
       console.log(`Non-member role - returning events: ${events.length}`);
     }
 
-    // 使用 formatDateTime 格式化每筆活動的日期欄位
-    const formattedEvents = events.map(e => ({
-      ...e,
-      datetime_start: e.datetime_start ? formatDateTime(e.datetime_start) : null,
-      datetime_end: e.datetime_end ? formatDateTime(e.datetime_end) : null
-    }));
-
-    res.json({ events: formattedEvents });
+    // Return events with ISO format datetime (no formatting needed)
+    res.json({ events });
   } catch (error) {
     console.error('Get events list failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });
@@ -95,18 +93,8 @@ router.get('/events/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'lea
       return res.status(403).json({ message: '禁止存取' });
     }
 
-    if (event.create_time) {
-      event.create_time = formatDateTime(event.create_time);
-    }
-    if (event.datetime_start) {
-      event.datetime_start = formatDateTime(event.datetime_start);
-    }
-    if (event.datetime_end) {
-      event.datetime_end = formatDateTime(event.datetime_end);
-    }
-    
-
-  console.log('Successfully retrieved event data:', id);
+    // Return event with ISO format datetime (no formatting needed)
+    console.log('Successfully retrieved event data:', id);
     res.json({ event });
 
   } catch (error) {
@@ -170,14 +158,8 @@ router.get('/events/status/:status', authMiddleware, roleMiddleware(['admin', 's
     const events = await findEventByStatus(status);
     console.log(`Retrieved ${events.length} events with status:`, status);
 
-    // 使用 formatDateTime 格式化每筆活動的日期欄位
-    const formattedEvents = events.map(e => ({
-      ...e,
-      datetime_start: e.datetime_start ? formatDateTime(e.datetime_start) : null,
-      datetime_end: e.datetime_end ? formatDateTime(e.datetime_end) : null
-    }));
-
-    res.json({ events: formattedEvents });
+    // Return events with ISO format datetime (no formatting needed)
+    res.json({ events });
   } catch (error) {
     console.error('Get events by status failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });

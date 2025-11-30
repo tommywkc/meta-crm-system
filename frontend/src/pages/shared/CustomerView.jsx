@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { handleGetById } from '../../api/customersListAPI';
 import Calendar from '../../components/Calendar';
 import { QRCodeCanvas } from 'qrcode.react';
+import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 
 
@@ -97,7 +98,7 @@ const CustomerView = () => {
                 <div>N/A</div>
               )}
             </div>
-            <div><strong>建立時間:</strong> {customer.create_time}</div>
+            <div><strong>建立時間:</strong> {customer.create_time ? formatDateTimeForDisplay(customer.create_time) : 'N/A'}</div>
           </div>
           
           <div style={{ marginTop: 16 }}>

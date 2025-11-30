@@ -4,8 +4,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleGetById as handleGetUserById } from '../../api/customersListAPI';
-import { getStatusDisplay, getTypeDisplay } from '../../utils/dateFormatter';
+import { handleListSessionsByEventId, handleGetSessionById, handleDeleteSession } from '../../api/sessionAPI';
+import { getStatusDisplay, getTypeDisplay, formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import WaitingListTable from '../../components/WaitingListTable';
+import SessionListTable from '../../components/SessionListTable';
 
 const EventView = () => {
   const { id } = useParams();
@@ -18,7 +20,9 @@ const EventView = () => {
   const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
   
   const [event, setEvent] = useState([]);
+  const [sessions, setSessions] = useState([]);
   const [speakerName, setSpeakerName] = useState('');
+  const [selectedSessionName, setSelectedSessionName] = useState('all');
   // Note: isEnrolling is for future enrollment loading state
   const [isEnrolling] = useState(false);
   
@@ -51,6 +55,15 @@ const EventView = () => {
       const fetchData = async () => {
         const data = await handleGetById(id);
         setEvent(data.event || {});
+        
+        // Fetch sessions for this event
+        try {
+          const sessionData = await handleListSessionsByEventId(id);
+          setSessions(sessionData.sessions || []);
+        } catch (err) {
+          console.error('Failed to fetch sessions:', err);
+          setSessions([]);
+        }
       };
       fetchData();
     }, [id]);
@@ -78,6 +91,34 @@ const EventView = () => {
     navigate(`/events/${id}/apply`);
   };
 
+  const handleEditSession = (session_id) => {
+    if (!session_id) return;
+    navigate(`/sessions/${session_id}/edit`);
+  };
+
+  const onDeleteSession = async (session_id) => {
+    if (!session_id) return;
+    const payload = await handleGetSessionById(session_id);
+    const findSessionData = payload?.session || {};
+    if (window.confirm(`確認要刪除此場次？ \n ${findSessionData.session_name || ''} (${findSessionData.datetime_start ? formatDateTimeForDisplay(findSessionData.datetime_start) : 'N/A'})`)) {
+      try {
+        await handleDeleteSession(session_id);
+        alert('場次刪除成功！');
+        const sessionData = await handleListSessionsByEventId(id);
+        setSessions(sessionData.sessions || []);
+      } catch (err) {
+        console.error('Failed to delete session:', err);
+        alert('刪除場次失敗，請稍後再試');
+      }
+    }
+  };
+
+  const handleEnrollSession = (session_id) => {
+    if (!session_id) return;
+    navigate(`/events/${id}/apply`);
+  };
+
+
 
   if (!event || !event.event_id) {
     return (
@@ -96,8 +137,8 @@ const EventView = () => {
         <div><strong>ID:</strong> {event.event_id}</div>
         <div><strong>名稱:</strong> {event.event_name || 'N/A'}</div>
         <div><strong>類別:</strong> {getTypeDisplay(event.type) || 'N/A'}</div>
-        <div><strong>開始時間:</strong> {event.datetime_start || 'N/A'}</div>
-        <div><strong>結束時間:</strong> {event.datetime_end || 'N/A'}</div>
+        <div><strong>開始時間:</strong> {event.datetime_start ? formatDateTimeForDisplay(event.datetime_start) : 'N/A'}</div>
+        <div><strong>結束時間:</strong> {event.datetime_end ? formatDateTimeForDisplay(event.datetime_end) : 'N/A'}</div>
         <div><strong>狀態:</strong> {getStatusDisplay(event.status) || 'N/A'}</div>
         
         {event.capacity && (
@@ -113,16 +154,23 @@ const EventView = () => {
           {event.speaker_id
             ? (
               <>
-                {event.speaker_id}
-                {speakerName ? ` - ${speakerName}` : ' (載入中...)'}
+                {speakerName ? `${speakerName}` : ' (載入中...)'}
               </>
             )
-            : 'N/A'}
+            : 'TBC'}
         </div>
-        <div><strong>地點:</strong> {event.location || 'N/A'}</div>
-        <div><strong>價格:</strong> {event.price ? `$ ${event.price}` : '免費'}</div>
-        <div><strong>房間費用:</strong> {event.room_cost || 'N/A'}</div>
-        <div><strong>建立時間:</strong> {event.create_time || 'N/A'}</div>
+        <div><strong>地點:</strong> {event.location || 'TBC'}</div>
+  <div><strong>活動價格:</strong> {event.price == null || Number(event.price) === 0
+    ? '免費'
+    : `HK$ ${event.price}`}</div>
+        {isAdmin && (
+          <>
+      <div><strong>房間費用:</strong> {event.room_cost == null || Number(event.room_cost) === 0
+    ? 'N/A'
+    : `HK$ ${event.room_cost}`}</div>
+            <div><strong>建立時間:</strong> {formatDateTimeForDisplay(event.create_time)|| 'N/A'}</div>
+          </>
+        )}
       </div>
       
       <div>
@@ -134,6 +182,54 @@ const EventView = () => {
             {isEnrolling ? '報名中...' : '報名'}
           </button>
         ) : null}
+      </div>
+
+      {/* Session list table */}
+      <div style={{ marginTop: 40 }}>
+        <h2>場次列表</h2>
+        
+        {/* Session name filter */}
+        {sessions.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <label htmlFor="session-filter" style={{ marginRight: 8, fontWeight: 'bold' }}>
+              場次名稱:
+            </label>
+            <select
+              id="session-filter"
+              value={selectedSessionName}
+              onChange={(e) => setSelectedSessionName(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                fontSize: '14px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                minWidth: '200px'
+              }}
+            >
+              <option value="all">全部場次</option>
+              {/* Get unique session names */}
+              {[...new Set(sessions.map(s => s.session_name))]
+                .filter(name => name) // Filter out null/undefined
+                .map(name => (
+                  <option key={name} value={name}>
+                    {name} ({sessions.filter(s => s.session_name === name).length})
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
+        
+        <SessionListTable 
+          sessions={
+            selectedSessionName === 'all' 
+              ? sessions 
+              : sessions.filter(s => s.session_name === selectedSessionName)
+          }
+          role={user?.role}
+          onEditSession={isAdmin ? handleEditSession : undefined}
+          onEnrollSession={(isMember || isSalesOrLeader) ? handleEnrollSession : undefined}
+          onDeleteSession={isAdmin ? onDeleteSession : undefined}
+        />
       </div>
 
   {/* Waiting list table - Admin only */}

@@ -74,4 +74,18 @@ async function findLatestEventId() {
   }
 }
 
-module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId, findLatestEventId, findEventByStatus };
+async function updateRemainingSeats(event_id) {
+  const eventData = await findByEventId(event_id);
+  if (!eventData) {
+    throw new Error(`Event with ID ${event_id} not found`);
+  }
+  let newRemainingSeats = eventData.remaining_seats -1;
+  
+  const sql = `UPDATE EVENTS SET remaining_seats = $1 WHERE event_id = $2 RETURNING *`;
+  const vals = [newRemainingSeats, event_id];
+  const res = await query(sql, vals);
+  return res.rows[0] || null;
+}
+  
+
+module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId, findLatestEventId, findEventByStatus, updateRemainingSeats };
