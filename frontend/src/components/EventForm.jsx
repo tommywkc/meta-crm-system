@@ -211,7 +211,7 @@ const EventForm = ({
                 width: '100%',
                 padding: '8px 8px 8px 20px', 
                 borderColor: !/^\d*$/.test(price || '') ? 'red' : ''
-              }}
+              }}placeholder="留空或輸入 ' 0 ' 表示免費"
             />
           </div>
           {!/^\d*$/.test(price || '') && (
@@ -317,7 +317,7 @@ const EventForm = ({
                   width: '100%',
                   padding: '8px 8px 8px 20px',
                   borderColor: !/^\d*$/.test(roomCost || '') ? 'red' : ''
-                }}
+                }}placeholder="留空或輸入 ' 0 ' 表示免費"
               />
             </div>
             {!/^\d*$/.test(roomCost || '') && (

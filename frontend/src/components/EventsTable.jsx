@@ -18,7 +18,8 @@ const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) 
           <th style={thTdStyle}>開始日期</th>
           <th style={thTdStyle}>結束日期</th>
           <th style={thTdStyle}>名額</th>
-          <th style={thTdStyle}>狀態</th>
+          <th style={thTdStyle}>價格</th>
+          {!isMember && <th style={thTdStyle}>狀態</th>}
           <th style={thTdStyle}>操作</th>
         </tr>
       </thead>
@@ -31,7 +32,12 @@ const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) 
             <td style={thTdStyle}>{event.datetime_start != null ? formatForDisplay(event.datetime_start) : '無'}</td>
             <td style={thTdStyle}>{event.datetime_end != null ? formatForDisplay(event.datetime_end) : '無'}</td>
             <td style={thTdStyle}>{event.capacity != null ? `剩餘 ${event.remaining_seats}/${event.capacity}` : '無限制'}</td>
-            <td style={thTdStyle}>{getStatusDisplay(event.status)}</td>
+            <td style={thTdStyle}>
+              {event.price == null || Number(event.price) === 0
+                ? '免費'
+                : new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 }).format(Number(event.price))}
+            </td>
+            {!isMember && <td style={thTdStyle}>{getStatusDisplay(event.status)}</td>}
             <td style={thTdStyle}>
               <button onClick={() => onView && onView(event.event_id)}>詳情</button>
               {isAdmin ? (

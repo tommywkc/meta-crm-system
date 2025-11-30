@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { redTextStyle } from '../styles/TableStyles';
 import { handleFindUsersByRoles } from '../api/customersListAPI';
+import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
 
 const CustomerForm = ({ 
@@ -280,7 +281,7 @@ const CustomerForm = ({
 
         {showUserId && initialData.create_time && (
           <div style={{ marginBottom: 8 }}>
-            <p><strong>創建時間:</strong><br /><u>{initialData.create_time}</u></p>
+            <p><strong>創建時間:</strong><br /><u>{formatDateTimeForDisplay(initialData.create_time)}</u></p>
           </div>
         )}
 

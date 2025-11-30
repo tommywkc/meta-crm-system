@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { handleList, handleFindUserByRole } from '../../api/customersListAPI';
 import { getEventById } from '../../api/eventListAPI';
 import { handleCreateEnrollment } from '../../api/enrollmentAPI';
+import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 const Apply = () => {
   const { id } = useParams();
@@ -114,7 +115,14 @@ const Apply = () => {
       };
 
       const result = await handleCreateEnrollment(enrollmentData);
-      alert(result?.message || '報名成功！感謝你的參與。');
+      
+      let message = result?.message || '報名成功！';
+      if (event?.price != null && Number(event?.price) > 0 && result?.payment?.expire_time) {
+        const formattedDateTime = formatDateTimeForDisplay(result.payment.expire_time);
+        message += `\n\n請在 ${formattedDateTime} 之前付款。`;
+      }
+      
+      alert(message);
       navigate('/events');
     } catch (error) {
       console.error('Registration failed:', error);
@@ -238,15 +246,17 @@ const Apply = () => {
           )}
         </div>
 
-        <div>
-          <label>支付方式: </label>
-          <select name="paymentMethod" value={formData.paymentMethod} onChange={handleInputChange} required>
-            <option value="CREDITCARD">信用卡 (Credit Card)</option>
-            <option value="CASH">現金</option>
-            <option value="FPS">轉數快 (FPS)</option>
-            <option value="PAYME">PayMe</option>
-          </select>
-        </div>
+        {event?.price != null && Number(event?.price) > 0 && (
+          <div>
+            <label>支付方式: </label>
+            <select name="paymentMethod" value={formData.paymentMethod} onChange={handleInputChange} required>
+              <option value="CREDITCARD">信用卡 (Credit Card)</option>
+              <option value="CASH">現金</option>
+              <option value="FPS">轉數快 (FPS)</option>
+              <option value="PAYME">PayMe</option>
+            </select>
+          </div>
+        )}
 
         <div>
           <button type="submit" disabled={isSubmitting}>

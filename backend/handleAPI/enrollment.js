@@ -28,6 +28,8 @@ router.post('/enrollments', authMiddleware, async (req, res) => {
     console.log('Enrollment created successfully:', newEnrollment);
 
     const event = await findByEventId(event_id);
+    let paymentInfo = null;
+    
     if (event && event.price != null && event.price > 0) {
       console.log(`Enrollment for paid event. Event ID: ${event_id}, Price: ${event.price}`);
       const paymentMethod = req.body.payment_method;
@@ -38,13 +40,21 @@ router.post('/enrollments', authMiddleware, async (req, res) => {
       }
       
       try {
-        await createPayment({
-          event_id,
-          user_id,
-          amount: event.price,
-          method: paymentMethod,
+        // Set payment deadline to 3 days from now at end of day (23:59:59)
+        const paymentDeadline = new Date();
+        paymentDeadline.setDate(paymentDeadline.getDate() + 3);
+        paymentDeadline.setHours(23, 59, 59, 999);
+        
+        const payment = await createPayment({
+            event_id,
+            user_id,
+            amount: event.price,
+            method: paymentMethod,
+            enrollment_id: newEnrollment.enrollment_id,
+            expire_time: paymentDeadline
         });
-        console.log('Payment record created for enrollment.');
+        paymentInfo = { ...payment, expire_time: paymentDeadline };
+        console.log('Payment record created for enrollment with 3-day deadline.');
       } catch (paymentError) {
         console.error('Failed to create payment record:', paymentError);
         // Rollback enrollment if payment creation fails
@@ -53,8 +63,9 @@ router.post('/enrollments', authMiddleware, async (req, res) => {
     }
     
     res.status(201).json({ 
-      message: '報名成功', 
-      enrollment: newEnrollment 
+      message: '報名成功！', 
+      enrollment: newEnrollment,
+      payment: paymentInfo
     });
   } catch (error) {
     console.error('Create enrollment failed:', error);

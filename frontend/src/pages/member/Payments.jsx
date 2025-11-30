@@ -66,12 +66,13 @@ const Payments = () => {
 				<table style={tableStyle}>
 					<thead>
 						<tr>
-							<th style={thTdStyle}>付款日期</th>
+							<th style={thTdStyle}>建立日期</th>
 							<th style={thTdStyle}>訂單編號</th>
 							<th style={thTdStyle}>活動ID</th>
 							<th style={thTdStyle}>金額 (HKD)</th>
 							<th style={thTdStyle}>付款方式</th>
 							<th style={thTdStyle}>狀態</th>
+							<th style={thTdStyle}>付款期限</th>
 							<th style={thTdStyle}>動作</th>
 						</tr>
 					</thead>
@@ -84,6 +85,7 @@ const Payments = () => {
 								<td style={thTdStyle}>{currency.format(Number(p.amount || 0))}</td>
 								<td style={thTdStyle}>{methodLabel(p.method)}</td>
 								<td style={thTdStyle}>{statusLabel(p.status)}</td>
+								<td style={thTdStyle}>{p.expire_time ? formatDateTimeForDisplay(p.expire_time) : '-'}</td>
 								<td style={thTdStyle}>
 									<button onClick={() => onView(p)} style={{ marginRight: 8 }}>查看</button>
 									<button onClick={() => onDownload(p)}>下載</button>
@@ -92,7 +94,7 @@ const Payments = () => {
 						))}
 						{payments.length === 0 && (
 							<tr>
-								<td style={thTdStyle} colSpan={7}>
+								<td style={thTdStyle} colSpan={8}>
 									暫無付款紀錄
 								</td>
 							</tr>

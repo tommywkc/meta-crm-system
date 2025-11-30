@@ -160,10 +160,14 @@ const EventView = () => {
             : 'TBC'}
         </div>
         <div><strong>地點:</strong> {event.location || 'TBC'}</div>
-        <div><strong>價格:</strong> {event.price ? `$ ${event.price}` : '免費'}</div>
+  <div><strong>活動價格:</strong> {event.price == null || Number(event.price) === 0
+    ? '免費'
+    : `HK$ ${event.price}`}</div>
         {isAdmin && (
           <>
-            <div><strong>房間費用:</strong> $ {event.room_cost || 'N/A'}</div>
+      <div><strong>房間費用:</strong> {event.room_cost == null || Number(event.room_cost) === 0
+    ? 'N/A'
+    : `HK$ ${event.room_cost}`}</div>
             <div><strong>建立時間:</strong> {formatDateTimeForDisplay(event.create_time)|| 'N/A'}</div>
           </>
         )}
