@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { formatForDisplay, getTypeDisplay } from '../utils/dateFormatter';
+import { getTypeDisplay } from '../utils/dateFormatter';
 import { redTextStyle } from '../styles/TableStyles';
 import '../styles/BatchSessionStyles.css';
 import { handleFindUsersByRoles } from '../api/customersListAPI';
@@ -17,12 +17,7 @@ const EventForm = ({
 }) => {
   const [name, setName] = useState(initialData.event_name || '');
   const [type, setType] = useState(initialData.type || '');
-  const [datetimeStart, setDatetimeStart] = useState(
-    initialData.datetime_start ? formatForDisplay(initialData.datetime_start) : ''
-  );
-  const [datetimeEnd, setDatetimeEnd] = useState(
-    initialData.datetime_end ? formatForDisplay(initialData.datetime_end) : ''
-  );
+  // datetime_start and datetime_end will be calculated from sessions
   const [capacity, setCapacity] = useState(initialData.capacity || 60);
   const [status, setStatus] = useState(initialData.status || 'SCHEDULED');
   const [location, setLocation] = useState(initialData.location || '');
@@ -53,8 +48,7 @@ const EventForm = ({
     if (initialData && Object.keys(initialData).length > 0) {
       setName(initialData.event_name || '');
       setType(initialData.type || '');
-      setDatetimeStart(initialData.datetime_start ? formatForDisplay(initialData.datetime_start) : '');
-      setDatetimeEnd(initialData.datetime_end ? formatForDisplay(initialData.datetime_end) : '');
+      // datetime_start and datetime_end will be calculated from sessions
       setCapacity(initialData.capacity || 60);
       setStatus(initialData.status || 'SCHEDULED');
       setLocation(initialData.location || '');
@@ -120,12 +114,6 @@ const EventForm = ({
     return;
   }
 
-  // 驗證：結束時間不得早於開始時間
-  if (datetimeStart && datetimeEnd && new Date(datetimeEnd) < new Date(datetimeStart)) {
-    alert("結束時間不能早於開始時間，請重新選擇。");
-    return; // prevent submission
-  }
-
   // 轉換多場次資料
   if (speakerError) {
     alert(speakerError);
@@ -153,11 +141,25 @@ const EventForm = ({
     });
   });
 
+  // Calculate event datetime_start and datetime_end from sessions
+  let eventDatetimeStart = null;
+  let eventDatetimeEnd = null;
+  
+  if (sessionsPayload.length > 0) {
+    // Find earliest start time
+    const allStartTimes = sessionsPayload.map(s => new Date(s.datetime_start));
+    eventDatetimeStart = new Date(Math.min(...allStartTimes)).toISOString();
+    
+    // Find latest end time
+    const allEndTimes = sessionsPayload.map(s => new Date(s.datetime_end));
+    eventDatetimeEnd = new Date(Math.max(...allEndTimes)).toISOString();
+  }
+
   const formData = {
     event_name: name.trim(),
     type: type.trim(),
-    datetime_start: datetimeStart ? new Date(datetimeStart).toISOString() : null,
-    datetime_end: datetimeEnd ? new Date(datetimeEnd).toISOString() : null,
+    datetime_start: eventDatetimeStart,
+    datetime_end: eventDatetimeEnd,
     capacity: parseInt(capacity, 10) || 60,
     status,
     location,
@@ -218,31 +220,7 @@ const EventForm = ({
             </select>
           </div>
 
-  {/* Date/time inputs */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
-          <div style={{ flex: 1 }}>
-            <label>開始時間:</label><br />
-            <input
-              type="datetime-local"
-              value={datetimeStart}
-              onChange={(e) => setDatetimeStart(e.target.value)}
-              style={{ width: '100%', padding: 8 }}
-            />
-          </div>
-
-          <div style={{ flex: 1 }}>
-            <label>結束時間:</label><br />
-            <input
-              type="datetime-local"
-              value={datetimeEnd}
-              onChange={(e) => setDatetimeEnd(e.target.value)}
-              style={{ width: '100%', padding: 8 }}
-            />
-          </div>
-        </div>
-        {datetimeStart && datetimeEnd && new Date(datetimeEnd) < new Date(datetimeStart) && (
-            <small style={{ color: 'red' }}>結束時間不得早於開始時間。</small>
-        )}
+  {/* Note: 開始時間 and 結束時間 are automatically calculated from sessions */}
 
   {/* Location and description */}
         <div style={{ marginBottom: 12 }}>

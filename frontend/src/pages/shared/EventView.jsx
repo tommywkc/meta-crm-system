@@ -4,8 +4,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleGetById as handleGetUserById } from '../../api/customersListAPI';
+import { handleGetSessionsByEventId } from '../../api/sessionAPI';
 import { getStatusDisplay, getTypeDisplay } from '../../utils/dateFormatter';
 import WaitingListTable from '../../components/WaitingListTable';
+import SessionListTable from '../../components/SessionListTable';
 
 const EventView = () => {
   const { id } = useParams();
@@ -18,7 +20,9 @@ const EventView = () => {
   const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
   
   const [event, setEvent] = useState([]);
+  const [sessions, setSessions] = useState([]);
   const [speakerName, setSpeakerName] = useState('');
+  const [selectedSessionName, setSelectedSessionName] = useState('all');
   // Note: isEnrolling is for future enrollment loading state
   const [isEnrolling] = useState(false);
   
@@ -51,6 +55,15 @@ const EventView = () => {
       const fetchData = async () => {
         const data = await handleGetById(id);
         setEvent(data.event || {});
+        
+        // Fetch sessions for this event
+        try {
+          const sessionData = await handleGetSessionsByEventId(id);
+          setSessions(sessionData.sessions || []);
+        } catch (err) {
+          console.error('Failed to fetch sessions:', err);
+          setSessions([]);
+        }
       };
       fetchData();
     }, [id]);
@@ -134,6 +147,50 @@ const EventView = () => {
             {isEnrolling ? '報名中...' : '報名'}
           </button>
         ) : null}
+      </div>
+
+      {/* Session list table */}
+      <div style={{ marginTop: 40 }}>
+        <h2>場次列表</h2>
+        
+        {/* Session name filter */}
+        {sessions.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <label htmlFor="session-filter" style={{ marginRight: 8, fontWeight: 'bold' }}>
+              場次名稱:
+            </label>
+            <select
+              id="session-filter"
+              value={selectedSessionName}
+              onChange={(e) => setSelectedSessionName(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                fontSize: '14px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                minWidth: '200px'
+              }}
+            >
+              <option value="all">全部場次</option>
+              {/* Get unique session names */}
+              {[...new Set(sessions.map(s => s.session_name))]
+                .filter(name => name) // Filter out null/undefined
+                .map(name => (
+                  <option key={name} value={name}>
+                    {name} ({sessions.filter(s => s.session_name === name).length})
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
+        
+        <SessionListTable 
+          sessions={
+            selectedSessionName === 'all' 
+              ? sessions 
+              : sessions.filter(s => s.session_name === selectedSessionName)
+          } 
+        />
       </div>
 
   {/* Waiting list table - Admin only */}

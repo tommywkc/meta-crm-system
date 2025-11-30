@@ -3,7 +3,34 @@ const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { formatDateTime } = require('../function/dateFormatter');
-const { createSession } = require('../dao/eventSessionsDao');
+const { createSession, listByEventId } = require('../dao/eventSessionsDao');
+
+//handle get sessions by event_id
+router.get('/events/:event_id/sessions', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
+  try {
+    const event_id = parseInt(req.params.event_id, 10);
+    console.log('Received get sessions request for event:', event_id, 'from user:', req.user.sub);
+
+    if (isNaN(event_id)) {
+      return res.status(400).json({ message: '無效的活動 ID' });
+    }
+
+    const sessions = await listByEventId(event_id);
+    
+    // Format datetime fields for display
+    const formattedSessions = sessions.map(s => ({
+      ...s,
+      datetime_start: s.datetime_start ? formatDateTime(s.datetime_start) : null,
+      datetime_end: s.datetime_end ? formatDateTime(s.datetime_end) : null
+    }));
+
+    console.log(`Found ${sessions.length} sessions for event ${event_id}`);
+    res.json({ sessions: formattedSessions });
+  } catch (error) {
+    console.error('Get sessions failed:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
 
 //handle create new session
 router.post('/sessions', authMiddleware, roleMiddleware('admin'), async (req, res) => {
