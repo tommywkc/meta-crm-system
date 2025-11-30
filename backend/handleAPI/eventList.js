@@ -27,8 +27,13 @@ router.post('/events', authMiddleware, roleMiddleware('admin'), async (req, res)
 
 
     const createdEvent = await createEvent(newEvent);
-    console.log('Event created successfully:');
-    res.status(201).json({ message: '活動建立成功', event: createdEvent });
+    console.log('Event created successfully:', createdEvent);
+    res.status(201).json({ 
+      message: '活動建立成功', 
+      event: createdEvent,
+      event_id: createdEvent.event_id,
+      id: createdEvent.event_id 
+    });
   } catch (error) {
     console.error('Create event failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });

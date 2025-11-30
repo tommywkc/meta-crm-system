@@ -427,6 +427,7 @@ const EventForm = ({
                         value={s.session_name}
                         onChange={(e) => updateSession(idx, 'session_name', e.target.value)}
                         className="batch-input-field"
+                        required
                       />
                     </div>
                     <div className="session-desc-block">

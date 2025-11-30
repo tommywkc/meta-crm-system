@@ -2,67 +2,43 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { emptyToNull } = require('../function/dataSanitizer');
+const { formatDateTime } = require('../function/dateFormatter');
 const { createSession } = require('../dao/eventSessionsDao');
 
-// Create single event session
-// Body: { event_id, session_name, description?, datetime_start, datetime_end }
-router.post('/event-sessions', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+//handle create new session
+router.post('/sessions', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
-    const body = emptyToNull(req.body || {});
-    console.log('Received create event session request by user:', req.user.sub, '->', body);
+    console.log('Received create session request from user:', req.user.sub, 'with data:', req.body);
 
-    const { event_id, session_name, description = null, datetime_start = null, datetime_end = null } = body;
-    if (!event_id || !session_name || !datetime_start || !datetime_end) {
-      return res.status(400).json({ message: '缺少必要的場次資料（event_id, session_name, datetime_start, datetime_end）' });
+    const body = emptyToNull(req.body);
+
+    const startRaw = body.start_time || body.datetime_start;
+    const endRaw = body.end_time || body.datetime_end;
+
+    if (!body.session_name || !body.event_id || !startRaw || !endRaw) {
+      return res.status(400).json({ message: '缺少必要的場次資料（需要 session_name, event_id, start/end 時間）' });
     }
 
-    const created = await createSession({
-      event_id,
-      session_name,
-      description,
+    // Don't format datetime for database insertion - PostgreSQL accepts ISO 8601 directly
+    const datetime_start = startRaw;
+    const datetime_end = endRaw;
+
+    const newSession = {
+      event_id: body.event_id,
+      session_name: body.session_name,
+      description: body.description || body.session_description || null,
+      capacity: body.capacity != null ? body.capacity : (body.session_capacity != null ? parseInt(body.session_capacity, 10) : null),
       datetime_start,
       datetime_end,
-      created_by_id: req.user.sub,
-    });
-    return res.status(201).json({ message: '場次建立成功', session: created });
+      created_by_id: req.user?.sub || null,
+    };
+
+    const createdSession = await createSession(newSession);
+    console.log('Session created successfully:', createdSession);
+    res.status(201).json({ message: '場次建立成功', session: createdSession });
   } catch (error) {
-    console.error('Create event session failed:', error);
-    return res.status(500).json({ message: '伺服器錯誤' });
-  }
-});
-
-// Bulk create event sessions
-// Body: { event_id?, sessions: [{ event_id?, session_name, description?, datetime_start, datetime_end }] }
-router.post('/event-sessions/bulk', authMiddleware, roleMiddleware('admin'), async (req, res) => {
-  try {
-    const body = req.body || {};
-    const { event_id: bodyEventId = null, sessions = [] } = body;
-
-    if (!Array.isArray(sessions) || sessions.length === 0) {
-      return res.status(400).json({ message: 'sessions 陣列不可為空' });
-    }
-
-    const results = [];
-    for (const s of sessions) {
-      const one = emptyToNull(s || {});
-      const finalEventId = one.event_id || bodyEventId;
-      if (!finalEventId || !one.session_name || !one.datetime_start || !one.datetime_end) {
-        return res.status(400).json({ message: '每筆場次需包含 event_id, session_name, datetime_start, datetime_end' });
-      }
-      const created = await createSession({
-        event_id: finalEventId,
-        session_name: one.session_name,
-        description: one.description || null,
-        datetime_start: one.datetime_start,
-        datetime_end: one.datetime_end,
-        created_by_id: req.user.sub,
-      });
-      results.push(created);
-    }
-    return res.status(201).json({ message: '批次建立成功', sessions: results });
-  } catch (error) {
-    console.error('Bulk create event sessions failed:', error);
-    return res.status(500).json({ message: '伺服器錯誤' });
+    console.error('Create session failed:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
   }
 });
 
