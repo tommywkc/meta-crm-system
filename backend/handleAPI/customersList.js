@@ -48,7 +48,7 @@ router.get('/customers', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
 });
 
 //handle get User by id in view customer detail
-router.get('/customers/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+router.get('/customers/:id', authMiddleware, async (req, res) => {
   try {
     const user_id = req.params.id;
     console.log('Received customer data request:', user_id, 'from user:', req.user.sub);
