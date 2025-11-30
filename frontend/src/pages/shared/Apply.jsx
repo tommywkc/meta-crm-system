@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { handleList } from '../../api/customersListAPI';
+import { handleList, handleFindUserByRole } from '../../api/customersListAPI';
 import { getEventById } from '../../api/eventListAPI';
+import { handleCreateEnrollment } from '../../api/enrollmentAPI';
 
 const Apply = () => {
   const { id } = useParams();
@@ -16,12 +17,14 @@ const Apply = () => {
   const [formData, setFormData] = useState({
     studentId: '',
     studentName: '',
-    paymentMethod: 'Credit Card'
+    paymentMethod: 'CREDITCARD'
   });
 
   const [members, setMembers] = useState([]);
   const [event, setEvent] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [membersInput, setMembersInput] = useState('');
+  const [memberError, setMemberError] = useState(null);
 
   // Load event information
   useEffect(() => {
@@ -55,10 +58,8 @@ const Apply = () => {
     if (isSalesOrLeader) {
       const fetchMembers = async () => {
         try {
-          const response = await handleList(1000, 0);
-          // filter users whose role is 'member'
-          const memberList = response.customers?.filter(u => u.role?.toLowerCase() === 'member') || [];
-          setMembers(memberList);
+          const response = await handleFindUserByRole('MEMBER');
+          setMembers(response.customers || []);
         } catch (error) {
           console.error('Failed to load members list:', error);
         }
@@ -66,6 +67,23 @@ const Apply = () => {
       fetchMembers();
     }
   }, [isSalesOrLeader]);
+
+  useEffect(() => {
+    if (!formData.studentId) {
+      setMembersInput('');
+      setMemberError(null);
+      return;
+    }
+    const m = members.find(x => String(x.user_id) === String(formData.studentId));
+    if (m) {
+      setMembersInput(`${m.user_id} - ${m.name}`);
+      setMemberError(null);
+    } else {
+      // if ID exists but not in list, show raw id
+      setMembersInput(String(formData.studentId));
+      setMemberError(null);
+    }
+  }, [formData.studentId, members]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -75,42 +93,32 @@ const Apply = () => {
     }));
   };
 
-  const handleMemberSelect = (e) => {
-    const selectedMemberId = e.target.value;
-    console.log('Selected value:', selectedMemberId);
-    console.log('Members list:', members);
-    const selectedMember = members.find(m => String(m.user_id) === selectedMemberId);
-    console.log('Found member:', selectedMember);
-    if (selectedMember) {
-      console.log('Setting form data with ID:', selectedMember.user_id, 'Name:', selectedMember.name);
-      setFormData(prev => ({
-        ...prev,
-        studentId: selectedMember.user_id,
-        studentName: selectedMember.name
-      }));
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate studentId is filled
+    if (!formData.studentId) {
+      alert('請選擇或輸入學生 ID');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      console.log('Registration payload:', {
-        eventId: id,
-        studentId: formData.studentId,
-        studentName: formData.studentName,
-        paymentMethod: formData.paymentMethod,
-        registeredBy: user?.sub,
-        registeredAt: new Date().toISOString()
-      });
+      const enrollmentData = {
+        event_id: parseInt(id, 10),
+        user_id: parseInt(formData.studentId, 10),
+        enroll_by_id: user?.sub || null,
+        payment_method: formData.paymentMethod,
+      };
 
-      alert('報名成功！感謝你的參與。');
+      const result = await handleCreateEnrollment(enrollmentData);
+      alert(result?.message || '報名成功！感謝你的參與。');
       navigate('/events');
     } catch (error) {
       console.error('Registration failed:', error);
-      alert('報名失敗，請稍後重試');
+      alert(error?.message || '報名失敗，請稍後重試');
     } finally {
       setIsSubmitting(false);
     }
@@ -122,7 +130,7 @@ const Apply = () => {
 
       <form onSubmit={handleSubmit}>
         <div>
-          <label>課堂/講座名稱</label>
+          <label>課堂/講座名稱: </label>
           <input
             type="text"
             value={event?.event_name || '載入中...'}
@@ -131,7 +139,16 @@ const Apply = () => {
         </div>
 
         <div>
-          <label>學生ID</label>
+          <label>價格: </label>
+          <span style={{ fontWeight: 'bold' }}>
+            {event?.price == null || Number(event?.price) === 0
+              ? '免費'
+              : new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 }).format(Number(event.price))}
+          </span>
+        </div>
+
+        <div>
+          <label>學生ID: </label>
           {isMember ? (
             <input
               type="text"
@@ -140,22 +157,70 @@ const Apply = () => {
               disabled
             />
           ) : (
-            <select name="studentId" value={formData.studentId} onChange={handleMemberSelect} required>
-              <option value="">-- 選擇成員 --</option>
-              {members.map(member => {
-                console.log('Rendering member option:', member.user_id, member.name);
-                return (
-                  <option key={member.user_id} value={member.user_id}>
-                    {member.user_id} - {member.name}
-                  </option>
-                );
-              })}
-            </select>
+            <>
+              <input
+                list="members-list"
+                value={membersInput}
+                  onFocus={() => {
+                    // clear current input when user focuses/clicks the field
+                    setMembersInput('');
+                    setFormData(prev => ({ ...prev, studentId: '', studentName: '' }));
+                    setMemberError(null);
+                  }}
+                  onClick={() => {
+                    // also clear on click for safety
+                    setMembersInput('');
+                    setFormData(prev => ({ ...prev, studentId: '', studentName: '' }));
+                    setMemberError(null);
+                  }}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setMembersInput(val);
+                  const match = members.find(u => `${u.user_id} - ${u.name}` === val);
+                  if (match) {
+                    setFormData(prev => ({ ...prev, studentId: String(match.user_id), studentName: match.name }));
+                    setMemberError(null);
+                  } else {
+                    const trimmed = val.trim();
+                    if (trimmed === '') {
+                      setFormData(prev => ({ ...prev, studentId: '', studentName: '' }));
+                      setMemberError(null);
+                      return;
+                    }
+                    if (/^\d+$/.test(trimmed)) {
+                      // allow numeric ID input, validate exists in members list
+                      setFormData(prev => ({ ...prev, studentId: trimmed }));
+                      const exists = members.some(u => String(u.user_id) === trimmed);
+                      if (exists) {
+                        const m = members.find(u => String(u.user_id) === trimmed);
+                        setFormData(prev => ({ ...prev, studentName: m?.name || '' }));
+                        setMemberError(null);
+                      } else {
+                        setFormData(prev => ({ ...prev, studentName: '' }));
+                        setMemberError('此學生 ID 不在會員清單');
+                      }
+                    } else {
+                      setFormData(prev => ({ ...prev, studentId: '' , studentName: ''}));
+                      setMemberError('請輸入學生 ID（數字），或從清單選擇');
+                    }
+                  }
+                }}
+                placeholder="輸入學生ID或從清單選擇"
+                style={{ width: '20%', padding: 8, borderColor: memberError ? 'red' : '' }}
+                required
+              />
+              <datalist id="members-list">
+                {members.map(u => (
+                  <option key={u.user_id} value={`${u.user_id} - ${u.name}`} />
+                ))}
+              </datalist>
+              {memberError && <small style={{ color: 'red' }}>{memberError}</small>}
+            </>
           )}
         </div>
 
         <div>
-          <label>學生姓名</label>
+          <label>學生姓名: </label>
           {isMember ? (
             <input
               type="text"
@@ -174,11 +239,12 @@ const Apply = () => {
         </div>
 
         <div>
-          <label>支付方式</label>
+          <label>支付方式: </label>
           <select name="paymentMethod" value={formData.paymentMethod} onChange={handleInputChange} required>
-            <option value="Credit Card">Credit Card</option>
-            <option value="現金">現金</option>
-            <option value="Payme">Payme</option>
+            <option value="CREDITCARD">信用卡 (Credit Card)</option>
+            <option value="CASH">現金</option>
+            <option value="FPS">轉數快 (FPS)</option>
+            <option value="PAYME">PayMe</option>
           </select>
         </div>
 

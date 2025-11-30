@@ -1,9 +1,9 @@
 // Waitlist DAO — helpers for managing session waitlists and ranks
 const { query } = require('../db/pool');
 
-async function createWaitlist({ session_id, user_id, rank, created_by_id, create_time = null }) {
-  const sql = `INSERT INTO WAITLIST (session_id, user_id, rank, created_by_id, create_time) VALUES ($1,$2,$3,$4,$5) RETURNING *`;
-  const vals = [session_id, user_id, rank, created_by_id, create_time];
+async function createWaitlist({ event_id, user_id, rank, created_by_id, create_time = null }) {
+  const sql = `INSERT INTO WAITLIST (event_id, user_id, rank, created_by_id, create_time) VALUES ($1,$2,$3,$4,$5) RETURNING *`;
+  const vals = [event_id, user_id, rank, created_by_id, create_time];
   const res = await query(sql, vals);
   return res.rows[0];
 }

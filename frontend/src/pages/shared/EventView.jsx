@@ -149,7 +149,6 @@ const EventView = () => {
         )}
         
         <div><strong>描述:</strong> {event.description || 'N/A'}</div>
-          onDeleteSession={isAdmin ? onDeleteSession : undefined}
         <div>
           <strong>講者:</strong>{' '}
           {event.speaker_id

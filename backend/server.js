@@ -61,6 +61,14 @@ const holidaysRouter = require('./handleAPI/holidays');
 console.log('Holidays router loaded');
 app.use('/api', holidaysRouter); // Use the holidays router
 
+const enrollmentRouter = require('./handleAPI/enrollment');
+console.log('Enrollment router loaded');
+app.use('/api', enrollmentRouter); // Use the enrollment router
+
+const paymentsRouter = require('./handleAPI/payments');
+console.log('Payments router loaded');
+app.use('/api', paymentsRouter); // Use the payments router
+
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');
