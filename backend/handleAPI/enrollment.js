@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
 const { createEnrollment, findIfExist } = require('../dao/eventEnrollmentsDao');
-const { findByEventId } = require('../dao/eventsDao');
+const { findByEventId, updateRemainingSeats } = require('../dao/eventsDao');
 const { createPayment } = require('../dao/paymentsDao');
 
 // Handle create new enrollment
@@ -24,8 +24,15 @@ router.post('/enrollments', authMiddleware, async (req, res) => {
     // Use enroll_by_id from request body if provided, otherwise use authenticated user
     const enrollById = enroll_by_id || req.user.sub;
 
+    const remaining_seats = await findByEventId(event_id)
+    if (remaining_seats.remaining_seats != null && remaining_seats.remaining_seats <= 0) {
+      return res.status(400).json({ message: '此活動已無剩餘名額' });
+    }
+
     const newEnrollment = await createEnrollment({ event_id, user_id, enroll_by_id: enrollById });
     console.log('Enrollment created successfully:', newEnrollment);
+
+    await updateRemainingSeats(event_id);
 
     const event = await findByEventId(event_id);
     let paymentInfo = null;

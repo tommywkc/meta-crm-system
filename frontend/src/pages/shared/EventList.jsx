@@ -21,6 +21,7 @@ const EventList = () => {
 	const [searchTerm, setSearchTerm] = useState('');
 
 	const [events, setEvents] = useState([]);
+		const [enrolledEventIds, setEnrolledEventIds] = useState([]);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -30,15 +31,32 @@ const EventList = () => {
 		};
 		fetchData();
 	}, []);
+
+		// 讀取 sessionStorage 中已報名的活動 ID
+		useEffect(() => {
+			try {
+				const enrolled = JSON.parse(sessionStorage.getItem('enrolledEventIds') || '[]');
+				setEnrolledEventIds(Array.isArray(enrolled) ? enrolled : []);
+			} catch (e) {
+				setEnrolledEventIds([]);
+			}
+		}, []);
 	
 	const fetchEvents = async () => {
 		const payload = await handleListEvents(100, 0);
 		setEvents(payload.events || []);
 	};
 
+	// 依活動 ID 升冪排序
+	const sortedEvents = (events || []).slice().sort((a, b) => {
+		const aId = Number(a?.event_id) || 0;
+		const bId = Number(b?.event_id) || 0;
+		return aId - bId;
+	});
+
 	// 分頁計算
 	const startIndex = (page - 1) * limit;
-	const pagedEvents = events.slice(startIndex, startIndex + limit);
+	const pagedEvents = sortedEvents.slice(startIndex, startIndex + limit);
 	const totalPages = Math.max(1, Math.ceil(events.length / limit));
 	const canPrev = page > 1;
 	const canNext = page < totalPages;
@@ -127,7 +145,8 @@ const EventList = () => {
 
 				{/* 📋 Events table */}
 				<EventsTable
-					events={pagedEvents}
+						events={pagedEvents}
+						enrolledEventIds={enrolledEventIds}
 					role={user?.role}
 					onView={handleView}
 					onEdit={onEdit}
