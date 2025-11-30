@@ -32,7 +32,7 @@ const EventCreate = () => {
         }
       }
       alert('活動新增成功！');
-      navigate('/events');
+      navigate(`/events/${createdEventId}`);
     } catch (err) {
       console.error('Create failed:', err);
       alert(`新增失敗：${err.message || '請稍後再試'}`);
