@@ -4,8 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleGetById as handleGetUserById } from '../../api/customersListAPI';
-import { handleGetSessionsByEventId } from '../../api/sessionAPI';
-import { getStatusDisplay, getTypeDisplay } from '../../utils/dateFormatter';
+import { handleListSessionsByEventId, handleGetSessionById, handleDeleteSession } from '../../api/sessionAPI';
+import { getStatusDisplay, getTypeDisplay, formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import WaitingListTable from '../../components/WaitingListTable';
 import SessionListTable from '../../components/SessionListTable';
 
@@ -58,7 +58,7 @@ const EventView = () => {
         
         // Fetch sessions for this event
         try {
-          const sessionData = await handleGetSessionsByEventId(id);
+          const sessionData = await handleListSessionsByEventId(id);
           setSessions(sessionData.sessions || []);
         } catch (err) {
           console.error('Failed to fetch sessions:', err);
@@ -91,6 +91,34 @@ const EventView = () => {
     navigate(`/events/${id}/apply`);
   };
 
+  const handleEditSession = (session_id) => {
+    if (!session_id) return;
+    navigate(`/sessions/${session_id}/edit`);
+  };
+
+  const onDeleteSession = async (session_id) => {
+    if (!session_id) return;
+    const payload = await handleGetSessionById(session_id);
+    const findSessionData = payload?.session || {};
+    if (window.confirm(`確認要刪除此場次？ \n ${findSessionData.session_name || ''} (${findSessionData.datetime_start ? formatDateTimeForDisplay(findSessionData.datetime_start) : 'N/A'})`)) {
+      try {
+        await handleDeleteSession(session_id);
+        alert('場次刪除成功！');
+        const sessionData = await handleListSessionsByEventId(id);
+        setSessions(sessionData.sessions || []);
+      } catch (err) {
+        console.error('Failed to delete session:', err);
+        alert('刪除場次失敗，請稍後再試');
+      }
+    }
+  };
+
+  const handleEnrollSession = (session_id) => {
+    if (!session_id) return;
+    navigate(`/events/${id}/apply`);
+  };
+
+
 
   if (!event || !event.event_id) {
     return (
@@ -109,8 +137,8 @@ const EventView = () => {
         <div><strong>ID:</strong> {event.event_id}</div>
         <div><strong>名稱:</strong> {event.event_name || 'N/A'}</div>
         <div><strong>類別:</strong> {getTypeDisplay(event.type) || 'N/A'}</div>
-        <div><strong>開始時間:</strong> {event.datetime_start || 'N/A'}</div>
-        <div><strong>結束時間:</strong> {event.datetime_end || 'N/A'}</div>
+        <div><strong>開始時間:</strong> {event.datetime_start ? formatDateTimeForDisplay(event.datetime_start) : 'N/A'}</div>
+        <div><strong>結束時間:</strong> {event.datetime_end ? formatDateTimeForDisplay(event.datetime_end) : 'N/A'}</div>
         <div><strong>狀態:</strong> {getStatusDisplay(event.status) || 'N/A'}</div>
         
         {event.capacity && (
@@ -121,21 +149,25 @@ const EventView = () => {
         )}
         
         <div><strong>描述:</strong> {event.description || 'N/A'}</div>
+          onDeleteSession={isAdmin ? onDeleteSession : undefined}
         <div>
           <strong>講者:</strong>{' '}
           {event.speaker_id
             ? (
               <>
-                {event.speaker_id}
-                {speakerName ? ` - ${speakerName}` : ' (載入中...)'}
+                {speakerName ? `${speakerName}` : ' (載入中...)'}
               </>
             )
-            : 'N/A'}
+            : 'TBC'}
         </div>
-        <div><strong>地點:</strong> {event.location || 'N/A'}</div>
+        <div><strong>地點:</strong> {event.location || 'TBC'}</div>
         <div><strong>價格:</strong> {event.price ? `$ ${event.price}` : '免費'}</div>
-        <div><strong>房間費用:</strong> {event.room_cost || 'N/A'}</div>
-        <div><strong>建立時間:</strong> {event.create_time || 'N/A'}</div>
+        {isAdmin && (
+          <>
+            <div><strong>房間費用:</strong> $ {event.room_cost || 'N/A'}</div>
+            <div><strong>建立時間:</strong> {formatDateTimeForDisplay(event.create_time)|| 'N/A'}</div>
+          </>
+        )}
       </div>
       
       <div>
@@ -189,7 +221,11 @@ const EventView = () => {
             selectedSessionName === 'all' 
               ? sessions 
               : sessions.filter(s => s.session_name === selectedSessionName)
-          } 
+          }
+          role={user?.role}
+          onEditSession={isAdmin ? handleEditSession : undefined}
+          onEnrollSession={(isMember || isSalesOrLeader) ? handleEnrollSession : undefined}
+          onDeleteSession={isAdmin ? onDeleteSession : undefined}
         />
       </div>
 

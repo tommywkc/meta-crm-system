@@ -3,7 +3,6 @@ const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findLatestId, findUserByQrToken, findUserByRole} = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
-const { formatDateTime } = require('../function/dateFormatter');
 const crypto = require('crypto');
 
 
@@ -19,9 +18,7 @@ router.get('/customers/myqrcode', authMiddleware, async (req, res) => {
       console.log('Customer not found:', user_id);
       return res.status(404).json({ message: '客戶不存在' });
     }
-    if (customer.create_time) {
-      customer.create_time = formatDateTime(customer.create_time);
-    }
+    // Return customer with ISO format datetime (no formatting needed)
     console.log('Successfully retrieved customer QR code:', user_id);
     res.json({ customer });
   } catch (error) {
@@ -61,9 +58,7 @@ router.get('/customers/:id', authMiddleware, roleMiddleware(['admin', 'sales', '
       console.log('Customer not found:', user_id);
       return res.status(404).json({ message: '客戶不存在' });
     }
-    if (customer.create_time) {
-      customer.create_time = formatDateTime(customer.create_time);
-    }
+    // Return ISO format, frontend will format for display
     console.log('Successfully retrieved customer data:', user_id);
     res.json({ customer });
   } catch (error) {
@@ -83,9 +78,7 @@ router.get('/customers/:id/edit', authMiddleware, roleMiddleware('admin'), async
       console.log('Customer not found:', user_id);
       return res.status(404).json({ message: '客戶不存在' });
     }
-    if (customer.create_time) {
-      customer.create_time = formatDateTime(customer.create_time);
-    }
+    // Return ISO format, frontend will format for display
     console.log('Successfully retrieved customer data for edit:', user_id);
     res.json({ customer });
   } catch (error) {
@@ -191,9 +184,7 @@ router.get('/customers/scan/:qr_token', authMiddleware, roleMiddleware(['admin',
       console.log('Customer not found for QR token:', qr_token);
       return res.status(404).json({ message: '客戶不存在' });
     }
-    if (customer.create_time) {
-      customer.create_time = formatDateTime(customer.create_time);
-    }
+    // Return ISO format, frontend will format for display
     console.log('Successfully retrieved customer data from QR token');
     res.json({ customer });
   } catch (error) {

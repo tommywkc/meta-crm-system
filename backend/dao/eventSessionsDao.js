@@ -34,4 +34,15 @@ async function removeBySessionById(id) {
   return true;
 }
 
-module.exports = { createSession, findBySessionId, listByEventId, removeBySessionById };
+async function updateSessionById(id, fields = {}) {
+  const keys = Object.keys(fields);
+  if (keys.length === 0) return findBySessionId(id);
+  const sets = keys.map((k, i) => `${k} = $${i+1}`).join(', ');
+  const vals = keys.map(k => fields[k]);
+  vals.push(id);
+  const sql = `UPDATE EVENT_SESSIONS SET ${sets} WHERE session_id = $${vals.length} RETURNING *`;
+  const res = await query(sql, vals);
+  return res.rows[0] || null;
+}
+
+module.exports = { createSession, findBySessionId, listByEventId, removeBySessionById, updateSessionById };

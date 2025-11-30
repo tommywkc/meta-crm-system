@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { handleGetById, handleUpdateById, handleDeleteById } from '../../api/eventListAPI';
+import { handleListSessionsByEventId } from '../../api/sessionAPI';
 import EventForm from '../../components/EventForm';
+import { formSessionsToBackendPayload } from '../../utils/sessionDateHelper';
 
 
 const EventsEdit = () => {
@@ -9,19 +11,31 @@ const EventsEdit = () => {
   const navigate = useNavigate();
 
   const [event, setEvent] = useState([]);
-      useEffect(() => {
-        const fetchData = async () => {
-          const data = await handleGetById(id);
-          setEvent(data.event || {});
-        };
-        fetchData();
-      }, [id]);
+  const [sessions, setSessions] = useState([]);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await handleGetById(id);
+      setEvent(data.event || {});
+      
+      // Fetch sessions for this event (backend returns ISO format)
+      try {
+        const sessionData = await handleListSessionsByEventId(id);
+        setSessions(sessionData.sessions || []);
+      } catch (err) {
+        console.error('Failed to fetch sessions:', err);
+        setSessions([]);
+      }
+    };
+    fetchData();
+  }, [id]);
   
   const handleSubmit = async (formData) => {
     try{
-      // Remove sessions from formData, only update event
-      const { sessions, ...eventData } = formData || {};
+      const { sessions: formSessions, ...eventData } = formData || {};
+      
       await handleUpdateById(id, eventData);
+      
       alert('更新成功');
       navigate('/events/'+id);
     }catch (error) {
@@ -48,7 +62,7 @@ const EventsEdit = () => {
     <EventForm
       title="編輯課堂/講座"
       submitButtonText="更新"
-      initialData={event}
+      initialData={{ ...event, sessions }}
       onSubmit={handleSubmit}
       onCancel={handleCancel}
       onDelete={handleDelete}

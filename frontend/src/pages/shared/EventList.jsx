@@ -5,6 +5,7 @@ import EventsTable from '../../components/EventsTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
 import { handleListEvents, handleDeleteById } from '../../api/eventListAPI';
+import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 const EventList = () => {
 	const navigate = useNavigate();
@@ -60,7 +61,7 @@ const EventList = () => {
 	const onDelete = async (event_id) => {
 		const event = events.find(e => e.event_id === event_id);
 		const eventInfo = event 
-			? `${event.type || ''} ${event.event_id} ${event.event_name || ''} ${event.datetime_start ? `(${event.datetime_start})` : ''}`
+			? `${event.type || ''} ${event.event_id} ${event.event_name || ''} ${event.datetime_start ? `(${formatDateTimeForDisplay(event.datetime_start)})` : ''}`
 			: `活動 ID: ${event_id}`;
 		
 		if (window.confirm(`確認要刪除此活動？\n\n${eventInfo}`)) {

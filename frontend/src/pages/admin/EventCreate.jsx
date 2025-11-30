@@ -50,6 +50,7 @@ const EventCreate = () => {
       submitButtonText="建立"
       onSubmit={handleSubmit}
       onCancel={handleCancel}
+      showSessionForm={true}
     />
   );
 };

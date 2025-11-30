@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { emptyToNull } = require('../function/dataSanitizer');
-const { formatDateTime } = require('../function/dateFormatter');
-const { createSession, listByEventId } = require('../dao/eventSessionsDao');
+const { createSession, listByEventId, findBySessionId, removeBySessionById, updateSessionById } = require('../dao/eventSessionsDao');
 
 //handle get sessions by event_id
 router.get('/events/:event_id/sessions', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
@@ -17,15 +16,24 @@ router.get('/events/:event_id/sessions', authMiddleware, roleMiddleware(['admin'
 
     const sessions = await listByEventId(event_id);
     
-    // Format datetime fields for display
-    const formattedSessions = sessions.map(s => ({
-      ...s,
-      datetime_start: s.datetime_start ? formatDateTime(s.datetime_start) : null,
-      datetime_end: s.datetime_end ? formatDateTime(s.datetime_end) : null
-    }));
+    // Calculate duration_minutes, keep datetime in ISO format
+    const processedSessions = sessions.map(s => {
+      let duration_minutes = 60; // default
+      if (s.datetime_start && s.datetime_end) {
+        const start = new Date(s.datetime_start);
+        const end = new Date(s.datetime_end);
+        duration_minutes = Math.round((end - start) / (1000 * 60)); // difference in minutes
+      }
+      
+      return {
+        ...s,
+        duration_minutes
+        // datetime_start and datetime_end remain in ISO format
+      };
+    });
 
     console.log(`Found ${sessions.length} sessions for event ${event_id}`);
-    res.json({ sessions: formattedSessions });
+    res.json({ sessions: processedSessions });
   } catch (error) {
     console.error('Get sessions failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });
@@ -65,6 +73,71 @@ router.post('/sessions', authMiddleware, roleMiddleware('admin'), async (req, re
     res.status(201).json({ message: '場次建立成功', session: createdSession });
   } catch (error) {
     console.error('Create session failed:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// handle get single session by id
+router.get('/sessions/:id', authMiddleware, roleMiddleware(['admin','sales','leader','member']), async (req, res) => {
+  try {
+    const session_id = parseInt(req.params.id, 10);
+    console.log('Received get single session request:', session_id, 'from user:', req.user.sub);
+    if (isNaN(session_id)) {
+      return res.status(400).json({ message: '無效的場次 ID' });
+    }
+    const session = await findBySessionId(session_id);
+    if (!session) {
+      return res.status(404).json({ message: '場次不存在' });
+    }
+    let duration_minutes = null;
+    if (session.datetime_start && session.datetime_end) {
+      duration_minutes = Math.round((new Date(session.datetime_end) - new Date(session.datetime_start)) / (1000*60));
+    }
+    res.json({ session: { ...session, duration_minutes } });
+  } catch (error) {
+    console.error('Get single session failed:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+//handle update session by id
+router.put('/sessions/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const session_id = parseInt(req.params.id, 10);
+    const updateData = emptyToNull(req.body);
+    console.log('Received session update request:', session_id, 'from user:', req.user.sub);
+
+    const existingSession = await findBySessionId(session_id);
+    if (!existingSession) {
+      return res.status(404).json({ message: '場次不存在' });
+    }
+
+    const updated = await updateSessionById(session_id, updateData);
+
+    console.log('Successfully updated session data:', session_id);
+    res.json({ message: '場次資料更新成功', session: updated });
+  } catch (error) {
+    console.error('Failed to update session data:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+//handle delete session by id
+router.delete('/sessions/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const session_id = parseInt(req.params.id, 10);
+    console.log('Received delete session request:', session_id, 'from user:', req.user.sub);
+
+    const existingSession = await findBySessionId(session_id);
+    if (!existingSession) {
+      return res.status(404).json({ message: '場次不存在' });
+    }
+
+    await removeBySessionById(session_id);
+    console.log('Successfully deleted session:', session_id);
+    res.json({ message: '場次資料刪除成功' });
+  } catch (error) {
+    console.error('Failed to delete session:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });

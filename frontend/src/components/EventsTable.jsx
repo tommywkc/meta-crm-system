@@ -1,6 +1,6 @@
 import React from 'react';
 import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
-import { getStatusDisplay, getTypeDisplay } from '../utils/dateFormatter';
+import { getStatusDisplay, getTypeDisplay, formatForDisplay } from '../utils/dateFormatter';
 
 const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) => {
   const userRole = role?.toLowerCase();
@@ -28,8 +28,8 @@ const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) 
             <td style={thTdStyle}>{event.event_id}</td>
             <td style={thTdStyle}>{event.event_name}</td>
             <td style={thTdStyle}>{getTypeDisplay(event.type)}</td>
-            <td style={thTdStyle}>{event.datetime_start != null ? event.datetime_start : '無'}</td>
-            <td style={thTdStyle}>{event.datetime_end != null ? event.datetime_end : '無'}</td>
+            <td style={thTdStyle}>{event.datetime_start != null ? formatForDisplay(event.datetime_start) : '無'}</td>
+            <td style={thTdStyle}>{event.datetime_end != null ? formatForDisplay(event.datetime_end) : '無'}</td>
             <td style={thTdStyle}>{event.capacity != null ? `剩餘 ${event.remaining_seats}/${event.capacity}` : '無限制'}</td>
             <td style={thTdStyle}>{getStatusDisplay(event.status)}</td>
             <td style={thTdStyle}>

@@ -5,6 +5,11 @@ import { getTypeDisplay } from '../utils/dateFormatter';
 import { redTextStyle } from '../styles/TableStyles';
 import '../styles/BatchSessionStyles.css';
 import { handleFindUsersByRoles } from '../api/customersListAPI';
+import { 
+  backendSessionsToFormState, 
+  formSessionsToBackendPayload, 
+  calculateEventDateTimes 
+} from '../utils/sessionDateHelper';
 
 const EventForm = ({
   initialData = {},
@@ -13,6 +18,7 @@ const EventForm = ({
   submitButtonText = "提交",
   title = "活動表單",
   showEventId = false,
+  showSessionForm = false,
   onDelete = null
 }) => {
   const [name, setName] = useState(initialData.event_name || '');
@@ -29,17 +35,7 @@ const EventForm = ({
   const [speakerCandidates, setSpeakerCandidates] = useState([]);
   const [price, setPrice] = useState(initialData.price || '');
   const [sessions, setSessions] = useState(
-    Array.isArray(initialData.sessions)
-      ? initialData.sessions.map(s => ({
-          // 將原本每個單一場次轉成可包含多個日期的結構（editing 時每個原始場次視為只有一個日期）
-          session_name: s.session_name || '',
-          dates: s.datetime_start ? [new Date(s.datetime_start)] : [],
-          time: s.datetime_start ? new Date(s.datetime_start).toISOString().slice(11, 16) : '09:00',
-           duration_minutes: s.duration_minutes || 60,
-           session_description: s.session_description || s.description || '',
-           session_capacity: s.session_capacity || s.capacity || ''
-        }))
-      : []
+    backendSessionsToFormState(initialData.sessions)
   );
 
 
@@ -56,18 +52,7 @@ const EventForm = ({
       setRoomCost(initialData.room_cost || '');
       setSpeakerId(initialData.speaker_id || '');
       setPrice(initialData.price || '');
-      setSessions(
-        Array.isArray(initialData.sessions)
-          ? initialData.sessions.map(s => ({
-              session_name: s.session_name || '',
-              dates: s.datetime_start ? [new Date(s.datetime_start)] : [],
-              time: s.datetime_start ? new Date(s.datetime_start).toISOString().slice(11, 16) : '09:00',
-               duration_minutes: s.duration_minutes || 60,
-               session_description: s.session_description || s.description || '',
-               session_capacity: s.session_capacity || s.capacity || ''
-            }))
-          : []
-      );
+      setSessions(backendSessionsToFormState(initialData.sessions));
     }
   }, [initialData]);
 
@@ -119,47 +104,18 @@ const EventForm = ({
     alert(speakerError);
     return;
   }
-  // 將每個 session 的多個日期展開成後端接受的多個 session 條目
-  const sessionsPayload = [];
-  sessions.forEach(s => {
-    const dur = s.duration_minutes || 60;
-    const timeParts = (s.time || '09:00').split(':');
-    const hours = parseInt(timeParts[0], 10) || 0;
-    const minutes = parseInt(timeParts[1], 10) || 0;
-    (s.dates || []).forEach(d => {
-      const dateObj = new Date(d);
-      // 把選到的日期與場次時間合併
-      dateObj.setHours(hours, minutes, 0, 0);
-      const endDate = new Date(dateObj.getTime() + dur * 60000);
-      sessionsPayload.push({
-        session_name: s.session_name || '',
-        datetime_start: dateObj.toISOString(),
-        datetime_end: endDate.toISOString(),
-        session_description: s.session_description || '',
-        session_capacity: s.session_capacity ? parseInt(s.session_capacity, 10) : null
-      });
-    });
-  });
-
-  // Calculate event datetime_start and datetime_end from sessions
-  let eventDatetimeStart = null;
-  let eventDatetimeEnd = null;
   
-  if (sessionsPayload.length > 0) {
-    // Find earliest start time
-    const allStartTimes = sessionsPayload.map(s => new Date(s.datetime_start));
-    eventDatetimeStart = new Date(Math.min(...allStartTimes)).toISOString();
-    
-    // Find latest end time
-    const allEndTimes = sessionsPayload.map(s => new Date(s.datetime_end));
-    eventDatetimeEnd = new Date(Math.max(...allEndTimes)).toISOString();
-  }
+  // Convert form sessions to backend payload format
+  const sessionsPayload = formSessionsToBackendPayload(sessions);
+  
+  // Calculate event datetime_start and datetime_end from sessions
+  const { datetime_start, datetime_end } = calculateEventDateTimes(sessionsPayload);
 
   const formData = {
     event_name: name.trim(),
     type: type.trim(),
-    datetime_start: eventDatetimeStart,
-    datetime_end: eventDatetimeEnd,
+    datetime_start,
+    datetime_end,
     capacity: parseInt(capacity, 10) || 60,
     status,
     location,
@@ -383,9 +339,9 @@ const EventForm = ({
           </div>
           
         </div>
-
-        {/* 多場次設定（可選） */}
-        <div style={{ marginBottom: 16 }}>
+        
+        {showSessionForm && (
+          <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <label><strong>場次（可選）:</strong></label>
             <button type="button" onClick={addSession}>+ 新增場次</button>
@@ -401,7 +357,7 @@ const EventForm = ({
                       <label className="session-name-label">場次名稱</label><br/>
                       <input
                         type="text"
-                        placeholder="例：Session A, 第一堂課"
+                        placeholder="Session A, 第一堂課"
                         value={s.session_name}
                         onChange={(e) => updateSession(idx, 'session_name', e.target.value)}
                         className="batch-input-field"
@@ -505,6 +461,7 @@ const EventForm = ({
             </div>
           ) : null}
         </div>
+        )}
 
 
 
