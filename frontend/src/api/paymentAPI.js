@@ -34,3 +34,35 @@ export async function handleListPaymentByUserId(user_id) {
         throw err;
     }
 }
+
+
+export async function listAllPayment(limit, offset) {
+  console.log('Fetching payments list from backend');
+  const res = await fetch('http://localhost:4000/api/payments', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // allow cookies to be sent across origins
+  });
+  if (!res.ok) {
+    // try to read backend error message
+    try {
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to fetch payments list');
+    } catch (e) {
+      throw new Error(res.statusText || 'Failed to fetch payments list');
+    }
+  }
+  return await res.json();
+}
+
+export async function handleListAllPayment(limit, offset) {
+  try {
+    console.log('Attempting to fetch payments list...');
+    const payload = await listAllPayment(limit, offset);
+    console.log('Payments list response:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Fetch payments list error:', err);
+    throw err;
+  }
+}

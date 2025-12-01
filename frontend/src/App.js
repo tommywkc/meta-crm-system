@@ -26,7 +26,7 @@ import Files from './pages/admin/Files';
 // SalesCustomers removed in favor of shared CustomersList
 import KPI from './pages/sales/KPI';
 
-import Payments from './pages/member/Payments';
+import Payments from './pages/shared/Payments';
 import Receipts from './pages/member/Receipts';
 import Requests from './pages/member/Requests';
 import RequestsForm from './pages/member/RequestsForm';
@@ -160,7 +160,7 @@ function App() {
           } />
 
           <Route path="/payments" element={
-            <ProtectedRoute allowedRole="member">
+            <ProtectedRoute allowedRoles={['admin', 'sales', 'leader', 'member']}>
               <Payments />
             </ProtectedRoute>
           } />

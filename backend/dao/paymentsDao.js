@@ -19,9 +19,22 @@ async function listByUser(user_id) {
   return res.rows;
 }
 
+async function listByPaymentId(limit = 100, offset = 0) {
+  const sql = `
+    SELECT p.*, u.name as user_name, u.email as user_email
+    FROM PAYMENTS p
+    LEFT JOIN USERS u ON p.user_id = u.user_id
+    ORDER BY p.payment_id DESC
+    LIMIT $1 OFFSET $2
+  `;
+  const res = await query(sql, [limit, offset]);
+  return res.rows;
+}
+
+
 async function removeByPaymentId(id) {
   await query('DELETE FROM PAYMENTS WHERE payment_id = $1', [id]);
   return true;
 }
 
-module.exports = { createPayment, findByPaymentId, listByUser, removeByPaymentId };
+module.exports = { createPayment, findByPaymentId, listByUser, removeByPaymentId, listByPaymentId };
