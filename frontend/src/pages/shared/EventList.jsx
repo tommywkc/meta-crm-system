@@ -27,7 +27,6 @@ const EventList = () => {
 
 	useEffect(() => {
 		const fetchData = async () => {
-			// 後端已針對角色處理可見性（member 只回 OPEN）
 			const payload = await handleListEvents(100, 0);
 			setEvents(payload.events || []);
 			setFilteredEvents(payload.events || []);

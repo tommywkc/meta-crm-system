@@ -19,6 +19,11 @@ export const redTextStyle = {
   marginRight: 8
 };
 
+export const greenTextStyle = {
+  color: '#00a600ff',
+  marginRight: 8
+};
+
 // Search bar styles
 export const searchInputStyle = {
   flex: 1,

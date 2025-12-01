@@ -10,7 +10,18 @@ async function createPayment({ event_id, user_id, enrollment_id, amount, method,
 }
 
 async function findByPaymentId(id) {
-  const res = await query('SELECT * FROM PAYMENTS WHERE payment_id = $1', [id]);
+  const sql = `
+    SELECT p.*, 
+           u.name as user_name, u.email as user_email, 
+           e.event_name,
+           c.name as casher_name
+    FROM PAYMENTS p
+    LEFT JOIN USERS u ON p.user_id = u.user_id
+    LEFT JOIN EVENTS e ON p.event_id = e.event_id
+    LEFT JOIN USERS c ON p.casher_id = c.user_id
+    WHERE p.payment_id = $1
+  `;
+  const res = await query(sql, [id]);
   return res.rows[0] || null;
 }
 
@@ -19,9 +30,37 @@ async function listByUser(user_id) {
   return res.rows;
 }
 
+async function listByPaymentId(limit = 100, offset = 0) {
+  const sql = `
+    SELECT p.*, 
+           u.name as user_name, u.email as user_email,
+           c.name as casher_name
+    FROM PAYMENTS p
+    LEFT JOIN USERS u ON p.user_id = u.user_id
+    LEFT JOIN USERS c ON p.casher_id = c.user_id
+    ORDER BY p.payment_id DESC
+    LIMIT $1 OFFSET $2
+  `;
+  const res = await query(sql, [limit, offset]);
+  return res.rows;
+}
+
+
 async function removeByPaymentId(id) {
   await query('DELETE FROM PAYMENTS WHERE payment_id = $1', [id]);
   return true;
 }
 
-module.exports = { createPayment, findByPaymentId, listByUser, removeByPaymentId };
+async function updatePaymentById(id, fields = {}) {
+  const keys = Object.keys(fields);
+  if (keys.length === 0) return findByPaymentId(id);
+  const sets = keys.map((k, i) => `${k} = $${i+1}`).join(', ');
+  const vals = keys.map(k => fields[k]);
+  vals.push(id);
+  const sql = `UPDATE PAYMENTS SET ${sets} WHERE payment_id = $${vals.length} RETURNING *`;
+  const res = await query(sql, vals);
+  return res.rows[0] || null;
+}
+
+
+module.exports = { createPayment, findByPaymentId, listByUser, removeByPaymentId, listByPaymentId, updatePaymentById };

@@ -34,3 +34,91 @@ export async function handleListPaymentByUserId(user_id) {
         throw err;
     }
 }
+
+
+export async function listAllPayment(limit, offset) {
+  console.log('Fetching payments list from backend');
+  const res = await fetch('http://localhost:4000/api/payments', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // allow cookies to be sent across origins
+  });
+  if (!res.ok) {
+    // try to read backend error message
+    try {
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to fetch payments list');
+    } catch (e) {
+      throw new Error(res.statusText || 'Failed to fetch payments list');
+    }
+  }
+  return await res.json();
+}
+
+export async function handleListAllPayment(limit, offset) {
+  try {
+    console.log('Attempting to fetch payments list...');
+    const payload = await listAllPayment(limit, offset);
+    console.log('Payments list response:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Fetch payments list error:', err);
+    throw err;
+  }
+}
+
+export async function getPaymentById(payment_id) {
+  const res = await fetch(`http://localhost:4000/api/payments/${payment_id}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch payment ${payment_id}`);
+  }
+  return res.json();
+}
+
+export async function handleGetPaymentById(payment_id) {
+  try {
+    console.log(`Attempting to fetch payment ${payment_id}...`);
+    const payload = await getPaymentById(payment_id);
+    console.log(`Payment ${payment_id} data:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Fetch payment error for ${payment_id}:`, err);
+    throw err;
+  }
+}
+
+
+export async function updatePaymentById(payment_id, data) {
+  const response = await fetch(`http://localhost:4000/api/payments/${payment_id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // allow cookies to be sent across origins
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    // try to read backend error message
+    try {
+      const err = await response.json();
+      throw new Error(err.message || `Failed to update payment ${payment_id}`);
+    } catch (e) {
+      throw new Error(response.statusText || `Failed to update payment ${payment_id}`);
+    }
+  }
+  return response.json();
+}
+
+export async function handleUpdatePaymentById(payment_id, data) {
+  try {
+    console.log(`Attempting to update payment ${payment_id} with data:`, data);
+    const payload = await updatePaymentById(payment_id, data);
+    console.log(`Payment ${payment_id} update response:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Update payment error for ${payment_id}:`, err);
+    throw err;
+  }
+}

@@ -32,7 +32,7 @@ router.post('/enrollments', authMiddleware, async (req, res) => {
     const newEnrollment = await createEnrollment({ event_id, user_id, enroll_by_id: enrollById });
     console.log('Enrollment created successfully:', newEnrollment);
 
-    await updateRemainingSeats(event_id);
+    await updateRemainingSeats(event_id, -1);
 
     const event = await findByEventId(event_id);
     let paymentInfo = null;
