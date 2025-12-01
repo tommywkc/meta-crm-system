@@ -3,6 +3,7 @@ const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
 const { listByUser, listByPaymentId, findByPaymentId, updatePaymentById } = require('../dao/paymentsDao');
 const { removeByEnrollmentId, updateStatusByEnrollmentId } = require('../dao/eventEnrollmentsDao');
+const { updateRemainingSeats } = require('../dao/eventsDao');
 
 
 router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
@@ -72,6 +73,7 @@ router.put('/payments/:paymentId', authMiddleware, async (req, res) => {
     if (updateData.status && (updateData.status.toUpperCase() === 'CANCELLED' || updateData.status.toUpperCase() === 'REFUNDED')) {
         // If payment is cancelled or refunded, remove associated event enrollments
         await removeByEnrollmentId(existingPayment.enrollment_id);
+        await updateRemainingSeats(existingPayment.event_id, 1);
     }
     if (updateData.status && updateData.status.toUpperCase() === 'COMPLETED') {
         // If payment is completed, update enrollment status to CONFIRMED

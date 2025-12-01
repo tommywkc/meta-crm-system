@@ -74,12 +74,12 @@ async function findLatestEventId() {
   }
 }
 
-async function updateRemainingSeats(event_id) {
+async function updateRemainingSeats(event_id, change) {
   const eventData = await findByEventId(event_id);
   if (!eventData) {
     throw new Error(`Event with ID ${event_id} not found`);
   }
-  let newRemainingSeats = eventData.remaining_seats -1;
+  let newRemainingSeats = eventData.remaining_seats + change;
   
   const sql = `UPDATE EVENTS SET remaining_seats = $1 WHERE event_id = $2 RETURNING *`;
   const vals = [newRemainingSeats, event_id];
