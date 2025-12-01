@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS PAYMENTS (
     event_id BIGINT,
     user_id BIGINT,
     enrollment_id BIGINT,
-    amount DECIMAL(10,2),
+    amount DECIMAL(12,2),
     method VARCHAR(50),
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
