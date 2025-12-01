@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
-const { createEnrollment, findIfExist } = require('../dao/eventEnrollmentsDao');
+const { createEnrollment, findIfExist, checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 const { findByEventId, updateRemainingSeats } = require('../dao/eventsDao');
 const { createPayment } = require('../dao/paymentsDao');
 
@@ -83,5 +83,19 @@ router.post('/enrollments', authMiddleware, async (req, res) => {
     });
   }
 });
+
+router.get('/enrollments/check', authMiddleware, async (req, res) => {
+  try {
+    const { event_id, user_id } = req.query;
+    console.log('Received enrollment check request from user:', req.user.sub, 'for event_id:', event_id, 'and user_id:', user_id);
+
+    const isEnrolled = await checkIsConfirmedEnrolled(user_id, event_id);
+    res.json({ isEnrolled });
+  } catch (error) {
+    console.error('Enrollment check failed:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
 
 module.exports = router;

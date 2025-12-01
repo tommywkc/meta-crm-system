@@ -5,6 +5,7 @@ import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleGetById as handleGetUserById } from '../../api/customersListAPI';
 import { handleListSessionsByEventId, handleGetSessionById, handleDeleteSession } from '../../api/sessionAPI';
+import { handleCheckEnrollment } from '../../api/enrollmentAPI';
 import { getStatusDisplay, getTypeDisplay, formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import WaitingListTable from '../../components/WaitingListTable';
 import SessionListTable from '../../components/SessionListTable';
@@ -25,6 +26,7 @@ const EventView = () => {
   const [selectedSessionName, setSelectedSessionName] = useState('all');
   // Note: isEnrolling is for future enrollment loading state
   const [isEnrolling] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
   
   // Mock waiting list data
   const mockWaiting = [
@@ -64,6 +66,12 @@ const EventView = () => {
           console.error('Failed to fetch sessions:', err);
           setSessions([]);
         }
+        
+        const enrollmentData = await handleCheckEnrollment(id, user?.id);
+        if (enrollmentData != null) {
+          setIsEnrolled(true);
+        }
+
       };
       fetchData();
     }, [id]);
@@ -229,6 +237,7 @@ const EventView = () => {
           onEditSession={isAdmin ? handleEditSession : undefined}
           onEnrollSession={(isMember || isSalesOrLeader) ? handleEnrollSession : undefined}
           onDeleteSession={isAdmin ? onDeleteSession : undefined}
+          isEnrolled={isEnrolled}
         />
       </div>
 

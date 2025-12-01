@@ -39,4 +39,9 @@ async function updateStatusByEnrollmentId(id, status) {
   return res.rows[0] || null;
 }
 
-module.exports = { createEnrollment, findByEnrollmentId, listByUser, listByEvent, removeByEnrollmentId, findIfExist, updateStatusByEnrollmentId };
+async function checkIsConfirmedEnrolled(user_id, event_id) {
+  const res = await query('SELECT * FROM EVENT_ENROLLMENTS WHERE user_id = $1 AND event_id = $2 AND status = $3', [user_id, event_id, 'CONFIRMED']);
+  return res.rows.length > 0;
+}
+
+module.exports = { createEnrollment, findByEnrollmentId, listByUser, listByEvent, removeByEnrollmentId, findIfExist, updateStatusByEnrollmentId, checkIsConfirmedEnrolled };
