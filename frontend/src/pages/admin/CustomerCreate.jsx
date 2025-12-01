@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { handleCreate } from '../../api/customersListAPI';
 import CustomerForm from '../../components/CustomerForm';
+import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 const CustomerCreate = () => {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ const CustomerCreate = () => {
   // 從掃描頁帶入的來源活動，用於預填「來源」欄位（不影響標籤/備註）
   const sourceEvent = location?.state?.sourceEvent;
   const formattedSource = sourceEvent
-    ? `現場登記 - ${sourceEvent.type} ${sourceEvent.event_id} ${sourceEvent.event_name || ''}${sourceEvent.datetime_start ? ` (${sourceEvent.datetime_start})` : ''}`.trim()
+    ? `現場登記 - ${sourceEvent.type} ${sourceEvent.event_id} ${sourceEvent.event_name || ''}${sourceEvent.datetime_start ? ` (${formatDateTimeForDisplay(sourceEvent.datetime_start)})` : ''}`.trim()
     : undefined;
 
   const handleSubmit = async (formData) => {

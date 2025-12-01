@@ -115,6 +115,11 @@ const EventList = () => {
 	const handleView = (event_id) => navigate(`/events/${event_id}`);
 
 	const onEnroll = (id) => {
+		const event = events.find(e => e.event_id === id);
+		if (event && event.status !== 'OPEN') {
+			alert('留意此活動目前未公開報名');
+			navigate(`/events/${id}/apply`);
+		}
 		navigate(`/events/${id}/apply`);
 	};
 
