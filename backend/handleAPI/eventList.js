@@ -166,4 +166,8 @@ router.get('/events/status/:status', authMiddleware, roleMiddleware(['admin', 's
   }
 });
 
+
+
+
+
 module.exports = router;
