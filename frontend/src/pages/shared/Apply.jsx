@@ -123,7 +123,16 @@ const Apply = () => {
       }
       
       alert(message);
-      navigate('/events');
+      if (event?.price == null || Number(event?.price) === 0) {
+        navigate('/events');
+      } else {
+        if (isSalesOrLeader) {
+          navigate(`/payments/${result.payment.payment_id}/process`);
+        } else {
+          navigate('/events');
+        }
+      }
+      
     } catch (error) {
       console.error('Registration failed:', error);
       alert(error?.message || '報名失敗，請稍後重試');
