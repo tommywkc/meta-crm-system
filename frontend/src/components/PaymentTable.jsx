@@ -1,5 +1,5 @@
 import React from 'react';
-import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
+import { tableStyle, thTdStyle, redTextStyle, greenTextStyle } from '../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
 const currency = new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 });
@@ -19,18 +19,20 @@ const statusLabel = (s) => {
 		case 'PENDING': return '待付款';
 		case 'COMPLETED': return '已付款';
 		case 'EXPIRED': return '已過期';
+        case 'CANCELLED': return '已取消';
+        case 'REFUNDED': return '已退款';
 		default: return s || '-';
 	}
 };
 
-const PaymentTable = ({ payments, onView, onDownload, showUserColumn = false }) => {
+const PaymentTable = ({ payments, onView, onDownload, onProcess, showUserColumn = false }) => {
 	return (
 		<table style={tableStyle}>
 			<thead>
 				<tr>
 					<th style={thTdStyle}>建立日期</th>
 					<th style={thTdStyle}>訂單編號</th>
-					{showUserColumn && <th style={thTdStyle}>用戶</th>}
+					{showUserColumn && <th style={thTdStyle}>姓名 (用戶編號)</th>}
 					<th style={thTdStyle}>活動ID</th>
 					<th style={thTdStyle}>金額 (HKD)</th>
 					<th style={thTdStyle}>付款方式</th>
@@ -41,9 +43,9 @@ const PaymentTable = ({ payments, onView, onDownload, showUserColumn = false }) 
 			</thead>
 			<tbody>
 				{payments.map((p) => {
-					const userDisplay = p.user_id 
-						? `${p.user_id}${p.user_name ? ` - ${p.user_name}` : ''}` 
-						: '-';
+					const userDisplay = p.user_name 
+						? `${p.user_name} (${p.user_id})` 
+						: (p.user_id || '-');
 					return (
 						<tr key={p.payment_id}>
 							<td style={thTdStyle}>{formatDateTimeForDisplay(p.paid_time || p.create_time)}</td>
@@ -55,9 +57,16 @@ const PaymentTable = ({ payments, onView, onDownload, showUserColumn = false }) 
 							<td style={thTdStyle}>{statusLabel(p.status)}</td>
 							<td style={thTdStyle}>{p.expire_time ? formatDateTimeForDisplay(p.expire_time) : '-'}</td>
 							<td style={thTdStyle}>
-                                {showUserColumn && <button onClick={() => onView(p)} style={{ ...redTextStyle }}>處理</button>}
+                                
 								<button onClick={() => onView(p)} style={{ marginRight: 8 }}>查看</button>
 								<button onClick={() => onDownload(p)}>下載</button>
+                                
+                                {showUserColumn && p.status?.toUpperCase() == 'PENDING' && (
+									<button onClick={() => onProcess(p)} style={{ ...greenTextStyle }}>付款</button>
+								)}
+                                {showUserColumn && p.status?.toUpperCase() == 'COMPLETED' && (
+									<button onClick={() => onProcess(p)} style={{ ...redTextStyle }}>更改</button>
+								)}
 							</td>
 						</tr>
 					);

@@ -32,4 +32,11 @@ async function removeByEnrollmentId(id) {
   return true;
 }
 
-module.exports = { createEnrollment, findByEnrollmentId, listByUser, listByEvent, removeByEnrollmentId, findIfExist };
+async function updateStatusByEnrollmentId(id, status) {
+  const sql = 'UPDATE EVENT_ENROLLMENTS SET status = $1 WHERE enrollment_id = $2 RETURNING *';
+  const vals = [status, id];
+  const res = await query(sql, vals);
+  return res.rows[0] || null;
+}
+
+module.exports = { createEnrollment, findByEnrollmentId, listByUser, listByEvent, removeByEnrollmentId, findIfExist, updateStatusByEnrollmentId };
