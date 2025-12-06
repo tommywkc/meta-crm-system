@@ -43,9 +43,10 @@ const PaymentTable = ({ payments, onView, onDownload, onProcess, showUserColumn 
 			</thead>
 			<tbody>
 				{payments.map((p) => {
-					const userDisplay = p.user_name 
-						? `${p.user_name} (${p.user_id})` 
-						: (p.user_id || '-');
+					// Display user as "Name (ID)"; if no name but has ID, show "(Deleted User) (ID)"; if neither, show '-'
+					const userDisplay = p.user_name
+						? `${p.user_name} (${p.user_id})`
+						: '(Delected User)';
 					return (
 						<tr key={p.payment_id}>
 							<td style={thTdStyle}>{formatDateTimeForDisplay(p.paid_time || p.create_time)}</td>
@@ -59,13 +60,13 @@ const PaymentTable = ({ payments, onView, onDownload, onProcess, showUserColumn 
 							<td style={thTdStyle}>
                                 
 								<button onClick={() => onView(p)} style={{ marginRight: 8 }}>查看</button>
-								<button onClick={() => onDownload(p)}>下載</button>
-                                
+								<button onClick={() => onDownload(p) } style={{ marginRight: 8 }}>下載</button>
+
                                 {showUserColumn && p.status?.toUpperCase() == 'PENDING' && (
-									<button onClick={() => onProcess(p)} style={{ ...greenTextStyle }}>付款</button>
+									<button onClick={() => onProcess(p)} style={{ ...greenTextStyle, marginRight: 8 }}>付款</button>
 								)}
                                 {showUserColumn && p.status?.toUpperCase() == 'COMPLETED' && (
-									<button onClick={() => onProcess(p)} style={{ ...redTextStyle }}>更改</button>
+									<button onClick={() => onProcess(p)} style={{ ...redTextStyle, marginRight: 8 }}>更改</button>
 								)}
 							</td>
 						</tr>

@@ -58,7 +58,11 @@ const PaymentDetailsTable = ({
 						</tr>
 						<tr>
 							<td><strong>姓名 (用戶編號)：</strong></td>
-							<td>{payment.user_name} ({payment.user_id})</td>
+							<td>
+								{(payment.user_name || payment.user_id)
+									? `${payment.user_name || ''}${payment.user_name && payment.user_id ? ' ' : ''}${payment.user_id ? `(${payment.user_id})` : ''}`
+									: '(Deleted User)'}
+							</td>
 						</tr>
 						<tr>
 							<td><strong>活動：</strong></td>

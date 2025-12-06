@@ -14,7 +14,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
   });
 
   const isMember = role?.toLowerCase() === 'member';
-  const showActionColumn = !isMember || !isEnrolled;
+  const showActionColumn = !isMember || isEnrolled;
 
   return (
     <table style={tableStyle}>
@@ -48,7 +48,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
                 {(role?.toLowerCase() === 'sales' || role?.toLowerCase() === 'leader') ? (
                   <button onClick={() => onEnrollSession && onEnrollSession(session.session_id)} style={{ marginLeft: 8 }}>報名</button>
                 ) : null}
-                {(role?.toLowerCase() === 'member' && !isEnrolled) ? (
+                {(role?.toLowerCase() === 'member' && isEnrolled) ? (
                   <button onClick={() => onEnrollSession && onEnrollSession(session.session_id)} style={{ marginLeft: 8 }}>報名</button>
                 ) : null}
               </td>

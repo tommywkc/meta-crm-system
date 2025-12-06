@@ -79,6 +79,10 @@ router.put('/payments/:paymentId', authMiddleware, async (req, res) => {
         // If payment is completed, update enrollment status to CONFIRMED
         await updateStatusByEnrollmentId(existingPayment.enrollment_id, 'CONFIRMED');
     }
+    if (updateData.status && updateData.status.toUpperCase() === 'PENDING') {
+        // If payment is set to pending, update enrollment status to PENDING
+        await updateStatusByEnrollmentId(existingPayment.enrollment_id, 'PENDING');
+    }
 
 
     return res.json({ message: '付款資料更新成功', payment: updatedPayment });

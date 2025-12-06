@@ -431,3 +431,6 @@ INSERT INTO EVENT_ENROLLMENTS (event_id, user_id, enroll_by_id, status, enroll_t
     -- Expired/Other -> CANCELLED
     (104, 50004, 50000, 'CANCELLED', '2025-11-10 08:00:00'),
     (109, 50015, 50000, 'CANCELLED', '2025-11-18 15:30:00');
+
+
+SELECT * FROM EVENT_ENROLLMENTS;

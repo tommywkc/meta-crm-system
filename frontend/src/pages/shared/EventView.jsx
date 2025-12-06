@@ -67,11 +67,16 @@ const EventView = () => {
           setSessions([]);
         }
         
-        const enrollmentData = await handleCheckEnrollment(id, user?.id);
-        if (enrollmentData != null) {
-          setIsEnrolled(true);
-        }
 
+        try {
+          const enrollmentData = await handleCheckEnrollment(id, user?.id);
+          if (enrollmentData != null) {
+            setIsEnrolled(true);
+          }
+        } catch (err) {
+          console.error('Failed to check enrollment:', err);
+        }
+        
       };
       fetchData();
     }, [id]);

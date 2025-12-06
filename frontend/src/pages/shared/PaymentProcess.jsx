@@ -90,7 +90,7 @@ const PaymentProcess = () => {
 	};
 
 	const handleRefund = async () => {
-		if (window.confirm('確認要退款嗎？此操作將會把付款狀態改為「已退款」。')) {
+		if (window.confirm('確認要退款嗎？此操作將會把付款狀態改為「已退款」。 \n\n退款後，付款狀態將不能更改。')) {
 			setProcessing(true);
 			try {
 				await handleUpdatePaymentById(paymentId, { 
