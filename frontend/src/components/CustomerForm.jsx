@@ -27,6 +27,10 @@ const CustomerForm = ({
   const [salesLeaders, setSalesLeaders] = useState([]);
   const [salesInput, setSalesInput] = useState('');
   const [ownerSalesError, setOwnerSalesError] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [referrerInput, setReferrerInput] = useState('');
+  const [referrerId, setReferrerId] = useState(initialData.referrer_id || '');
+  const [referrerError, setReferrerError] = useState(null);
   const location = useLocation();
   const isCreatePage = location.pathname === '/customers/create';
   const [source, setSource] = useState(
@@ -68,6 +72,18 @@ const CustomerForm = ({
     })();
   }, []);
 
+  // 載入 MEMBER 清單
+  useEffect(() => {
+    (async () => {
+      try {
+        const payload = await handleFindUsersByRoles(['MEMBER']);
+        setMembers(payload.customers || []);
+      } catch (err) {
+        console.error('載入會員清單失敗:', err);
+      }
+    })();
+  }, []);
+
   // 根據 ownerSales（id）決定顯示文字
   useEffect(() => {
     if (!ownerSales) {
@@ -86,11 +102,33 @@ const CustomerForm = ({
     }
   }, [ownerSales, salesLeaders]);
 
+  // 根據 referrerId（id）決定顯示文字
+  useEffect(() => {
+    if (!referrerId) {
+      setReferrerInput('');
+      setReferrerError(null);
+      return;
+    }
+    const u = members.find(x => String(x.user_id) === String(referrerId));
+    if (u) {
+      setReferrerInput(`${u.user_id} - ${u.name}`);
+      setReferrerError(null);
+    } else {
+      setReferrerInput(String(referrerId));
+      setReferrerError('此介紹人 ID 不在會員清單');
+    }
+  }, [referrerId, members]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // 驗證負責銷售是否有效（若有輸入）
     if (ownerSalesError) {
       alert(ownerSalesError);
+      return;
+    }
+    // 驗證介紹人是否有效（若有輸入）
+    if (referrerError) {
+      alert(referrerError);
       return;
     }
     const formData = {
@@ -101,6 +139,7 @@ const CustomerForm = ({
       role,
       source,
       owner_sales: ownerSales,
+      referrer: referrerId,
       team,
       tags,
       note_special: specialNotes,
@@ -237,6 +276,49 @@ const CustomerForm = ({
           </datalist>
           {ownerSalesError && (
             <small style={{ color: 'red' }}>{ownerSalesError}</small>
+          )}
+        </div>
+
+        <div style={{ marginBottom: 8 }}>
+          <label>介紹人:</label><br/>
+          <input
+            list="member-list"
+            value={referrerInput}
+            onChange={(e) => {
+              const val = e.target.value;
+              setReferrerInput(val);
+              const match = members.find(u => `${u.user_id} - ${u.name}` === val);
+              if (match) {
+                setReferrerId(String(match.user_id));
+                setReferrerError(null);
+              } else {
+                const trimmed = val.trim();
+                if (trimmed === '') {
+                  setReferrerId('');
+                  setReferrerError(null);
+                  return;
+                }
+                if (/^\d+$/.test(trimmed)) {
+                  // 允許直接輸入數字 ID，但需驗證是否存在於清單
+                  setReferrerId(trimmed);
+                  const exists = members.some(u => String(u.user_id) === trimmed);
+                  setReferrerError(exists ? null : '此 ID 不在會員清單');
+                } else {
+                  setReferrerId('');
+                  setReferrerError('請輸入介紹人 ID（數字），或從清單選擇');
+                }
+              }
+            }}
+            placeholder="輸入介紹人ID或從清單選擇"
+            style={{ width: '100%', padding: 8, borderColor: referrerError ? 'red' : '' }}
+          />
+          <datalist id="member-list">
+            {members.map(u => (
+              <option key={u.user_id} value={`${u.user_id} - ${u.name}`} />
+            ))}
+          </datalist>
+          {referrerError && (
+            <small style={{ color: 'red' }}>{referrerError}</small>
           )}
         </div>
 

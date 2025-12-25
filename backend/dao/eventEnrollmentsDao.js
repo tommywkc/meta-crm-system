@@ -44,4 +44,9 @@ async function checkIsConfirmedEnrolled(user_id, event_id) {
   return res.rows[0] || null;
 }
 
-module.exports = { createEnrollment, findByEnrollmentId, listByUser, listByEvent, removeByEnrollmentId, findIfExist, updateStatusByEnrollmentId, checkIsConfirmedEnrolled };
+async function listConfirmedEnrolled(user_id, limit = 100, offset = 0) {
+  const res = await query('SELECT * FROM EVENT_ENROLLMENTS WHERE user_id = $1 AND status = $2 ORDER BY enrollment_id DESC LIMIT $3 OFFSET $4', [user_id, 'CONFIRMED', limit, offset]);
+  return res.rows || null;
+}
+
+module.exports = { createEnrollment, findByEnrollmentId, listByUser, listByEvent, removeByEnrollmentId, findIfExist, updateStatusByEnrollmentId, checkIsConfirmedEnrolled, listConfirmedEnrolled };

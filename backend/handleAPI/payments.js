@@ -9,11 +9,13 @@ const { updateRemainingSeats } = require('../dao/eventsDao');
 router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
     if (!userId) {
       return res.status(400).json({ message: '缺少使用者ID' });
     }
 
-    const payments = await listByUser(userId);
+    const payments = await listByUser(userId, limit, offset);
     return res.json({ payments });
   } catch (error) {
     console.error('List payments failed:', error);

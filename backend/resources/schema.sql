@@ -32,8 +32,11 @@ CREATE TABLE IF NOT EXISTS USERS (
     team VARCHAR(100),
     tags VARCHAR(100),
     note_special VARCHAR(255),
+    referrer BIGINT,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id),
+    FOREIGN KEY (owner_sales) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (referrer) REFERENCES USERS(user_id) ON DELETE SET NULL,
     CONSTRAINT CHKROLE CHECK (role IN ('ADMIN', 'SALES', 'LEADER', 'MEMBER', 'N/A'))
 );
 

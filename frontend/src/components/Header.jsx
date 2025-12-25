@@ -29,7 +29,8 @@ const Header = () => {
     requests: { path: '/requests', label: '覆課/補堂/請假申請' },
     homework: { path: '/homework', label: '交功課' },
     myqrcode: { path: '/myqrcode', label: '我的QR code' },
-    mycalendar: { path: '/mycalendar', label: '我的日曆' }
+    mycalendar: { path: '/mycalendar', label: '我的日曆' },
+    myevents: { path: '/myevents', label: '我的活動' }
   };
 
   // Which pages each role should see (order matters)
@@ -38,7 +39,7 @@ const Header = () => {
     admin: ['customers','events','payments','approvals','scan','waiting','download','reports','files','notifications'],
     sales: ['customers','events','payments','sales_kpi','notifications'],
     leader: ['customers','events','payments','sales_kpi','notifications'], // LEADER 角色與 sales 相同權限
-    member: ['mycalendar','events','payments','receipts','requests','homework','notifications','myqrcode']
+    member: ['mycalendar','myevents','events','payments','receipts','requests','homework','notifications','myqrcode']
   };
 
   const pages = rolePages[user.role?.toLowerCase()] || [];
@@ -93,7 +94,7 @@ const Header = () => {
                 '/homework': '交功課',
                 '/myqrcode': '我的QR code',
                 '/mycalendar': '我的日曆',
-
+                '/myevents': '我的報名活動',
                 '/member': '成員頁面',
                 '/sales': '銷售頁面',
                 '/admin': '管理員頁面',

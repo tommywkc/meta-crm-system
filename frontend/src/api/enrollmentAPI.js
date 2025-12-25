@@ -57,3 +57,27 @@ export async function handleCheckEnrollment(event_id, user_id) {
     throw err;
   }
 }
+
+export async function listConfirmEnrollmentByUser(user_id, limit = 100, offset = 0) {
+  const response = await fetch(`http://localhost:4000/api/enrollments/confirmed?user_id=${user_id}&limit=${limit}&offset=${offset}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to list confirmed enrollments for user ${user_id}`);
+  }
+  return response.json();
+}
+
+export async function handleConfirmEnrollmentByUser(user_id, limit = 100, offset = 0) {
+  try {
+    console.log(`Attempting to confirm enrollment for user ${user_id}...`);
+    const payload = await listConfirmEnrollmentByUser(user_id);
+    console.log(`Enrollment confirmation response for user ${user_id}:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Enrollment confirmation error for user ${user_id}:`, err);
+    throw err;
+  }
+}
