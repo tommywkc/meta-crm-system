@@ -10,6 +10,8 @@ const statusLabel = (s) => {
 		case 'COMPLETED': return '已付款';
 		case 'EXPIRED': return '已過期';
 		case 'CANCELLED': return '已取消';
+		case 'REFUNDED': return '已退款';
+		case 'OUTSTANDING': return '欠款';
 		default: return s || '-';
 	}
 };
@@ -27,6 +29,7 @@ const PaymentProcess = () => {
 	const [error, setError] = useState(null);
 	const [newStatus, setNewStatus] = useState('');
 	const [newMethod, setNewMethod] = useState('');
+	const [paidAmount, setPaidAmount] = useState('');
 	const [notes, setNotes] = useState('');
 	const [processing, setProcessing] = useState(false);
 
@@ -48,6 +51,19 @@ const PaymentProcess = () => {
 				
 				setNewStatus('COMPLETED');
 				setNewMethod(res.payment.method || 'CASH');
+				// 預設已付金額輸入值：
+				// - 若 paid_amount 為 0 或未設定，預設為應付金額 amount
+				// - 若 paid_amount 不為 0，預設為 amount - paid_amount（剩餘需付金額）
+				const totalAmount = Number(res.payment.amount || 0);
+				const alreadyPaid = Number(res.payment.paid_amount || 0);
+				let defaultPaid = 0;
+				if (!alreadyPaid) {
+					defaultPaid = totalAmount;
+				} else {
+					defaultPaid = totalAmount - alreadyPaid;
+					if (defaultPaid < 0) defaultPaid = 0;
+				}
+				setPaidAmount(defaultPaid ? String(defaultPaid) : '');
 			} catch (e) {
 				setError(e?.message || '載入失敗');
 			} finally {
@@ -65,12 +81,33 @@ const PaymentProcess = () => {
 			return;
 		}
 
-		if (window.confirm(`確認要將付款狀態更新為「${statusLabel(newStatus)}」嗎？`)) {
+		// 計算本次收款、欠款與找續金額
+		const alreadyPaid = Number(payment?.paid_amount || 0);
+		const totalAmount = Number(payment?.amount || 0);
+		const incomingPaidRaw = paidAmount !== '' ? Number(paidAmount) : 0;
+		const outstanding = Math.max(totalAmount - alreadyPaid, 0);
+		const incomingPaidCapped = Math.min(incomingPaidRaw, outstanding);
+		const changeAmount = Math.max(incomingPaidRaw - outstanding, 0);
+
+		let confirmMessage = `確認要將付款狀態更新為「${statusLabel(newStatus)}」嗎？`;
+		if (incomingPaidRaw > 0) {
+			confirmMessage += `\n\n應收金額：${outstanding}，本次實收：${incomingPaidRaw}`;
+			if (changeAmount > 0) {
+				confirmMessage += `\n找續金額：${changeAmount}（系統只會記錄已收 ${incomingPaidCapped}）`;
+			}
+		}
+
+		if (window.confirm(confirmMessage)) {
 			setProcessing(true);
 			try {
+					// 若本次收款金額大於欠款金額，就以欠款金額為上限
+					const incomingPaid = incomingPaidCapped;
+					const newPaidAmount = incomingPaid ? alreadyPaid + incomingPaid : alreadyPaid;
+
 				await handleUpdatePaymentById(paymentId, { 
 					status: newStatus, 
 					method: newMethod, 
+					paid_amount: newPaidAmount,
 					remarks: notes,
 					casher_id: user?.id 
 				});
@@ -125,6 +162,8 @@ const PaymentProcess = () => {
 				setNewStatus={setNewStatus}
 				newMethod={newMethod}
 				setNewMethod={setNewMethod}
+				paidAmount={paidAmount}
+				setPaidAmount={setPaidAmount}
 				notes={notes}
 				setNotes={setNotes}
 				processing={processing}

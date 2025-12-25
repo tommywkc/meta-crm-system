@@ -20,6 +20,7 @@ const statusLabel = (s) => {
 		case 'COMPLETED': return '已付款';
 		case 'EXPIRED': return '已過期';
 		case 'CANCELLED': return '已取消';
+		case 'OUTSTANDING': return '欠款';
         case 'REFUNDED': return '已退款';
 		default: return s || '-';
 	}
@@ -33,6 +34,8 @@ const PaymentDetailsTable = ({
 	setNewStatus,
 	newMethod,
 	setNewMethod,
+	paidAmount,
+	setPaidAmount,
 	notes, 
 	setNotes, 
 	processing, 
@@ -71,6 +74,10 @@ const PaymentDetailsTable = ({
 						<tr>
 							<td><strong>金額：</strong></td>
 							<td>{currency.format(Number(payment.amount || 0))}</td>
+						</tr>
+						<tr>
+							<td><strong>欠款金額：</strong></td>
+							<td>{currency.format(Number(((payment.amount || 0) - (payment.paid_amount || 0)) || 0))}</td>
 						</tr>
 						<tr>
 							<td><strong>付款方式：</strong></td>
@@ -133,6 +140,59 @@ const PaymentDetailsTable = ({
 										</td>
 									</tr>
 									<tr>
+										<td><label htmlFor="paidAmount">收款金額：</label></td>
+										<td>
+											<div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+												<span
+													style={{
+														position: 'absolute',
+														left: 8,
+														top: '50%',
+														transform: 'translateY(-50%)',
+														pointerEvents: 'none',
+														color: '#555',
+														fontSize: '0.9em',
+													}}
+												>
+													HKD$
+												</span>
+												<input
+													id="paidAmount"
+													type="numeric"
+													min="0"
+													step="1"
+													value={paidAmount ?? ''}
+													onChange={(e) => {
+														const value = e.target.value;
+														if (setPaidAmount) setPaidAmount(value);
+														if (setNewStatus) {
+															const inputPaid = Number(value || 0);
+															const alreadyPaid = Number(payment.paid_amount || 0);
+															const totalAmount = Number(payment.amount || 0);
+															if (totalAmount > 0) {
+																if (alreadyPaid + inputPaid < totalAmount) {
+																	setNewStatus('OUTSTANDING');
+																} else if (alreadyPaid + inputPaid >= totalAmount) {
+																	setNewStatus('COMPLETED');
+																}
+															}
+														}
+													}}
+													style={{
+														width: '100%',
+														boxSizing: 'border-box',
+														padding: '8px 8px 8px 50px',
+														fontSize: '0.9em',
+														borderColor: !/^\d*$/.test(paidAmount || '') ? 'red' : ''
+													}}
+												/>
+											</div>
+											{!/^\d*$/.test(paidAmount || '') && (
+												<small style={{ color: 'red' }}>請輸入有效的金額（僅限數字）。</small>
+											)}
+										</td>
+									</tr>
+									<tr>
 										<td><label htmlFor="status">更改付款狀態</label></td>
 										<td>
 											<select
@@ -144,7 +204,8 @@ const PaymentDetailsTable = ({
 												<option value="">-- 請選擇 --</option>
 												<option value="PENDING">待付款</option>
 												<option value="COMPLETED">已付款</option>
-												<option value="CANCELLED">已取消</option>
+												<option value="REFUNDED">已退款</option>
+												<option value="OUTSTANDING">欠款</option>
 											</select>
 										</td>
 									</tr>
@@ -170,14 +231,12 @@ const PaymentDetailsTable = ({
 								{processing ? '處理中...' : (isPending ? '確認付款' : '更新付款')}
 							</button>
 							{' '}
-							{isCompleted && onRefund && (
 								<>
 									<button type="button" onClick={onRefund} disabled={processing} style={{ ...redTextStyle }} >
-										退款
+										取消並退款
 									</button>
 									{' '}
 								</>
-							)}
 							<button type="button" onClick={onCancel} disabled={processing}>
 								取消
 							</button>

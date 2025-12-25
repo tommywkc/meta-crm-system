@@ -5,6 +5,7 @@ import EventsTable from '../../components/EventsTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
 import { handleConfirmEnrollmentByUser } from '../../api/enrollmentAPI';
+import { handleListEvents } from '../../api/eventListAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 const MyEventList = () => {
@@ -18,18 +19,35 @@ const MyEventList = () => {
     const [limit, setLimit] = useState(25);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const [events, setEvents] = useState([]);
     const [filteredEvents, setFilteredEvents] = useState([]);
 
     useEffect(() => {
             const fetchData = async () => {
-                const payload = await handleConfirmEnrollmentByUser(user.id, 100, 0);
-                setEvents(payload.events || []);
-                setFilteredEvents(payload.events || []);
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    // Get confirmed enrollments (returns enrollments with event details already merged)
+                    const enrollmentPayload = await handleConfirmEnrollmentByUser(user?.id, 100, 0);
+                    const enrollments = enrollmentPayload?.enrollments || [];
+                    
+                    console.log('Confirmed enrollments:', enrollments);
+                    
+                    setEvents(enrollments);
+                    setFilteredEvents(enrollments);
+                } catch (err) {
+                    console.error('Failed to fetch events:', err);
+                    setError(err.message || 'Failed to load events');
+                } finally {
+                    setLoading(false);
+                }
             };
-            fetchData();
-        }, [user.id]);
+            if (user?.id) fetchData();
+        }, [user?.id]);
 
     // 搜尋邏輯 - 搜尋活動編號、名稱、類型、狀態
     const performSearch = (term) => {
