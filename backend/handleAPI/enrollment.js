@@ -90,7 +90,14 @@ router.get('/enrollments/check', authMiddleware, async (req, res) => {
     console.log('Received enrollment check request from user:', req.user.sub, 'for event_id:', event_id, 'and user_id:', user_id);
 
     const isEnrolled = await checkIsConfirmedEnrolled(user_id, event_id);
-    res.json({ isEnrolled });
+    if (isEnrolled != null) {
+      console.log(`User ${user_id} is confirmed enrolled for event ${event_id}`);
+      return res.status(200).json(isEnrolled);
+    } else {
+      console.log(`User ${user_id} is NOT confirmed enrolled for event ${event_id}`);
+      return res.status(200).json(null);
+    }
+
   } catch (error) {
     console.error('Enrollment check failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });
