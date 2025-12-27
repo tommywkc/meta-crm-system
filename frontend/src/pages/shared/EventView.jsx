@@ -5,7 +5,7 @@ import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleGetById as handleGetUserById } from '../../api/customersListAPI';
 import { handleListSessionsByEventId, handleGetSessionById, handleDeleteSession, handleListMyRegisteredSessionsByEvent } from '../../api/sessionAPI';
-import { handleCheckEnrollment } from '../../api/enrollmentAPI';
+import { handleCheckEnrollment, handleListMyActiveEnrolledEvents } from '../../api/enrollmentAPI';
 import { getStatusDisplay, getTypeDisplay, formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import WaitingListTable from '../../components/WaitingListTable';
 import SessionListTable from '../../components/SessionListTable';
@@ -28,6 +28,7 @@ const EventView = () => {
   // Note: isEnrolling is for future enrollment loading state
   const [isEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [hasActiveEnrollment, setHasActiveEnrollment] = useState(false);
   const hasShownErrorRef = useRef(false);
   
   // Mock waiting list data
@@ -83,13 +84,28 @@ const EventView = () => {
       }
 		
 
+      // isEnrolled：只代表「已確認報名」（CONFIRMED），給下方場次表使用
       try {
         const enrollmentData = await handleCheckEnrollment(id, user?.id);
         if (enrollmentData != null) {
-        setIsEnrolled(true);
+          setIsEnrolled(true);
+        } else {
+          setIsEnrolled(false);
         }
       } catch (err) {
-        console.error('Failed to check enrollment:', err);
+        console.error('Failed to check enrollment (confirmed only):', err);
+        setIsEnrolled(false);
+      }
+
+      // hasActiveEnrollment：包含 PENDING 與 CONFIRMED，給上方活動「報名」按鈕使用
+      try {
+        const activePayload = await handleListMyActiveEnrolledEvents();
+        const eventIds = Array.isArray(activePayload.eventIds) ? activePayload.eventIds : [];
+        const active = eventIds.some(eventId => String(eventId) === String(id));
+        setHasActiveEnrollment(active);
+      } catch (err) {
+        console.error('Failed to check active enrollment status:', err);
+        setHasActiveEnrollment(false);
       }
 
       // Fetch registered session IDs for current user for this event (member only)
@@ -219,8 +235,12 @@ const EventView = () => {
         {isAdmin ? (
           <button onClick={() => navigate(`/events/${id}/edit`)} style={{ marginLeft: 8 }}>編輯</button>
         ) : isMember || isSalesOrLeader ? (
-          <button onClick={handleEnroll} disabled={isEnrolling} style={{ marginLeft: 8 }}>
-            {isEnrolling ? '報名中...' : '報名'}
+          <button
+            onClick={hasActiveEnrollment ? undefined : handleEnroll}
+            disabled={isEnrolling || hasActiveEnrollment}
+            style={{ marginLeft: 8 }}
+          >
+            {hasActiveEnrollment ? '已報名' : (isEnrolling ? '報名中...' : '報名')}
           </button>
         ) : null}
       </div>
