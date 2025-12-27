@@ -227,7 +227,14 @@ const EventView = () => {
 
       {/* Session list table */}
       <div style={{ marginTop: 40 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>場次列表</h2>
+        {isAdmin && (
+          <button onClick={() => navigate(`/events/${id}/sessions/create`)}>
+            新增場次
+          </button>
+        )}
+      </div>
         
         {/* Session name filter */}
         {sessions.length > 0 && (
