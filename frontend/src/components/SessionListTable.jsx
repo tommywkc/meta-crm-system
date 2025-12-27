@@ -45,10 +45,8 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
                     <button onClick={() => onDeleteSession && onDeleteSession(session.session_id)} style={redTextStyle}>刪除</button>
                   </>
                 ) : null}
-                {(role?.toLowerCase() === 'sales' || role?.toLowerCase() === 'leader') ? (
-                  <button onClick={() => onEnrollSession && onEnrollSession(session.session_id)} style={{ marginLeft: 8 }}>報名</button>
-                ) : null}
-                {(role?.toLowerCase() === 'member' && isEnrolled) ? (
+                {/* Sales and Leader or Member (if enrolled) can enroll */}
+                {(role?.toLowerCase() === 'sales' || role?.toLowerCase() === 'leader' || (role?.toLowerCase() === 'member' && isEnrolled)) ? (
                   <button onClick={() => onEnrollSession && onEnrollSession(session.session_id)} style={{ marginLeft: 8 }}>報名</button>
                 ) : null}
               </td>

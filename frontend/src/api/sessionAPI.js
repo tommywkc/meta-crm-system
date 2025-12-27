@@ -68,9 +68,6 @@ export async function handleGetSessionById(session_id) {
   }
 }
 
-
-
-
 export async function updateSession(session_id, data) {
   const response = await fetch(`http://localhost:4000/api/sessions/${session_id}`, {
     method: 'PUT',
@@ -113,3 +110,40 @@ export async function handleDeleteSession(session_id) {
     throw err;
   }
 }
+
+
+
+// --- Session registrations (場次報名) ---
+
+export async function createSessionRegistration(data) {
+  const response = await fetch('http://localhost:4000/api/session-registrations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    let message = '場次報名失敗';
+    try {
+      const err = await response.json();
+      if (err?.message) message = err.message;
+    } catch (e) {
+      message = response.statusText || message;
+    }
+    throw new Error(message);
+  }
+  return response.json();
+}
+
+export async function handleCreateSessionRegistration(data) {
+  try {
+    console.log('Attempting to create session registration...', data);
+    const payload = await createSessionRegistration(data);
+    console.log('Session registration response:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Session registration error:', err);
+    throw err;
+  }
+}
+

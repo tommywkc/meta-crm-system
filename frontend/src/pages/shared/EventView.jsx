@@ -128,7 +128,7 @@ const EventView = () => {
 
   const handleEnrollSession = (session_id) => {
     if (!session_id) return;
-    navigate(`/events/${id}/apply`);
+    navigate(`/events/${id}/enrollsession?session_id=${session_id}`);
   };
 
 

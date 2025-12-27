@@ -69,6 +69,10 @@ const paymentsRouter = require('./handleAPI/payments');
 console.log('Payments router loaded');
 app.use('/api', paymentsRouter); // Use the payments router
 
+const sessionRegistrationsRouter = require('./handleAPI/sessionRegistrations');
+console.log('Session registrations router loaded');
+app.use('/api', sessionRegistrationsRouter); // Use the session registrations router
+
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');
