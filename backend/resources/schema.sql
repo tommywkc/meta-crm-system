@@ -417,7 +417,6 @@ INSERT INTO PAYMENTS (event_id, user_id, enrollment_id, amount, method, status, 
 INSERT INTO EVENT_ENROLLMENTS (event_id, user_id, enroll_by_id, status, enroll_time) VALUES
     -- Completed -> CONFIRMED
     (101, 50008, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
-    (102, 50008, 50000, 'CONFIRMED', '2025-11-20 09:15:00'),
     (103, 50008, 50000, 'CONFIRMED', '2025-11-25 16:45:00'),
     (105, 50012, 50000, 'CONFIRMED', '2025-11-28 11:00:00'),
     (110, 50018, 50000, 'CONFIRMED', '2025-11-22 13:45:00'),
