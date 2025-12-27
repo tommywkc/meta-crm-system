@@ -8,6 +8,7 @@ const {
   listConfirmedEnrolled,
   listConfirmedUsersByEvent,
   listActiveEnrolledEventIds,
+  updateStatusByEnrollmentId
 } = require('../dao/eventEnrollmentsDao');
 const { findByEventId, updateRemainingSeats } = require('../dao/eventsDao');
 const { createPayment } = require('../dao/paymentsDao');
@@ -74,6 +75,9 @@ router.post('/enrollments', authMiddleware, async (req, res) => {
         // Rollback enrollment if payment creation fails
         throw new Error('建立付款記錄失敗：' + paymentError.message);
       }
+    }else if(event && (event.price == null || event.price == 0)) {
+      console.log('Enrollment for free event, no payment needed.');
+      await updateStatusByEnrollmentId(newEnrollment.enrollment_id, 'CONFIRMED');
     }
     
     res.status(201).json({ 

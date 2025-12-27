@@ -51,13 +51,25 @@ export async function getEventById(event_id) {
     credentials: 'include', // allow cookies to be sent across origins
   });
   if (!res.ok) {
-    // try to read backend error message
+    // 優先使用後端回傳的 message，其次根據狀態碼給友善預設文字
+    let message;
     try {
       const err = await res.json();
-      throw new Error(err.message || `Failed to fetch event ${event_id}`);
+      message = err && err.message;
     } catch (e) {
-      throw new Error(res.statusText || `Failed to fetch event ${event_id}`);
+      // 若不是 JSON 或沒有 body，就忽略，改用下面的預設
     }
+
+    if (!message) {
+      if (res.status === 403) {
+        // 後端對非 OPEN 活動的預期訊息
+        message = '暫時未能瀏覽未開放活動';
+      } else {
+        message = res.statusText || `Failed to fetch event ${event_id}`;
+      }
+    }
+
+    throw new Error(message);
   }
   return await res.json();
 }

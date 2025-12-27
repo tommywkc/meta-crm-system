@@ -121,7 +121,14 @@ const EventList = () => {
 		navigate(`/events/${id}/edit`);
 	};
 
-	const handleView = (event_id) => navigate(`/events/${event_id}`);
+	const handleView = (event_id) => { 
+		try {
+			navigate(`/events/${event_id}`);
+		} catch (error) {
+			console.error('Failed to navigate to event view:', error);
+			alert('無法前往活動詳情頁面，請稍後重試');
+		}
+	};
 
 	const onEnroll = (id) => {
 		const event = events.find(e => e.event_id === id);

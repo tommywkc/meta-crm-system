@@ -23,7 +23,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
           <th style={thTdStyle}>場次名稱</th>
           <th style={thTdStyle}>開始時間</th>
           <th style={thTdStyle}>結束時間</th>
-          <th style={thTdStyle}>可容納人數</th>
+          <th style={thTdStyle}>剩餘座位數</th>
           <th style={thTdStyle}>描述</th>
           {showActionColumn && <th style={thTdStyle}>操作</th>}
         </tr>
@@ -40,7 +40,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
               <td style={thTdStyle}>{session.session_name}</td>
               <td style={thTdStyle}>{formatDateTimeForDisplay(session.datetime_start) || 'N/A'}</td>
               <td style={thTdStyle}>{formatDateTimeForDisplay(session.datetime_end) || 'N/A'}</td>
-              <td style={thTdStyle}>{session.capacity || 'N/A'}</td>
+              <td style={thTdStyle}>{session.remaining_seats || 'N/A'}</td>
               <td style={thTdStyle}>{session.description || '-'}</td>
               {showActionColumn && (
                 <td style={thTdStyle}>

@@ -35,6 +35,25 @@ async function removeBySessionById(id) {
 }
 
 async function updateSessionById(id, fields = {}) {
+  // 若有更新 capacity 且呼叫端沒有明確指定 remaining_seats，
+  // 則依照新容量調整剩餘位： new_cap - (old_cap - old_remaining)
+  if (Object.prototype.hasOwnProperty.call(fields, 'capacity') &&
+      !Object.prototype.hasOwnProperty.call(fields, 'remaining_seats')) {
+    const existing = await findBySessionId(id);
+    if (existing && existing.capacity != null && existing.remaining_seats != null) {
+      const oldCap = Number(existing.capacity);
+      const oldRemain = Number(existing.remaining_seats);
+      const newCap = Number(fields.capacity);
+
+      if (!Number.isNaN(oldCap) && !Number.isNaN(oldRemain) && !Number.isNaN(newCap)) {
+        const used = oldCap - oldRemain; // 已使用名額
+        let newRemain = newCap - used;   // 依照已使用名額計算新剩餘
+        if (newRemain < 0) newRemain = 0; // 不讓剩餘小於 0
+        fields.remaining_seats = newRemain;
+      }
+    }
+  }
+
   const keys = Object.keys(fields);
   if (keys.length === 0) return findBySessionId(id);
   const sets = keys.map((k, i) => `${k} = $${i+1}`).join(', ');

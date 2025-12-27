@@ -16,6 +16,7 @@ import EventList from './pages/shared/EventList';
 import EventCreate from './pages/admin/EventCreate';
 import EventsEdit from './pages/admin/EventsEdit';
 import SessionEdit from './pages/admin/SessionEdit';
+import SessionCreate from './pages/admin/SessionCreate';
 import EventView from './pages/shared/EventView';
 import Download from './pages/admin/Download';
 import Reports from './pages/admin/Reports';
@@ -120,6 +121,11 @@ function App() {
           <Route path="/events/:id/edit" element={
             <ProtectedRoute allowedRole="admin">
               <EventsEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:eventId/sessions/create" element={
+            <ProtectedRoute allowedRole="admin">
+              <SessionCreate />
             </ProtectedRoute>
           } />
           <Route path="/sessions/:id/edit" element={
