@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
@@ -28,6 +28,7 @@ const EventView = () => {
   // Note: isEnrolling is for future enrollment loading state
   const [isEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const hasShownErrorRef = useRef(false);
   
   // Mock waiting list data
   const mockWaiting = [
@@ -56,44 +57,57 @@ const EventView = () => {
   ];
     useEffect(() => {
       const fetchData = async () => {
+      // 先抓活動資料；若後端回傳 403（非 OPEN 活動），會在這裡丟出 Error
+      try {
         const data = await handleGetById(id);
         setEvent(data.event || {});
-
-			// Fetch sessions for this event
-        try {
-          const sessionData = await handleListSessionsByEventId(id);
-          setSessions(sessionData.sessions || []);
-        } catch (err) {
-          console.error('Failed to fetch sessions:', err);
-          setSessions([]);
+      } catch (err) {
+        console.error('Failed to fetch event:', err);
+        if (!hasShownErrorRef.current) {
+        // 避免在嚴格模式或多次重渲染時彈兩次
+        hasShownErrorRef.current = true;
+        window.alert(err?.message || '暫時未能瀏覽未開放活動');
+        // 回到上一頁（例如從「我的活動」列表點進來時就回去該頁）
+        navigate(-1);
         }
-        
+        return;
+      }
 
-        try {
-          const enrollmentData = await handleCheckEnrollment(id, user?.id);
-          if (enrollmentData != null) {
-            setIsEnrolled(true);
-          }
-        } catch (err) {
-          console.error('Failed to check enrollment:', err);
+      // Fetch sessions for this event
+      try {
+        const sessionData = await handleListSessionsByEventId(id);
+        setSessions(sessionData.sessions || []);
+      } catch (err) {
+        console.error('Failed to fetch sessions:', err);
+        setSessions([]);
+      }
+		
+
+      try {
+        const enrollmentData = await handleCheckEnrollment(id, user?.id);
+        if (enrollmentData != null) {
+        setIsEnrolled(true);
         }
+      } catch (err) {
+        console.error('Failed to check enrollment:', err);
+      }
 
-			// Fetch registered session IDs for current user for this event (member only)
-			if (userRole === 'member') {
-				try {
-					const payload = await handleListMyRegisteredSessionsByEvent(id);
-					setRegisteredSessionIds(Array.isArray(payload.sessionIds) ? payload.sessionIds : []);
-				} catch (err) {
-					console.error('Failed to fetch registered sessions for this event:', err);
-					setRegisteredSessionIds([]);
-				}
-			} else {
-				setRegisteredSessionIds([]);
-			}
-        
+      // Fetch registered session IDs for current user for this event (member only)
+      if (userRole === 'member') {
+        try {
+          const payload = await handleListMyRegisteredSessionsByEvent(id);
+          setRegisteredSessionIds(Array.isArray(payload.sessionIds) ? payload.sessionIds : []);
+        } catch (err) {
+          console.error('Failed to fetch registered sessions for this event:', err);
+          setRegisteredSessionIds([]);
+        }
+      } else {
+        setRegisteredSessionIds([]);
+      }
+		
       };
       fetchData();
-    }, [id]);
+    }, [id, user?.id, userRole, navigate]);
 
   // Fetch speaker name by speaker_id
   useEffect(() => {
