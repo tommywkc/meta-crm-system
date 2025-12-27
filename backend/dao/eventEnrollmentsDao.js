@@ -49,4 +49,41 @@ async function listConfirmedEnrolled(user_id, limit = 100, offset = 0) {
   return res.rows || null;
 }
 
-module.exports = { createEnrollment, findByEnrollmentId, listByUser, listByEvent, removeByEnrollmentId, findIfExist, updateStatusByEnrollmentId, checkIsConfirmedEnrolled, listConfirmedEnrolled };
+// List event_ids where the user has an active (PENDING or CONFIRMED) enrollment
+async function listActiveEnrolledEventIds(user_id) {
+  const sql = `
+    SELECT DISTINCT event_id
+    FROM EVENT_ENROLLMENTS
+    WHERE user_id = $1
+      AND status IN ('PENDING', 'CONFIRMED')
+  `;
+  const res = await query(sql, [user_id]);
+  return res.rows || [];
+}
+
+async function listConfirmedUsersByEvent(event_id) {
+  const sql = `
+    SELECT DISTINCT u.user_id, u.name
+    FROM EVENT_ENROLLMENTS e
+    JOIN USERS u ON e.user_id = u.user_id
+    WHERE e.event_id = $1
+      AND e.status = 'CONFIRMED'
+    ORDER BY u.user_id
+  `;
+  const res = await query(sql, [event_id]);
+  return res.rows || [];
+}
+
+module.exports = {
+  createEnrollment,
+  findByEnrollmentId,
+  listByUser,
+  listByEvent,
+  removeByEnrollmentId,
+  findIfExist,
+  updateStatusByEnrollmentId,
+  checkIsConfirmedEnrolled,
+  listConfirmedEnrolled,
+  listConfirmedUsersByEvent,
+  listActiveEnrolledEventIds,
+};

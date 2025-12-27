@@ -37,6 +37,7 @@ import MyQRcode from './pages/member/MyQRcode';
 import MemberCalendarPage from './pages/member/Calendar';
 import Apply from './pages/shared/Apply';
 import MyEventList from './pages/member/MyEventList';
+import EnrollSession from './pages/shared/EnrollSession';
 
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -176,6 +177,18 @@ function App() {
           <Route path="/payments/:paymentId/process" element={
             <ProtectedRoute allowedRoles={['admin', 'sales', 'leader']}>
               <PaymentProcess />
+            </ProtectedRoute>
+          } />
+          {/* 場次報名頁面：從 EventView 場次列表點擊「報名」而來 */}
+          <Route path="/events/:id/enrollsession" element={
+            <ProtectedRoute allowedRoles={['admin', 'sales', 'leader', 'member']}>
+              <EnrollSession />
+            </ProtectedRoute>
+          } />
+          {/* 保留舊路徑以避免已有連結壞掉 */}
+          <Route path="/enrollsession" element={
+            <ProtectedRoute allowedRoles={['admin', 'sales', 'leader', 'member']}>
+              <EnrollSession />
             </ProtectedRoute>
           } />
           <Route path="/receipts" element={

@@ -81,3 +81,53 @@ export async function handleConfirmEnrollmentByUser(user_id, limit = 100, offset
     throw err;
   }
 }
+
+// List event_ids that the current logged-in user has enrolled (PENDING or CONFIRMED)
+export async function listMyActiveEnrolledEvents() {
+  const response = await fetch('http://localhost:4000/api/enrollments/my-events/active', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to list active enrolled events for current user');
+  }
+  return response.json();
+}
+
+export async function handleListMyActiveEnrolledEvents() {
+  try {
+    console.log('Attempting to list active enrolled events for current user...');
+    const payload = await listMyActiveEnrolledEvents();
+    console.log('Active enrolled events response for current user:', payload);
+    return payload;
+  } catch (err) {
+    console.error('List active enrolled events error for current user:', err);
+    throw err;
+  }
+}
+
+// List confirmed-enrolled users for a specific event (for session enrollment member selection)
+export async function listConfirmedUsersByEvent(event_id) {
+  const response = await fetch(`http://localhost:4000/api/enrollments/confirmed-users?event_id=${event_id}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to list confirmed users for event ${event_id}`);
+  }
+  return response.json();
+}
+
+export async function handleListConfirmedUsersByEvent(event_id) {
+  try {
+    console.log(`Attempting to list confirmed users for event ${event_id}...`);
+    const payload = await listConfirmedUsersByEvent(event_id);
+    console.log(`Confirmed users response for event ${event_id}:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`List confirmed users error for event ${event_id}:`, err);
+    throw err;
+  }
+}
