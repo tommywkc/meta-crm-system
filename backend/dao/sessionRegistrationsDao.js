@@ -30,6 +30,19 @@ async function listByUserId(user_id) {
   return res.rows;
 }
 
+// List session_ids that the user has registered for a specific event
+async function listRegisteredSessionIdsByUserAndEvent(user_id, event_id) {
+  const sql = `
+    SELECT DISTINCT sr.session_id
+    FROM SESSION_REGISTRATIONS sr
+    JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
+    WHERE sr.user_id = $1
+      AND s.event_id = $2
+  `;
+  const res = await query(sql, [user_id, event_id]);
+  return res.rows || [];
+}
+
 async function listUpcomingSessionsByUser(user_id, limit = 5) {
   const sql = `
     SELECT
@@ -95,4 +108,5 @@ module.exports = {
    listSessionsByUserAndYear,
   removeByRegistrationId,
   findBySessionAndUser,
+  listRegisteredSessionIdsByUserAndEvent,
 };

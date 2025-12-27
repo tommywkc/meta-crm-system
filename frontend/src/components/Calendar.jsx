@@ -124,7 +124,7 @@ const Calendar = ({ events = {}, onYearChange }) => {
                       <div key={i} style={{ marginTop: 4 }}>
                         <div style={{ fontWeight: 'bold' }}>{label}</div>
                         {timeText && (
-                          <div style={{ fontSize: 12, color: '#555' }}>
+                          <div style={{ fontSize: 16, color: '#555' }}>
                             {timeText}
                           </div>
                         )}

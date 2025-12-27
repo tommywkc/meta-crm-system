@@ -199,3 +199,29 @@ export async function handleListMySessionsByYear(year) {
   }
 }
 
+// --- Registered sessions for current user by event ---
+
+export async function listMyRegisteredSessionsByEvent(event_id) {
+  const response = await fetch(`http://localhost:4000/api/my-sessions/registered-by-event?event_id=${event_id}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch registered sessions for event ${event_id}`);
+  }
+  return response.json();
+}
+
+export async function handleListMyRegisteredSessionsByEvent(event_id) {
+  try {
+    console.log(`Attempting to fetch my registered sessions for event ${event_id}...`);
+    const payload = await listMyRegisteredSessionsByEvent(event_id);
+    console.log(`My registered sessions for event ${event_id}:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Fetch my registered sessions by event error for event ${event_id}:`, err);
+    throw err;
+  }
+}
+

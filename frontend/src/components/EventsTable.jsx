@@ -2,7 +2,7 @@ import React from 'react';
 import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
 import { getStatusDisplay, getTypeDisplay, formatForDisplay } from '../utils/dateFormatter';
 
-const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) => {
+const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit, onDelete, onEnroll }) => {
   const userRole = role?.toLowerCase();
   const isAdmin = userRole === 'admin';
   const isMember = userRole === 'member';
@@ -24,35 +24,48 @@ const EventsTable = ({ events = [], role, onView, onEdit, onDelete, onEnroll }) 
         </tr>
       </thead>
       <tbody>
-        {events.map((event) => (
-          <tr key={event.id}>
-            <td style={thTdStyle}>{event.event_id}</td>
-            <td style={thTdStyle}>{event.event_name}</td>
-            <td style={thTdStyle}>{getTypeDisplay(event.type)}</td>
-            <td style={thTdStyle}>{event.datetime_start != null ? formatForDisplay(event.datetime_start) : '無'}</td>
-            <td style={thTdStyle}>{event.datetime_end != null ? formatForDisplay(event.datetime_end) : '無'}</td>
-            <td style={thTdStyle}>{event.capacity != null ? `剩餘 ${event.remaining_seats}/${event.capacity}` : '無限制'}</td>
-            <td style={thTdStyle}>
-              {event.price == null || Number(event.price) === 0
-                ? '免費'
-                : new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 }).format(Number(event.price))}
-            </td>
-            {!isMember && <td style={thTdStyle}>{getStatusDisplay(event.status)}</td>}
-            <td style={thTdStyle}>
-              <button onClick={() => onView && onView(event.event_id)}>詳情</button>
-              {isAdmin ? (
-                <>
-                  <button onClick={() => onEdit && onEdit(event.event_id)} style={{ marginLeft: 8 }}>編輯</button>
-                  <button onClick={() => onDelete && onDelete(event.event_id)} style={{ ...redTextStyle, marginLeft: 8 }}>刪除</button>
-                </>
-              ) : isMember || isSalesOrLeader ? (
-                <button onClick={() => onEnroll && onEnroll(event.event_id)} style={{ marginLeft: 8 }}>
-                  報名
-                </button>
-              ) : null}
-            </td>
-          </tr>
-        ))}
+        {events.map((event) => {
+          const isEnrolledForMember = isMember && enrolledEventIds.some((id) => String(id) === String(event.event_id));
+          const canShowEnrollButton = isMember || isSalesOrLeader;
+          return (
+            <tr key={event.id}>
+              <td style={thTdStyle}>{event.event_id}</td>
+              <td style={thTdStyle}>{event.event_name}</td>
+              <td style={thTdStyle}>{getTypeDisplay(event.type)}</td>
+              <td style={thTdStyle}>{event.datetime_start != null ? formatForDisplay(event.datetime_start) : '無'}</td>
+              <td style={thTdStyle}>{event.datetime_end != null ? formatForDisplay(event.datetime_end) : '無'}</td>
+              <td style={thTdStyle}>{event.capacity != null ? `剩餘 ${event.remaining_seats}/${event.capacity}` : '無限制'}</td>
+              <td style={thTdStyle}>
+                {event.price == null || Number(event.price) === 0
+                    ? '免費'
+                    : new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 }).format(Number(event.price))}
+              </td>
+              {!isMember && <td style={thTdStyle}>{getStatusDisplay(event.status)}</td>}
+              <td style={thTdStyle}>
+                <button onClick={() => onView && onView(event.event_id)}>詳情</button>
+                {isAdmin ? (
+                  <>
+                    <button onClick={() => onEdit && onEdit(event.event_id)} style={{ marginLeft: 8 }}>編輯</button>
+                    <button onClick={() => onDelete && onDelete(event.event_id)} style={{ ...redTextStyle, marginLeft: 8 }}>刪除</button>
+                  </>
+                ) : canShowEnrollButton ? (
+                  <button
+                    onClick={() => {
+                      if (!onEnroll) return;
+                      // 會員已報名時不再觸發 onEnroll
+                      if (isMember && isEnrolledForMember) return;
+                      onEnroll(event.event_id);
+                    }}
+                    style={{ marginLeft: 8 }}
+                    disabled={isEnrolledForMember}
+                  >
+                    {isEnrolledForMember ? '已報名' : '報名'}
+                  </button>
+                ) : null}
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

@@ -5,6 +5,7 @@ import EventsTable from '../../components/EventsTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
 import { handleListEvents, handleDeleteById } from '../../api/eventListAPI';
+import { handleListMyActiveEnrolledEvents } from '../../api/enrollmentAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 const EventList = () => {
@@ -22,27 +23,35 @@ const EventList = () => {
 	const [isSearching, setIsSearching] = useState(false);
 
 	const [events, setEvents] = useState([]);
-		const [enrolledEventIds, setEnrolledEventIds] = useState([]);
+	const [enrolledEventIds, setEnrolledEventIds] = useState([]);
 	const [filteredEvents, setFilteredEvents] = useState([]);
 
-	useEffect(() => {
-		const fetchData = async () => {
-			const payload = await handleListEvents(100, 0);
-			setEvents(payload.events || []);
-			setFilteredEvents(payload.events || []);
-		};
-		fetchData();
-	}, []);
-
-		// 讀取 sessionStorage 中已報名的活動 ID
 		useEffect(() => {
-			try {
-				const enrolled = JSON.parse(sessionStorage.getItem('enrolledEventIds') || '[]');
-				setEnrolledEventIds(Array.isArray(enrolled) ? enrolled : []);
-			} catch (e) {
-				setEnrolledEventIds([]);
-			}
+			const fetchData = async () => {
+				const payload = await handleListEvents(100, 0);
+				setEvents(payload.events || []);
+				setFilteredEvents(payload.events || []);
+			};
+			fetchData();
 		}, []);
+
+		// 從後端讀取目前登入會員已報名 (PENDING / CONFIRMED) 的活動 ID
+		useEffect(() => {
+			if (!isMember) {
+				setEnrolledEventIds([]);
+				return;
+			}
+			const fetchEnrolled = async () => {
+				try {
+					const payload = await handleListMyActiveEnrolledEvents();
+					setEnrolledEventIds(Array.isArray(payload.eventIds) ? payload.eventIds : []);
+				} catch (e) {
+					console.error('Failed to load active enrolled events for current user', e);
+					setEnrolledEventIds([]);
+				}
+			};
+			fetchEnrolled();
+		}, [isMember]);
 	
 	const fetchEvents = async () => {
 		const payload = await handleListEvents(100, 0);

@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleGetById as handleGetUserById } from '../../api/customersListAPI';
-import { handleListSessionsByEventId, handleGetSessionById, handleDeleteSession } from '../../api/sessionAPI';
+import { handleListSessionsByEventId, handleGetSessionById, handleDeleteSession, handleListMyRegisteredSessionsByEvent } from '../../api/sessionAPI';
 import { handleCheckEnrollment } from '../../api/enrollmentAPI';
 import { getStatusDisplay, getTypeDisplay, formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import WaitingListTable from '../../components/WaitingListTable';
@@ -22,6 +22,7 @@ const EventView = () => {
   
   const [event, setEvent] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [registeredSessionIds, setRegisteredSessionIds] = useState([]);
   const [speakerName, setSpeakerName] = useState('');
   const [selectedSessionName, setSelectedSessionName] = useState('all');
   // Note: isEnrolling is for future enrollment loading state
@@ -57,8 +58,8 @@ const EventView = () => {
       const fetchData = async () => {
         const data = await handleGetById(id);
         setEvent(data.event || {});
-        
-        // Fetch sessions for this event
+
+			// Fetch sessions for this event
         try {
           const sessionData = await handleListSessionsByEventId(id);
           setSessions(sessionData.sessions || []);
@@ -76,6 +77,19 @@ const EventView = () => {
         } catch (err) {
           console.error('Failed to check enrollment:', err);
         }
+
+			// Fetch registered session IDs for current user for this event (member only)
+			if (userRole === 'member') {
+				try {
+					const payload = await handleListMyRegisteredSessionsByEvent(id);
+					setRegisteredSessionIds(Array.isArray(payload.sessionIds) ? payload.sessionIds : []);
+				} catch (err) {
+					console.error('Failed to fetch registered sessions for this event:', err);
+					setRegisteredSessionIds([]);
+				}
+			} else {
+				setRegisteredSessionIds([]);
+			}
         
       };
       fetchData();
@@ -243,6 +257,7 @@ const EventView = () => {
           onEnrollSession={(isMember || isSalesOrLeader) ? handleEnrollSession : undefined}
           onDeleteSession={isAdmin ? onDeleteSession : undefined}
           isEnrolled={isEnrolled}
+				registeredSessionIds={registeredSessionIds}
         />
       </div>
 

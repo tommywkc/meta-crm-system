@@ -49,6 +49,18 @@ async function listConfirmedEnrolled(user_id, limit = 100, offset = 0) {
   return res.rows || null;
 }
 
+// List event_ids where the user has an active (PENDING or CONFIRMED) enrollment
+async function listActiveEnrolledEventIds(user_id) {
+  const sql = `
+    SELECT DISTINCT event_id
+    FROM EVENT_ENROLLMENTS
+    WHERE user_id = $1
+      AND status IN ('PENDING', 'CONFIRMED')
+  `;
+  const res = await query(sql, [user_id]);
+  return res.rows || [];
+}
+
 async function listConfirmedUsersByEvent(event_id) {
   const sql = `
     SELECT DISTINCT u.user_id, u.name
@@ -73,4 +85,5 @@ module.exports = {
   checkIsConfirmedEnrolled,
   listConfirmedEnrolled,
   listConfirmedUsersByEvent,
+  listActiveEnrolledEventIds,
 };
