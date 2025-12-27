@@ -436,4 +436,8 @@ INSERT INTO EVENT_ENROLLMENTS (event_id, user_id, enroll_by_id, status, enroll_t
     (109, 50015, 50000, 'CANCELLED', '2025-11-18 15:30:00');
 
 
-SELECT * FROM EVENT_ENROLLMENTS;
+INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id) VALUES
+    (4, 50008, 50008),
+    (5, 50008, 50008),
+    (46, 50008, 50008),
+    (2, 50008, 50008);

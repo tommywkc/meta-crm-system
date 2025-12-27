@@ -19,6 +19,25 @@ export const formatDateTimeForDisplay = (isoString) => {
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 };
 
+// Format ISO datetime to time (HH:mm) only
+export const formatTimeForDisplay = (isoString) => {
+	if (!isoString) return '';
+	const date = new Date(isoString);
+	const hh = String(date.getHours()).padStart(2, '0');
+	const min = String(date.getMinutes()).padStart(2, '0');
+	return `${hh}:${min}`;
+};
+
+// Format a Date object into a canonical YYYY-MM-DD key string
+export const formatDateKey = (date) => {
+  if (!date) return '';
+  const d = date instanceof Date ? date : new Date(date);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 // Map event status from English to Chinese display
 export const getStatusDisplay = (status) => {
   const statusMap = {

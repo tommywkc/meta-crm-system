@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
-const { createRegistration, findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
+const { createRegistration, findBySessionAndUser, listUpcomingSessionsByUser, listSessionsByUserAndYear } = require('../dao/sessionRegistrationsDao');
 
 // Create a new session registration (場次報名)
 router.post('/session-registrations', authMiddleware, async (req, res) => {
@@ -60,6 +60,49 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Create session registration failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// Get upcoming sessions for current user (next N sessions)
+router.get('/my-sessions/upcoming', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const limit = parseInt(req.query.limit, 10) || 5;
+
+    if (!userId) {
+      return res.status(401).json({ message: '未登入' });
+    }
+
+    const sessions = await listUpcomingSessionsByUser(userId, limit);
+
+    return res.status(200).json({ sessions });
+  } catch (error) {
+    console.error('Get upcoming sessions for current user failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// Get all sessions for current user within a specific year (for calendar view)
+router.get('/my-sessions/by-year', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const yearParam = req.query.year;
+    const now = new Date();
+    const year = yearParam ? parseInt(yearParam, 10) : now.getFullYear();
+
+    if (!userId) {
+      return res.status(401).json({ message: '未登入' });
+    }
+    if (!year || Number.isNaN(year)) {
+      return res.status(400).json({ message: '無效的年度參數' });
+    }
+
+    const sessions = await listSessionsByUserAndYear(userId, year);
+
+    return res.status(200).json({ sessions, year });
+  } catch (error) {
+    console.error('Get sessions by year for current user failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
   }
 });

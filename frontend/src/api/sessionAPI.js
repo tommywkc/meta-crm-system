@@ -147,3 +147,55 @@ export async function handleCreateSessionRegistration(data) {
   }
 }
 
+// --- Upcoming sessions for current user ---
+
+export async function listMyUpcomingSessions(limit = 5) {
+  const response = await fetch(`http://localhost:4000/api/my-sessions/upcoming?limit=${limit}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch upcoming sessions');
+  }
+  return response.json();
+}
+
+export async function handleListMyUpcomingSessions(limit = 5) {
+  try {
+    console.log('Attempting to fetch my upcoming sessions...');
+    const payload = await listMyUpcomingSessions(limit);
+    console.log('My upcoming sessions:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Fetch my upcoming sessions error:', err);
+    throw err;
+  }
+}
+
+// --- Sessions by year for current user (for calendar) ---
+
+export async function listMySessionsByYear(year) {
+  const response = await fetch(`http://localhost:4000/api/my-sessions/by-year?year=${year}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch sessions by year');
+  }
+  return response.json();
+}
+
+export async function handleListMySessionsByYear(year) {
+  try {
+    console.log('Attempting to fetch my sessions for year...', year);
+    const payload = await listMySessionsByYear(year);
+    console.log('My sessions for year result:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Fetch my sessions by year error:', err);
+    throw err;
+  }
+}
+

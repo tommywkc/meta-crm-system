@@ -1,15 +1,9 @@
-import React, { useMemo, useState } from 'react';
-
-function formatKey(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+import React, { useEffect, useMemo, useState } from 'react';
+import { formatDateTimeForDisplay, formatDateKey, formatForDisplay, formatTimeForDisplay } from '../utils/dateFormatter';
 
 const Weekdays = ['日','一','二','三','四','五','六'];
 
-const Calendar = ({ events = {} }) => {
+const Calendar = ({ events = {}, onYearChange }) => {
   const [viewDate, setViewDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -37,6 +31,13 @@ const Calendar = ({ events = {} }) => {
     return weeks;
   }, [year, month]);
 
+  // 當檢視年份改變時，通知父元件（例如用來載入該年度的事件）
+  useEffect(() => {
+    if (typeof onYearChange === 'function') {
+      onYearChange(year);
+    }
+  }, [year, onYearChange]);
+
   const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
   const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
 
@@ -60,7 +61,7 @@ const Calendar = ({ events = {} }) => {
           {cells.map((week, wi) => (
             <tr key={wi}>
               {week.map((date) => {
-                const key = formatKey(date);
+                const key = formatDateKey(date);
                 const inMonth = date.getMonth() === month;
                 const dayEvents = events[key];
                 return (
@@ -71,7 +72,7 @@ const Calendar = ({ events = {} }) => {
                       verticalAlign: 'top',
                       padding: 6,
                       border: '1px solid #eee',
-                      color: inMonth ? '#000' : '#999',
+                      color: inMonth ? '#000' : '#d5d5d5ff',
                       cursor: 'pointer',
                       minWidth: 80
                     }}
@@ -80,10 +81,17 @@ const Calendar = ({ events = {} }) => {
                     {dayEvents && (
                       Array.isArray(dayEvents) ? (
                         <ul style={{ margin: '6px 0 0 14px', padding: 0 }}>
-                          {dayEvents.map((e, i) => <li key={i}>{e}</li>)}
+                          {dayEvents.map((e, i) => {
+                            const text = typeof e === 'string' ? e : (e && e.label) || '';
+                            return (
+                              <li key={i} style={{ fontWeight: 'bold' }}>{text}</li>
+                            );
+                          })}
                         </ul>
                       ) : (
-                        <div style={{ marginTop: 6 }}>{dayEvents}</div>
+                        <div style={{ marginTop: 6, fontWeight: 'bold' }}>
+                          {typeof dayEvents === 'string' ? dayEvents : (dayEvents && dayEvents.label) || ''}
+                        </div>
                       )
                     )}
                   </td>
@@ -95,18 +103,41 @@ const Calendar = ({ events = {} }) => {
       </table>
 
       <div style={{ marginTop: 10 }}>
-        {selected ? (
-          <div>
-            <div>詳情 — {selected}</div>
+          {selected ? (
             <div>
-              {(events[selected] && (Array.isArray(events[selected]) ? events[selected] : [events[selected]]))?.map((e, i) => (
-                <div key={i}>{e}</div>
-              )) || <div>此日無事件</div>}
+              <div style={{ marginTop: 6, fontWeight: 'bold' }}>詳情: {formatForDisplay(selected)}</div>
+              <div>
+              {(events[selected] && (Array.isArray(events[selected]) ? events[selected] : [events[selected]]))?.length
+                  ? (events[selected] && (Array.isArray(events[selected]) ? events[selected] : [events[selected]])).map((e, i) => {
+                    const label = typeof e === 'string' ? e : (e && e.label) || '';
+                    // 支援舊格式 { datetime } 以及新格式 { start, end }
+                    const start = e && typeof e === 'object' && (e.start || e.datetime) ? (e.start || e.datetime) : null;
+                    const end = e && typeof e === 'object' && e.end ? e.end : null;
+                    let timeText = '';
+                    if (start && end) {
+                      timeText = `${formatTimeForDisplay(start)} - ${formatTimeForDisplay(end)}`;
+                    } else if (start) {
+                      // 只有開始時間時，顯示完整日期時間作為後備
+                      timeText = formatDateTimeForDisplay(start);
+                    }
+                    return (
+                      <div key={i} style={{ marginTop: 4 }}>
+                        <div style={{ fontWeight: 'bold' }}>{label}</div>
+                        {timeText && (
+                          <div style={{ fontSize: 12, color: '#555' }}>
+                            {timeText}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                  : <div>此日無事件</div>
+                }
+              </div>
             </div>
-          </div>
-        ) : (
-          <div>按一下日期檢視詳情</div>
-        )}
+          ) : (
+            <div>按一下日期檢視詳情</div>
+          )}
       </div>
     </div>
   );
