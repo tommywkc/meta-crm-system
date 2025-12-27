@@ -36,6 +36,8 @@ import Homework from './pages/member/Homework';
 import MyQRcode from './pages/member/MyQRcode';
 import MemberCalendarPage from './pages/member/Calendar';
 import Apply from './pages/shared/Apply';
+import MyEventList from './pages/member/MyEventList';
+
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -204,6 +206,11 @@ function App() {
           <Route path="/mycalendar" element={
             <ProtectedRoute allowedRole="member">
               <MemberCalendarPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/myevents" element={
+            <ProtectedRoute allowedRole="member">
+              <MyEventList />
             </ProtectedRoute>
           } />
           <Route 

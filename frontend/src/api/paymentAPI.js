@@ -1,5 +1,5 @@
-export async function listPaymentByUserId(user_id) {
-    const res = await fetch(`http://localhost:4000/api/users/${user_id}/payments`, {
+export async function listPaymentByUserId(user_id, limit = 100, offset = 0) {
+    const res = await fetch(`http://localhost:4000/api/users/${user_id}/payments?limit=${limit}&offset=${offset}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -23,10 +23,10 @@ export async function listPaymentByUserId(user_id) {
     throw new Error(`Unexpected non-JSON response for payments: ${text.slice(0, 120)}`);
 }
 
-export async function handleListPaymentByUserId(user_id) {
+export async function handleListPaymentByUserId(user_id, limit = 100, offset = 0) {
     try {
         console.log(`Attempting to fetch payments for user ${user_id}...`);
-        const payload = await listPaymentByUserId(user_id);
+        const payload = await listPaymentByUserId(user_id, limit, offset);
         console.log(`Payments for user ${user_id} response:`, payload);
         return payload;
     } catch (err) {

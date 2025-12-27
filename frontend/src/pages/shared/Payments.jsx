@@ -32,7 +32,7 @@ const Payments = () => {
                     return;
                 }
                 if (!isSalesOrLeader && !isAdmin) {
-                    const res = await handleListPaymentByUserId(user.id);
+                    const res = await handleListPaymentByUserId(user.id, 100, 0);
                     const list = Array.isArray(res) ? res : (res.payments || []);
                     setPayments(list);
                 } else {

@@ -13,14 +13,15 @@ async function createUser({
   owner_sales = null,
   team = null,
   tags = null,
-  note_special = null
+  note_special = null,
+  referrer = null
 }) {
   const sql = `
     INSERT INTO USERS (
       user_id, password, role, name, mobile, email, qr_token, source,
-      owner_sales, team, tags, note_special
+      owner_sales, team, tags, note_special, referrer
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
     RETURNING *;
   `;
 
@@ -36,7 +37,8 @@ async function createUser({
     owner_sales,
     team,
     tags,
-    note_special
+    note_special,
+    referrer
   ];
 
   const res = await query(sql, vals);

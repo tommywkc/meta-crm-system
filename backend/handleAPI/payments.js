@@ -9,11 +9,13 @@ const { updateRemainingSeats } = require('../dao/eventsDao');
 router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
     if (!userId) {
       return res.status(400).json({ message: '缺少使用者ID' });
     }
 
-    const payments = await listByUser(userId);
+    const payments = await listByUser(userId, limit, offset);
     return res.json({ payments });
   } catch (error) {
     console.error('List payments failed:', error);
@@ -75,9 +77,13 @@ router.put('/payments/:paymentId', authMiddleware, async (req, res) => {
         await removeByEnrollmentId(existingPayment.enrollment_id);
         await updateRemainingSeats(existingPayment.event_id, 1);
     }
-    if (updateData.status && updateData.status.toUpperCase() === 'COMPLETED') {
-        // If payment is completed, update enrollment status to CONFIRMED
+    if (updateData.status && (updateData.status.toUpperCase() === 'COMPLETED' || updateData.status.toUpperCase() === 'OUTSTANDING')) {
+        // If payment is completed or partly paid, update enrollment status to CONFIRMED
         await updateStatusByEnrollmentId(existingPayment.enrollment_id, 'CONFIRMED');
+    }
+    if (updateData.status && updateData.status.toUpperCase() === 'PENDING') {
+        // If payment is set to pending, update enrollment status to PENDING
+        await updateStatusByEnrollmentId(existingPayment.enrollment_id, 'PENDING');
     }
 
 
