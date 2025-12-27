@@ -65,7 +65,14 @@ router.post('/sessions', authMiddleware, roleMiddleware('admin'), async (req, re
     // Don't format datetime for database insertion - PostgreSQL accepts ISO 8601 directly
     const datetime_start = startRaw;
     const datetime_end = endRaw;
-    const remaining_seats = body.capacity != null ? parseInt(body.capacity, 10) : (body.session_capacity != null ? parseInt(body.session_capacity, 10) : null);
+
+    if (body.capacity != null && parseInt(body.capacity, 10)) {
+      remaining_seats = body.capacity;
+    }else{
+      remaining_seats = null;
+    }
+
+
     
 
     const newSession = {
@@ -215,9 +222,9 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
     }
 
     remaining_seats = session.remaining_seats;
-    if (remaining_seats <= 0) {
+    if (remaining_seats <= 0. && remaining_seats != null) {
       return res.status(400).json({ message: '此場次已無剩餘名額，無法報名' });
-    }else{
+    }else if (remaining_seats != null) {
       // 減少剩餘名額
       remaining_seats -= 1;
       await updateSessionById(sessionId, { remaining_seats });

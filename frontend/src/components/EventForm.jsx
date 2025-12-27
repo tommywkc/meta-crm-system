@@ -24,7 +24,7 @@ const EventForm = ({
   const [name, setName] = useState(initialData.event_name || '');
   const [type, setType] = useState(initialData.type || '');
   // datetime_start and datetime_end will be calculated from sessions
-  const [capacity, setCapacity] = useState(initialData.capacity || 60);
+  const [capacity, setCapacity] = useState(initialData.capacity);
   const [status, setStatus] = useState(initialData.status || 'SCHEDULED');
   const [location, setLocation] = useState(initialData.location || '');
   const [description, setDescription] = useState(initialData.description || '');
@@ -439,7 +439,7 @@ const EventForm = ({
                           <input
                             type="text"
                             inputMode="numeric"
-                            placeholder="例：60"
+                            placeholder="留空不限制人數"
                             value={s.session_capacity ?? ''}
                             onChange={(e) => updateSession(idx, 'session_capacity', e.target.value)}
                             className="batch-input-field"
