@@ -43,7 +43,7 @@ async function listRegisteredSessionIdsByUserAndEvent(user_id, event_id) {
   return res.rows || [];
 }
 
-async function listUpcomingSessionsByUser(user_id, limit = 5) {
+async function listUpcomingSessionsByUser(user_id, limit = 5, offset = 0) {
   const sql = `
     SELECT
       sr.registration_id,
@@ -61,9 +61,35 @@ async function listUpcomingSessionsByUser(user_id, limit = 5) {
     WHERE sr.user_id = $1
       AND s.datetime_start > NOW()
     ORDER BY s.datetime_start ASC
-    LIMIT $2
+    LIMIT $2 OFFSET $3
   `;
-  const res = await query(sql, [user_id, limit]);
+  const res = await query(sql, [user_id, limit, offset]);
+  return res.rows || [];
+}
+
+// List upcoming sessions (not yet started) for all users, ordered by time
+async function listUpcomingSessionsAllUsers(limit = 100, offset = 0) {
+  const sql = `
+    SELECT
+      sr.registration_id,
+      sr.session_id,
+      sr.user_id,
+      u.name AS user_name,
+      s.event_id,
+      s.session_name,
+      s.datetime_start,
+      s.datetime_end,
+      e.event_name,
+      e.location
+    FROM SESSION_REGISTRATIONS sr
+    JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
+    LEFT JOIN EVENTS e ON s.event_id = e.event_id
+    LEFT JOIN USERS u ON sr.user_id = u.user_id
+    WHERE s.datetime_start > NOW()
+    ORDER BY s.datetime_start ASC
+    LIMIT $1 OFFSET $2
+  `;
+  const res = await query(sql, [limit, offset]);
   return res.rows || [];
 }
 
@@ -105,8 +131,9 @@ module.exports = {
   listBySessionId,
   listByUserId,
   listUpcomingSessionsByUser,
-   listSessionsByUserAndYear,
+  listSessionsByUserAndYear,
   removeByRegistrationId,
   findBySessionAndUser,
   listRegisteredSessionIdsByUserAndEvent,
+  listUpcomingSessionsAllUsers,
 };

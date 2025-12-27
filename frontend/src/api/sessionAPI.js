@@ -149,8 +149,8 @@ export async function handleCreateSessionRegistration(data) {
 
 // --- Upcoming sessions for current user ---
 
-export async function listMyUpcomingSessions(limit = 5) {
-  const response = await fetch(`http://localhost:4000/api/my-sessions/upcoming?limit=${limit}`, {
+export async function listMyUpcomingSessions(limit = 5, offset = 0) {
+  const response = await fetch(`http://localhost:4000/api/my-sessions/upcoming?limit=${limit}&offset=${offset}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -161,14 +161,40 @@ export async function listMyUpcomingSessions(limit = 5) {
   return response.json();
 }
 
-export async function handleListMyUpcomingSessions(limit = 5) {
+export async function handleListMyUpcomingSessions(limit = 5, offset = 0) {
   try {
     console.log('Attempting to fetch my upcoming sessions...');
-    const payload = await listMyUpcomingSessions(limit);
+    const payload = await listMyUpcomingSessions(limit, offset);
     console.log('My upcoming sessions:', payload);
     return payload;
   } catch (err) {
     console.error('Fetch my upcoming sessions error:', err);
+    throw err;
+  }
+}
+
+// --- Enrolled upcoming sessions list (role-based: member sees own, others see all) ---
+
+export async function listEnrolledUpcomingSessions(limit = 100, offset = 0) {
+  const response = await fetch(`http://localhost:4000/api/session-registrations/enrolled-upcoming?limit=${limit}&offset=${offset}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch enrolled upcoming sessions list');
+  }
+  return response.json();
+}
+
+export async function handleListEnrolledUpcomingSessions(limit = 100, offset = 0) {
+  try {
+    console.log('Attempting to fetch enrolled upcoming sessions list...');
+    const payload = await listEnrolledUpcomingSessions(limit, offset);
+    console.log('Enrolled upcoming sessions list:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Fetch enrolled upcoming sessions list error:', err);
     throw err;
   }
 }

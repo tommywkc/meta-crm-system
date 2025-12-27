@@ -9,6 +9,7 @@ const {
   listUpcomingSessionsByUser,
   listSessionsByUserAndYear,
   listRegisteredSessionIdsByUserAndEvent,
+  listUpcomingSessionsAllUsers,
 } = require('../dao/sessionRegistrationsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 
@@ -253,16 +254,49 @@ router.get('/my-sessions/upcoming', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.sub;
     const limit = parseInt(req.query.limit, 10) || 5;
+    const offset = parseInt(req.query.offset, 10) || 0;
 
     if (!userId) {
       return res.status(401).json({ message: '未登入' });
     }
 
-    const sessions = await listUpcomingSessionsByUser(userId, limit);
+    const sessions = await listUpcomingSessionsByUser(userId, limit, offset);
 
     return res.status(200).json({ sessions });
   } catch (error) {
     console.error('Get upcoming sessions for current user failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// Get upcoming enrolled sessions list (not finished), role-based:
+// - MEMBER: only own sessions
+// - ADMIN/SALES/LEADER: all sessions
+router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const role = (req.user.role || '').toUpperCase();
+    const limit = parseInt(req.query.limit, 10) || 100;
+    const offset = parseInt(req.query.offset, 10) || 0;
+
+    if (!userId) {
+      return res.status(401).json({ message: '未登入' });
+    }
+
+    let sessions = [];
+    if (role === 'MEMBER') {
+      // 會員只可看到自己的尚未開始場次
+      sessions = await listUpcomingSessionsByUser(userId, limit, offset);
+    } else if (['ADMIN', 'SALES', 'LEADER'].includes(role)) {
+      // 管理員 / 銷售 / 組長可看到全部人的尚未開始場次
+      sessions = await listUpcomingSessionsAllUsers(limit, offset);
+    } else {
+      return res.status(403).json({ message: '沒有權限查看場次報名列表' });
+    }
+
+    return res.status(200).json({ sessions });
+  } catch (error) {
+    console.error('Get enrolled-upcoming sessions list failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
   }
 });

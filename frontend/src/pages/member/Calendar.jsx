@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Calendar from '../../components/Calendar';
 import { handleListMyUpcomingSessions, handleListMySessionsByYear } from '../../api/sessionAPI';
 import { formatDateKey, formatDateTimeForDisplay, formatForDisplay } from '../../utils/dateFormatter';
 
 const MemberCalendarPage = () => {
+	const navigate = useNavigate();
 	const today = new Date();
 	const initialYear = today.getFullYear();
 
@@ -99,7 +101,7 @@ const MemberCalendarPage = () => {
 						{calendarLoading && <p>日曆載入中...</p>}
 					</div>
 					<div style={{ flex: 1 }}>
-						<h3>即將到來的課堂</h3>
+						<h3>即將到來的5堂課</h3>
 						{loading ? (
 							<p>載入中...</p>
 						) : error ? (
@@ -128,6 +130,11 @@ const MemberCalendarPage = () => {
 								</tbody>
 							</table>
 						)}
+						<div style={{ marginTop: 12 }}>
+							<button onClick={() => navigate('/sessions/enrolled')}>
+								查看所有即將到來的場次
+							</button>
+						</div>
 					</div>
 				</div>
 			</section>
