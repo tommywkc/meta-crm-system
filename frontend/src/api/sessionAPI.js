@@ -151,8 +151,8 @@ export async function handleCreateSessionRegistration(data) {
 
 // --- Upcoming sessions for current user ---
 
-export async function listMyUpcomingSessions(limit = 5) {
-  const response = await fetch(apiUrl(`/api/my-sessions/upcoming?limit=${limit}`), {
+export async function listMyUpcomingSessions(limit = 5, offset = 0) {
+  const response = await fetch(apiUrl(`/api/my-sessions/upcoming?limit=${limit}&offset=${offset}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -178,7 +178,7 @@ export async function handleListMyUpcomingSessions(limit = 5, offset = 0) {
 // --- Enrolled upcoming sessions list (role-based: member sees own, others see all) ---
 
 export async function listEnrolledUpcomingSessions(limit = 100, offset = 0) {
-  const response = await fetch(`http://localhost:4000/api/session-registrations/enrolled-upcoming?limit=${limit}&offset=${offset}`, {
+  const response = await fetch(apiUrl(`/api/session-registrations/enrolled-upcoming?limit=${limit}&offset=${offset}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
