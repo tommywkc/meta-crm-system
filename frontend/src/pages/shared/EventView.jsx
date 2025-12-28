@@ -25,6 +25,7 @@ const EventView = () => {
   const [registeredSessionIds, setRegisteredSessionIds] = useState([]);
   const [speakerName, setSpeakerName] = useState('');
   const [selectedSessionName, setSelectedSessionName] = useState('all');
+  const [selectedRound, setSelectedRound] = useState('all');
   // Note: isEnrolling is for future enrollment loading state
   const [isEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
@@ -279,6 +280,37 @@ const EventView = () => {
                   </option>
                 ))}
             </select>
+            
+            {/* Round filter */}
+            {sessions.some(s => s.round != null) && (
+              <>
+                <label htmlFor="round-filter" style={{ marginLeft: 16, marginRight: 8, fontWeight: 'bold' }}>
+                  期數:
+                </label>
+                <select
+                  id="round-filter"
+                  value={selectedRound}
+                  onChange={(e) => setSelectedRound(e.target.value)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    minWidth: '120px'
+                  }}
+                >
+                  <option value="all">全部期數</option>
+                  {[...new Set(sessions.map(s => s.round))]
+                    .filter(r => r != null)
+                    .sort((a, b) => a - b)
+                    .map(r => (
+                      <option key={r} value={String(r)}>
+                        第 {r} 期
+                      </option>
+                    ))}
+                </select>
+              </>
+            )}
             {isAdmin && (
               <button onClick={() => navigate(`/events/${id}/sessions/create`)}>
                 新增場次
@@ -288,11 +320,16 @@ const EventView = () => {
         )}
         
         <SessionListTable 
-          sessions={
-            selectedSessionName === 'all' 
-              ? sessions 
-              : sessions.filter(s => s.session_name === selectedSessionName)
-          }
+          sessions={(() => {
+            let filtered = sessions;
+            if (selectedSessionName !== 'all') {
+              filtered = filtered.filter(s => s.session_name === selectedSessionName);
+            }
+            if (selectedRound !== 'all') {
+              filtered = filtered.filter(s => String(s.round) === selectedRound);
+            }
+            return filtered;
+          })()}
           role={user?.role}
           onEditSession={isAdmin ? handleEditSession : undefined}
           onEnrollSession={(isMember || isSalesOrLeader) ? handleEnrollSession : undefined}

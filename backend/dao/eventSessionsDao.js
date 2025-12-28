@@ -1,20 +1,73 @@
 // Event sessions DAO — helpers for creating and managing event sessions
 const { query } = require('../db/pool');
 
-async function createSession({ event_id, session_name, description = null, capacity = null, datetime_start = null, datetime_end = null, created_by_id }) {
+// Create a new session
+// round 會根據同一活動與同一 session_name 的開始時間自動計算：
+//   round = 1 + 已存在且 datetime_start 早於新場次的筆數
+async function createSession({
+  event_id,
+  session_name,
+  description = null,
+  capacity = null,
+  remaining_seats = null,
+  datetime_start = null,
+  datetime_end = null,
+  created_by_id,
+}) {
+  // 先查出此活動、同名場次中，比這次開始時間早的場次數量
+  const roundSql = `
+    SELECT COALESCE(COUNT(*), 0) + 1 AS round
+    FROM EVENT_SESSIONS es
+    WHERE es.event_id = $1
+      AND es.session_name = $2
+      AND es.datetime_start < $3
+  `;
+
+  let round = 1;
+  if (event_id != null && session_name && datetime_start) {
+    const roundRes = await query(roundSql, [event_id, session_name, datetime_start]);
+    if (roundRes.rows[0] && roundRes.rows[0].round != null) {
+      round = Number(roundRes.rows[0].round) || 1;
+    }
+  }
+
   const sql = `
     INSERT INTO EVENT_SESSIONS (
       event_id,
       session_name,
       description,
       capacity,
+      remaining_seats,
       datetime_start,
       datetime_end,
+      round,
       created_by_id
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+    ) VALUES (
+      $1,
+      $2,
+      $3,
+      $4,
+      $5,
+      $6,
+      $7,
+      $8,
+      $9
+    )
     RETURNING *
   `;
-  const vals = [event_id, session_name, description, capacity, datetime_start, datetime_end, created_by_id];
+
+  const vals = [
+    event_id,
+    session_name,
+    description,
+    capacity,
+    remaining_seats,
+    datetime_start,
+    datetime_end,
+    round,
+    created_by_id,
+  ];
+
   const res = await query(sql, vals);
   return res.rows[0];
 }
