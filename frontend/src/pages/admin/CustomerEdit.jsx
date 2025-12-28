@@ -37,7 +37,7 @@ const CustomerEdit = () => {
   };
 
   const handleCancel = () => {
-    navigate('/customers/' + id);
+    navigate(-1);
   };
 
   return (

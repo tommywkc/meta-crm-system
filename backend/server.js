@@ -14,36 +14,12 @@ const { findByUserId } = require('./dao/usersDao');
 
 const app = express();
 
-const isProd = process.env.NODE_ENV === 'production';
-if (isProd) {
-  // Needed on Azure App Service (TLS terminated at proxy)
-  app.set('trust proxy', 1);
-}
-
-function parseAllowedOrigins() {
-  const raw = String(process.env.CORS_ORIGINS || '').trim();
-  const list = raw
-    ? raw.split(',').map(s => s.trim()).filter(Boolean)
-    : ['http://localhost:3000'];
-  return new Set(list);
-}
-
-const allowedOrigins = parseAllowedOrigins();
-const corsOptions = {
-  origin(origin, callback) {
-    // allow non-browser requests (no Origin header)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.has(origin)) return callback(null, true);
-    return callback(new Error(`CORS blocked for origin: ${origin}`));
-  },
+// Allow frontend on http://localhost:3000 to send credentials
+app.use(cors({ 
+  origin: 'http://localhost:3000', 
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 204,
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 
 app.use(express.json());
 app.use(cookieParser());
@@ -93,16 +69,13 @@ const paymentsRouter = require('./handleAPI/payments');
 console.log('Payments router loaded');
 app.use('/api', paymentsRouter); // Use the payments router
 
+const attendanceRouter = require('./handleAPI/attendance');
+console.log('Attendance router loaded');
+app.use('/api', attendanceRouter); // Use the attendance router
+
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
-  const cookieSameSite = String(process.env.COOKIE_SAMESITE || (isProd ? 'none' : 'lax')).toLowerCase();
-  const cookieSecure = cookieSameSite === 'none' ? true : String(process.env.COOKIE_SECURE || '').toLowerCase() === 'true' ? true : isProd;
-  res.clearCookie('token', {
-    httpOnly: true,
-    secure: cookieSecure,
-    sameSite: cookieSameSite,
-    path: '/',
-  });
+  res.clearCookie('token');
   res.json({ ok: true });
 });
 
@@ -138,15 +111,7 @@ const port = process.env.PORT || 4000;
 // Initialize the database before starting the server
 async function startServer() {
   try {
-    const dbInitFlag = String(process.env.DB_INIT || '').trim().toLowerCase();
-    const dbUser = String(process.env.DB_USER || '').trim().toLowerCase();
-    const shouldInitDb = (dbInitFlag === '1' || dbInitFlag === 'true' || dbInitFlag === 'yes') || dbUser === 'postgres';
-
-    if (shouldInitDb) {
-      await initDatabase();
-    } else {
-      console.log('DB init skipped (set DB_INIT=true or DB_USER=postgres to run schema.sql).');
-    }
+    await initDatabase();
     // Start holidays scheduler after DB is ready
     try {
       const { startHolidaySchedules } = require('./services/holidayScheduler');

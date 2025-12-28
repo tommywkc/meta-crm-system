@@ -47,7 +47,7 @@ const EventsEdit = () => {
 
 
   const handleCancel = () => {
-    navigate('/events/'+id);
+    navigate(-1);
   };
 
   const handleDelete = async (event_id) => {

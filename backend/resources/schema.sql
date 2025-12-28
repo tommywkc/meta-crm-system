@@ -125,15 +125,11 @@ CREATE TABLE IF NOT EXISTS WAITLIST (
 
 CREATE TABLE IF NOT EXISTS EVENT_ATTENDANCE (
     attendance_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
-    session_id BIGINT,
-    user_id BIGINT,
     registration_id BIGINT,
     attend_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(50),
     remarks VARCHAR(255),
     PRIMARY KEY (attendance_id),
-    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id) ON DELETE SET NULL,
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     FOREIGN KEY (registration_id) REFERENCES SESSION_REGISTRATIONS(registration_id) ON DELETE SET NULL,
     CONSTRAINT CHKSTATUS_ATT CHECK (status IN ('G', 'Y', 'R'))
 );
@@ -443,3 +439,4 @@ INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id) VALU
     (5, 50008, 50008),
     (46, 50008, 50008),
     (2, 50008, 50008);
+

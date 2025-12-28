@@ -32,11 +32,7 @@ export default function SessionCreate() {
   };
 
   const handleCancel = () => {
-    if (numericEventId) {
-      navigate(`/events/${numericEventId}`);
-    } else {
-      navigate(-1);
-    }
+    navigate(-1);
   };
 
   return (

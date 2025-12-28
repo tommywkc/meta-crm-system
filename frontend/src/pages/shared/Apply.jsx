@@ -271,7 +271,7 @@ const Apply = () => {
           <button type="submit" disabled={isSubmitting}>
             {isSubmitting ? '提交中...' : '確認報名'}
           </button>
-          <button type="button" onClick={() => navigate('/events')}>
+          <button type="button" onClick={() => navigate(-1)}>
             取消
           </button>
         </div>
