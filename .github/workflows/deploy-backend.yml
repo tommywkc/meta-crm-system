@@ -14,7 +14,7 @@ permissions:
 
 concurrency:
   group: deploy-backend-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
@@ -33,7 +33,21 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Deploy to Azure Web App
+      - name: Deploy to Azure Web App (attempt 1)
+        id: deploy_attempt_1
+        uses: azure/webapps-deploy@v3
+        continue-on-error: true
+        with:
+          app-name: ${{ vars['AZURE_BACKEND_APP_NAME'] }}
+          publish-profile: ${{ secrets['AZURE_BACKEND_PUBLISH_PROFILE'] }}
+          package: backend
+
+      - name: Wait before retry (SCM restart/backoff)
+        if: steps.deploy_attempt_1.outcome == 'failure'
+        run: sleep 45
+
+      - name: Deploy to Azure Web App (attempt 2)
+        if: steps.deploy_attempt_1.outcome == 'failure'
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ vars['AZURE_BACKEND_APP_NAME'] }}
