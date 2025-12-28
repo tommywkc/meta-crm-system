@@ -36,6 +36,7 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         env:
+          CI: 'false'
           REACT_APP_API_BASE_URL: ${{ vars['REACT_APP_API_BASE_URL'] }}
         run: npm run build
 
