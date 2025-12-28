@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
+import { apiUrl } from '../../api/apiBase';
 
 const Files = () => {
 	const [homeworkFiles, setHomeworkFiles] = useState([]);
@@ -15,7 +16,7 @@ const Files = () => {
             setError('');
 		try {
             	// Fetch all homework files (Admin API)
-			const homeworkRes = await fetch('http://localhost:4000/api/homework/files/admin/all', {
+			const homeworkRes = await fetch(apiUrl('/api/homework/files/admin/all'), {
 				method: 'GET',
 				credentials: 'include'
 			});
@@ -28,7 +29,7 @@ const Files = () => {
 				}
 
 				// Certificate files API call can be added here if needed
-				// const certificateRes = await fetch('http://localhost:4000/api/certificates/files', {...});
+				// const certificateRes = await fetch(apiUrl('/api/certificates/files'), {...});
 		} catch (err) {
 			console.error('Failed to fetch file list:', err);
 			setError(`無法獲取檔案列表: ${err.message}`);
@@ -40,7 +41,7 @@ const Files = () => {
 	const handleDownloadFile = async (file) => {
 		try {
 			const fileName = encodeURIComponent(file.name);
-			const response = await fetch(`http://localhost:4000/api/homework/download/${fileName}`, {
+			const response = await fetch(apiUrl(`/api/homework/download/${fileName}`), {
 				method: 'GET',
 				credentials: 'include'
 			});
@@ -81,7 +82,7 @@ const Files = () => {
 		}
 
 		try {
-			const response = await fetch(`http://localhost:4000/api/homework/file/${encodeURIComponent(file.name)}`, {
+			const response = await fetch(apiUrl(`/api/homework/file/${encodeURIComponent(file.name)}`), {
 				method: 'DELETE',
 				credentials: 'include'
 			});

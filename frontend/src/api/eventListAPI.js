@@ -1,5 +1,7 @@
+import { apiUrl } from './apiBase';
+
 export async function createEvent(data) {
-  const response = await fetch('http://localhost:4000/api/events', {
+  const response = await fetch(apiUrl('/api/events'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -22,7 +24,7 @@ export async function handleCreateEvent(data) {
 
 
 export async function listEvents() {
-    const response = await fetch('http://localhost:4000/api/events', {
+  const response = await fetch(apiUrl('/api/events'), {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // allow cookies to be sent across origins
@@ -45,7 +47,7 @@ export async function handleListEvents() {
 
 export async function getEventById(event_id) {
   console.log(`Fetching event ${event_id} from backend`);
-  const res = await fetch(`http://localhost:4000/api/events/${event_id}`, {
+  const res = await fetch(apiUrl(`/api/events/${event_id}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -91,7 +93,7 @@ export async function handleGetById(event_id) {
 
 export async function updateEventById(event_id, data) {
   console.log(`Updating event ${event_id} on backend`, data);
-  const res = await fetch(`http://localhost:4000/api/events/${event_id}`, {
+  const res = await fetch(apiUrl(`/api/events/${event_id}`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -124,7 +126,7 @@ export async function handleUpdateById(event_id, data) {
 
 export async function deleteEventById(event_id) {
   console.log(`Deleting event ${event_id} on backend`);
-  const res = await fetch(`http://localhost:4000/api/events/${event_id}`, {
+  const res = await fetch(apiUrl(`/api/events/${event_id}`), {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins

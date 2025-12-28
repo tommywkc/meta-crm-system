@@ -14,12 +14,36 @@ const { findByUserId } = require('./dao/usersDao');
 
 const app = express();
 
-// Allow frontend on http://localhost:3000 to send credentials
-app.use(cors({ 
-  origin: 'http://localhost:3000', 
+const isProd = process.env.NODE_ENV === 'production';
+if (isProd) {
+  // Needed on Azure App Service (TLS terminated at proxy)
+  app.set('trust proxy', 1);
+}
+
+function parseAllowedOrigins() {
+  const raw = String(process.env.CORS_ORIGINS || '').trim();
+  const list = raw
+    ? raw.split(',').map(s => s.trim()).filter(Boolean)
+    : ['http://localhost:3000'];
+  return new Set(list);
+}
+
+const allowedOrigins = parseAllowedOrigins();
+const corsOptions = {
+  origin(origin, callback) {
+    // allow non-browser requests (no Origin header)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 app.use(cookieParser());
@@ -71,7 +95,14 @@ app.use('/api', paymentsRouter); // Use the payments router
 
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
-  res.clearCookie('token');
+  const cookieSameSite = String(process.env.COOKIE_SAMESITE || (isProd ? 'none' : 'lax')).toLowerCase();
+  const cookieSecure = cookieSameSite === 'none' ? true : String(process.env.COOKIE_SECURE || '').toLowerCase() === 'true' ? true : isProd;
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: cookieSecure,
+    sameSite: cookieSameSite,
+    path: '/',
+  });
   res.json({ ok: true });
 });
 

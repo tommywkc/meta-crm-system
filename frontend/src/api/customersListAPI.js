@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom';
+import { apiUrl } from './apiBase';
 
 export async function listUsers(limit, offset) {
   console.log('Fetching customers list from backend');
-  const res = await fetch('http://localhost:4000/api/customers', {
+  const res = await fetch(apiUrl('/api/customers'), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -33,7 +33,7 @@ export async function handleList(limit, offset) {
 
 export async function getUserById(user_id) {
   console.log(`Fetching customer ${user_id} from backend`);
-  const res = await fetch(`http://localhost:4000/api/customers/${user_id}`, {
+  const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -64,7 +64,7 @@ export async function handleGetById(user_id) {
 
 export async function updateUserById(user_id, data) {
   console.log(`Updating customer ${user_id} on backend`, data);
-  const res = await fetch(`http://localhost:4000/api/customers/${user_id}`, {
+  const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -96,7 +96,7 @@ export async function handleUpdateById(user_id, data) {
 
 export async function createUser(data) {
   console.log('Creating new customer on backend', data);
-  const res = await fetch('http://localhost:4000/api/customers', {
+  const res = await fetch(apiUrl('/api/customers'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -128,7 +128,7 @@ export async function handleCreate(data) {
 
 export async function deleteUserById(user_id) {
   console.log(`Deleting customer ${user_id} on backend`);
-  const res = await fetch(`http://localhost:4000/api/customers/${user_id}`, {
+  const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -161,7 +161,7 @@ export async function handleDeleteById(user_id) {
 //handle get user detail in scan
 export async function getUserByQRToken(qr_token) { 
   console.log(`Fetching customer detail by QR token from backend`);
-  const res = await fetch(`http://localhost:4000/api/customers/scan/${encodeURIComponent(qr_token)}`, {
+  const res = await fetch(apiUrl(`/api/customers/scan/${encodeURIComponent(qr_token)}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -192,7 +192,7 @@ export async function handleGetUserByQRToken(qr_token) {
 
 export async function findUserByRole(role) {
   console.log(`Fetching customers with role ${role} from backend`);
-  const res = await fetch(`http://localhost:4000/api/customers/role/${encodeURIComponent(role)}`, {
+  const res = await fetch(apiUrl(`/api/customers/role/${encodeURIComponent(role)}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins

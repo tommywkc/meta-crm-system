@@ -1,5 +1,7 @@
+import { apiUrl } from './apiBase';
+
 export async function createSession(data) {
-  const response = await fetch('http://localhost:4000/api/sessions', {
+  const response = await fetch(apiUrl('/api/sessions'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -21,7 +23,7 @@ export async function handleCreateSession(data) {
 }
 
 export async function listSessionsByEventId(event_id) {
-  const response = await fetch(`http://localhost:4000/api/events/${event_id}/sessions`, {
+  const response = await fetch(apiUrl(`/api/events/${event_id}/sessions`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -45,7 +47,7 @@ export async function handleListSessionsByEventId(event_id) {
 }
 
 export async function getSessionById(session_id) {
-  const response = await fetch(`http://localhost:4000/api/sessions/${session_id}`, {
+  const response = await fetch(apiUrl(`/api/sessions/${session_id}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -69,7 +71,7 @@ export async function handleGetSessionById(session_id) {
 }
 
 export async function updateSession(session_id, data) {
-  const response = await fetch(`http://localhost:4000/api/sessions/${session_id}`, {
+  const response = await fetch(apiUrl(`/api/sessions/${session_id}`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -91,7 +93,7 @@ export async function handleUpdateSession(session_id, data) {
 }
 
 export async function deleteSession(session_id) {
-  const response = await fetch(`http://localhost:4000/api/sessions/${session_id}`, {
+  const response = await fetch(apiUrl(`/api/sessions/${session_id}`), {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -116,7 +118,7 @@ export async function handleDeleteSession(session_id) {
 // --- Session registrations (場次報名) ---
 
 export async function createSessionRegistration(data) {
-  const response = await fetch('http://localhost:4000/api/session-registrations', {
+  const response = await fetch(apiUrl('/api/session-registrations'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -150,7 +152,7 @@ export async function handleCreateSessionRegistration(data) {
 // --- Upcoming sessions for current user ---
 
 export async function listMyUpcomingSessions(limit = 5) {
-  const response = await fetch(`http://localhost:4000/api/my-sessions/upcoming?limit=${limit}`, {
+  const response = await fetch(apiUrl(`/api/my-sessions/upcoming?limit=${limit}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -176,7 +178,7 @@ export async function handleListMyUpcomingSessions(limit = 5) {
 // --- Sessions by year for current user (for calendar) ---
 
 export async function listMySessionsByYear(year) {
-  const response = await fetch(`http://localhost:4000/api/my-sessions/by-year?year=${year}`, {
+  const response = await fetch(apiUrl(`/api/my-sessions/by-year?year=${year}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -202,7 +204,7 @@ export async function handleListMySessionsByYear(year) {
 // --- Registered sessions for current user by event ---
 
 export async function listMyRegisteredSessionsByEvent(event_id) {
-  const response = await fetch(`http://localhost:4000/api/my-sessions/registered-by-event?event_id=${event_id}`, {
+  const response = await fetch(apiUrl(`/api/my-sessions/registered-by-event?event_id=${event_id}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',

@@ -1,6 +1,8 @@
+import { apiUrl } from './apiBase';
+
 export async function createEnrollment(data) {
   console.log('Creating enrollment on backend', data);
-  const res = await fetch(`http://localhost:4000/api/enrollments`, {
+  const res = await fetch(apiUrl('/api/enrollments'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', 
@@ -35,7 +37,7 @@ export async function handleCreateEnrollment(data) {
 
 
 export async function checkEnrollment(event_id, user_id) { 
-  const response = await fetch(`http://localhost:4000/api/enrollments/check?event_id=${event_id}&user_id=${user_id}`, {
+  const response = await fetch(apiUrl(`/api/enrollments/check?event_id=${event_id}&user_id=${user_id}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -59,7 +61,7 @@ export async function handleCheckEnrollment(event_id, user_id) {
 }
 
 export async function listConfirmEnrollmentByUser(user_id, limit = 100, offset = 0) {
-  const response = await fetch(`http://localhost:4000/api/enrollments/confirmed?user_id=${user_id}&limit=${limit}&offset=${offset}`, {
+  const response = await fetch(apiUrl(`/api/enrollments/confirmed?user_id=${user_id}&limit=${limit}&offset=${offset}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -84,7 +86,7 @@ export async function handleConfirmEnrollmentByUser(user_id, limit = 100, offset
 
 // List event_ids that the current logged-in user has enrolled (PENDING or CONFIRMED)
 export async function listMyActiveEnrolledEvents() {
-  const response = await fetch('http://localhost:4000/api/enrollments/my-events/active', {
+  const response = await fetch(apiUrl('/api/enrollments/my-events/active'), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -109,7 +111,7 @@ export async function handleListMyActiveEnrolledEvents() {
 
 // List confirmed-enrolled users for a specific event (for session enrollment member selection)
 export async function listConfirmedUsersByEvent(event_id) {
-  const response = await fetch(`http://localhost:4000/api/enrollments/confirmed-users?event_id=${event_id}`, {
+  const response = await fetch(apiUrl(`/api/enrollments/confirmed-users?event_id=${event_id}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',

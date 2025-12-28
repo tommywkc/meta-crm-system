@@ -1,5 +1,7 @@
+import { apiUrl } from './apiBase';
+
 export async function listPaymentByUserId(user_id, limit = 100, offset = 0) {
-    const res = await fetch(`http://localhost:4000/api/users/${user_id}/payments?limit=${limit}&offset=${offset}`, {
+  const res = await fetch(apiUrl(`/api/users/${user_id}/payments?limit=${limit}&offset=${offset}`), {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -38,7 +40,7 @@ export async function handleListPaymentByUserId(user_id, limit = 100, offset = 0
 
 export async function listAllPayment(limit, offset) {
   console.log('Fetching payments list from backend');
-  const res = await fetch('http://localhost:4000/api/payments', {
+  const res = await fetch(apiUrl('/api/payments'), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -68,7 +70,7 @@ export async function handleListAllPayment(limit, offset) {
 }
 
 export async function getPaymentById(payment_id) {
-  const res = await fetch(`http://localhost:4000/api/payments/${payment_id}`, {
+  const res = await fetch(apiUrl(`/api/payments/${payment_id}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -93,7 +95,7 @@ export async function handleGetPaymentById(payment_id) {
 
 
 export async function updatePaymentById(payment_id, data) {
-  const response = await fetch(`http://localhost:4000/api/payments/${payment_id}`, {
+  const response = await fetch(apiUrl(`/api/payments/${payment_id}`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
