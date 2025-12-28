@@ -107,7 +107,15 @@ const port = process.env.PORT || 4000;
 // Initialize the database before starting the server
 async function startServer() {
   try {
-    await initDatabase();
+    const dbInitFlag = String(process.env.DB_INIT || '').trim().toLowerCase();
+    const dbUser = String(process.env.DB_USER || '').trim().toLowerCase();
+    const shouldInitDb = (dbInitFlag === '1' || dbInitFlag === 'true' || dbInitFlag === 'yes') || dbUser === 'postgres';
+
+    if (shouldInitDb) {
+      await initDatabase();
+    } else {
+      console.log('DB init skipped (set DB_INIT=true or DB_USER=postgres to run schema.sql).');
+    }
     // Start holidays scheduler after DB is ready
     try {
       const { startHolidaySchedules } = require('./services/holidayScheduler');
