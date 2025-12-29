@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS PAYMENTS (
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     paid_time TIMESTAMP,
-    casher_id BIGINT DEFAULT '50000',
+    casher_id BIGINT DEFAULT '10000',
     expire_time TIMESTAMP,
     receipt_number VARCHAR(100),
     issued_receipt BOOLEAN DEFAULT FALSE,
@@ -272,7 +272,8 @@ CREATE TABLE holidays (
 );
 
 INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags) VALUES
-('50000', 'password', 'ADMIN', 'System', '12345678', 'test@gmail.com', 'hewr2ur2kb2kf3f3', 'WhatsApp', NULL, 'Management', 'admin,super'),
+('50000', 'password', 'ADMIN', 'Admin User', '12345678', 'test@gmail.com', 'hewr2ur2kb2kf3f3', 'WhatsApp', NULL, 'Management', 'admin,super'),
+('10000', 'password', 'ADMIN', 'System', '12345644', 'System@gmail.com', 'System', 'WhatsApp', NULL, 'Management', 'admin,super'),
 ('50001', 'password', 'SALES', 'Sales User', '23456789', 'test2@gmail.com', 'djqw3ji32nl23', 'WhatsApp', NULL, 'Sales A', 'sales,active'),
 ('50002', 'password', 'LEADER', 'Leader User', '34567890', 'test3@gmail.com', '3h2oj2fekjbwfbjk ew', 'WhatsApp', NULL, 'Sales A', 'leader'),
 ('50003', 'password', 'MEMBER', 'Member User', '45678901', 'test4@gmail.com', 'ehoi2dho3fnoen', 'WhatsApp', 50001, 'Sales A', 'member'),

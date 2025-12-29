@@ -62,7 +62,8 @@ const CustomerCreate = () => {
       navigate(`/customers/${newUserId}`);  // after creation, navigate to the new customer's page
     } catch (err) {
       console.error('Create failed:', err);
-      alert('新增客戶失敗，請稍後再試');
+      const msg = err?.message;
+      alert(msg || '新增客戶失敗，請稍後再試');
     }
   };
 

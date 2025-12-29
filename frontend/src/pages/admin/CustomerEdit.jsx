@@ -24,7 +24,8 @@ const CustomerEdit = () => {
       navigate('/customers/' + id);
     } catch (error) {
       console.error('Update failed:', error);
-      alert('更新資料失敗，請稍後再試');
+      const msg = error?.message;
+      alert(msg || '更新資料失敗，請稍後再試');
     }
   };
 
