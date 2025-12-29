@@ -120,16 +120,6 @@ router.put('/customers/:id', authMiddleware, roleMiddleware('admin'), async (req
     res.json({ message: '客戶資料更新成功', customer: updated });
   } catch (error) {
     console.error('Failed to update customer data:', error);
-    // DB 層唯一鍵衝突（保險：避免競態）
-    if (error && error.code === '23505') {
-      const constraint = String(error.constraint || '');
-      if (constraint.includes('mobile')) {
-        return res.status(409).json({ message: '手機號碼已被使用' });
-      }
-      if (constraint.includes('email')) {
-        return res.status(409).json({ message: 'Email 已被使用' });
-      }
-    }
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
@@ -185,16 +175,6 @@ router.post('/customers', authMiddleware, roleMiddleware('admin'), async (req, r
     });
   } catch (error) {
     console.error('Failed to create customer:', error);
-    // DB 層唯一鍵衝突（保險：避免競態）
-    if (error && error.code === '23505') {
-      const constraint = String(error.constraint || '');
-      if (constraint.includes('mobile')) {
-        return res.status(409).json({ message: '手機號碼已被使用' });
-      }
-      if (constraint.includes('email')) {
-        return res.status(409).json({ message: 'Email 已被使用' });
-      }
-    }
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
