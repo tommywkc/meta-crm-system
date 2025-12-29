@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { createEvent, listbyEventsId, findLatestEventId, findByEventId, updateByEventId, removeByEventId, findEventByStatus } = require('../dao/eventsDao');
+const { createEvent, listbyEventsId, findLatestEventId, findByEventId, updateByEventId, removeByEventId, findEventByStatus, searchEvents, searchEventsByStatus } = require('../dao/eventsDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 
 //handle create new event
@@ -46,20 +46,23 @@ router.get('/events', authMiddleware, roleMiddleware(['admin', 'sales', 'leader'
 
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
+    const q = req.query.q || '';
 
     const role = (req.user.role || '').toLowerCase();
     let events = [];
 
     if (role === 'member') {
-      // 會員只能看到 OPEN 的活動
-      events = await findEventByStatus('OPEN');
-      // 套用分頁（簡單在應用層分頁，若資料量大建議改為 DB 層處理）
-      events = events.slice(offset, offset + limit);
-      console.log(`Member role - returning only OPEN events: ${events.length}`);
+      // member: only see OPEN activities; apply search within OPEN when q provided
+      events = await searchEventsByStatus('OPEN', limit, offset, q);
+      console.log(`Member role - returning OPEN events (q=${q}): ${events.length}`);
     } else {
-      // 其他角色維持原行為
-      events = await listbyEventsId(limit, offset);
-      console.log(`Non-member role - returning events: ${events.length}`);
+      // non-member: search across all events when q provided
+      if (q && q.trim()) {
+        events = await searchEvents(limit, offset, q);
+      } else {
+        events = await listbyEventsId(limit, offset);
+      }
+      console.log(`Non-member role - returning events (q=${q}): ${events.length}`);
     }
 
     // Return events with ISO format datetime (no formatting needed)

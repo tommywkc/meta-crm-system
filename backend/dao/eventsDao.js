@@ -63,6 +63,46 @@ async function listbyEventsId(limit = 100, offset = 0) {
   return res.rows;
 }
 
+async function searchEvents(limit = 100, offset = 0, q = '') {
+  if (!q || !q.trim()) return listbyEventsId(limit, offset);
+  const pattern = `%${q}%`;
+  const sql = `
+    SELECT * FROM EVENTS
+    WHERE CAST(event_id AS TEXT) ILIKE $3
+       OR event_name ILIKE $3
+       OR type ILIKE $3
+       OR status ILIKE $3
+    ORDER BY event_id ASC
+    LIMIT $1 OFFSET $2
+  `;
+  const res = await query(sql, [limit, offset, pattern]);
+  return res.rows;
+}
+
+async function searchEventsByStatus(status, limit = 100, offset = 0, q = '') {
+  const pattern = q && q.trim() ? `%${q}%` : null;
+  if (!pattern) {
+    const sql = `SELECT * FROM EVENTS WHERE status = $1 ORDER BY event_id ASC LIMIT $2 OFFSET $3`;
+    const res = await query(sql, [status, limit, offset]);
+    return res.rows;
+  }
+
+  const sql = `
+    SELECT * FROM EVENTS
+    WHERE status = $1
+      AND (
+        CAST(event_id AS TEXT) ILIKE $4
+        OR event_name ILIKE $4
+        OR type ILIKE $4
+        OR status ILIKE $4
+      )
+    ORDER BY event_id ASC
+    LIMIT $2 OFFSET $3
+  `;
+  const res = await query(sql, [status, limit, offset, pattern]);
+  return res.rows;
+}
+
 async function findLatestEventId() {
   try {
     const sql = `SELECT MAX(event_id) AS latest_id FROM EVENTS;`;
@@ -88,4 +128,4 @@ async function updateRemainingSeats(event_id, change) {
 }
   
 
-module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId, findLatestEventId, findEventByStatus, updateRemainingSeats };
+module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId, findLatestEventId, findEventByStatus, updateRemainingSeats, searchEvents, searchEventsByStatus };

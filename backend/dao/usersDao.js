@@ -88,6 +88,22 @@ async function listByUsersId(limit = 100, offset = 0) {
   return res.rows;
 }
 
+async function searchUsers(limit = 100, offset = 0, q = '') {
+  if (!q || !q.trim()) return listByUsersId(limit, offset);
+  const pattern = `%${q}%`;
+  const sql = `
+    SELECT * FROM USERS
+    WHERE CAST(user_id AS TEXT) ILIKE $3
+       OR name ILIKE $3
+       OR mobile ILIKE $3
+       OR email ILIKE $3
+    ORDER BY user_id ASC
+    LIMIT $1 OFFSET $2
+  `;
+  const res = await query(sql, [limit, offset, pattern]);
+  return res.rows;
+}
+
 async function findLatestId() {
   try {
     const sql = `SELECT MAX(user_id) AS latest_id FROM USERS;`;
@@ -99,4 +115,4 @@ async function findLatestId() {
   }
 }
 
-module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId, findLatestId, findUserByQrToken, findUserByRole };
+module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId, findLatestId, findUserByQrToken, findUserByRole, searchUsers };
