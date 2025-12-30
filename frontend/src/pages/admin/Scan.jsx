@@ -22,6 +22,18 @@ const Scan = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchSessionTerm, setSearchSessionTerm] = useState('');
 
+  const formatDateTimeWithSecondsForDisplay = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const ss = String(date.getSeconds()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
+  };
+
  
   const handleScanSuccess = useCallback(async (decodedText) => {
     console.log('Scanned:', decodedText);
@@ -42,6 +54,14 @@ const Scan = () => {
       return;
     }
 
+    const eventLine = selectedEvent
+      ? `${selectedEvent.type} ${selectedEvent.event_id} ${selectedEvent.event_name}`
+      : `活動 ID: ${selectedEventId}`;
+    const sessionTime = selectedSession.datetime_start
+      ? ` (${formatDateTimeForDisplay(selectedSession.datetime_start)})`
+      : '';
+    const sessionLine = `${selectedSession.session_name || ''}${sessionTime}`;
+
     // 呼叫後端：用 qr_token + session_id 完成「找用戶 → 檢查報名 → 新增出席紀錄」
     let payload;
     try {
@@ -50,7 +70,26 @@ const Scan = () => {
         session_id: selectedSession.session_id,
       });
     } catch (err) {
-      alert(err.message || '簽到失敗，請稍後再試');
+      // 例如：後端回 409「已簽到」，也在這裡顯示該筆紀錄的簽到時間
+      const p = err?.payload;
+      if (p && (p.user || p.attendance || p.session)) {
+        const user = p.user;
+        const userName = user?.name || '未知用戶';
+        const userId = user?.user_id ? `（${user.user_id}）` : '';
+
+        const attendStatus = p?.attendance?.status;
+        const title = p?.message || err?.message || '簽到失敗，請稍後再試';
+        const statusLine = attendStatus ? `\n狀態：${attendStatus}` : '';
+
+        const attendTimeRaw = p?.attendance?.attend_time;
+        const attendTimeLine = p?.attendance
+          ? `\n簽到時間：${attendTimeRaw ? formatDateTimeWithSecondsForDisplay(attendTimeRaw) : '—'}`
+          : '';
+
+        alert(`${eventLine}\n${sessionLine}\n${title}\n用戶：${userName}${userId}${statusLine}${attendTimeLine}`);
+      } else {
+        alert(err.message || '簽到失敗，請稍後再試');
+      }
       return;
     }
 
@@ -58,18 +97,18 @@ const Scan = () => {
   setLastResult(decodedText);
 
     const user = payload?.user;
-    const eventLine = selectedEvent
-      ? `${selectedEvent.type} ${selectedEvent.event_id} ${selectedEvent.event_name}`
-      : `活動 ID: ${selectedEventId}`;
-    const sessionTime = selectedSession.datetime_start
-      ? `（${formatDateTimeForDisplay(selectedSession.datetime_start)}）`
-      : '';
-    const sessionLine = `${selectedSession.session_name || ''}${sessionTime}`;
 
     const userName = user?.name || '未知用戶';
     const userId = user?.user_id ? `（${user.user_id}）` : '';
 
-    alert(`簽到成功！\n${eventLine}\n${sessionLine}\n用戶: ${userName}${userId}\nQR Token: ${decodedText}`);
+    const attendStatus = payload?.attendance?.status;
+    const title = payload?.message || (attendStatus === 'G' ? '簽到成功' : '簽到完成');
+    const statusLine = attendStatus ? `\n狀態：${attendStatus}` : '';
+    const attendTimeRaw = payload?.attendance?.attend_time;
+    const attendTimeLine = attendTimeRaw ? `\n簽到時間：${formatDateTimeWithSecondsForDisplay(attendTimeRaw)}` : '';
+
+    // 顯示順序（依需求）：活動 → 場次 → 結果 → 用戶 → 狀態 → 簽到時間
+    alert(`${eventLine}\n${sessionLine}\n${title}\n用戶：${userName}${userId}${statusLine}${attendTimeLine}`);
   }, [selectedEventId, selectedSessionId, events, sessions]);
 
 

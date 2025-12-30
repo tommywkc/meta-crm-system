@@ -332,6 +332,7 @@ INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_sta
 ('121', NULL, 'SEMINAR', '領導力培訓講座', '領導力發展與團隊管理', '2026-11-15 18:00:00', '2026-11-15 20:00:00', 100, 85, 'Main Hall', 'SCHEDULED', 400, 50020);
 
 INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datetime_start, datetime_end, created_by_id, remaining_seats, round) VALUES
+(101, 'Test', 'CRM 基礎概念與重要性111', 30, '2024-07-01 10:00:00', '2027-07-01 12:00:00', 50000, 30, 1),
 (101, '基礎理論', 'CRM 基礎概念與重要性', 30, '2026-07-01 10:00:00', '2026-07-01 12:00:00', 50000, 30, 1),
 (101, '實作演練', 'CRM 系統操作實作', 30, '2026-07-08 10:00:00', '2026-07-08 12:00:00', 50000, 30, 1),
 (102, '主題演講', '高效銷售策略分享', 100, '2026-07-05 14:00:00', '2026-07-05 16:00:00', 50001, 100, 1),
@@ -439,5 +440,5 @@ INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id) VALU
     (4, 50008, 50008),
     (5, 50008, 50008),
     (46, 50008, 50008),
-    (2, 50008, 50008);
+    (1, 50008, 50008);
 

@@ -12,15 +12,20 @@ export async function scanAttendance(data) {
   // 統一錯誤處理風格，先嘗試讀取後端的 message
   if (!response.ok) {
     let message = '簽到失敗，請稍後再試';
+    let errPayload = null;
     try {
-      const err = await response.json();
-      if (err && err.message) {
-        message = err.message;
+      errPayload = await response.json();
+      if (errPayload && errPayload.message) {
+        message = errPayload.message;
       }
     } catch (e) {
       message = response.statusText || message;
     }
-    throw new Error(message);
+
+    const error = new Error(message);
+    error.status = response.status;
+    error.payload = errPayload;
+    throw error;
   }
 
   return response.json();
