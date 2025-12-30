@@ -47,11 +47,7 @@ export default function SessionEdit() {
 	};
 
 	const handleCancel = () => {
-		if (eventId) {
-			navigate(`/events/${eventId}`);
-		} else {
-			navigate(-1);
-		}
+		navigate(-1);
 	};
 
 	if (loading) {

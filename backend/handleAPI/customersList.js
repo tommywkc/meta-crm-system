@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findLatestId, findUserByQrToken, findUserByRole} = require('../dao/usersDao');
+const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findUserByEmail, findLatestId, findUserByQrToken, findUserByRole} = require('../dao/usersDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const crypto = require('crypto');
 
@@ -100,6 +100,20 @@ router.put('/customers/:id', authMiddleware, roleMiddleware('admin'), async (req
       return res.status(404).json({ message: '客戶不存在' });
     }
 
+    // 手機／Email 重複檢查（排除自己）
+    if (updateData.mobile && String(updateData.mobile) !== String(existing.mobile)) {
+      const mobileOwner = await findUserByMobile(updateData.mobile);
+      if (mobileOwner && String(mobileOwner.user_id) !== String(user_id)) {
+        return res.status(409).json({ message: '手機號碼已被使用' });
+      }
+    }
+    if (updateData.email && String(updateData.email) !== String(existing.email || '')) {
+      const emailOwner = await findUserByEmail(updateData.email);
+      if (emailOwner && String(emailOwner.user_id) !== String(user_id)) {
+        return res.status(409).json({ message: 'Email 已被使用' });
+      }
+    }
+
     const updated = await updateByUserId(user_id, updateData);
 
     console.log('Successfully updated customer data:', user_id);
@@ -128,6 +142,19 @@ router.post('/customers', authMiddleware, roleMiddleware('admin'), async (req, r
     if (!newCustomer.name || !newCustomer.mobile) {
       return res.status(400).json({ message: '缺少必要的客戶資料' });
     }
+
+    // 手機／Email 重複檢查（給前端清楚訊息）
+    const mobileOwner = await findUserByMobile(newCustomer.mobile);
+    if (mobileOwner) {
+      return res.status(409).json({ message: '手機號碼已被使用' });
+    }
+    if (newCustomer.email) {
+      const emailOwner = await findUserByEmail(newCustomer.email);
+      if (emailOwner) {
+        return res.status(409).json({ message: 'Email 已被使用' });
+      }
+    }
+
     if (newCustomer.password == null) {
       newCustomer.password = newCustomer.mobile;
     }

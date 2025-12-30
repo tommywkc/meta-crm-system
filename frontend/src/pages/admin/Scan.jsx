@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { handleListEvents } from '../../api/eventListAPI';
-import { handleGetUserByQRToken } from '../../api/customersListAPI';
 import { handleListSessionsByEventId } from '../../api/sessionAPI';
+import { handleScanAttendance } from '../../api/attendanceAPI';
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
@@ -12,7 +12,6 @@ const Scan = () => {
   const navigate = useNavigate();
   const qrRef = useRef(null);          
   const hasStartedRef = useRef(false);
-  const lastResultRef = useRef(null);
   const [scanning, setScanning] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -23,43 +22,94 @@ const Scan = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchSessionTerm, setSearchSessionTerm] = useState('');
 
+  const formatDateTimeWithSecondsForDisplay = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const ss = String(date.getSeconds()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
+  };
+
  
   const handleScanSuccess = useCallback(async (decodedText) => {
     console.log('Scanned:', decodedText);
 
-    // 先以 QR Token 從後端查詢用戶
-    let customer = null;
-    try {
-      const payload = await handleGetUserByQRToken(decodedText);
-      customer = payload?.customer || null;
-    } catch (err) {
-      console.error('Invalid QR token or fetch failed:', err);
-      alert('無效的 QR Code，請確認後再試。');
+    if (!selectedEventId) {
+      alert('請先選擇簽到活動');
+      return;
+    }
+    if (!selectedSessionId) {
+      alert('請先選擇簽到場次');
       return;
     }
 
-    // 重複掃描檢查
-    if (decodedText === lastResultRef.current) {
-      const userName = customer?.name || '未知用戶';
-      const userId = customer?.user_id ? `（${customer.user_id}）` : '';
-      alert(`此 QR Code 已成功簽到過！\n\n用戶: ${userName}${userId}\nQR Token: ${decodedText}`);
-      return;
-    }
-
-    // 記錄最後一次掃描結果
-    lastResultRef.current = decodedText;
-    setLastResult(decodedText);
-
-    // 顯示活動資訊 + 用戶名稱
     const selectedEvent = events.find(ev => String(ev.event_id) === String(selectedEventId));
-    const eventInfo = selectedEvent 
-      ? `${selectedEvent.type} ${selectedEvent.event_id} ${selectedEvent.event_name})`
-      : `活動 ID: ${selectedEventId}`;
+    const selectedSession = sessions.find(s => String(s.session_id) === String(selectedSessionId));
+    if (!selectedSession) {
+      alert('找不到對應的簽到場次，請重新選擇');
+      return;
+    }
 
-    const userName = customer?.name || '未知用戶';
-    const userId = customer?.user_id ? `（${customer.user_id}）` : '';
-    alert(`簽到成功！\n${eventInfo}\n用戶: ${userName}${userId}\nQR Token: ${decodedText}`);
-  }, [selectedEventId, events]);
+    const eventLine = selectedEvent
+      ? `${selectedEvent.type} ${selectedEvent.event_id} ${selectedEvent.event_name}`
+      : `活動 ID: ${selectedEventId}`;
+    const sessionTime = selectedSession.datetime_start
+      ? ` (${formatDateTimeForDisplay(selectedSession.datetime_start)})`
+      : '';
+    const sessionLine = `${selectedSession.session_name || ''}${sessionTime}`;
+
+    // 呼叫後端：用 qr_token + session_id 完成「找用戶 → 檢查報名 → 新增出席紀錄」
+    let payload;
+    try {
+      payload = await handleScanAttendance({
+        qr_token: decodedText,
+        session_id: selectedSession.session_id,
+      });
+    } catch (err) {
+      // 例如：後端回 409「已簽到」，也在這裡顯示該筆紀錄的簽到時間
+      const p = err?.payload;
+      if (p && (p.user || p.attendance || p.session)) {
+        const user = p.user;
+        const userName = user?.name || '未知用戶';
+        const userId = user?.user_id ? `（${user.user_id}）` : '';
+
+        const attendStatus = p?.attendance?.status;
+        const title = p?.message || err?.message || '簽到失敗，請稍後再試';
+        const statusLine = attendStatus ? `\n狀態：${attendStatus}` : '';
+
+        const attendTimeRaw = p?.attendance?.attend_time;
+        const attendTimeLine = p?.attendance
+          ? `\n簽到時間：${attendTimeRaw ? formatDateTimeWithSecondsForDisplay(attendTimeRaw) : '—'}`
+          : '';
+
+        alert(`${eventLine}\n${sessionLine}\n${title}\n用戶：${userName}${userId}${statusLine}${attendTimeLine}`);
+      } else {
+        alert(err.message || '簽到失敗，請稍後再試');
+      }
+      return;
+    }
+
+  // 後端成功寫入簽到後，才記錄最後一次掃描結果（僅用於畫面顯示）
+  setLastResult(decodedText);
+
+    const user = payload?.user;
+
+    const userName = user?.name || '未知用戶';
+    const userId = user?.user_id ? `（${user.user_id}）` : '';
+
+    const attendStatus = payload?.attendance?.status;
+    const title = payload?.message || (attendStatus === 'G' ? '簽到成功' : '簽到完成');
+    const statusLine = attendStatus ? `\n狀態：${attendStatus}` : '';
+    const attendTimeRaw = payload?.attendance?.attend_time;
+    const attendTimeLine = attendTimeRaw ? `\n簽到時間：${formatDateTimeWithSecondsForDisplay(attendTimeRaw)}` : '';
+
+    // 顯示順序（依需求）：活動 → 場次 → 結果 → 用戶 → 狀態 → 簽到時間
+    alert(`${eventLine}\n${sessionLine}\n${title}\n用戶：${userName}${userId}${statusLine}${attendTimeLine}`);
+  }, [selectedEventId, selectedSessionId, events, sessions]);
 
 
   const handleScanFailure = useCallback((err) => {
@@ -191,6 +241,7 @@ const Scan = () => {
     } catch (_) {}
 
     const ev = events.find((e) => String(e.event_id) === String(selectedEventId));
+    const session = sessions.find((s) => String(s.session_id) === String(selectedSessionId));
     const sourceEvent = ev
       ? {
           event_id: ev.event_id,
@@ -199,8 +250,15 @@ const Scan = () => {
           type: ev.type,
         }
       : null;
+    const sourceSession = session
+      ? {
+          session_id: session.session_id,
+          session_name: session.session_name,
+          datetime_start: session.datetime_start,
+        }
+      : null;
 
-    navigate('/customers/create', { state: { from: 'scan', sourceEvent } });
+    navigate('/customers/create', { state: { from: 'scan', sourceEvent, sourceSession } });
   };
 
   useEffect(() => {
@@ -218,6 +276,7 @@ const Scan = () => {
       }
     };
   }, []);
+  const selectedEventForCheckin = events.find(e => String(e.event_id) === String(selectedEventId));
   
   return (
     <div style={{ padding: 20 }}>
@@ -231,7 +290,7 @@ const Scan = () => {
         <input
           list="events-list"
           value={searchTerm}
-          onChange={(e) => {
+          onChange={async (e) => {
             setSearchTerm(e.target.value);
             const match = events.find(ev => 
               `${ev.event_id} - ${ev.event_name}` === e.target.value
@@ -241,6 +300,17 @@ const Scan = () => {
               // 清空場次選擇
               setSelectedSessionId('');
               setSearchSessionTerm('');
+
+              // 若正在掃描中，切換活動後也重新啟動掃描，
+              // 確保之後簽到都以新的活動／場次設定為準
+              if (scanning) {
+                try {
+                  await stopScanning();
+                  await startScanning();
+                } catch (err) {
+                  console.error('切換活動時重啟掃描失敗:', err);
+                }
+              }
             } else {
               setSelectedEventId('');
               setSelectedSessionId('');
@@ -269,7 +339,7 @@ const Scan = () => {
         <input
           list="sessions-list"
           value={searchSessionTerm}
-          onChange={(e) => {
+          onChange={async (e) => {
             const val = e.target.value.trim();
             setSearchSessionTerm(val);
             // 從清單選擇場次（包含時間顯示）
@@ -282,6 +352,16 @@ const Scan = () => {
               setSelectedSessionId(match.session_id);
               const timeStr = match.datetime_start ? ` (${formatDateTimeForDisplay(match.datetime_start)})` : '';
               setSearchSessionTerm(`${match.session_name || ''}${timeStr}`);
+
+              // 若正在掃描中，為了讓新的場次設定生效，重啟掃描
+              if (scanning) {
+                try {
+                  await stopScanning();
+                  await startScanning();
+                } catch (err) {
+                  console.error('切換場次時重啟掃描失敗:', err);
+                }
+              }
             } else {
               setSelectedSessionId('');
             }
@@ -309,13 +389,15 @@ const Scan = () => {
         <button type="button" onClick={stopScanning} disabled={!scanning}>
           Stop Scanning
         </button>
-        <button
-          type="button"
-          onClick={handleQuickRegister}
-          style={{ marginLeft: 8 }}
-        >
-          現場快速登記
-        </button>
+        {selectedEventForCheckin?.type === 'SEMINAR' && (
+          <button
+            type="button"
+            onClick={handleQuickRegister}
+            style={{ marginLeft: 8 }}
+          >
+            現場快速登記
+          </button>
+        )}
       </div>
 
       <div id="reader" style={{ width: 320, minHeight: 240, background: '#00000008', border: '1px solid #ccc' }} />

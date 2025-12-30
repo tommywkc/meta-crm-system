@@ -123,7 +123,7 @@ const PaymentProcess = () => {
 	};
 
 	const handleCancel = () => {
-		navigate('/payments');
+		navigate(-1);
 	};
 
 	const handleRefund = async () => {
