@@ -14,6 +14,8 @@ const {
   updateStatusByEnrollmentId,
 } = require('../dao/eventEnrollmentsDao');
 
+const { findByEventId, updateRemainingSeats } = require('../dao/eventsDao');
+
 const { findBySessionId, updateSessionById } = require('../dao/eventSessionsDao');
 const {
   createRegistration,
@@ -97,11 +99,31 @@ async function ensureConfirmedEnrollment({ userId, eventId, operatorUserId }) {
   const existing = await findIfExist(userId, eventId);
 
   if (!existing) {
+    const event = await findByEventId(eventId);
+    if (!event) {
+      throw new ServiceError('EVENT_NOT_FOUND', '找不到指定的活動。');
+    }
+    if (event.remaining_seats != null) {
+      const remaining = Number(event.remaining_seats);
+      if (Number.isFinite(remaining) && remaining <= 0) {
+        throw new ServiceError('NO_EVENT_SEATS', '此活動已無剩餘名額，無法報名。');
+      }
+    }
+
     const created = await createEnrollment({
       event_id: eventId,
       user_id: userId,
       enroll_by_id: operatorUserId ?? null,
     });
+
+    // Keep behavior consistent with website: creating an enrollment consumes an event seat.
+    if (event?.remaining_seats != null) {
+      const remaining = Number(event.remaining_seats);
+      if (Number.isFinite(remaining)) {
+        await updateRemainingSeats(eventId, -1);
+      }
+    }
+
     const confirmed = await updateStatusByEnrollmentId(created.enrollment_id, 'CONFIRMED');
     return { enrollment: confirmed || created, created: true };
   }
