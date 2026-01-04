@@ -203,6 +203,39 @@ function getWhatsAppOperatorUserId() {
   return Number.isFinite(n) ? n : null;
 }
 
+async function sendFreeSeminarsMenu({ to, valueMetadata }) {
+  const seminars = await findOpenFreeSeminars();
+
+  let reply;
+  if (!seminars || seminars.length === 0) {
+    reply = '目前沒有開放中的免費講座。';
+  } else {
+    const lines = ['以下是目前免費的講座'];
+    seminars.forEach((s, idx) => {
+      const start = formatDateHK(s.datetime_start);
+      const end = s.datetime_end ? formatDateHK(s.datetime_end) : null;
+      const dateRange = end ? `${start}至${end}` : `${start}`;
+      const remaining = formatRemainingOnly(s.remaining_seats);
+      lines.push(`${idx + 1}. ${s.event_name}（${dateRange} \n餘下位置 ${remaining}）`);
+      if (idx !== seminars.length - 1) lines.push('');
+    });
+    lines.push('如有興趣，請輸入相應的數字（例如：輸入 1）');
+    reply = lines.join('\n');
+  }
+
+  if (seminars && seminars.length > 0) {
+    setState(to, { step: 'SEMINAR_MENU', seminars });
+  } else {
+    setState(to, { step: 'IDLE' });
+  }
+
+  await sendWhatsAppText({
+    to: String(to),
+    body: reply,
+    valueMetadata,
+  });
+}
+
 // GET /webhook/whatsapp
 // Verification: ?hub.mode=subscribe&hub.verify_token=...&hub.challenge=...
 router.get('/whatsapp', (req, res) => {
@@ -254,35 +287,7 @@ router.post('/whatsapp', (req, res) => {
       normalizedNoSpace === '查看免費講座' ||
       normalizedNoSpace === '返回查看免費講座'
     ) {
-      void (async () => {
-        const seminars = await findOpenFreeSeminars();
-
-        let reply;
-        if (!seminars || seminars.length === 0) {
-          reply = '目前沒有開放中的免費講座。';
-          setState(from, { step: 'IDLE' });
-        } else {
-          const lines = ['以下是目前免費的講座'];
-          seminars.forEach((s, idx) => {
-            const start = formatDateHK(s.datetime_start);
-            const end = s.datetime_end ? formatDateHK(s.datetime_end) : null;
-            const dateRange = end ? `${start}至${end}` : `${start}`;
-            const remaining = formatRemainingOnly(s.remaining_seats);
-            lines.push(`${idx + 1}. ${s.event_name}（${dateRange}）`);
-            lines.push(`（餘下位置 ${remaining}）`);
-            if (idx !== seminars.length - 1) lines.push('');
-          });
-          lines.push('如有興趣，請輸入相應的數字（例如：輸入 1）');
-          reply = lines.join('\n');
-          setState(from, { step: 'SEMINAR_MENU', seminars });
-        }
-
-        await sendWhatsAppText({
-          to: String(from),
-          body: reply,
-          valueMetadata: value?.metadata
-        });
-      })().catch((e) => {
+      void sendFreeSeminarsMenu({ to: from, valueMetadata: value?.metadata }).catch((e) => {
         console.error('WhatsApp back-to-menu failed:', e?.message || e);
       });
 
@@ -291,38 +296,7 @@ router.post('/whatsapp', (req, res) => {
 
     // Step 1: user sends "test" -> list open free seminars
     if (normalized === 'test') {
-      void (async () => {
-        const seminars = await findOpenFreeSeminars();
-
-        let reply;
-        if (!seminars || seminars.length === 0) {
-          reply = '目前沒有開放中的免費講座。';
-        } else {
-          const lines = ['以下是目前免費的講座'];
-          seminars.forEach((s, idx) => {
-            const start = formatDateHK(s.datetime_start);
-            const end = s.datetime_end ? formatDateHK(s.datetime_end) : null;
-            const dateRange = end ? `${start}至${end}` : `${start}`;
-            const remaining = formatRemainingOnly(s.remaining_seats);
-            lines.push(`${idx + 1}. ${s.event_name}（${dateRange} 餘下位置 ${remaining}）`);
-            if (idx !== seminars.length - 1) lines.push('');
-          });
-          lines.push('如有興趣，請輸入相應的數字（例如：輸入 1）');
-          reply = lines.join('\n');
-        }
-
-        if (seminars && seminars.length > 0) {
-          setState(from, { step: 'SEMINAR_MENU', seminars });
-        } else {
-          setState(from, { step: 'IDLE' });
-        }
-
-        await sendWhatsAppText({
-          to: String(from),
-          body: reply,
-          valueMetadata: value?.metadata
-        });
-      })().catch((e) => {
+      void sendFreeSeminarsMenu({ to: from, valueMetadata: value?.metadata }).catch((e) => {
         console.error('WhatsApp auto-reply failed:', e?.message || e);
       });
       return res.sendStatus(200);
@@ -372,7 +346,7 @@ router.post('/whatsapp', (req, res) => {
             sorted.forEach((s, i) => {
               const range = formatDateTimeRangeHK(s.datetime_start, s.datetime_end);
               const remaining = formatRemainingOnly(s.remaining_seats);
-              lines.push(`${i + 1}. ${s.session_name}（ ${range}，餘下位置 ${remaining}）`);
+              lines.push(`${i + 1}. ${s.session_name}（ ${range}\n餘下位置 ${remaining}）`);
             });
             lines.push('請輸入相應的場次數字（例如：輸入 2）');
             lines.push('如需返回查看免費講座，請輸入：返回');
