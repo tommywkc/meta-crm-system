@@ -1,6 +1,8 @@
 const express = require('express');
 const crypto = require('crypto');
 
+const { sendWhatsAppText } = require('../services/whatsappService');
+
 const router = express.Router();
 
 function getVerifyToken() {
@@ -56,10 +58,35 @@ router.post('/whatsapp', (req, res) => {
 
   // Keep it minimal: acknowledge quickly.
   // Log only high-level info to avoid storing PII in logs.
-  const hasEntry = Array.isArray(req.body?.entry) && req.body.entry.length > 0;
+  const body = req.body;
+  const hasEntry = Array.isArray(body?.entry) && body.entry.length > 0;
   console.log(
-    `WhatsApp webhook received: hasEntry=${hasEntry} object=${req.body?.object || ''}`
+    `WhatsApp webhook received: hasEntry=${hasEntry} object=${body?.object || ''}`
   );
+
+  // Fire-and-forget reply: user sends "test" -> reply "123".
+  try {
+    const entry = Array.isArray(body?.entry) ? body.entry[0] : null;
+    const change = Array.isArray(entry?.changes) ? entry.changes[0] : null;
+    const value = change?.value;
+    const message = Array.isArray(value?.messages) ? value.messages[0] : null;
+
+    const from = message?.from;
+    const textBody = message?.text?.body;
+    const normalized = String(textBody ?? '').trim().toLowerCase();
+
+    if (from && normalized === 'test') {
+      void sendWhatsAppText({
+        to: String(from),
+        body: '123',
+        valueMetadata: value?.metadata
+      }).catch((e) => {
+        console.error('WhatsApp auto-reply failed:', e?.message || e);
+      });
+    }
+  } catch (e) {
+    console.error('WhatsApp webhook handler error:', e);
+  }
 
   return res.sendStatus(200);
 });
