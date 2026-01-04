@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 
 const { sendWhatsAppText } = require('../services/whatsappService');
+const { findOpenFreeSeminars } = require('../dao/eventsDao');
 
 const router = express.Router();
 
@@ -34,6 +35,33 @@ function verifyMetaSignature(req) {
     crypto.createHmac('sha256', appSecret).update(rawBody).digest('hex');
 
   return timingSafeEqualString(signatureHeader, expected);
+}
+
+function formatDateTimeHK(value) {
+  if (!value) return '未定';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Hong_Kong',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(d);
+
+  const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+  return `${map.year}-${map.month}-${map.day} ${map.hour}:${map.minute}`;
+}
+
+function formatRemainingSeats(remaining, capacity) {
+  const r = remaining == null ? null : Number(remaining);
+  const c = capacity == null ? null : Number(capacity);
+  if (Number.isFinite(r) && Number.isFinite(c)) return `${r}/${c}`;
+  if (Number.isFinite(r)) return `${r}`;
+  return '未知';
 }
 
 // GET /webhook/whatsapp
@@ -76,11 +104,29 @@ router.post('/whatsapp', (req, res) => {
     const normalized = String(textBody ?? '').trim().toLowerCase();
 
     if (from && normalized === 'test') {
-      void sendWhatsAppText({
-        to: String(from),
-        body: '123',
-        valueMetadata: value?.metadata
-      }).catch((e) => {
+      void (async () => {
+        const seminars = await findOpenFreeSeminars();
+
+        let reply;
+        if (!seminars || seminars.length === 0) {
+          reply = '目前沒有開放中的免費講座。';
+        } else {
+          const lines = ['以下是目前免費的講座'];
+          seminars.forEach((s, idx) => {
+            const start = formatDateTimeHK(s.datetime_start);
+            const seats = formatRemainingSeats(s.remaining_seats, s.capacity);
+            lines.push(`${idx + 1}. ${s.event_name}（開始日期 ${start}，餘下位置 ${seats}）`);
+          });
+          lines.push('如有興趣，請輸入相應的數字（例如：輸入 1）');
+          reply = lines.join('\n');
+        }
+
+        await sendWhatsAppText({
+          to: String(from),
+          body: reply,
+          valueMetadata: value?.metadata
+        });
+      })().catch((e) => {
         console.error('WhatsApp auto-reply failed:', e?.message || e);
       });
     }
