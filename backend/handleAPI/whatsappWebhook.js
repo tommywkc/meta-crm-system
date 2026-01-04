@@ -264,12 +264,13 @@ router.post('/whatsapp', (req, res) => {
         } else {
           const lines = ['以下是目前免費的講座'];
           seminars.forEach((s, idx) => {
-              const start = formatDateHK(s.datetime_start);
-              const end = formatDateHK(s.datetime_end);
-              const remaining = formatRemainingOnly(s.remaining_seats);
-              lines.push(`${idx + 1}. ${s.event_name}（${start}至${end}）`);
-              lines.push(`（餘下位置 ${remaining}）`);
-              if (idx !== seminars.length - 1) lines.push('');
+            const start = formatDateHK(s.datetime_start);
+            const end = s.datetime_end ? formatDateHK(s.datetime_end) : null;
+            const dateRange = end ? `${start}至${end}` : `${start}`;
+            const remaining = formatRemainingOnly(s.remaining_seats);
+            lines.push(`${idx + 1}. ${s.event_name}（${dateRange}）`);
+            lines.push(`（餘下位置 ${remaining}）`);
+            if (idx !== seminars.length - 1) lines.push('');
           });
           lines.push('如有興趣，請輸入相應的數字（例如：輸入 1）');
           reply = lines.join('\n');
@@ -300,10 +301,10 @@ router.post('/whatsapp', (req, res) => {
           const lines = ['以下是目前免費的講座'];
           seminars.forEach((s, idx) => {
             const start = formatDateHK(s.datetime_start);
-            const end = formatDateHK(s.datetime_end);
+            const end = s.datetime_end ? formatDateHK(s.datetime_end) : null;
+            const dateRange = end ? `${start}至${end}` : `${start}`;
             const remaining = formatRemainingOnly(s.remaining_seats);
-            lines.push(`${idx + 1}. ${s.event_name}（${start}至${end}）`);
-            lines.push(`（餘下位置 ${remaining}）`);
+            lines.push(`${idx + 1}. ${s.event_name}（${dateRange} 餘下位置 ${remaining}）`);
             if (idx !== seminars.length - 1) lines.push('');
           });
           lines.push('如有興趣，請輸入相應的數字（例如：輸入 1）');
@@ -371,7 +372,7 @@ router.post('/whatsapp', (req, res) => {
             sorted.forEach((s, i) => {
               const range = formatDateTimeRangeHK(s.datetime_start, s.datetime_end);
               const remaining = formatRemainingOnly(s.remaining_seats);
-              lines.push(`${i + 1}. ${s.session_name}（開始日期 ${range}，餘下位置 ${remaining}）`);
+              lines.push(`${i + 1}. ${s.session_name}（ ${range}，餘下位置 ${remaining}）`);
             });
             lines.push('請輸入相應的場次數字（例如：輸入 2）');
             lines.push('如需返回查看免費講座，請輸入：返回');

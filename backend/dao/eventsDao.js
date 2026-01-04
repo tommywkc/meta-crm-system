@@ -44,7 +44,7 @@ async function findEventByStatus(status) {
 //for whatsapp////
 async function findOpenFreeSeminars() {
   const sql = `
-    SELECT event_id, event_name, datetime_start, capacity, remaining_seats
+    SELECT event_id, event_name, datetime_start, datetime_end, capacity, remaining_seats
     FROM EVENTS
     WHERE type = 'SEMINAR'
       AND status = 'OPEN'
