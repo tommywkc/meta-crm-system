@@ -86,10 +86,67 @@ function formatDateTimeHK(value) {
   return `${map.year}-${map.month}-${map.day} ${map.hour}:${map.minute}`;
 }
 
+function formatTimeHK(value) {
+  if (!value) return '未定';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Hong_Kong',
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+  }).formatToParts(d);
+
+  const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+  return `${map.hour}:${map.minute}`;
+}
+
+function formatDateTimeRangeHK(startValue, endValue) {
+  if (!startValue) return '未定';
+  if (!endValue) return formatDateTimeHK(startValue);
+
+  const start = new Date(startValue);
+  const end = new Date(endValue);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return `${formatDateTimeHK(startValue)}至${formatDateTimeHK(endValue)}`;
+  }
+
+  const startDate = formatDateHK(startValue);
+  const endDate = formatDateHK(endValue);
+  const startTime = formatTimeHK(startValue);
+  const endTime = formatTimeHK(endValue);
+
+  if (startDate === endDate) return `${startDate} ${startTime}-${endTime}`;
+  return `${startDate} ${startTime}至${endDate} ${endTime}`;
+}
+
+function formatDateHK(value) {
+  if (!value) return '未定';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Hong_Kong',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+
+  const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
 function formatRemainingSeats(remaining, capacity) {
   const r = remaining == null ? null : Number(remaining);
   const c = capacity == null ? null : Number(capacity);
   if (Number.isFinite(r) && Number.isFinite(c)) return `${r}/${c}`;
+  if (Number.isFinite(r)) return `${r}`;
+  return '未知';
+}
+
+function formatRemainingOnly(remaining) {
+  const r = remaining == null ? null : Number(remaining);
   if (Number.isFinite(r)) return `${r}`;
   return '未知';
 }
@@ -207,9 +264,12 @@ router.post('/whatsapp', (req, res) => {
         } else {
           const lines = ['以下是目前免費的講座'];
           seminars.forEach((s, idx) => {
-            const start = formatDateTimeHK(s.datetime_start);
-            const seats = formatRemainingSeats(s.remaining_seats, s.capacity);
-            lines.push(`${idx + 1}. ${s.event_name}（開始日期 ${start}，餘下位置 ${seats}）`);
+              const start = formatDateHK(s.datetime_start);
+              const end = formatDateHK(s.datetime_end);
+              const remaining = formatRemainingOnly(s.remaining_seats);
+              lines.push(`${idx + 1}. ${s.event_name}（${start}至${end}）`);
+              lines.push(`（餘下位置 ${remaining}）`);
+              if (idx !== seminars.length - 1) lines.push('');
           });
           lines.push('如有興趣，請輸入相應的數字（例如：輸入 1）');
           reply = lines.join('\n');
@@ -239,9 +299,12 @@ router.post('/whatsapp', (req, res) => {
         } else {
           const lines = ['以下是目前免費的講座'];
           seminars.forEach((s, idx) => {
-            const start = formatDateTimeHK(s.datetime_start);
-            const seats = formatRemainingSeats(s.remaining_seats, s.capacity);
-            lines.push(`${idx + 1}. ${s.event_name}（開始日期 ${start}，餘下位置 ${seats}）`);
+            const start = formatDateHK(s.datetime_start);
+            const end = formatDateHK(s.datetime_end);
+            const remaining = formatRemainingOnly(s.remaining_seats);
+            lines.push(`${idx + 1}. ${s.event_name}（${start}至${end}）`);
+            lines.push(`（餘下位置 ${remaining}）`);
+            if (idx !== seminars.length - 1) lines.push('');
           });
           lines.push('如有興趣，請輸入相應的數字（例如：輸入 1）');
           reply = lines.join('\n');
@@ -306,9 +369,9 @@ router.post('/whatsapp', (req, res) => {
           } else {
             const lines = [`以下是${eventName}的場次`];
             sorted.forEach((s, i) => {
-              const start = formatDateTimeHK(s.datetime_start);
-              const seats = formatRemainingSeats(s.remaining_seats, s.capacity);
-              lines.push(`${i + 1}. ${s.session_name}（開始日期 ${start}，餘下位置 ${seats}）`);
+              const range = formatDateTimeRangeHK(s.datetime_start, s.datetime_end);
+              const remaining = formatRemainingOnly(s.remaining_seats);
+              lines.push(`${i + 1}. ${s.session_name}（開始日期 ${range}，餘下位置 ${remaining}）`);
             });
             lines.push('請輸入相應的場次數字（例如：輸入 2）');
             lines.push('如需返回查看免費講座，請輸入：返回');
@@ -343,7 +406,7 @@ router.post('/whatsapp', (req, res) => {
 
         const seminarName = String(state.seminar.event_name || '');
         const sessionName = String(selectedSession.session_name || '');
-        const start = formatDateTimeHK(selectedSession.datetime_start);
+        const range = formatDateTimeRangeHK(selectedSession.datetime_start, selectedSession.datetime_end);
 
         setState(from, {
           step: 'WAIT_PROFILE',
@@ -352,23 +415,36 @@ router.post('/whatsapp', (req, res) => {
           session_id: selectedSession.session_id,
           session_name: selectedSession.session_name,
           session_datetime_start: selectedSession.datetime_start,
+          session_datetime_end: selectedSession.datetime_end,
         });
 
         const reply =
           `收到，你已選擇：\n` +
           `${seminarName}\n` +
-          `${sessionName} 開始日期 ${start}\n\n` +
+          `${sessionName} ${range}\n\n` +
           `請根據以下格式輸入個人資料\n` +
           `(例子)\n` +
           `姓名: 王小明\n` +
           `電話號碼: 23456789\n` +
           `Email(選填): abcd@yahoo.com.hk`;
 
-        void sendWhatsAppText({
-          to: String(from),
-          body: reply,
-          valueMetadata: value?.metadata
-        }).catch(() => {});
+        const blankTemplate =
+          `姓名: \n` +
+          `電話號碼: \n` +
+          `Email(選填): `;
+
+        void (async () => {
+          await sendWhatsAppText({
+            to: String(from),
+            body: reply,
+            valueMetadata: value?.metadata
+          });
+          await sendWhatsAppText({
+            to: String(from),
+            body: blankTemplate,
+            valueMetadata: value?.metadata
+          });
+        })().catch(() => {});
 
         return res.sendStatus(200);
       }
@@ -454,15 +530,32 @@ router.post('/whatsapp', (req, res) => {
           const sessionName = String(state.session_name || '');
           const start = formatDateTimeHK(state.session_datetime_start);
 
-          const head = result.userCreated
-            ? '已為你建立新帳號並完成報名！'
-            : '已使用你現有帳號並完成報名！';
+          const crmUrl =
+            process.env.CRM_PORTAL_URL ||
+            'https://meta-academy-crm-frontend-hvbgdedec7hfayaa.switzerlandnorth-01.azurewebsites.net/';
 
           const extra = result.alreadyRegistered ? '\n（你之前已報名此場次，系統已略過重複報名。）' : '';
 
           await sendWhatsAppText({
             to: String(from),
-            body: `${head}\n${eventName}\n${sessionName} 開始日期 ${start}${extra}\n\n如需返回查看免費講座，請輸入：返回`,
+            body: result.userCreated
+              ? (
+                  `已為你建立新帳號並完成報名！\n` +
+                  `${eventName}\n` +
+                  `${sessionName} ${start}${extra}\n\n` +
+                  `登入帳戶: ${result.user?.user_id}\n` +
+                  `密碼: ${mobile}\n\n` +
+                  `CRM: ${crmUrl}\n\n` +
+                  `如需返回查看免費講座，請輸入：返回`
+                )
+              : (
+                  `已使用你現有帳號並完成報名！\n` +
+                  `${eventName}\n` +
+                  `${sessionName} ${start}${extra}\n\n` +
+                  `可登入CRM查看:\n` +
+                  `${crmUrl}\n\n` +
+                  `如需返回查看免費講座，請輸入：返回`
+                ),
             valueMetadata: value?.metadata
           });
 

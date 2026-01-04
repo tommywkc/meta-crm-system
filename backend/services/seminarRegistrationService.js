@@ -66,13 +66,13 @@ async function ensureUser({ name, mobile, email, source }) {
 
   const normalizedEmail = normalizeEmail(email);
   if (normalizedEmail && !isValidEmail(normalizedEmail)) {
-    throw new ServiceError('INVALID_EMAIL', '你輸入嘅 Email 格式唔正確。');
+    throw new ServiceError('INVALID_EMAIL', '你輸入的 Email 格式不正確。');
   }
 
   if (normalizedEmail) {
     const emailOwner = await findUserByEmail(normalizedEmail);
     if (emailOwner) {
-      throw new ServiceError('EMAIL_IN_USE', '呢個 Email 已被使用，請更換另一個 Email（或留空）。');
+      throw new ServiceError('EMAIL_IN_USE', '此 Email 已被使用，請更換另一個 Email（或留空）。');
     }
   }
 
