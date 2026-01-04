@@ -346,7 +346,7 @@ router.post('/whatsapp', (req, res) => {
             sorted.forEach((s, i) => {
               const range = formatDateTimeRangeHK(s.datetime_start, s.datetime_end);
               const remaining = formatRemainingOnly(s.remaining_seats);
-              lines.push(`${i + 1}. ${s.session_name}(${range}\n餘下位置 ${remaining})`);
+              lines.push(`${i + 1}. ${s.session_name}(${range} 餘下位置 ${remaining})`);
             });
             lines.push('請輸入相應的場次數字(例如：輸入 2)');
             lines.push('如需返回查看免費講座，請輸入：返回');
