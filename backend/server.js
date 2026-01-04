@@ -21,7 +21,13 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    }
+  })
+);
 app.use(cookieParser());
 
 // request logging middleware
@@ -33,6 +39,10 @@ app.use((req, res, next) => {
 const loginRouter = require('./handleAPI/login');
 console.log('Login router loaded');
 app.use('/api', loginRouter); // Use the login router
+
+const whatsappWebhookRouter = require('./handleAPI/whatsappWebhook');
+console.log('WhatsApp webhook router loaded');
+app.use('/webhook', whatsappWebhookRouter);
 
 // In-memory users for demo (plain text passwords for development only)
 // Passwords: member -> password, sales -> password, admin -> adminpass
