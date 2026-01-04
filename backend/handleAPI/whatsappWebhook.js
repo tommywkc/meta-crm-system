@@ -3,6 +3,30 @@ const crypto = require('crypto');
 
 const { sendWhatsAppText } = require('../services/whatsappService');
 const { findOpenFreeSeminars } = require('../dao/eventsDao');
+const { listByEventId } = require('../dao/eventSessionsDao');
+
+// In-memory conversation state (per phone number). This resets on server restart.
+// Kept minimal for now.
+const conversationState = new Map();
+const CONVERSATION_TTL_MS = 15 * 60 * 1000;
+
+function getState(from) {
+  const key = String(from || '').trim();
+  if (!key) return null;
+  const state = conversationState.get(key);
+  if (!state) return null;
+  if (Date.now() - state.ts > CONVERSATION_TTL_MS) {
+    conversationState.delete(key);
+    return null;
+  }
+  return state;
+}
+
+function setState(from, state) {
+  const key = String(from || '').trim();
+  if (!key) return;
+  conversationState.set(key, { ...state, ts: Date.now() });
+}
 
 const router = express.Router();
 
@@ -101,9 +125,53 @@ router.post('/whatsapp', (req, res) => {
 
     const from = message?.from;
     const textBody = message?.text?.body;
-    const normalized = String(textBody ?? '').trim().toLowerCase();
+    const rawText = String(textBody ?? '').trim();
+    const normalized = rawText.toLowerCase();
+    const normalizedNoSpace = rawText.replace(/\s+/g, '');
 
-    if (from && normalized === 'test') {
+    if (!from) {
+      return res.sendStatus(200);
+    }
+
+    // Global: allow user to type "返回" to go back to the free seminar list
+    if (
+      normalizedNoSpace === '返回' ||
+      normalizedNoSpace === '查看免費講座' ||
+      normalizedNoSpace === '返回查看免費講座'
+    ) {
+      void (async () => {
+        const seminars = await findOpenFreeSeminars();
+
+        let reply;
+        if (!seminars || seminars.length === 0) {
+          reply = '目前沒有開放中的免費講座。';
+          setState(from, { step: 'IDLE' });
+        } else {
+          const lines = ['以下是目前免費的講座'];
+          seminars.forEach((s, idx) => {
+            const start = formatDateTimeHK(s.datetime_start);
+            const seats = formatRemainingSeats(s.remaining_seats, s.capacity);
+            lines.push(`${idx + 1}. ${s.event_name}（開始日期 ${start}，餘下位置 ${seats}）`);
+          });
+          lines.push('如有興趣，請輸入相應的數字（例如：輸入 1）');
+          reply = lines.join('\n');
+          setState(from, { step: 'SEMINAR_MENU', seminars });
+        }
+
+        await sendWhatsAppText({
+          to: String(from),
+          body: reply,
+          valueMetadata: value?.metadata
+        });
+      })().catch((e) => {
+        console.error('WhatsApp back-to-menu failed:', e?.message || e);
+      });
+
+      return res.sendStatus(200);
+    }
+
+    // Step 1: user sends "test" -> list open free seminars
+    if (normalized === 'test') {
       void (async () => {
         const seminars = await findOpenFreeSeminars();
 
@@ -121,6 +189,12 @@ router.post('/whatsapp', (req, res) => {
           reply = lines.join('\n');
         }
 
+        if (seminars && seminars.length > 0) {
+          setState(from, { step: 'SEMINAR_MENU', seminars });
+        } else {
+          setState(from, { step: 'IDLE' });
+        }
+
         await sendWhatsAppText({
           to: String(from),
           body: reply,
@@ -129,6 +203,75 @@ router.post('/whatsapp', (req, res) => {
       })().catch((e) => {
         console.error('WhatsApp auto-reply failed:', e?.message || e);
       });
+      return res.sendStatus(200);
+    }
+
+    // Step 2: user replies a number -> show sessions for selected seminar
+    if (/^\d+$/.test(normalized)) {
+      const n = Number(normalized);
+      if (!Number.isFinite(n) || n <= 0) {
+        return res.sendStatus(200);
+      }
+
+      const state = getState(from);
+      if (!state || state.step !== 'SEMINAR_MENU' || !Array.isArray(state.seminars)) {
+        void sendWhatsAppText({
+          to: String(from),
+          body: '請先輸入 Test 取得講座清單。',
+          valueMetadata: value?.metadata
+        }).catch(() => {});
+        return res.sendStatus(200);
+      }
+
+      const idx = n - 1;
+      const selected = state.seminars[idx];
+      if (!selected) {
+        void sendWhatsAppText({
+          to: String(from),
+          body: '無效的選項，請輸入清單內的數字。',
+          valueMetadata: value?.metadata
+        }).catch(() => {});
+        return res.sendStatus(200);
+      }
+
+      void (async () => {
+        const eventId = selected.event_id;
+        const eventName = selected.event_name;
+        const sessions = await listByEventId(eventId);
+
+        // Sort sessions by datetime_start asc (fallback to session_id)
+        const sorted = [...(sessions || [])].sort((a, b) => {
+          const at = a?.datetime_start ? new Date(a.datetime_start).getTime() : Number.POSITIVE_INFINITY;
+          const bt = b?.datetime_start ? new Date(b.datetime_start).getTime() : Number.POSITIVE_INFINITY;
+          if (at !== bt) return at - bt;
+          return (Number(a?.session_id) || 0) - (Number(b?.session_id) || 0);
+        });
+
+        let reply;
+        if (!sorted || sorted.length === 0) {
+          reply = `「${eventName}」目前未有場次。`;
+        } else {
+          const lines = [`以下是${eventName}的場次`];
+          sorted.forEach((s, i) => {
+            const start = formatDateTimeHK(s.datetime_start);
+            const seats = formatRemainingSeats(s.remaining_seats, s.capacity);
+            lines.push(`${i + 1}. ${s.session_name}（開始日期 ${start}，餘下位置 ${seats}）`);
+          });
+          lines.push('如有興趣，請輸入相應的數字（例如：輸入 1）');
+          lines.push('如需返回查看免費講座，請輸入：返回');
+          reply = lines.join('\n');
+        }
+
+        await sendWhatsAppText({
+          to: String(from),
+          body: reply,
+          valueMetadata: value?.metadata
+        });
+      })().catch((e) => {
+        console.error('WhatsApp session list failed:', e?.message || e);
+      });
+
+      return res.sendStatus(200);
     }
   } catch (e) {
     console.error('WhatsApp webhook handler error:', e);
