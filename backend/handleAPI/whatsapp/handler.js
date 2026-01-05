@@ -40,6 +40,11 @@ function parseProfileText(rawText) {
     const value = normalizedLine.slice(idx + 1).trim();
     if (!value) continue;
 
+    const normalizedKey = key
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/[()（）]/g, '');
+
     if (key === '姓名' || key.toLowerCase() === 'name') {
       out.name = value;
       continue;
@@ -48,14 +53,14 @@ function parseProfileText(rawText) {
     if (
       key === '電話號碼' ||
       key === '電話' ||
-      key.toLowerCase() === 'mobile' ||
-      key.toLowerCase() === 'phone'
+      normalizedKey === 'mobile' ||
+      normalizedKey === 'phone'
     ) {
       out.mobile = value;
       continue;
     }
 
-    if (key.toLowerCase() === 'email' || key === '電郵' || key === '電子郵件') {
+    if (normalizedKey === 'email' || normalizedKey.startsWith('email') || key === '電郵' || key === '電子郵件') {
       out.email = value;
       continue;
     }
