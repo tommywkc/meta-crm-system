@@ -22,8 +22,8 @@ const Payments = () => {
 	const [limit, setLimit] = useState(25);
 	const [searchTerm, setSearchTerm] = useState('');
 	const [appliedQ, setAppliedQ] = useState('');
-	const [methodFilter, setMethodFilter] = useState('');
-	const [appliedMethod, setAppliedMethod] = useState('');
+	const [methodFilter, setMethodFilter] = useState([]);
+	const [appliedMethod, setAppliedMethod] = useState([]);
 	const [statusFilter, setStatusFilter] = useState([]);
 	const [appliedStatus, setAppliedStatus] = useState([]);
 	const [lastPageReached, setLastPageReached] = useState(false);
@@ -90,51 +90,83 @@ const Payments = () => {
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}
 
-			{!loading && !error && (
-				<>
-					<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
-						<input 
-							type="text" 
-							placeholder="輸入[訂單編號/姓名/活動ID/付款方式/狀態]來搜尋..." 
-							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
-							onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-							style={searchInputStyle}
-						/>
-						<select value={methodFilter} onChange={(e) => setMethodFilter(e.target.value)} style={{ height: 32 }}>
-							<option value="">全部付款方式</option>
-							<option value="CREDITCARD">信用卡</option>
-							<option value="FPS">轉數快</option>
-							<option value="PAYME">PayMe</option>
-							<option value="CASH">現金</option>
-						</select>
-							{/* status filters */}
-							<div style={{ display: 'flex', gap: 8 }}>
-								<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-									<input type="checkbox" checked={statusFilter.includes('COMPLETED')} onChange={(e) => {
-										if (e.target.checked) setStatusFilter(prev => [...prev, 'COMPLETED']); else setStatusFilter(prev => prev.filter(x => x !== 'COMPLETED'));
-									}} /> 已付款
-								</label>
-								<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-									<input type="checkbox" checked={statusFilter.includes('PENDING')} onChange={(e) => {
-										if (e.target.checked) setStatusFilter(prev => [...prev, 'PENDING']); else setStatusFilter(prev => prev.filter(x => x !== 'PENDING'));
-									}} /> 待付款
-								</label>
-								<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-									<input type="checkbox" checked={statusFilter.includes('EXPIRED')} onChange={(e) => {
-										if (e.target.checked) setStatusFilter(prev => [...prev, 'EXPIRED']); else setStatusFilter(prev => prev.filter(x => x !== 'EXPIRED'));
-									}} /> 已過期
-								</label>
-							</div>
-						<button onClick={handleSearch}>
-							搜尋
-						</button>
-						<button onClick={() => { setSearchTerm(''); setAppliedQ(''); setPage(1); }}>
-							清除
-						</button>
+		{!loading && !error && (
+			<>
+				{/* Search input */}
+				<div style={{ marginTop: 16, marginBottom: 16 }}>
+					<input 
+						type="text" 
+						placeholder="輸入[訂單編號/姓名/活動ID/付款方式/狀態]來搜尋..." 
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+						style={searchInputStyle}
+					/>
+				</div>
+
+				{/* Filter list */}
+				<div style={{ marginBottom: 16, padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+					<div style={{ fontWeight: 600, marginBottom: 12 }}>篩選條件</div>
+					
+					{/* Method filters */}
+					<div style={{ marginBottom: 12 }}>
+						<div style={{ fontSize: '14px', fontWeight: 500, marginBottom: 6 }}>付款方式</div>
+						<div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={methodFilter.includes('CREDITCARD')} onChange={(e) => {
+									if (e.target.checked) setMethodFilter(prev => [...prev, 'CREDITCARD']); else setMethodFilter(prev => prev.filter(x => x !== 'CREDITCARD'));
+								}} /> 信用卡
+							</label>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={methodFilter.includes('FPS')} onChange={(e) => {
+									if (e.target.checked) setMethodFilter(prev => [...prev, 'FPS']); else setMethodFilter(prev => prev.filter(x => x !== 'FPS'));
+								}} /> 轉數快
+							</label>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={methodFilter.includes('PAYME')} onChange={(e) => {
+									if (e.target.checked) setMethodFilter(prev => [...prev, 'PAYME']); else setMethodFilter(prev => prev.filter(x => x !== 'PAYME'));
+								}} /> PayMe
+							</label>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={methodFilter.includes('CASH')} onChange={(e) => {
+									if (e.target.checked) setMethodFilter(prev => [...prev, 'CASH']); else setMethodFilter(prev => prev.filter(x => x !== 'CASH'));
+								}} /> 現金
+							</label>
+						</div>
 					</div>
 
-					<div style={UpperSelectContainerStyle}>
+					{/* Status filters */}
+					<div style={{ marginBottom: 12 }}>
+						<div style={{ fontSize: '14px', fontWeight: 500, marginBottom: 6 }}>付款狀態</div>
+						<div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={statusFilter.includes('COMPLETED')} onChange={(e) => {
+									if (e.target.checked) setStatusFilter(prev => [...prev, 'COMPLETED']); else setStatusFilter(prev => prev.filter(x => x !== 'COMPLETED'));
+								}} /> 已付款
+							</label>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={statusFilter.includes('PENDING')} onChange={(e) => {
+									if (e.target.checked) setStatusFilter(prev => [...prev, 'PENDING']); else setStatusFilter(prev => prev.filter(x => x !== 'PENDING'));
+								}} /> 待付款
+							</label>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={statusFilter.includes('EXPIRED')} onChange={(e) => {
+									if (e.target.checked) setStatusFilter(prev => [...prev, 'EXPIRED']); else setStatusFilter(prev => prev.filter(x => x !== 'EXPIRED'));
+								}} /> 已過期
+							</label>
+						</div>
+					</div>
+				</div>
+
+				{/* Action buttons */}
+				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+					<button onClick={handleSearch}>
+						搜尋
+					</button>
+					<button onClick={() => { setSearchTerm(''); setAppliedQ(''); setMethodFilter([]); setAppliedMethod([]); setStatusFilter([]); setAppliedStatus([]); setPage(1); }}>
+						清除
+					</button>
+				</div>					<div style={UpperSelectContainerStyle}>
 						<label>
 							頁數: &nbsp; {page}
 						</label>

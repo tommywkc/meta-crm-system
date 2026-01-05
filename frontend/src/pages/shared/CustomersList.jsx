@@ -96,6 +96,9 @@ const CustomersList = () => {
         <button onClick={handleSearch}>
           搜尋
         </button>
+        <button onClick={() => { setSearchTerm(''); fetchCustomers(); setPage(1); }}>
+          清除
+        </button>
       </div>
 
       <div

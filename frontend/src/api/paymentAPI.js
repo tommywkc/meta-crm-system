@@ -3,7 +3,11 @@ export async function listPaymentByUserId(user_id, { limit, offset, q, method, s
   if (limit) params.append('limit', limit);
   if (offset) params.append('offset', offset);
   if (q) params.append('q', q);
-  if (method) params.append('method', method);
+  if (method) {
+    if (Array.isArray(method)) method.forEach(m => params.append('method', m));
+    else if (String(method).includes(',')) String(method).split(',').map(s=>s.trim()).forEach(s => params.append('method', s));
+    else params.append('method', method);
+  }
   if (status) {
     // status can be array or comma-joined
     if (Array.isArray(status)) status.forEach(s => params.append('status', s));
@@ -56,7 +60,11 @@ export async function listAllPayment(limit, offset, q, method, status) {
   if (limit) params.append('limit', limit);
   if (offset) params.append('offset', offset);
   if (q) params.append('q', q);
-  if (method) params.append('method', method);
+  if (method) {
+    if (Array.isArray(method)) method.forEach(m => params.append('method', m));
+    else if (String(method).includes(',')) String(method).split(',').map(s=>s.trim()).forEach(s => params.append('method', s));
+    else params.append('method', method);
+  }
   if (status) {
     if (Array.isArray(status)) status.forEach(s => params.append('status', s));
     else if (String(status).includes(',')) String(status).split(',').map(s=>s.trim()).forEach(s => params.append('status', s));

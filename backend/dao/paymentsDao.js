@@ -55,9 +55,12 @@ async function listByUserWithSearch(user_id, limit = 100, offset = 0, q = '', co
     )`);
   }
 
-  if (method && method.trim() !== '') {
-    params.push(method);
-    where.push(`p.method = $${params.length}`);
+  if (method) {
+    const methodArr = Array.isArray(method) ? method : String(method).split(',').map(s => s.trim()).filter(Boolean);
+    if (methodArr.length > 0) {
+      params.push(methodArr);
+      where.push(`p.method = ANY($${params.length})`);
+    }
   }
 
   if (status) {
@@ -109,9 +112,12 @@ async function searchPayments(limit = 100, offset = 0, q = '', method = null, st
     )`);
   }
 
-  if (method && method.trim() !== '') {
-    params.push(method);
-    where.push(`p.method = $${params.length}`);
+  if (method) {
+    const methodArr = Array.isArray(method) ? method : String(method).split(',').map(s => s.trim()).filter(Boolean);
+    if (methodArr.length > 0) {
+      params.push(methodArr);
+      where.push(`p.method = ANY($${params.length})`);
+    }
   }
 
   if (status) {

@@ -14,7 +14,15 @@ router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
     }
 
     const q = req.query.q || '';
-    const method = req.query.method || null;
+    let method = req.query.method || null;
+    // method can be repeated or comma-separated -> normalize to array of upper-case
+    if (method) {
+      if (Array.isArray(method)) {
+        method = method.map(m => String(m).trim().toUpperCase()).filter(Boolean);
+      } else {
+        method = String(method).split(',').map(m => m.trim().toUpperCase()).filter(Boolean);
+      }
+    }
     // status can be provided as repeated query params or comma-separated
     let status = req.query.status || null;
     if (status) {
@@ -51,7 +59,14 @@ router.get('/payments', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
     const q = req.query.q || '';
-    const method = req.query.method || null;
+    let method = req.query.method || null;
+    if (method) {
+      if (Array.isArray(method)) {
+        method = method.map(m => String(m).trim().toUpperCase()).filter(Boolean);
+      } else {
+        method = String(method).split(',').map(m => m.trim().toUpperCase()).filter(Boolean);
+      }
+    }
     let status = req.query.status || null;
     if (status) {
       if (Array.isArray(status)) {

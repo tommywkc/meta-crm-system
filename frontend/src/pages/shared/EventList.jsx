@@ -161,6 +161,9 @@ const EventList = () => {
 				<button onClick={handleSearch}>
 					搜尋
 				</button>
+				<button onClick={() => { setSearchTerm(''); fetchEvents(); setPage(1); setIsSearching(false); }}>
+					清除
+				</button>
 				{isSearching && (
 					<span style={{ color: '#666', fontSize: '14px' }}>
 						找到 {totalResults} 筆結果
