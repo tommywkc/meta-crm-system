@@ -41,7 +41,49 @@ async function updateStatusByEnrollmentId(id, status) {
 
 async function checkIsConfirmedEnrolled(user_id, event_id) {
   const res = await query('SELECT * FROM EVENT_ENROLLMENTS WHERE user_id = $1 AND event_id = $2 AND status = $3', [user_id, event_id, 'CONFIRMED']);
-  return res.rows.length > 0;
+  return res.rows[0] || null;
 }
 
-module.exports = { createEnrollment, findByEnrollmentId, listByUser, listByEvent, removeByEnrollmentId, findIfExist, updateStatusByEnrollmentId, checkIsConfirmedEnrolled };
+async function listConfirmedEnrolled(user_id, limit = 100, offset = 0) {
+  const res = await query('SELECT * FROM EVENT_ENROLLMENTS WHERE user_id = $1 AND status = $2 ORDER BY enrollment_id DESC LIMIT $3 OFFSET $4', [user_id, 'CONFIRMED', limit, offset]);
+  return res.rows || null;
+}
+
+// List event_ids where the user has an active (PENDING or CONFIRMED) enrollment
+async function listActiveEnrolledEventIds(user_id) {
+  const sql = `
+    SELECT DISTINCT event_id
+    FROM EVENT_ENROLLMENTS
+    WHERE user_id = $1
+      AND status IN ('PENDING', 'CONFIRMED')
+  `;
+  const res = await query(sql, [user_id]);
+  return res.rows || [];
+}
+
+async function listConfirmedUsersByEvent(event_id) {
+  const sql = `
+    SELECT DISTINCT u.user_id, u.name
+    FROM EVENT_ENROLLMENTS e
+    JOIN USERS u ON e.user_id = u.user_id
+    WHERE e.event_id = $1
+      AND e.status = 'CONFIRMED'
+    ORDER BY u.user_id
+  `;
+  const res = await query(sql, [event_id]);
+  return res.rows || [];
+}
+
+module.exports = {
+  createEnrollment,
+  findByEnrollmentId,
+  listByUser,
+  listByEvent,
+  removeByEnrollmentId,
+  findIfExist,
+  updateStatusByEnrollmentId,
+  checkIsConfirmedEnrolled,
+  listConfirmedEnrolled,
+  listConfirmedUsersByEvent,
+  listActiveEnrolledEventIds,
+};

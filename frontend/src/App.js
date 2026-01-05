@@ -16,6 +16,7 @@ import EventList from './pages/shared/EventList';
 import EventCreate from './pages/admin/EventCreate';
 import EventsEdit from './pages/admin/EventsEdit';
 import SessionEdit from './pages/admin/SessionEdit';
+import SessionCreate from './pages/admin/SessionCreate';
 import EventView from './pages/shared/EventView';
 import Download from './pages/admin/Download';
 import Reports from './pages/admin/Reports';
@@ -36,6 +37,10 @@ import Homework from './pages/member/Homework';
 import MyQRcode from './pages/member/MyQRcode';
 import MemberCalendarPage from './pages/member/Calendar';
 import Apply from './pages/shared/Apply';
+import MyEventList from './pages/member/MyEventList';
+import EnrollSession from './pages/shared/EnrollSession';
+import SessionListPage from './pages/shared/sessionList';
+
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -119,6 +124,11 @@ function App() {
               <EventsEdit />
             </ProtectedRoute>
           } />
+          <Route path="/events/:eventId/sessions/create" element={
+            <ProtectedRoute allowedRole="admin">
+              <SessionCreate />
+            </ProtectedRoute>
+          } />
           <Route path="/sessions/:id/edit" element={
             <ProtectedRoute allowedRole="admin">
               <SessionEdit />
@@ -176,6 +186,18 @@ function App() {
               <PaymentProcess />
             </ProtectedRoute>
           } />
+          {/* 場次報名頁面：從 EventView 場次列表點擊「報名」而來 */}
+          <Route path="/events/:id/enrollsession" element={
+            <ProtectedRoute allowedRoles={['admin', 'sales', 'leader', 'member']}>
+              <EnrollSession />
+            </ProtectedRoute>
+          } />
+          {/* 保留舊路徑以避免已有連結壞掉 */}
+          <Route path="/enrollsession" element={
+            <ProtectedRoute allowedRoles={['admin', 'sales', 'leader', 'member']}>
+              <EnrollSession />
+            </ProtectedRoute>
+          } />
           <Route path="/receipts" element={
             <ProtectedRoute allowedRole="member">
               <Receipts />
@@ -204,6 +226,16 @@ function App() {
           <Route path="/mycalendar" element={
             <ProtectedRoute allowedRole="member">
               <MemberCalendarPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/myevents" element={
+            <ProtectedRoute allowedRole="member">
+              <MyEventList />
+            </ProtectedRoute>
+          } />
+          <Route path="/sessions/enrolled" element={
+            <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
+              <SessionListPage />
             </ProtectedRoute>
           } />
           <Route 

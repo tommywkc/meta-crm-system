@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleGetById as handleGetUserById } from '../../api/customersListAPI';
-import { handleListSessionsByEventId, handleGetSessionById, handleDeleteSession } from '../../api/sessionAPI';
-import { handleCheckEnrollment } from '../../api/enrollmentAPI';
+import { handleListSessionsByEventId, handleGetSessionById, handleDeleteSession, handleListMyRegisteredSessionsByEvent } from '../../api/sessionAPI';
+import { handleCheckEnrollment, handleListMyActiveEnrolledEvents } from '../../api/enrollmentAPI';
 import { getStatusDisplay, getTypeDisplay, formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import WaitingListTable from '../../components/WaitingListTable';
 import SessionListTable from '../../components/SessionListTable';
@@ -22,11 +22,15 @@ const EventView = () => {
   
   const [event, setEvent] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [registeredSessionIds, setRegisteredSessionIds] = useState([]);
   const [speakerName, setSpeakerName] = useState('');
   const [selectedSessionName, setSelectedSessionName] = useState('all');
+  const [selectedRound, setSelectedRound] = useState('all');
   // Note: isEnrolling is for future enrollment loading state
   const [isEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [hasActiveEnrollment, setHasActiveEnrollment] = useState(false);
+  const hasShownErrorRef = useRef(false);
   
   // Mock waiting list data
   const mockWaiting = [
@@ -55,26 +59,72 @@ const EventView = () => {
   ];
     useEffect(() => {
       const fetchData = async () => {
+      // 先抓活動資料；若後端回傳 403（非 OPEN 活動），會在這裡丟出 Error
+      try {
         const data = await handleGetById(id);
         setEvent(data.event || {});
-        
-        // Fetch sessions for this event
-        try {
-          const sessionData = await handleListSessionsByEventId(id);
-          setSessions(sessionData.sessions || []);
-        } catch (err) {
-          console.error('Failed to fetch sessions:', err);
-          setSessions([]);
+      } catch (err) {
+        console.error('Failed to fetch event:', err);
+        if (!hasShownErrorRef.current) {
+        // 避免在嚴格模式或多次重渲染時彈兩次
+        hasShownErrorRef.current = true;
+        window.alert(err?.message || '暫時未能瀏覽未開放活動');
+        // 回到上一頁（例如從「我的活動」列表點進來時就回去該頁）
+        navigate(-1);
         }
-        
+        return;
+      }
+
+      // Fetch sessions for this event
+      try {
+        const sessionData = await handleListSessionsByEventId(id);
+        setSessions(sessionData.sessions || []);
+      } catch (err) {
+        console.error('Failed to fetch sessions:', err);
+        setSessions([]);
+      }
+		
+
+      // isEnrolled：只代表「已確認報名」（CONFIRMED），給下方場次表使用
+      try {
         const enrollmentData = await handleCheckEnrollment(id, user?.id);
         if (enrollmentData != null) {
           setIsEnrolled(true);
+        } else {
+          setIsEnrolled(false);
         }
+      } catch (err) {
+        console.error('Failed to check enrollment (confirmed only):', err);
+        setIsEnrolled(false);
+      }
 
+      // hasActiveEnrollment：包含 PENDING 與 CONFIRMED，給上方活動「報名」按鈕使用
+      try {
+        const activePayload = await handleListMyActiveEnrolledEvents();
+        const eventIds = Array.isArray(activePayload.eventIds) ? activePayload.eventIds : [];
+        const active = eventIds.some(eventId => String(eventId) === String(id));
+        setHasActiveEnrollment(active);
+      } catch (err) {
+        console.error('Failed to check active enrollment status:', err);
+        setHasActiveEnrollment(false);
+      }
+
+      // Fetch registered session IDs for current user for this event (member only)
+      if (userRole === 'member') {
+        try {
+          const payload = await handleListMyRegisteredSessionsByEvent(id);
+          setRegisteredSessionIds(Array.isArray(payload.sessionIds) ? payload.sessionIds : []);
+        } catch (err) {
+          console.error('Failed to fetch registered sessions for this event:', err);
+          setRegisteredSessionIds([]);
+        }
+      } else {
+        setRegisteredSessionIds([]);
+      }
+		
       };
       fetchData();
-    }, [id]);
+    }, [id, user?.id, userRole, navigate]);
 
   // Fetch speaker name by speaker_id
   useEffect(() => {
@@ -123,7 +173,7 @@ const EventView = () => {
 
   const handleEnrollSession = (session_id) => {
     if (!session_id) return;
-    navigate(`/events/${id}/apply`);
+    navigate(`/events/${id}/enrollsession?session_id=${session_id}`);
   };
 
 
@@ -186,15 +236,21 @@ const EventView = () => {
         {isAdmin ? (
           <button onClick={() => navigate(`/events/${id}/edit`)} style={{ marginLeft: 8 }}>編輯</button>
         ) : isMember || isSalesOrLeader ? (
-          <button onClick={handleEnroll} disabled={isEnrolling} style={{ marginLeft: 8 }}>
-            {isEnrolling ? '報名中...' : '報名'}
+          <button
+            onClick={hasActiveEnrollment ? undefined : handleEnroll}
+            disabled={isEnrolling || hasActiveEnrollment}
+            style={{ marginLeft: 8 }}
+          >
+            {hasActiveEnrollment ? '已報名' : (isEnrolling ? '報名中...' : '報名')}
           </button>
         ) : null}
       </div>
 
       {/* Session list table */}
       <div style={{ marginTop: 40 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>場次列表</h2>
+      </div>
         
         {/* Session name filter */}
         {sessions.length > 0 && (
@@ -224,20 +280,62 @@ const EventView = () => {
                   </option>
                 ))}
             </select>
+            
+            {/* Round filter */}
+            {sessions.some(s => s.round != null) && (
+              <>
+                <label htmlFor="round-filter" style={{ marginLeft: 16, marginRight: 8, fontWeight: 'bold' }}>
+                  期數:
+                </label>
+                <select
+                  id="round-filter"
+                  value={selectedRound}
+                  onChange={(e) => setSelectedRound(e.target.value)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '14px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    minWidth: '120px'
+                  }}
+                >
+                  <option value="all">全部期數</option>
+                  {[...new Set(sessions.map(s => s.round))]
+                    .filter(r => r != null)
+                    .sort((a, b) => a - b)
+                    .map(r => (
+                      <option key={r} value={String(r)}>
+                        第 {r} 期
+                      </option>
+                    ))}
+                </select>
+              </>
+            )}
+            {isAdmin && (
+              <button onClick={() => navigate(`/events/${id}/sessions/create`)}>
+                新增場次
+              </button>
+            )}
           </div>
         )}
         
         <SessionListTable 
-          sessions={
-            selectedSessionName === 'all' 
-              ? sessions 
-              : sessions.filter(s => s.session_name === selectedSessionName)
-          }
+          sessions={(() => {
+            let filtered = sessions;
+            if (selectedSessionName !== 'all') {
+              filtered = filtered.filter(s => s.session_name === selectedSessionName);
+            }
+            if (selectedRound !== 'all') {
+              filtered = filtered.filter(s => String(s.round) === selectedRound);
+            }
+            return filtered;
+          })()}
           role={user?.role}
           onEditSession={isAdmin ? handleEditSession : undefined}
           onEnrollSession={(isMember || isSalesOrLeader) ? handleEnrollSession : undefined}
           onDeleteSession={isAdmin ? onDeleteSession : undefined}
           isEnrolled={isEnrolled}
+				registeredSessionIds={registeredSessionIds}
         />
       </div>
 

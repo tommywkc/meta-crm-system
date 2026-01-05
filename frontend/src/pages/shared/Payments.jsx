@@ -35,15 +35,15 @@ const Payments = () => {
 			setError(null);
 			if (!user?.id) { setLoading(false); return; }
 			try {
-						const offset = (page - 1) * limit;
-						if (!isSalesOrLeader && !isAdmin) {
+				const offset = (page - 1) * limit;
+				if (!isSalesOrLeader && !isAdmin) {
 					// member: only fetch own completed payments (backend enforces)
-							const res = await handleListPaymentByUserId(user.id, { limit, offset, q: appliedQ, method: appliedMethod, status: appliedStatus });
+					const res = await handleListPaymentByUserId(user.id, { limit, offset, q: appliedQ, method: appliedMethod, status: appliedStatus });
 					const list = Array.isArray(res) ? res : (res.payments || []);
 					setPayments(list);
 					setLastPageReached(list.length < limit);
 				} else {
-							const res = await handleListAllPayment(limit, offset, appliedQ, appliedMethod, appliedStatus);
+					const res = await handleListAllPayment(limit, offset, appliedQ, appliedMethod, appliedStatus);
 					const list = Array.isArray(res) ? res : (res.payments || []);
 					setPayments(list);
 					setLastPageReached(list.length < limit);

@@ -6,9 +6,14 @@ require('dotenv').config();
 
 class AzureBlobService {
     constructor() {
-        this.blobServiceClient = BlobServiceClient.fromConnectionString(
-            process.env.AZURE_STORAGE_CONNECTION_STRING
-        );
+        const conn = process.env.AZURE_STORAGE_CONNECTION_STRING;
+        if (!conn) {
+            // Allow the app to start even when Blob Storage isn't configured (e.g. in some environments)
+            console.warn('[AzureBlobService] AZURE_STORAGE_CONNECTION_STRING not set; file features are disabled.');
+            this.blobServiceClient = null;
+        } else {
+            this.blobServiceClient = BlobServiceClient.fromConnectionString(conn);
+        }
         // Define container configuration
         this.containers = {
             homework: 'homework-files',
@@ -17,7 +22,19 @@ class AzureBlobService {
         };
     }
 
+    ensureConfigured() {
+        if (!this.blobServiceClient) {
+            return {
+                success: false,
+                error: 'Azure Blob Storage 未設定 (missing AZURE_STORAGE_CONNECTION_STRING)'
+            };
+        }
+        return null;
+    }
+
     async uploadFile(file, userId, resourceId, containerType = 'homework') {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
         try {
             // generate a unique file name
             const fileExtension = file.originalname.split('.').pop();
@@ -62,6 +79,8 @@ class AzureBlobService {
     }
 
     async deleteFile(fileName, containerType = 'homework') {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
         try {
             const containerName = this.containers[containerType];
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
@@ -83,6 +102,8 @@ class AzureBlobService {
     }
 
     async getFileUrl(fileName, containerType = 'homework') {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
         try {
             const containerName = this.containers[containerType];
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
@@ -102,6 +123,8 @@ class AzureBlobService {
     }
 
     async downloadFile(fileName, containerType = 'homework') {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
         try {
             const containerName = this.containers[containerType];
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
@@ -142,6 +165,8 @@ class AzureBlobService {
     }
 
     async listFiles(userId, resourceId = null, containerType = 'homework') {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
         try {
             const containerName = this.containers[containerType];
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
@@ -171,6 +196,8 @@ class AzureBlobService {
     }
 
     async listAllFiles(containerType = 'homework') {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
         try {
             const containerName = this.containers[containerType];
             const containerClient = this.blobServiceClient.getContainerClient(containerName);

@@ -14,6 +14,7 @@ const CustomerView = () => {
   const [customer, setCustomer] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [ownerSalesName, setOwnerSalesName] = useState('');
+  const [referrerName, setReferrerName] = useState('');
   
   useEffect(() => {
     const fetchData = async () => {
@@ -41,6 +42,23 @@ const CustomerView = () => {
       }
     })();
   }, [customer?.owner_sales]);
+  useEffect(() => {
+    (async () => {
+      const referrerId = customer?.referrer;
+      if (!referrerId) {
+        setReferrerName('');
+        return;
+      }
+      try {
+        const data = await handleGetById(referrerId);
+        const name = data?.customer?.name || '';
+        setReferrerName(name);
+      } catch (err) {
+        console.error('Failed to fetch referrer name:', err);
+        setReferrerName('');
+      }
+    })();
+  }, [customer?.referrer]);
 
   // Mock calendar events for this customer
   const customerEvents = {
@@ -82,6 +100,17 @@ const CustomerView = () => {
                   <>
                     {customer.owner_sales}
                     {ownerSalesName ? ` - ${ownerSalesName}` : ' (載入中...)'}
+                  </>
+                )
+                : 'N/A'}
+            </div>
+            <div>
+              <strong>推薦人:</strong>{' '}
+              {customer.referrer
+                ? (
+                  <>
+                    {customer.referrer}
+                    {referrerName ? ` - ${referrerName}` : ' (載入中...)'}
                   </>
                 )
                 : 'N/A'}

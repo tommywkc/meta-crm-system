@@ -41,6 +41,21 @@ async function findEventByStatus(status) {
   return res.rows;
 }
 
+//for whatsapp////
+async function findOpenFreeSeminars() {
+  const sql = `
+    SELECT event_id, event_name, datetime_start, datetime_end, capacity, remaining_seats
+    FROM EVENTS
+    WHERE type = 'SEMINAR'
+      AND status = 'OPEN'
+      AND (price IS NULL OR price = 0)
+    ORDER BY datetime_start ASC NULLS LAST, event_id ASC
+  `;
+  const res = await query(sql);
+  return res.rows;
+}
+////////////////
+
 async function updateByEventId(id, fields = {}) {
   const keys = Object.keys(fields);
   if (keys.length === 0) return findByEventId(id);
@@ -126,6 +141,5 @@ async function updateRemainingSeats(event_id, change) {
   const res = await query(sql, vals);
   return res.rows[0] || null;
 }
-  
 
 module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId, findLatestEventId, findEventByStatus, updateRemainingSeats, searchEvents, searchEventsByStatus };

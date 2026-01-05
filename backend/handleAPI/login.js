@@ -7,6 +7,21 @@ const { findByUserId } = require('../dao/usersDao');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
 const ACCESS_EXPIRES = '30m';
 
+function getAuthCookieOptions() {
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieSameSite = String(process.env.COOKIE_SAMESITE || (isProd ? 'none' : 'lax')).toLowerCase();
+  const explicitSecure = String(process.env.COOKIE_SECURE || '').trim().toLowerCase();
+  const cookieSecure = cookieSameSite === 'none' ? true : explicitSecure === 'true' ? true : isProd;
+
+  return {
+    httpOnly: true,
+    secure: cookieSecure,
+    sameSite: cookieSameSite,
+    path: '/',
+    maxAge: 30 * 60 * 1000,
+  };
+}
+
 router.post('/login', async (req, res) => {
   try {
   console.log('Received login request:', { username: req.body.username });
@@ -40,12 +55,7 @@ router.post('/login', async (req, res) => {
     };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_EXPIRES });
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' ? true : false,
-      sameSite: 'lax',
-      maxAge: 30 * 60 * 1000
-    });
+    res.cookie('token', token, getAuthCookieOptions());
 
   // return user data without the password
     const { password: _p, ...safe } = user;

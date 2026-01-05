@@ -25,8 +25,8 @@ async function findByPaymentId(id) {
   return res.rows[0] || null;
 }
 
-async function listByUser(user_id) {
-  const res = await query('SELECT * FROM PAYMENTS WHERE user_id = $1 ORDER BY payment_id DESC', [user_id]);
+async function listByUser(user_id, limit = 100, offset = 0) {
+  const res = await query('SELECT * FROM PAYMENTS WHERE user_id = $1 ORDER BY payment_id DESC LIMIT $2 OFFSET $3', [user_id, limit, offset]);
   return res.rows;
 }
 

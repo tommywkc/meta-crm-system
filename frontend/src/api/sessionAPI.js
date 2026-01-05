@@ -1,5 +1,7 @@
+import { apiUrl } from './apiBase';
+
 export async function createSession(data) {
-  const response = await fetch('http://localhost:4000/api/sessions', {
+  const response = await fetch(apiUrl('/api/sessions'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -21,7 +23,7 @@ export async function handleCreateSession(data) {
 }
 
 export async function listSessionsByEventId(event_id) {
-  const response = await fetch(`http://localhost:4000/api/events/${event_id}/sessions`, {
+  const response = await fetch(apiUrl(`/api/events/${event_id}/sessions`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -45,7 +47,7 @@ export async function handleListSessionsByEventId(event_id) {
 }
 
 export async function getSessionById(session_id) {
-  const response = await fetch(`http://localhost:4000/api/sessions/${session_id}`, {
+  const response = await fetch(apiUrl(`/api/sessions/${session_id}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -68,11 +70,8 @@ export async function handleGetSessionById(session_id) {
   }
 }
 
-
-
-
 export async function updateSession(session_id, data) {
-  const response = await fetch(`http://localhost:4000/api/sessions/${session_id}`, {
+  const response = await fetch(apiUrl(`/api/sessions/${session_id}`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -94,7 +93,7 @@ export async function handleUpdateSession(session_id, data) {
 }
 
 export async function deleteSession(session_id) {
-  const response = await fetch(`http://localhost:4000/api/sessions/${session_id}`, {
+  const response = await fetch(apiUrl(`/api/sessions/${session_id}`), {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -113,3 +112,148 @@ export async function handleDeleteSession(session_id) {
     throw err;
   }
 }
+
+
+
+// --- Session registrations (場次報名) ---
+
+export async function createSessionRegistration(data) {
+  const response = await fetch(apiUrl('/api/session-registrations'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    let message = '場次報名失敗';
+    try {
+      const err = await response.json();
+      if (err?.message) message = err.message;
+    } catch (e) {
+      message = response.statusText || message;
+    }
+    throw new Error(message);
+  }
+  return response.json();
+}
+
+export async function handleCreateSessionRegistration(data) {
+  try {
+    console.log('Attempting to create session registration...', data);
+    const payload = await createSessionRegistration(data);
+    console.log('Session registration response:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Session registration error:', err);
+    throw err;
+  }
+}
+
+// --- Upcoming sessions for current user ---
+
+export async function listMyUpcomingSessions(limit = 5, offset = 0) {
+  const response = await fetch(apiUrl(`/api/my-sessions/upcoming?limit=${limit}&offset=${offset}`), {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch upcoming sessions');
+  }
+  return response.json();
+}
+
+export async function handleListMyUpcomingSessions(limit = 5, offset = 0) {
+  try {
+    console.log('Attempting to fetch my upcoming sessions...');
+    const payload = await listMyUpcomingSessions(limit, offset);
+    console.log('My upcoming sessions:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Fetch my upcoming sessions error:', err);
+    throw err;
+  }
+}
+
+// --- Enrolled upcoming sessions list (role-based: member sees own, others see all) ---
+
+export async function listEnrolledUpcomingSessions(limit = 100, offset = 0, q = '') {
+  const params = new URLSearchParams();
+  params.append('limit', limit);
+  params.append('offset', offset);
+  if (q && q.trim()) params.append('q', q);
+  const response = await fetch(apiUrl(`/api/session-registrations/enrolled-upcoming?${params.toString()}`), {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch enrolled upcoming sessions list');
+  }
+  return response.json();
+}
+
+export async function handleListEnrolledUpcomingSessions(limit = 100, offset = 0, q = '') {
+  try {
+    console.log('Attempting to fetch enrolled upcoming sessions list...', { limit, offset, q });
+    const payload = await listEnrolledUpcomingSessions(limit, offset, q);
+    console.log('Enrolled upcoming sessions list:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Fetch enrolled upcoming sessions list error:', err);
+    throw err;
+  }
+}
+
+// --- Sessions by year for current user (for calendar) ---
+
+export async function listMySessionsByYear(year) {
+  const response = await fetch(apiUrl(`/api/my-sessions/by-year?year=${year}`), {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch sessions by year');
+  }
+  return response.json();
+}
+
+export async function handleListMySessionsByYear(year) {
+  try {
+    console.log('Attempting to fetch my sessions for year...', year);
+    const payload = await listMySessionsByYear(year);
+    console.log('My sessions for year result:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Fetch my sessions by year error:', err);
+    throw err;
+  }
+}
+
+// --- Registered sessions for current user by event ---
+
+export async function listMyRegisteredSessionsByEvent(event_id) {
+  const response = await fetch(apiUrl(`/api/my-sessions/registered-by-event?event_id=${event_id}`), {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch registered sessions for event ${event_id}`);
+  }
+  return response.json();
+}
+
+export async function handleListMyRegisteredSessionsByEvent(event_id) {
+  try {
+    console.log(`Attempting to fetch my registered sessions for event ${event_id}...`);
+    const payload = await listMyRegisteredSessionsByEvent(event_id);
+    console.log(`My registered sessions for event ${event_id}:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Fetch my registered sessions by event error for event ${event_id}:`, err);
+    throw err;
+  }
+}
+

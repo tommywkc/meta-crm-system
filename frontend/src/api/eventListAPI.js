@@ -1,5 +1,7 @@
+import { apiUrl } from './apiBase';
+
 export async function createEvent(data) {
-  const response = await fetch('http://localhost:4000/api/events', {
+  const response = await fetch(apiUrl('/api/events'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -20,14 +22,13 @@ export async function handleCreateEvent(data) {
   }
 }
 
-
 export async function listEvents({ limit = 100, offset = 0, q = '' } = {}) {
   const params = new URLSearchParams();
   params.append('limit', limit);
   params.append('offset', offset);
   if (q && q.trim()) params.append('q', q);
 
-  const response = await fetch(`http://localhost:4000/api/events?${params.toString()}`, {
+  const response = await fetch(apiUrl(`/api/events?${params.toString()}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -50,19 +51,31 @@ export async function handleListEvents(opts = {}) {
 
 export async function getEventById(event_id) {
   console.log(`Fetching event ${event_id} from backend`);
-  const res = await fetch(`http://localhost:4000/api/events/${event_id}`, {
+  const res = await fetch(apiUrl(`/api/events/${event_id}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
   });
   if (!res.ok) {
-    // try to read backend error message
+    // 優先使用後端回傳的 message，其次根據狀態碼給友善預設文字
+    let message;
     try {
       const err = await res.json();
-      throw new Error(err.message || `Failed to fetch event ${event_id}`);
+      message = err && err.message;
     } catch (e) {
-      throw new Error(res.statusText || `Failed to fetch event ${event_id}`);
+      // 若不是 JSON 或沒有 body，就忽略，改用下面的預設
     }
+
+    if (!message) {
+      if (res.status === 403) {
+        // 後端對非 OPEN 活動的預期訊息
+        message = '暫時未能瀏覽未開放活動';
+      } else {
+        message = res.statusText || `Failed to fetch event ${event_id}`;
+      }
+    }
+
+    throw new Error(message);
   }
   return await res.json();
 }
@@ -84,7 +97,7 @@ export async function handleGetById(event_id) {
 
 export async function updateEventById(event_id, data) {
   console.log(`Updating event ${event_id} on backend`, data);
-  const res = await fetch(`http://localhost:4000/api/events/${event_id}`, {
+  const res = await fetch(apiUrl(`/api/events/${event_id}`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -117,7 +130,7 @@ export async function handleUpdateById(event_id, data) {
 
 export async function deleteEventById(event_id) {
   console.log(`Deleting event ${event_id} on backend`);
-  const res = await fetch(`http://localhost:4000/api/events/${event_id}`, {
+  const res = await fetch(apiUrl(`/api/events/${event_id}`), {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins

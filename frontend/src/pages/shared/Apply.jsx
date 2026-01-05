@@ -124,12 +124,12 @@ const Apply = () => {
       
       alert(message);
       if (event?.price == null || Number(event?.price) === 0) {
-        navigate('/events');
+        navigate(-1);
       } else {
         if (isSalesOrLeader) {
           navigate(`/payments/${result.payment.payment_id}/process`);
         } else {
-          navigate('/events');
+          navigate(-1);
         }
       }
       
@@ -271,7 +271,7 @@ const Apply = () => {
           <button type="submit" disabled={isSubmitting}>
             {isSubmitting ? '提交中...' : '確認報名'}
           </button>
-          <button type="button" onClick={() => navigate('/events')}>
+          <button type="button" onClick={() => navigate(-1)}>
             取消
           </button>
         </div>

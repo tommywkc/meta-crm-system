@@ -1,7 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
-const { createEnrollment, findIfExist, checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
+const {
+  createEnrollment,
+  findIfExist,
+  checkIsConfirmedEnrolled,
+  listConfirmedEnrolled,
+  listConfirmedUsersByEvent,
+  listActiveEnrolledEventIds,
+  updateStatusByEnrollmentId
+} = require('../dao/eventEnrollmentsDao');
 const { findByEventId, updateRemainingSeats } = require('../dao/eventsDao');
 const { createPayment } = require('../dao/paymentsDao');
 
@@ -67,6 +75,9 @@ router.post('/enrollments', authMiddleware, async (req, res) => {
         // Rollback enrollment if payment creation fails
         throw new Error('建立付款記錄失敗：' + paymentError.message);
       }
+    }else if(event && (event.price == null || event.price == 0)) {
+      console.log('Enrollment for free event, no payment needed.');
+      await updateStatusByEnrollmentId(newEnrollment.enrollment_id, 'CONFIRMED');
     }
     
     res.status(201).json({ 
@@ -90,10 +101,90 @@ router.get('/enrollments/check', authMiddleware, async (req, res) => {
     console.log('Received enrollment check request from user:', req.user.sub, 'for event_id:', event_id, 'and user_id:', user_id);
 
     const isEnrolled = await checkIsConfirmedEnrolled(user_id, event_id);
-    res.json({ isEnrolled });
+    if (isEnrolled != null) {
+      console.log(`User ${user_id} is confirmed enrolled for event ${event_id}`);
+      return res.status(200).json(isEnrolled);
+    } else {
+      console.log(`User ${user_id} is NOT confirmed enrolled for event ${event_id}`);
+      return res.status(200).json(null);
+    }
+
   } catch (error) {
     console.error('Enrollment check failed:', error);
     res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+router.get('/enrollments/confirmed', authMiddleware, async (req, res) => {
+  try {
+    const user_id = req.query.user_id || req.user.sub;
+    const parsedLimit = parseInt(req.query.limit) || 100;
+    const parsedOffset = parseInt(req.query.offset) || 0;
+
+    console.log('Received confirmed enrollments list request from user:', req.user.sub, 'for user_id:', user_id);
+
+    const confirmedEnrollments = await listConfirmedEnrolled(user_id, parsedLimit, parsedOffset);
+    console.log(`Found ${confirmedEnrollments ? confirmedEnrollments.length : 0} confirmed enrollments for user ${user_id}`);
+
+    // Enrich enrollments with event details
+    const enrichedEnrollments = await Promise.all(
+      (confirmedEnrollments || []).map(async (enrollment) => {
+        const eventDetails = await findByEventId(enrollment.event_id);
+        return {
+          ...enrollment,
+          ...eventDetails // Merge event details into enrollment
+        };
+      })
+    );
+
+    return res.status(200).json({ enrollments: enrichedEnrollments });
+
+  } catch (error) {
+    console.error('Listing confirmed enrollments failed:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// List event_ids that the current user has enrolled (PENDING or CONFIRMED)
+router.get('/enrollments/my-events/active', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    if (!userId) {
+      return res.status(401).json({ message: '未登入' });
+    }
+
+    const rows = await listActiveEnrolledEventIds(userId);
+    const eventIds = rows.map((r) => r.event_id).filter((id) => id != null);
+
+    return res.status(200).json({ eventIds });
+  } catch (error) {
+    console.error('Listing active enrolled event IDs failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// List confirmed-enrolled users for a specific event (for picking session attendees)
+router.get('/enrollments/confirmed-users', authMiddleware, async (req, res) => {
+  try {
+    const { event_id } = req.query;
+
+    if (!event_id) {
+      return res.status(400).json({ message: '缺少活動 ID（event_id）' });
+    }
+
+    const eventIdNum = parseInt(event_id, 10);
+    if (isNaN(eventIdNum)) {
+      return res.status(400).json({ message: '無效的活動 ID' });
+    }
+
+    console.log('Received confirmed users list request for event_id:', eventIdNum, 'from user:', req.user.sub);
+
+    const users = await listConfirmedUsersByEvent(eventIdNum);
+
+    return res.status(200).json({ users });
+  } catch (error) {
+    console.error('Listing confirmed users by event failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
   }
 });
 

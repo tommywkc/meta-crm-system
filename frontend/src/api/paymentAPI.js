@@ -1,3 +1,5 @@
+import { apiUrl } from './apiBase';
+
 export async function listPaymentByUserId(user_id, { limit, offset, q, method, status } = {}) {
   const params = new URLSearchParams();
   if (limit) params.append('limit', limit);
@@ -14,7 +16,7 @@ export async function listPaymentByUserId(user_id, { limit, offset, q, method, s
     else if (String(status).includes(',')) String(status).split(',').map(s=>s.trim()).forEach(s => params.append('status', s));
     else params.append('status', status);
   }
-  const url = `http://localhost:4000/api/users/${user_id}/payments` + (params.toString() ? `?${params.toString()}` : '');
+  const url = apiUrl(`/api/users/${user_id}/payments`) + (params.toString() ? `?${params.toString()}` : '');
   const res = await fetch(url, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
@@ -39,11 +41,9 @@ export async function listPaymentByUserId(user_id, { limit, offset, q, method, s
     throw new Error(`Unexpected non-JSON response for payments: ${text.slice(0, 120)}`);
 }
 
-export async function handleListPaymentByUserId(user_id) {
+export async function handleListPaymentByUserId(user_id, options = {}) {
   try {
     console.log(`Attempting to fetch payments for user ${user_id}...`);
-    // allow passing pagination and search options
-    const options = arguments[1] || {};
     const payload = await listPaymentByUserId(user_id, options);
     console.log(`Payments for user ${user_id} response:`, payload);
     return payload;
@@ -70,7 +70,7 @@ export async function listAllPayment(limit, offset, q, method, status) {
     else if (String(status).includes(',')) String(status).split(',').map(s=>s.trim()).forEach(s => params.append('status', s));
     else params.append('status', status);
   }
-  const url = 'http://localhost:4000/api/payments' + (params.toString() ? `?${params.toString()}` : '');
+  const url = apiUrl('/api/payments') + (params.toString() ? `?${params.toString()}` : '');
   const res = await fetch(url, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
@@ -88,12 +88,9 @@ export async function listAllPayment(limit, offset, q, method, status) {
   return await res.json();
 }
 
-export async function handleListAllPayment(limit, offset) {
+export async function handleListAllPayment(limit, offset, q, method, status) {
   try {
     console.log('Attempting to fetch payments list...');
-    const q = arguments[2] || '';
-    const method = arguments[3] || undefined;
-    const status = arguments[4] || undefined;
     const payload = await listAllPayment(limit, offset, q, method, status);
     console.log('Payments list response:', payload);
     return payload;
@@ -104,7 +101,7 @@ export async function handleListAllPayment(limit, offset) {
 }
 
 export async function getPaymentById(payment_id) {
-  const res = await fetch(`http://localhost:4000/api/payments/${payment_id}`, {
+  const res = await fetch(apiUrl(`/api/payments/${payment_id}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -129,7 +126,7 @@ export async function handleGetPaymentById(payment_id) {
 
 
 export async function updatePaymentById(payment_id, data) {
-  const response = await fetch(`http://localhost:4000/api/payments/${payment_id}`, {
+  const response = await fetch(apiUrl(`/api/payments/${payment_id}`), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins

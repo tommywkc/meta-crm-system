@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
+import { apiUrl } from '../../api/apiBase';
 
 const mockHomework = [
 	{ id: 'H1001', subject: 'AI Animation 9A', assignment: 'Project 1', due: '2025-11-05', status: '未上傳', file: null },
@@ -24,7 +25,7 @@ const Homework = () => {
 			formData.append('file', file);
 			formData.append('assignmentId', item.id);
 
-			const response = await fetch('http://localhost:4000/api/homework/upload', {
+			const response = await fetch(apiUrl('/api/homework/upload'), {
 				method: 'POST',
 				body: formData,
 				credentials: 'include' // include cookies
@@ -67,7 +68,7 @@ const Homework = () => {
 			const fileName = urlParts[1] || fileUrl.split('/').pop();
 			
 			const encodedFileName = encodeURIComponent(fileName);
-			const response = await fetch(`http://localhost:4000/api/homework/download/${encodedFileName}`, {
+			const response = await fetch(apiUrl(`/api/homework/download/${encodedFileName}`), {
 				method: 'GET',
 				credentials: 'include'
 			});

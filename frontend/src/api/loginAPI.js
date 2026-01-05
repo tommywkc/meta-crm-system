@@ -1,6 +1,8 @@
+import { apiUrl } from './apiBase';
+
 export async function login({ username, password }) {
   console.log('Sending login request to backend');
-  const res = await fetch('http://localhost:4000/api/login', {
+  const res = await fetch(apiUrl('/api/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   credentials: 'include', // allow cookies to be sent across origins

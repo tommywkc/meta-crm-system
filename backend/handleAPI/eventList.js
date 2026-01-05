@@ -93,7 +93,7 @@ router.get('/events/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'lea
     const role = (req.user.role || '').toLowerCase();
     if (role === 'member' && event.status !== 'OPEN') {
       console.log('Forbidden for member to access non-OPEN event:', { id, status: event.status });
-      return res.status(403).json({ message: '禁止存取' });
+      return res.status(403).json({ message: '暫時未能瀏覽未開放活動' });
     }
 
     // Return event with ISO format datetime (no formatting needed)
