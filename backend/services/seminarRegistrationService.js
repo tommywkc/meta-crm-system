@@ -5,6 +5,7 @@ const {
   findLatestId,
   findUserByEmail,
   findUserByMobile,
+  updateByUserId,
 } = require('../dao/usersDao');
 
 const {
@@ -59,6 +60,24 @@ function generateQrToken(mobile) {
 async function ensureUser({ name, mobile, email, source }) {
   const existing = await findUserByMobile(mobile);
   if (existing) {
+    const normalizedEmail = normalizeEmail(email);
+    if (normalizedEmail) {
+      if (!isValidEmail(normalizedEmail)) {
+        throw new ServiceError('INVALID_EMAIL', '你輸入的 Email 格式不正確。');
+      }
+
+      const currentEmail = normalizeEmail(existing.email);
+      if (currentEmail !== normalizedEmail) {
+        const emailOwner = await findUserByEmail(normalizedEmail);
+        if (emailOwner && Number(emailOwner.user_id) !== Number(existing.user_id)) {
+          throw new ServiceError('EMAIL_IN_USE', '此 Email 已被使用，請更換另一個 Email（或留空）。');
+        }
+
+        const updated = await updateByUserId(existing.user_id, { email: normalizedEmail });
+        return { user: updated || existing, created: false, updated: true };
+      }
+    }
+
     return { user: existing, created: false };
   }
 
