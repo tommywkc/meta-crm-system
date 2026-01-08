@@ -21,34 +21,42 @@ const Payments = () => {
 	const [page, setPage] = useState(1);
 	const [limit, setLimit] = useState(25);
 	const [searchTerm, setSearchTerm] = useState('');
+	const [appliedQ, setAppliedQ] = useState('');
+	const [methodFilter, setMethodFilter] = useState([]);
+	const [appliedMethod, setAppliedMethod] = useState([]);
+	const [statusFilter, setStatusFilter] = useState([]);
+	const [appliedStatus, setAppliedStatus] = useState([]);
+	const [lastPageReached, setLastPageReached] = useState(false);
 
+	// Fetch page whenever user, page, limit, or appliedQ changes
 	useEffect(() => {
 		const load = async () => {
+			setLoading(true);
+			setError(null);
 			if (!user?.id) { setLoading(false); return; }
 			try {
-                if (!isMember && !isSalesOrLeader && !isAdmin) {
-                    alert('您沒有權限查看此頁面');
-                    navigate('/');
-                    return;
-                }
-                if (!isSalesOrLeader && !isAdmin) {
-                    const res = await handleListPaymentByUserId(user.id, 100, 0);
-                    const list = Array.isArray(res) ? res : (res.payments || []);
-                    setPayments(list);
-                } else {
-                    // For Sales, Leader, Admin: load all payments
-                    const res = await handleListAllPayment(100, 0);
-                    const list = Array.isArray(res) ? res : (res.payments || []);
-                    setPayments(list);
-                }
+				const offset = (page - 1) * limit;
+				if (!isSalesOrLeader && !isAdmin) {
+					// member: only fetch own completed payments (backend enforces)
+					const res = await handleListPaymentByUserId(user.id, { limit, offset, q: appliedQ, method: appliedMethod, status: appliedStatus });
+					const list = Array.isArray(res) ? res : (res.payments || []);
+					setPayments(list);
+					setLastPageReached(list.length < limit);
+				} else {
+					const res = await handleListAllPayment(limit, offset, appliedQ, appliedMethod, appliedStatus);
+					const list = Array.isArray(res) ? res : (res.payments || []);
+					setPayments(list);
+					setLastPageReached(list.length < limit);
+				}
 			} catch (e) {
 				setError(e?.message || '載入失敗');
 			} finally {
 				setLoading(false);
 			}
 		};
+
 		load();
-	}, [user?.id]);
+	}, [user?.id, page, limit, appliedQ, appliedMethod, appliedStatus]);
 
 	const onView = (p) => {
 		navigate(`/payments/${p.payment_id}`);
@@ -63,16 +71,17 @@ const Payments = () => {
 	};
 
 	const handleSearch = () => {
-		console.log('Searching for:', searchTerm);
-		// TODO: 實作搜尋邏輯
+		// Apply search only when user clicks 搜尋 or presses Enter
+		setAppliedQ(searchTerm.trim());
+		setAppliedMethod(methodFilter);
+		setAppliedStatus(statusFilter);
+		setPage(1);
 	};
 
-	// Pagination logic
-	const startIndex = (page - 1) * limit;
-	const pagedPayments = payments.slice(startIndex, startIndex + limit);
-	const totalPages = Math.max(1, Math.ceil(payments.length / limit));
+	// Pagination logic: backend-driven pages. payments contains current page
+	const pagedPayments = payments;
 	const canPrev = page > 1;
-	const canNext = page < totalPages;
+	const canNext = !lastPageReached;
 
 	return (
 		<div style={{ padding: 20 }}>
@@ -81,30 +90,85 @@ const Payments = () => {
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}
 
-			{!loading && !error && (
-				<>
-					<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
-						<input 
-							type="text" 
-							placeholder="輸入[訂單編號/姓名/活動ID/付款方式/狀態]來搜尋..." 
-							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
-							onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-							style={searchInputStyle}
-						/>
-						<button onClick={handleSearch}>
-							搜尋
-						</button>
+		{!loading && !error && (
+			<>
+				{/* Search input */}
+				<div style={{ marginTop: 16, marginBottom: 16 }}>
+					<input 
+						type="text" 
+						placeholder="輸入[訂單編號/姓名/活動ID/付款方式/狀態]來搜尋..." 
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+						style={searchInputStyle}
+					/>
+				</div>
+
+				{/* Filter list */}
+				<div style={{ marginBottom: 16, padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+					<div style={{ fontWeight: 600, marginBottom: 12 }}>篩選條件</div>
+					
+					{/* Method filters */}
+					<div style={{ marginBottom: 12 }}>
+						<div style={{ fontSize: '14px', fontWeight: 500, marginBottom: 6 }}>付款方式</div>
+						<div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={methodFilter.includes('CREDITCARD')} onChange={(e) => {
+									if (e.target.checked) setMethodFilter(prev => [...prev, 'CREDITCARD']); else setMethodFilter(prev => prev.filter(x => x !== 'CREDITCARD'));
+								}} /> 信用卡
+							</label>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={methodFilter.includes('FPS')} onChange={(e) => {
+									if (e.target.checked) setMethodFilter(prev => [...prev, 'FPS']); else setMethodFilter(prev => prev.filter(x => x !== 'FPS'));
+								}} /> 轉數快
+							</label>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={methodFilter.includes('PAYME')} onChange={(e) => {
+									if (e.target.checked) setMethodFilter(prev => [...prev, 'PAYME']); else setMethodFilter(prev => prev.filter(x => x !== 'PAYME'));
+								}} /> PayMe
+							</label>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={methodFilter.includes('CASH')} onChange={(e) => {
+									if (e.target.checked) setMethodFilter(prev => [...prev, 'CASH']); else setMethodFilter(prev => prev.filter(x => x !== 'CASH'));
+								}} /> 現金
+							</label>
+						</div>
 					</div>
 
-					<div style={UpperSelectContainerStyle}>
+					{/* Status filters */}
+					<div style={{ marginBottom: 12 }}>
+						<div style={{ fontSize: '14px', fontWeight: 500, marginBottom: 6 }}>付款狀態</div>
+						<div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={statusFilter.includes('COMPLETED')} onChange={(e) => {
+									if (e.target.checked) setStatusFilter(prev => [...prev, 'COMPLETED']); else setStatusFilter(prev => prev.filter(x => x !== 'COMPLETED'));
+								}} /> 已付款
+							</label>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={statusFilter.includes('PENDING')} onChange={(e) => {
+									if (e.target.checked) setStatusFilter(prev => [...prev, 'PENDING']); else setStatusFilter(prev => prev.filter(x => x !== 'PENDING'));
+								}} /> 待付款
+							</label>
+							<label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+								<input type="checkbox" checked={statusFilter.includes('EXPIRED')} onChange={(e) => {
+									if (e.target.checked) setStatusFilter(prev => [...prev, 'EXPIRED']); else setStatusFilter(prev => prev.filter(x => x !== 'EXPIRED'));
+								}} /> 已過期
+							</label>
+						</div>
+					</div>
+				</div>
+
+				{/* Action buttons */}
+				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+					<button onClick={handleSearch}>
+						搜尋
+					</button>
+					<button onClick={() => { setSearchTerm(''); setAppliedQ(''); setMethodFilter([]); setAppliedMethod([]); setStatusFilter([]); setAppliedStatus([]); setPage(1); }}>
+						清除
+					</button>
+				</div>					<div style={UpperSelectContainerStyle}>
 						<label>
-							頁數:&nbsp;
-							<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
-								{Array.from({ length: totalPages }, (_, i) => (
-									<option key={i + 1} value={i + 1}>{i + 1}</option>
-								))}
-							</select>
+							頁數: &nbsp; {page}
 						</label>
 
 						<label>
@@ -127,18 +191,10 @@ const Payments = () => {
 
 					<div style={LowerSelectContainerStyle}>
 						<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-							<label>
-								頁數:&nbsp;
-								<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
-									{Array.from({ length: totalPages }, (_, i) => (
-										<option key={i + 1} value={i + 1}>{i + 1}</option>
-									))}
-								</select>
-							</label>
 							<button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={!canPrev}>
 								上一頁
 							</button>
-							<button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={!canNext}>
+							<button onClick={() => setPage(p => p + 1)} disabled={!canNext}>
 								下一頁
 							</button>
 						</div>

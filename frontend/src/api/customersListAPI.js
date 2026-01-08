@@ -9,9 +9,13 @@ async function readBackendErrorMessage(res) {
   }
 }
 
-export async function listUsers(limit, offset) {
-  console.log('Fetching customers list from backend');
-  const res = await fetch(apiUrl('/api/customers'), {
+export async function listUsers(limit = 100, offset = 0, q = '') {
+  console.log('Fetching customers list from backend', { limit, offset, q });
+  const params = new URLSearchParams();
+  params.append('limit', limit);
+  params.append('offset', offset);
+  if (q && q.trim()) params.append('q', q);
+  const res = await fetch(apiUrl(`/api/customers?${params.toString()}`), {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -23,10 +27,10 @@ export async function listUsers(limit, offset) {
   return await res.json();
 }
 
-export async function handleList(limit, offset) {
+export async function handleList(limit = 100, offset = 0, q = '') {
   try {
-    console.log('Attempting to fetch customers list...');
-    const payload = await listUsers(limit, offset);
+    console.log('Attempting to fetch customers list...', { limit, offset, q });
+    const payload = await listUsers(limit, offset, q);
     console.log('Customers list response:', payload);
     return payload;
   } catch (err) {

@@ -26,16 +26,16 @@ const EventList = () => {
 	const [enrolledEventIds, setEnrolledEventIds] = useState([]);
 	const [filteredEvents, setFilteredEvents] = useState([]);
 
-		useEffect(() => {
-			const fetchData = async () => {
-				const payload = await handleListEvents(100, 0);
-				setEvents(payload.events || []);
-				setFilteredEvents(payload.events || []);
-			};
-			fetchData();
-		}, []);
+	useEffect(() => {
+		const fetchData = async () => {
+			const payload = await handleListEvents({ limit: 100, offset: 0, q: '' });
+			setEvents(payload.events || []);
+			setFilteredEvents(payload.events || []);
+		};
+		fetchData();
+	}, []);
 
-		// 從後端讀取目前登入會員已報名 (PENDING / CONFIRMED) 的活動 ID
+	// 從後端讀取目前登入會員已報名 (PENDING / CONFIRMED) 的活動 ID
 		useEffect(() => {
 			if (!isMember) {
 				setEnrolledEventIds([]);
@@ -54,36 +54,34 @@ const EventList = () => {
 		}, [isMember]);
 	
 	const fetchEvents = async () => {
-		const payload = await handleListEvents(100, 0);
+		const payload = await handleListEvents({ limit: 100, offset: 0, q: '' });
 		setEvents(payload.events || []);
 		setFilteredEvents(payload.events || []);
 	};
 
 	// 搜尋邏輯 - 搜尋活動編號、名稱、類型、狀態
-	const performSearch = (term) => {
-		if (!term.trim()) {
-			setFilteredEvents(events);
+	const performSearch = async (term) => {
+		if (!term || !term.trim()) {
+			// clear search: reload
+			await fetchEvents();
 			setIsSearching(false);
 			setPage(1);
 			return;
 		}
 
-		const searchLower = term.toLowerCase();
-		const results = events.filter(event => 
-			(event.event_id && event.event_id.toLowerCase().includes(searchLower)) ||
-			(event.event_name && event.event_name.toLowerCase().includes(searchLower)) ||
-			(event.type && event.type.toLowerCase().includes(searchLower)) ||
-			(event.status && event.status.toLowerCase().includes(searchLower))
-		);
-
-		setFilteredEvents(results);
-		setIsSearching(true);
-		setPage(1);
+		try {
+			const payload = await handleListEvents({ limit: 100, offset: 0, q: term });
+			setEvents(payload.events || []);
+			setFilteredEvents(payload.events || []);
+			setIsSearching(true);
+			setPage(1);
+		} catch (err) {
+			console.error('Event search failed:', err);
+			alert('搜尋活動失敗，請稍後再試');
+		}
 	};
 
-	const handleSearch = () => {
-		performSearch(searchTerm);
-	};
+	const handleSearch = () => performSearch(searchTerm);
 
 	const handleSearchInputChange = (e) => {
 		setSearchTerm(e.target.value);
@@ -178,6 +176,9 @@ const EventList = () => {
 				/>
 				<button onClick={handleSearch}>
 					搜尋
+				</button>
+				<button onClick={() => { setSearchTerm(''); fetchEvents(); setPage(1); setIsSearching(false); }}>
+					清除
 				</button>
 				{isSearching && (
 					<span style={{ color: '#666', fontSize: '14px' }}>

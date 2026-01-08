@@ -1,11 +1,27 @@
 import { apiUrl } from './apiBase';
 
-export async function listPaymentByUserId(user_id, limit = 100, offset = 0) {
-  const res = await fetch(apiUrl(`/api/users/${user_id}/payments?limit=${limit}&offset=${offset}`), {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-    });
+export async function listPaymentByUserId(user_id, { limit, offset, q, method, status } = {}) {
+  const params = new URLSearchParams();
+  if (limit) params.append('limit', limit);
+  if (offset) params.append('offset', offset);
+  if (q) params.append('q', q);
+  if (method) {
+    if (Array.isArray(method)) method.forEach(m => params.append('method', m));
+    else if (String(method).includes(',')) String(method).split(',').map(s=>s.trim()).forEach(s => params.append('method', s));
+    else params.append('method', method);
+  }
+  if (status) {
+    // status can be array or comma-joined
+    if (Array.isArray(status)) status.forEach(s => params.append('status', s));
+    else if (String(status).includes(',')) String(status).split(',').map(s=>s.trim()).forEach(s => params.append('status', s));
+    else params.append('status', status);
+  }
+  const url = apiUrl(`/api/users/${user_id}/payments`) + (params.toString() ? `?${params.toString()}` : '');
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
     const contentType = res.headers.get('content-type') || '';
     if (!res.ok) {
         // Try parse JSON error first
@@ -25,22 +41,37 @@ export async function listPaymentByUserId(user_id, limit = 100, offset = 0) {
     throw new Error(`Unexpected non-JSON response for payments: ${text.slice(0, 120)}`);
 }
 
-export async function handleListPaymentByUserId(user_id, limit = 100, offset = 0) {
-    try {
-        console.log(`Attempting to fetch payments for user ${user_id}...`);
-        const payload = await listPaymentByUserId(user_id, limit, offset);
-        console.log(`Payments for user ${user_id} response:`, payload);
-        return payload;
-    } catch (err) {
-        console.error(`Fetch payments error for user ${user_id}:`, err);
-        throw err;
-    }
+export async function handleListPaymentByUserId(user_id, options = {}) {
+  try {
+    console.log(`Attempting to fetch payments for user ${user_id}...`);
+    const payload = await listPaymentByUserId(user_id, options);
+    console.log(`Payments for user ${user_id} response:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Fetch payments error for user ${user_id}:`, err);
+    throw err;
+  }
 }
 
 
-export async function listAllPayment(limit, offset) {
+export async function listAllPayment(limit, offset, q, method, status) {
   console.log('Fetching payments list from backend');
-  const res = await fetch(apiUrl('/api/payments'), {
+  const params = new URLSearchParams();
+  if (limit) params.append('limit', limit);
+  if (offset) params.append('offset', offset);
+  if (q) params.append('q', q);
+  if (method) {
+    if (Array.isArray(method)) method.forEach(m => params.append('method', m));
+    else if (String(method).includes(',')) String(method).split(',').map(s=>s.trim()).forEach(s => params.append('method', s));
+    else params.append('method', method);
+  }
+  if (status) {
+    if (Array.isArray(status)) status.forEach(s => params.append('status', s));
+    else if (String(status).includes(',')) String(status).split(',').map(s=>s.trim()).forEach(s => params.append('status', s));
+    else params.append('status', status);
+  }
+  const url = apiUrl('/api/payments') + (params.toString() ? `?${params.toString()}` : '');
+  const res = await fetch(url, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // allow cookies to be sent across origins
@@ -57,10 +88,10 @@ export async function listAllPayment(limit, offset) {
   return await res.json();
 }
 
-export async function handleListAllPayment(limit, offset) {
+export async function handleListAllPayment(limit, offset, q, method, status) {
   try {
     console.log('Attempting to fetch payments list...');
-    const payload = await listAllPayment(limit, offset);
+    const payload = await listAllPayment(limit, offset, q, method, status);
     console.log('Payments list response:', payload);
     return payload;
   } catch (err) {

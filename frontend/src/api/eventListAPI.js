@@ -22,26 +22,30 @@ export async function handleCreateEvent(data) {
   }
 }
 
+export async function listEvents({ limit = 100, offset = 0, q = '' } = {}) {
+  const params = new URLSearchParams();
+  params.append('limit', limit);
+  params.append('offset', offset);
+  if (q && q.trim()) params.append('q', q);
 
-export async function listEvents() {
-  const response = await fetch(apiUrl('/api/events'), {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // allow cookies to be sent across origins
-    });
-    return response.json();
+  const response = await fetch(apiUrl(`/api/events?${params.toString()}`), {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // allow cookies to be sent across origins
+  });
+  return response.json();
 }
 
-export async function handleListEvents() {
-    try {
-        console.log('Attempting to fetch event list...');
-        const payload = await listEvents();
-        console.log('Event list response:', payload);
-        return payload;
-    } catch (err) {
-        console.error('Fetch event list error:', err);
-        throw err;
-    }
+export async function handleListEvents(opts = {}) {
+  try {
+    console.log('Attempting to fetch event list...', opts);
+    const payload = await listEvents(opts);
+    console.log('Event list response:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Fetch event list error:', err);
+    throw err;
+  }
 }
 
 
