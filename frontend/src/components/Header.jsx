@@ -33,7 +33,7 @@ const Header = () => {
     myevents: { path: '/myevents', label: '我的活動' },
     sessions_enrolled: { path: '/sessions/enrolled', label: '已報名場次' },
 
-    feedback: { path: '/feedback', label: 'Feedback' }
+    feedback: { path: '/feedback', label: '回饋' }
   };
 
   // Which pages each role should see (order matters)

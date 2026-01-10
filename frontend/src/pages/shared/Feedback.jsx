@@ -56,7 +56,7 @@ const Feedback = () => {
 	return (
 		<div style={{ padding: 20 }}>
 			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-				<h2 style={{ marginTop: 0 }}>Feedback</h2>
+				<h2 style={{ marginTop: 0 }}>回饋</h2>
 				{user?.role?.toUpperCase() === 'ADMIN' && (
 					<button
 						style={{ marginLeft: 'auto' }}
