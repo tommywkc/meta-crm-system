@@ -93,6 +93,77 @@ async function listUpcomingSessionsAllUsers(limit = 100, offset = 0) {
   return res.rows || [];
 }
 
+// Search upcoming sessions for current user with query
+async function searchUpcomingSessionsByUser(user_id, limit = 100, offset = 0, q = '') {
+  const pattern = q && q.trim() ? `%${q}%` : null;
+  if (!pattern) return listUpcomingSessionsByUser(user_id, limit, offset);
+  
+  const sql = `
+    SELECT
+      sr.registration_id,
+      sr.session_id,
+      sr.status AS registration_status,
+      s.event_id,
+      s.session_name,
+      s.datetime_start,
+      s.datetime_end,
+      e.event_name,
+      e.location
+    FROM SESSION_REGISTRATIONS sr
+    JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
+    LEFT JOIN EVENTS e ON s.event_id = e.event_id
+    WHERE sr.user_id = $1
+      AND s.datetime_start > NOW()
+      AND (
+        CAST(e.event_id AS TEXT) ILIKE $4
+        OR e.event_name ILIKE $4
+        OR s.session_name ILIKE $4
+        OR e.location ILIKE $4
+      )
+    ORDER BY s.datetime_start ASC
+    LIMIT $2 OFFSET $3
+  `;
+  const res = await query(sql, [user_id, limit, offset, pattern]);
+  return res.rows || [];
+}
+
+// Search upcoming sessions for all users with query
+async function searchUpcomingSessionsAllUsers(limit = 100, offset = 0, q = '') {
+  const pattern = q && q.trim() ? `%${q}%` : null;
+  if (!pattern) return listUpcomingSessionsAllUsers(limit, offset);
+  
+  const sql = `
+    SELECT
+      sr.registration_id,
+      sr.session_id,
+      sr.user_id,
+      u.name AS user_name,
+      s.event_id,
+      s.session_name,
+      s.datetime_start,
+      s.datetime_end,
+      e.event_name,
+      e.location
+    FROM SESSION_REGISTRATIONS sr
+    JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
+    LEFT JOIN EVENTS e ON s.event_id = e.event_id
+    LEFT JOIN USERS u ON sr.user_id = u.user_id
+    WHERE s.datetime_start > NOW()
+      AND (
+        CAST(e.event_id AS TEXT) ILIKE $3
+        OR e.event_name ILIKE $3
+        OR s.session_name ILIKE $3
+        OR e.location ILIKE $3
+        OR u.name ILIKE $3
+        OR CAST(u.user_id AS TEXT) ILIKE $3
+      )
+    ORDER BY s.datetime_start ASC
+    LIMIT $1 OFFSET $2
+  `;
+  const res = await query(sql, [limit, offset, pattern]);
+  return res.rows || [];
+}
+
 async function listSessionsByUserAndYear(user_id, year) {
   const start = new Date(year, 0, 1);
   const end = new Date(year + 1, 0, 1);
@@ -125,15 +196,29 @@ async function removeByRegistrationId(id) {
   return true;
 }
 
+async function updateRegistrationById(id, fields = {}) {
+  const keys = Object.keys(fields);
+  if (keys.length === 0) return findByRegistrationId(id);
+  const sets = keys.map((k, i) => `${k} = $${i+1}`).join(', ');
+  const vals = keys.map(k => fields[k]);
+  vals.push(id);
+  const sql = `UPDATE SESSION_REGISTRATIONS SET ${sets} WHERE registration_id = $${vals.length} RETURNING *`;
+  const res = await query(sql, vals);
+  return res.rows[0] || null;
+}
+
 module.exports = {
   createRegistration,
   findByRegistrationId,
   listBySessionId,
   listByUserId,
   listUpcomingSessionsByUser,
+  listUpcomingSessionsAllUsers,
+  searchUpcomingSessionsByUser,
+  searchUpcomingSessionsAllUsers,
   listSessionsByUserAndYear,
   removeByRegistrationId,
   findBySessionAndUser,
   listRegisteredSessionIdsByUserAndEvent,
-  listUpcomingSessionsAllUsers,
+  updateRegistrationById,
 };
