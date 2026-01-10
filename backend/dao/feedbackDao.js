@@ -1,8 +1,8 @@
 const { query } = require('../db/pool');
 
-async function createFeedback({ user_id, message, create_time = null }) {
-  const sql = `INSERT INTO FEEDBACKS (submitted_by_id, text, submit_time) VALUES ($1,$2,$3) RETURNING *`;
-  const vals = [user_id, message, create_time];
+async function createFeedback({ user_id, testing_role = null, rating, message }) {
+  const sql = `INSERT INTO FEEDBACKS (submitted_by_id, testing_role, rating, text) VALUES ($1,$2,$3,$4) RETURNING *`;
+  const vals = [user_id, testing_role, rating, message];
   const res = await query(sql, vals);
   return res.rows[0];
 }

@@ -274,11 +274,14 @@ CREATE TABLE HOLIDAYS (
 
 CREATE TABLE IF NOT EXISTS FEEDBACKS (
     feedback_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
-    text TEXT NOT NULL,
+    testing_role VARCHAR(50),
+    rating TEXT,
+    text TEXT,
     submitted_by_id BIGINT,
     submit_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (feedback_id),
-    FOREIGN KEY (submitted_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
+    FOREIGN KEY (submitted_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    CONSTRAINT CHKROLE_FEED CHECK (testing_role IN ('ADMIN', 'SALES', 'LEADER', 'MEMBER', 'N/A'))
 );
 
 INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags) VALUES
