@@ -77,7 +77,7 @@ const Feedback = () => {
 			<div style={{ marginTop: 16, maxWidth: 720 }}>
 				<div style={{ marginBottom: 12 }}>
 					<label style={{ display: 'block', marginBottom: 4 }}>
-						1. 你用咩角色測試？
+						1. 你用什麼角色測試？
 					</label>
 					<select
 						value={testRole}

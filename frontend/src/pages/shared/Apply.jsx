@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleList, handleFindUserByRole } from '../../api/customersListAPI';
-import { getEventById } from '../../api/eventListAPI';
+import { handleGetById } from '../../api/eventListAPI';
 import { handleCreateEnrollment } from '../../api/enrollmentAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
@@ -31,7 +31,7 @@ const Apply = () => {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const eventData = await getEventById(id);
+			const eventData = await handleGetById(id);
         setEvent(eventData.event || null);
       } catch (error) {
         console.error('Failed to load event information:', error);
