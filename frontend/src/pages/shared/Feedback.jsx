@@ -47,7 +47,8 @@ const Feedback = () => {
 				createdAt: new Date().toISOString()
 			});
 			alert('已送出，謝謝你的回饋！');
-			setMessage('');
+			// 重新載入頁面以清空所有輸入與評分
+			window.location.reload();
 		} finally {
 			setSubmitting(false);
 		}
@@ -167,7 +168,7 @@ const Feedback = () => {
 					value={message}
 					onChange={(e) => setMessage(e.target.value)}
 					rows={6}
-					placeholder="請描述你遇到的問題/建議（可包含頁面、操作步驟、錯誤訊息）"
+					placeholder="選填：描述你對平台的評價，建議或者遇到的問題（可包含頁面、操作步驟、錯誤訊息）"
 					style={{ width: '100%', padding: 10, resize: 'vertical' }}
 				/>
 				<div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
