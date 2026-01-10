@@ -40,6 +40,7 @@ import Apply from './pages/shared/Apply';
 import MyEventList from './pages/member/MyEventList';
 import EnrollSession from './pages/shared/EnrollSession';
 import SessionListPage from './pages/shared/sessionList';
+import Feedback from './pages/shared/Feedback';
 
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -236,6 +237,11 @@ function App() {
           <Route path="/sessions/enrolled" element={
             <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
               <SessionListPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/feedback" element={
+            <ProtectedRoute allowedRoles={['admin', 'sales', 'leader', 'member']}>
+              <Feedback />
             </ProtectedRoute>
           } />
           <Route 
