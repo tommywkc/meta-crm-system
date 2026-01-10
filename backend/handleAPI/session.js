@@ -7,9 +7,11 @@ const {
   createRegistration,
   findBySessionAndUser,
   listUpcomingSessionsByUser,
+  listUpcomingSessionsAllUsers,
+  searchUpcomingSessionsByUser,
+  searchUpcomingSessionsAllUsers,
   listSessionsByUserAndYear,
   listRegisteredSessionIdsByUserAndEvent,
-  listUpcomingSessionsAllUsers,
 } = require('../dao/sessionRegistrationsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 
@@ -278,6 +280,7 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
     const role = (req.user.role || '').toUpperCase();
     const limit = parseInt(req.query.limit, 10) || 100;
     const offset = parseInt(req.query.offset, 10) || 0;
+    const q = req.query.q || '';
 
     if (!userId) {
       return res.status(401).json({ message: '未登入' });
@@ -286,10 +289,18 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
     let sessions = [];
     if (role === 'MEMBER') {
       // 會員只可看到自己的尚未開始場次
-      sessions = await listUpcomingSessionsByUser(userId, limit, offset);
+      if (q && q.trim()) {
+        sessions = await searchUpcomingSessionsByUser(userId, limit, offset, q);
+      } else {
+        sessions = await listUpcomingSessionsByUser(userId, limit, offset);
+      }
     } else if (['ADMIN', 'SALES', 'LEADER'].includes(role)) {
       // 管理員 / 銷售 / 組長可看到全部人的尚未開始場次
-      sessions = await listUpcomingSessionsAllUsers(limit, offset);
+      if (q && q.trim()) {
+        sessions = await searchUpcomingSessionsAllUsers(limit, offset, q);
+      } else {
+        sessions = await listUpcomingSessionsAllUsers(limit, offset);
+      }
     } else {
       return res.status(403).json({ message: '沒有權限查看場次報名列表' });
     }

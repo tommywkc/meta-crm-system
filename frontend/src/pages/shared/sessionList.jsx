@@ -26,6 +26,7 @@ const SessionListPage = () => {
 	const [page, setPage] = useState(1);
 	const [limit, setLimit] = useState(25);
 	const [searchTerm, setSearchTerm] = useState('');
+	const [appliedQ, setAppliedQ] = useState('');
 
 	useEffect(() => {
 		const load = async () => {
@@ -41,7 +42,7 @@ const SessionListPage = () => {
 					return;
 				}
 
-				const res = await handleListEnrolledUpcomingSessions(100, 0);
+				const res = await handleListEnrolledUpcomingSessions(100, 0, appliedQ);
 				const list = Array.isArray(res.sessions) ? res.sessions : [];
 				setSessions(list);
 				setError(null);
@@ -53,28 +54,22 @@ const SessionListPage = () => {
 			}
 		};
 		load();
-	}, [user?.id, isAdmin, isSalesOrLeader, isMember, navigate]);
+	}, [user?.id, isAdmin, isSalesOrLeader, isMember, navigate, appliedQ]);
 
 	const handleSearch = () => {
-		// 前端簡單搜尋：依 event_name / session_name / user_name 篩選
-		// 真正的篩選邏輯會在 render 中依據 searchTerm 處理
-		console.log('Searching for:', searchTerm);
+		// Apply search to backend
+		setAppliedQ(searchTerm.trim());
+		setPage(1);
 	};
 
-	const filteredSessions = sessions.filter((s) => {
-		if (!searchTerm.trim()) return true;
-		const term = searchTerm.toLowerCase();
-		const fields = [
-			s.event_name,
-			s.session_name,
-			s.location,
-			s.user_name,
-			s.user_id && String(s.user_id),
-		]
-			.filter(Boolean)
-			.map((x) => String(x).toLowerCase());
-		return fields.some((f) => f.includes(term));
-	});
+	const handleClear = () => {
+		// Reset all filters and reload
+		setSearchTerm('');
+		setAppliedQ('');
+		setPage(1);
+	};
+
+	const filteredSessions = sessions;
 
 	// 依開始時間排序
 	const sortedSessions = filteredSessions.slice().sort((a, b) => {
@@ -105,26 +100,25 @@ const SessionListPage = () => {
 
 			{!loading && !error && (
 				<>
-					<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
-						<input
-							type="text"
-							placeholder="輸入 [課堂名稱/場次/地點/學員ID或姓名] 來搜尋..."
-							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === 'Enter') handleSearch();
-							}}
-							style={searchInputStyle}
-						/>
-						<button onClick={handleSearch}>搜尋</button>
-						{searchTerm.trim() && (
-							<span style={{ color: '#666', fontSize: '14px' }}>
-								共 {totalResults} 筆符合條件的場次
-							</span>
-						)}
-					</div>
-
-					<div style={UpperSelectContainerStyle}>
+				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
+					<input
+						type="text"
+						placeholder="輸入 [課堂名稱/場次/地點/學員ID或姓名] 來搜尋..."
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === 'Enter') handleSearch();
+						}}
+						style={searchInputStyle}
+					/>
+					<button onClick={handleSearch}>搜尋</button>
+					<button onClick={handleClear}>清除</button>
+					{appliedQ && (
+						<span style={{ color: '#666', fontSize: '14px' }}>
+							共 {totalResults} 筆符合條件的場次
+						</span>
+					)}
+				</div>					<div style={UpperSelectContainerStyle}>
 						<label>
 							頁數:&nbsp;
 							<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
