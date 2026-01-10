@@ -56,7 +56,7 @@ const Feedback = () => {
 	return (
 		<div style={{ padding: 20 }}>
 			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-				<h2 style={{ marginTop: 0 }}>Feedback</h2>
+				<h2 style={{ marginTop: 0 }}>意見回饋</h2>
 				{user?.role?.toUpperCase() === 'ADMIN' && (
 					<button
 						style={{ marginLeft: 'auto' }}
@@ -77,7 +77,7 @@ const Feedback = () => {
 			<div style={{ marginTop: 16, maxWidth: 720 }}>
 				<div style={{ marginBottom: 12 }}>
 					<label style={{ display: 'block', marginBottom: 4 }}>
-						1. 你用咩角色測試？
+						1. 你用什麼角色測試？
 					</label>
 					<select
 						value={testRole}
@@ -167,7 +167,7 @@ const Feedback = () => {
 					value={message}
 					onChange={(e) => setMessage(e.target.value)}
 					rows={6}
-					placeholder="請描述你遇到的問題/建議（可包含頁面、操作步驟、錯誤訊息）"
+					placeholder="選填：描述你對平台的想法、建議或遇到的問題（可以包含頁面、操作步驟、錯誤訊息）"
 					style={{ width: '100%', padding: 10, resize: 'vertical' }}
 				/>
 				<div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
