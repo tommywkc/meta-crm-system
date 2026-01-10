@@ -11,11 +11,14 @@ router.post('/feedback', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
 
     const newFeedback = {
       user_id: req.user.sub,
-      message: req.body.message
+      testing_role: req.body.testing_role || null,
+      rating: req.body.rating || null,
+      message: req.body.message || ''
     };
 
-    if (!newFeedback.message) {
-      return res.status(400).json({ message: '缺少必要的反饋內容' });
+    // rating 為必填，文字描述可選
+    if (!newFeedback.rating) {
+      return res.status(400).json({ message: '缺少必要的評分資料' });
     }
 
     const createdFeedback = await createFeedback(newFeedback);

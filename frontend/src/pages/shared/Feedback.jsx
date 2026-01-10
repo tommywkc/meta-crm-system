@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleCreateFeedback } from '../../api/feedbackAPI';
  
@@ -7,15 +7,40 @@ const Feedback = () => {
 	const { user } = useAuth();
 	const [message, setMessage] = useState('');
 	const [submitting, setSubmitting] = useState(false);
-	const canSubmit = message.trim().length > 0 && !submitting;
+	const [testRole, setTestRole] = useState(user?.role || '');
+	const [uiRating, setUiRating] = useState(0);
+	const [flowRating, setFlowRating] = useState(0);
+	const [perfRating, setPerfRating] = useState(0);
+	const hasAllRatings = uiRating > 0 && flowRating > 0 && perfRating > 0;
+	const canSubmit = hasAllRatings && !submitting;
+
+	useEffect(() => {
+		if (user?.role && !testRole) {
+			setTestRole(user.role);
+		}
+	}, [user, testRole]);
 
 	const onSubmit = async () => {
-		if (!message.trim()) return;
+		if (!hasAllRatings) {
+			alert('請先為三個問題都評分再送出。');
+			return;
+		}
 		setSubmitting(true);
 		try {
-            await handleCreateFeedback({ message: message.trim() });
+			const ratingParts = [uiRating, flowRating, perfRating];
+			const ratingString = ratingParts.join(';');
+			const testingRoleToSave = (testRole && testRole.trim()) || 'N/A';
+			const detail = message.trim();
+
+			await handleCreateFeedback({
+				message: detail, // 純文字描述
+				rating: ratingString,
+				testing_role: testingRoleToSave
+			});
 			console.log('feedback_submit', {
-				message: message.trim(),
+				testing_role: testingRoleToSave,
+				rating: ratingString,
+				message: detail,
 				userId: user?.id,
 				userName: user?.name,
 				role: user?.role,
@@ -50,6 +75,94 @@ const Feedback = () => {
 			</div>
 			
 			<div style={{ marginTop: 16, maxWidth: 720 }}>
+				<div style={{ marginBottom: 12 }}>
+					<label style={{ display: 'block', marginBottom: 4 }}>
+						1. 你用咩角色測試？
+					</label>
+					<select
+						value={testRole}
+						onChange={(e) => setTestRole(e.target.value)}
+						style={{ padding: 6, minWidth: 200 }}
+					>
+						<option value="">請選擇角色</option>
+						<option value="ADMIN">ADMIN</option>
+						<option value="SALES">SALES</option>
+						<option value="LEADER">LEADER</option>
+						<option value="MEMBER">MEMBER</option>
+					</select>
+				</div>
+
+				<div style={{ marginBottom: 8 }}>
+					<div>2. UI是否清晰？</div>
+					<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+						<span style={{ fontSize: 12, color: '#6b7280' }}>不清晰</span>
+						<div>
+							{[1,2,3,4,5].map((n) => (
+								<span
+									key={`ui-${n}`}
+									style={{
+										cursor: 'pointer',
+										color: n <= uiRating ? '#f59e0b' : '#d1d5db',
+										fontSize: 20,
+										marginRight: 4
+									}}
+									onClick={() => setUiRating(n)}
+								>
+									★
+								</span>
+							))}
+						</div>
+						<span style={{ fontSize: 12, color: '#6b7280' }}>清晰</span>
+					</div>
+				</div>
+
+				<div style={{ marginBottom: 8 }}>
+					<div>3. 操作流程是否清晰？</div>
+					<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+						<span style={{ fontSize: 12, color: '#6b7280' }}>不清晰</span>
+						<div>
+							{[1,2,3,4,5].map((n) => (
+								<span
+									key={`flow-${n}`}
+									style={{
+										cursor: 'pointer',
+										color: n <= flowRating ? '#f59e0b' : '#d1d5db',
+										fontSize: 20,
+										marginRight: 4
+									}}
+									onClick={() => setFlowRating(n)}
+								>
+									★
+								</span>
+							))}
+						</div>
+						<span style={{ fontSize: 12, color: '#6b7280' }}>清晰</span>
+					</div>
+				</div>
+
+				<div style={{ marginBottom: 8 }}>
+					<div>4. 網頁是否流暢？</div>
+					<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+						<span style={{ fontSize: 12, color: '#6b7280' }}>不流暢</span>
+						<div>
+							{[1,2,3,4,5].map((n) => (
+								<span
+									key={`perf-${n}`}
+									style={{
+										cursor: 'pointer',
+										color: n <= perfRating ? '#f59e0b' : '#d1d5db',
+										fontSize: 20,
+										marginRight: 4
+									}}
+									onClick={() => setPerfRating(n)}
+								>
+									★
+								</span>
+							))}
+						</div>
+						<span style={{ fontSize: 12, color: '#6b7280' }}>流暢</span>
+					</div>
+				</div>
 				<textarea
 					value={message}
 					onChange={(e) => setMessage(e.target.value)}
