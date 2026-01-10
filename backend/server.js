@@ -83,6 +83,12 @@ const attendanceRouter = require('./handleAPI/attendance');
 console.log('Attendance router loaded');
 app.use('/api', attendanceRouter); // Use the attendance router
 
+const feedbackRouter = require('./handleAPI/feedback');
+console.log('Feedback router loaded');
+app.use('/api', feedbackRouter); // Use the feedback router
+
+
+
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');
