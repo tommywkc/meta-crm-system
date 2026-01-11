@@ -12,7 +12,6 @@ async function readBackendErrorMessage(res) {
 export async function handleList(limit = 100, offset = 0, q = '') {
   try {
     console.log('Attempting to fetch customers list...', { limit, offset, q });
-    console.log('Fetching customers list from backend', { limit, offset, q });
     const params = new URLSearchParams();
     params.append('limit', limit);
     params.append('offset', offset);
@@ -38,7 +37,6 @@ export async function handleList(limit = 100, offset = 0, q = '') {
 export async function handleGetById(user_id) {
   try {
     console.log(`Attempting to fetch customer ${user_id}...`);
-    console.log(`Fetching customer ${user_id} from backend`);
     const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -60,7 +58,6 @@ export async function handleGetById(user_id) {
 export async function handleUpdateById(user_id, data) {
   try {
     console.log(`Attempting to update customer ${user_id}...`, data);
-    console.log(`Updating customer ${user_id} on backend`, data);
     const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -83,7 +80,6 @@ export async function handleUpdateById(user_id, data) {
 export async function handleCreate(data) {
   try {
     console.log('Attempting to create new customer...', data);
-    console.log('Creating new customer on backend', data);
     const res = await fetch(apiUrl('/api/customers'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -106,7 +102,6 @@ export async function handleCreate(data) {
 export async function handleDeleteById(user_id) {
   try {
     console.log(`Attempting to delete customer ${user_id}...`);
-    console.log(`Deleting customer ${user_id} on backend`);
     const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -130,7 +125,6 @@ export async function handleDeleteById(user_id) {
 export async function handleGetUserByQRToken(qr_token) {
   try {
     console.log(`Attempting to fetch customer detail by QR token...`);
-    console.log(`Fetching customer detail by QR token from backend`);
     const res = await fetch(apiUrl(`/api/customers/scan/${encodeURIComponent(qr_token)}`), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -152,7 +146,6 @@ export async function handleGetUserByQRToken(qr_token) {
 export async function handleFindUserByRole(role) {
   try {
     console.log(`Attempting to fetch customers with role ${role}...`);
-    console.log(`Fetching customers with role ${role} from backend`);
     const res = await fetch(apiUrl(`/api/customers/role/${encodeURIComponent(role)}`), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },

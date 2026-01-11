@@ -12,8 +12,8 @@ async function findByFeedbackId(id) {
   return res.rows[0] || null;
 }
 
-async function listByFeedbackId(limit = 100) {
-  const res = await query('SELECT * FROM FEEDBACKS ORDER BY feedback_id DESC LIMIT $1', [limit]);
+async function listByFeedbackId(limit = 100, offset = 0) {
+  const res = await query('SELECT * FROM FEEDBACKS ORDER BY feedback_id DESC LIMIT $1 OFFSET $2', [limit, offset]);
   return res.rows;
 }
 
