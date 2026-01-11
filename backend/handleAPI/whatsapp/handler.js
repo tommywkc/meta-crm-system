@@ -127,11 +127,8 @@ async function handleWhatsAppWebhookPayload(body) {
     return;
   }
 
-  // Step 1: user sends "test" -> list open free seminars
-  if (normalized === 'test') {
-    await sendFreeSeminarsMenu(from, valueMetadata);
-    return;
-  }
+  // Step 1: user sends "查看免費講座" -> list open free seminars
+  // (Handled in the global command block above)
 
   // Step 2: user replies a number -> show sessions for selected seminar
   if (/^\d+$/.test(normalized)) {
