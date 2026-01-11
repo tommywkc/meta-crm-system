@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleCreateFeedback } from '../../api/feedbackAPI';
  
  
 const Feedback = () => {
 	const { user } = useAuth();
+	const navigate = useNavigate();
 	const [message, setMessage] = useState('');
 	const [submitting, setSubmitting] = useState(false);
 	const [testRole, setTestRole] = useState(user?.role || '');
@@ -47,7 +49,7 @@ const Feedback = () => {
 				createdAt: new Date().toISOString()
 			});
 			alert('已送出，謝謝你的回饋！');
-			setMessage('');
+			window.location.reload();
 		} finally {
 			setSubmitting(false);
 		}
@@ -60,13 +62,12 @@ const Feedback = () => {
 				{user?.role?.toUpperCase() === 'ADMIN' && (
 					<button
 						style={{ marginLeft: 'auto' }}
-						onClick={() => {
-							// TODO: 導向 Feedback 列表頁或打 API 取得所有反饋
-							console.log('View Feedbacks clicked by admin');
-							alert('View Feedbacks 功能稍後補上列表頁，現在只是佔位按鈕。');
-						}}
+							onClick={() => {
+								console.log('View Feedbacks clicked by admin');
+								navigate('/admin/feedbacks');
+							}}
 					>
-						View Feedbacks
+						查看所有回饋
 					</button>
 				)}
 			</div>

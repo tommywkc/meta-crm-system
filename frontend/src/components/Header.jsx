@@ -32,7 +32,6 @@ const Header = () => {
     mycalendar: { path: '/mycalendar', label: '我的日曆' },
     myevents: { path: '/myevents', label: '我的活動' },
     sessions_enrolled: { path: '/sessions/enrolled', label: '已報名場次' },
-
     feedback: { path: '/feedback', label: '意見回饋' }
   };
 
@@ -99,7 +98,7 @@ const Header = () => {
                 '/mycalendar': '我的日曆',
                 '/myevents': '我的報名活動',
                 '/sessions/enrolled': '已報名場次',
-                '/feedback': 'Feedback',
+                '/feedback': '意見回饋',
                 '/member': '成員頁面',
                 '/sales': '銷售頁面',
                 '/admin': '管理員頁面',

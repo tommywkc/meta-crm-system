@@ -44,7 +44,6 @@ export async function handleListEvents(opts = {}) {
 export async function handleGetById(event_id) {
   try {
     console.log(`Attempting to fetch event ${event_id}...`);
-    console.log(`Fetching event ${event_id} from backend`);
     const res = await fetch(apiUrl(`/api/events/${event_id}`), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -83,7 +82,6 @@ export async function handleGetById(event_id) {
 export async function handleUpdateById(event_id, data) {
   try {
     console.log(`Attempting to update customer ${event_id}...`, data);
-    console.log(`Updating event ${event_id} on backend`, data);
     const res = await fetch(apiUrl(`/api/events/${event_id}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -111,7 +109,6 @@ export async function handleUpdateById(event_id, data) {
 export async function handleDeleteById(event_id) {
   try {
     console.log(`Attempting to delete customer ${event_id}...`);
-    console.log(`Deleting event ${event_id} on backend`);
     const res = await fetch(apiUrl(`/api/events/${event_id}`), {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
