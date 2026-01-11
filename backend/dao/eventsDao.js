@@ -142,4 +142,4 @@ async function updateRemainingSeats(event_id, change) {
   return res.rows[0] || null;
 }
 
-module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId, findLatestEventId, findEventByStatus, updateRemainingSeats, searchEvents, searchEventsByStatus };
+module.exports = { createEvent, findByEventId, updateByEventId, removeByEventId, listbyEventsId, findLatestEventId, findEventByStatus, updateRemainingSeats, searchEvents, searchEventsByStatus, findOpenFreeSeminars };
