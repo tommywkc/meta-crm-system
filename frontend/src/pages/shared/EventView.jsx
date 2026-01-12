@@ -311,13 +311,15 @@ const EventView = () => {
                 </select>
               </>
             )}
-            {isAdmin && (
+          </div>
+        )}
+        <div>
+          {isAdmin && (
               <button onClick={() => navigate(`/events/${id}/sessions/create`)}>
                 新增場次
               </button>
             )}
-          </div>
-        )}
+        </div>
         
         <SessionListTable 
           sessions={(() => {
