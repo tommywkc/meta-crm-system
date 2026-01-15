@@ -3,7 +3,6 @@ import { apiUrl } from './apiBase';
 export async function handleCreateEnrollment(data) {
   try {
     console.log('Attempting to create enrollment...', data);
-    console.log('Creating enrollment on backend', data);
     const res = await fetch(apiUrl('/api/enrollments'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
