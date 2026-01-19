@@ -25,6 +25,28 @@ async function listBySessionId(session_id) {
   return res.rows;
 }
 
+async function listRegistrationsWithUserBySessionId(session_id) {
+  const sql = `
+    SELECT
+      sr.registration_id,
+      sr.session_id,
+      sr.user_id,
+      sr.channel,
+      sr.status,
+      sr.registration_time,
+      u.name,
+      u.role,
+      u.mobile,
+      u.email
+    FROM SESSION_REGISTRATIONS sr
+    JOIN USERS u ON sr.user_id = u.user_id
+    WHERE sr.session_id = $1
+    ORDER BY sr.registration_id DESC
+  `;
+  const res = await query(sql, [session_id]);
+  return res.rows || [];
+}
+
 async function listByUserId(user_id) {
   const res = await query('SELECT * FROM SESSION_REGISTRATIONS WHERE user_id = $1 ORDER BY registration_id DESC', [user_id]);
   return res.rows;
@@ -222,4 +244,5 @@ module.exports = {
   findBySessionAndUser,
   listRegisteredSessionIdsByUserAndEvent,
   updateRegistrationById,
+  listRegistrationsWithUserBySessionId,
 };

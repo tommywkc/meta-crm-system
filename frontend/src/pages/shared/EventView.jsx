@@ -244,6 +244,14 @@ const EventView = () => {
             {hasActiveEnrollment ? '已報名' : (isEnrolling ? '報名中...' : '報名')}
           </button>
         ) : null}
+        {(isAdmin || isSalesOrLeader) && (
+          <button
+            onClick={() => navigate(`/events/${id}/enrolled`)}
+            style={{ marginLeft: 8 }}
+          >
+            查看已報名名單
+          </button>
+        )}
       </div>
 
       {/* Session list table */}

@@ -12,6 +12,7 @@ const {
   searchUpcomingSessionsAllUsers,
   listSessionsByUserAndYear,
   listRegisteredSessionIdsByUserAndEvent,
+  listRegistrationsWithUserBySessionId,
 } = require('../dao/sessionRegistrationsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 
@@ -358,6 +359,39 @@ router.get('/my-sessions/registered-by-event', authMiddleware, async (req, res) 
     return res.status(200).json({ sessionIds });
   } catch (error) {
     console.error('Get registered session IDs by event for current user failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// List all attendees (users) for a specific session
+router.get('/session-registrations/by-session', authMiddleware, async (req, res) => {
+  try {
+    const { session_id } = req.query;
+
+    if (!session_id) {
+      return res.status(400).json({ message: '缺少場次 ID（session_id）' });
+    }
+
+    const sessionIdNum = parseInt(session_id, 10);
+    if (Number.isNaN(sessionIdNum)) {
+      return res.status(400).json({ message: '無效的場次 ID' });
+    }
+
+    const rows = await listRegistrationsWithUserBySessionId(sessionIdNum);
+    const users = rows.map((r) => ({
+      user_id: r.user_id,
+      name: r.name,
+      role: r.role,
+      mobile: r.mobile,
+      email: r.email,
+      channel: r.channel,
+      status: r.status,
+      registration_time: r.registration_time,
+    }));
+
+    return res.status(200).json({ users });
+  } catch (error) {
+    console.error('List session attendees by session failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
   }
 });

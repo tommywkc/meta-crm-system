@@ -42,6 +42,7 @@ import EnrollSession from './pages/shared/EnrollSession';
 import SessionListPage from './pages/shared/sessionList';
 import Feedback from './pages/shared/Feedback';
 import FeedbackListPage from './pages/admin/FeedbackListPage';
+import EnrolledList from './pages/shared/EnrolledList';
 
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -109,6 +110,16 @@ function App() {
           <Route path="/events/:id" element={
             <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
               <EventView />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id/enrolled" element={
+            <ProtectedRoute allowedRoles={["admin","sales","leader"]}>
+              <EnrolledList />
+            </ProtectedRoute>
+          } />
+          <Route path="/sessions/:sessionId/enrolled" element={
+            <ProtectedRoute allowedRoles={["admin","sales","leader"]}>
+              <EnrolledList />
             </ProtectedRoute>
           } />
           <Route path="/events/:id/apply" element={

@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
 const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDeleteSession, isEnrolled, registeredSessionIds = [] }) => {
+  const navigate = useNavigate();
   if (!sessions || sessions.length === 0) {
     return <div style={{ marginTop: 12, color: '#666' }}>此活動暫無場次</div>;
   }
@@ -33,6 +35,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
           const lowerRole = role?.toLowerCase();
           const isMemberRole = lowerRole === 'member';
           const isSalesOrLeader = lowerRole === 'sales' || lowerRole === 'leader';
+          const isAdmin = lowerRole === 'admin';
           const isSessionRegisteredForMember = isMemberRole && registeredSessionIds.some(id => String(id) === String(session.session_id));
 
           return (
@@ -45,12 +48,22 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
               {showActionColumn && (
                 <td style={thTdStyle}>
                   {/* Permissions: same as EventsTable */}
-                  {lowerRole === 'admin' ? (
+                  {isAdmin ? (
                     <>
                       <button onClick={() => onEditSession && onEditSession(session.session_id)}>編輯</button>
                       <button onClick={() => onDeleteSession && onDeleteSession(session.session_id)} style={redTextStyle}>刪除</button>
                     </>
                   ) : null}
+
+                  {(isSalesOrLeader || isAdmin) ? (
+                    <button
+                      onClick={() => navigate(`/sessions/${session.session_id}/enrolled`)}
+                      style={{ marginLeft: 8 }}
+                    >
+                      查看已報名會員
+                    </button>
+                  ) : null}
+
                   {/* Sales and Leader or Member (if enrolled) can enroll */}
                   {(isSalesOrLeader || (isMemberRole && isEnrolled)) ? (
                     <button
