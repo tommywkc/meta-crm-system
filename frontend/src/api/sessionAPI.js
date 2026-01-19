@@ -245,3 +245,28 @@ export async function handleListMyRegisteredSessionsByEvent(event_id) {
   }
 }
 
+// --- Attendees list for a specific session ---
+
+export async function handleListSessionAttendees(session_id) {
+  try {
+    console.log(`Attempting to fetch attendees for session ${session_id}...`);
+
+    const response = await fetch(apiUrl(`/api/session-registrations/by-session?session_id=${session_id}`), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch attendees for session ${session_id}`);
+    }
+
+    const payload = await response.json();
+    console.log(`Attendees for session ${session_id}:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Fetch attendees error for session ${session_id}:`, err);
+    throw err;
+  }
+}
+
