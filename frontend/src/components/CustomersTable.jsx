@@ -1,7 +1,7 @@
 import React from 'react';
 import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
 
-const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete }) => {
+const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, renderActions, showAdminActions = true }) => {
   return (
     <table style={tableStyle}>
       <thead>
@@ -24,7 +24,7 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete }) => {
             <td style={thTdStyle}>{c.email ? c.email : '無'}</td>
             <td style={thTdStyle}>
               <button onClick={() => onView && onView(c.user_id)}>詳情</button>
-              {role === 'ADMIN' && (
+              {role === 'ADMIN' && showAdminActions && (
                 <>
                   <button style={{ marginLeft: 8 }} onClick={() => onEdit && onEdit(c.user_id)}>
                     編輯
@@ -33,6 +33,11 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete }) => {
                     刪除
                   </button>
                 </>
+              )}
+              {renderActions && (
+                <span style={{ marginLeft: 8 }}>
+                  {renderActions(c)}
+                </span>
               )}
             </td>
           </tr>

@@ -13,6 +13,7 @@ const {
   listSessionsByUserAndYear,
   listRegisteredSessionIdsByUserAndEvent,
   listRegistrationsWithUserBySessionId,
+  removeByRegistrationId,
 } = require('../dao/sessionRegistrationsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 
@@ -379,6 +380,7 @@ router.get('/session-registrations/by-session', authMiddleware, async (req, res)
 
     const rows = await listRegistrationsWithUserBySessionId(sessionIdNum);
     const users = rows.map((r) => ({
+      registration_id: r.registration_id,
       user_id: r.user_id,
       name: r.name,
       role: r.role,
@@ -392,6 +394,22 @@ router.get('/session-registrations/by-session', authMiddleware, async (req, res)
     return res.status(200).json({ users });
   } catch (error) {
     console.error('List session attendees by session failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// Delete a session registration by registration_id
+router.delete('/session-registrations/:id', authMiddleware, async (req, res) => {
+  try {
+    const registrationId = parseInt(req.params.id, 10);
+    if (Number.isNaN(registrationId)) {
+      return res.status(400).json({ message: '無效的 registration_id' });
+    }
+
+    await removeByRegistrationId(registrationId);
+    return res.status(200).json({ message: '場次報名已刪除' });
+  } catch (error) {
+    console.error('Delete session registration failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
   }
 });

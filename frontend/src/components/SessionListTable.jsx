@@ -60,7 +60,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
                       onClick={() => navigate(`/sessions/${session.session_id}/enrolled`)}
                       style={{ marginLeft: 8 }}
                     >
-                      查看已報名會員
+                      查看名單
                     </button>
                   ) : null}
 
