@@ -63,9 +63,17 @@ async function listActiveEnrolledEventIds(user_id) {
 
 async function listConfirmedUsersByEvent(event_id) {
   const sql = `
-    SELECT DISTINCT u.user_id, u.name, u.role, u.mobile, u.email
+    SELECT DISTINCT
+      e.enrollment_id,
+      u.user_id,
+      u.name,
+      u.role,
+      u.mobile,
+      u.email,
+      p.payment_id
     FROM EVENT_ENROLLMENTS e
     JOIN USERS u ON e.user_id = u.user_id
+    LEFT JOIN PAYMENTS p ON p.enrollment_id = e.enrollment_id
     WHERE e.event_id = $1
       AND e.status = 'CONFIRMED'
     ORDER BY u.user_id

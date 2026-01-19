@@ -249,7 +249,7 @@ const EventView = () => {
             onClick={() => navigate(`/events/${id}/enrolled`)}
             style={{ marginLeft: 8 }}
           >
-            查看已報名名單
+            查看名單
           </button>
         )}
       </div>

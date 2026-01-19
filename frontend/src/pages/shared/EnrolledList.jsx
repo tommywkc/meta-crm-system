@@ -4,7 +4,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleListConfirmedUsersByEvent } from '../../api/enrollmentAPI';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
-import { handleGetSessionById, handleListSessionAttendees } from '../../api/sessionAPI';
+import { handleGetSessionById, handleListSessionAttendees, handleDeleteSessionRegistration } from '../../api/sessionAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 const EnrolledList = () => {
@@ -90,6 +90,9 @@ const EnrolledList = () => {
         }
         const customers = res.users || [];
         const mapped = customers.map((c) => ({
+          registration_id: c.registration_id,
+          enrollment_id: c.enrollment_id,
+          payment_id: c.payment_id,
           id: c.user_id,
           user_id: c.user_id,
           name: c.name,
@@ -111,6 +114,30 @@ const EnrolledList = () => {
 
   const handleView = (user_id) => {
     navigate(`/customers/${user_id}`);
+  };
+
+  const handleRefund = (payment_id) => {
+    if (!payment_id) {
+      alert('找不到付款紀錄，無法退款');
+      return;
+    }
+    navigate(`/payments/${payment_id}/process`);
+  };
+
+  const handleDeleteRegistration = async (registration_id) => {
+    if (!registration_id) {
+      alert('找不到報名紀錄，無法刪除');
+      return;
+    }
+    if (!window.confirm('確認要刪除此場次報名嗎？')) return;
+    try {
+      await handleDeleteSessionRegistration(registration_id);
+      // refresh list
+      setMembers((prev) => prev.filter((m) => String(m.registration_id) !== String(registration_id)));
+      alert('場次報名已刪除');
+    } catch (err) {
+      alert(err?.message || '刪除失敗，請稍後再試');
+    }
   };
 
   const isSessionMode = Boolean(sessionId);
@@ -154,6 +181,33 @@ const EnrolledList = () => {
               onView={handleView}
               onEdit={null}
               onDelete={null}
+              showAdminActions={false}
+              renderActions={(customer) => {
+                if (isSessionMode) {
+                  return (
+                    <button
+                      style={{ color: 'red' }}
+                      onClick={() => handleDeleteRegistration(customer.registration_id)}
+                    >
+                      刪除報名
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    style={{ color: 'red' }}
+                    onClick={() => {
+                      if (!customer.payment_id) {
+                        alert('找不到付款紀錄，無法退款');
+                        return;
+                      }
+                      handleRefund(customer.payment_id);
+                    }}
+                  >
+                    退款
+                  </button>
+                );
+              }}
             />
           )}
 

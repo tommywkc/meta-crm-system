@@ -137,7 +137,7 @@ const PaymentProcess = () => {
 				});
 				
 				alert('退款成功！');
-				navigate('/payments');
+				navigate(-1);
 			} catch (e) {
 				alert(`退款失敗：${e?.message || '未知錯誤'}`);
 			} finally {

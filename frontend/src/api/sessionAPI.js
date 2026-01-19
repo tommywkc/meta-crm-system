@@ -270,3 +270,25 @@ export async function handleListSessionAttendees(session_id) {
   }
 }
 
+export async function handleDeleteSessionRegistration(registration_id) {
+  try {
+    console.log(`Attempting to delete session registration ${registration_id}...`);
+    const response = await fetch(apiUrl(`/api/session-registrations/${registration_id}`), {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete session registration ${registration_id}`);
+    }
+
+    const payload = await response.json();
+    console.log(`Delete session registration ${registration_id} result:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Delete session registration error for ${registration_id}:`, err);
+    throw err;
+  }
+}
+
