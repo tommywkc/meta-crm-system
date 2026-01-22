@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleListAssignments, handleCreateAssignment, handleUpdateAssignment, handleDeleteAssignment } from '../../api/assignmentsAPI';
+import { apiUrl } from '../../api/apiBase';
 
 const buildDatetimeLocal = (value) => {
   if (!value) return '';
@@ -27,6 +28,9 @@ const EventHomework = () => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [filesByAssignment, setFilesByAssignment] = useState({});
+  const [uploadingId, setUploadingId] = useState(null);
+  const uploadInputRefs = useRef({});
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
@@ -59,6 +63,30 @@ const EventHomework = () => {
   useEffect(() => {
     fetchAssignments();
   }, [eventId]);
+
+  useEffect(() => {
+    const loadFiles = async () => {
+      if (!isMember || assignments.length === 0) return;
+      const results = {};
+      await Promise.all(
+        assignments.map(async (item) => {
+          try {
+            const response = await fetch(
+              apiUrl(`/api/homework/files?assignmentId=${item.assignment_id}`),
+              { credentials: 'include' }
+            );
+            const payload = await response.json();
+            results[item.assignment_id] = Array.isArray(payload.files) ? payload.files : [];
+          } catch (err) {
+            results[item.assignment_id] = [];
+          }
+        })
+      );
+      setFilesByAssignment(results);
+    };
+
+    loadFiles();
+  }, [assignments, isMember]);
 
   const handleOpenModal = (assignment = null) => {
     if (assignment) {
@@ -114,6 +142,48 @@ const EventHomework = () => {
     }
   };
 
+  const handleUploadFile = async (assignmentId, file) => {
+    if (!file) return;
+    setUploadingId(assignmentId);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('assignmentId', assignmentId);
+      const response = await fetch(apiUrl('/api/homework/upload'), {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+      const payload = await response.json();
+      if (!response.ok || payload?.success === false) {
+        throw new Error(payload?.error || '上傳失敗');
+      }
+      await fetchAssignments();
+    } catch (err) {
+      alert(err?.message || '上傳失敗，請稍後再試');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const handleDeleteFile = async (fileName) => {
+    if (!fileName) return;
+    if (!window.confirm('確認要刪除此檔案？')) return;
+    try {
+      const response = await fetch(apiUrl(`/api/homework/file/${fileName}`), {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const payload = await response.json();
+      if (!response.ok || payload?.success === false) {
+        throw new Error(payload?.error || '刪除失敗');
+      }
+      await fetchAssignments();
+    } catch (err) {
+      alert(err?.message || '刪除失敗，請稍後再試');
+    }
+  };
+
   return (
     <div style={{ padding: 20 }}>
       <h1>功課</h1>
@@ -141,13 +211,13 @@ const EventHomework = () => {
             <th style={thTdStyle}>名稱</th>
             <th style={thTdStyle}>描述</th>
             <th style={thTdStyle}>截止日期</th>
-            {!isMember && <th style={thTdStyle}>操作</th>}
+            <th style={thTdStyle}>操作</th>
           </tr>
         </thead>
         <tbody>
           {assignments.length === 0 ? (
             <tr>
-              <td style={thTdStyle} colSpan={isMember ? 4 : 5}>暫無功課</td>
+              <td style={thTdStyle} colSpan={5}>暫無功課</td>
             </tr>
           ) : (
             assignments.map((item) => (
@@ -160,12 +230,44 @@ const EventHomework = () => {
                 <td style={thTdStyle}>
                   {item.deadline ? formatDateTimeForDisplay(item.deadline) : 'N/A'}
                 </td>
-                {!isMember && (
-                  <td style={thTdStyle}>
-                    <button onClick={() => handleOpenModal(item)} style={{ marginRight: 8 }}>編輯</button>
-                    <button onClick={() => handleDelete(item.assignment_id)} style={{ color: 'red' }}>刪除</button>
-                  </td>
-                )}
+                <td style={thTdStyle}>
+                  {!isMember ? (
+                    <>
+                      <button onClick={() => handleOpenModal(item)} style={{ marginRight: 8 }}>編輯</button>
+                      <button onClick={() => handleDelete(item.assignment_id)} style={{ color: 'red' }}>刪除</button>
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        type="file"
+                        ref={(el) => { uploadInputRefs.current[item.assignment_id] = el; }}
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleUploadFile(item.assignment_id, e.target.files?.[0])}
+                      />
+                      <button
+                        onClick={() => uploadInputRefs.current[item.assignment_id]?.click()}
+                        disabled={uploadingId === item.assignment_id}
+                        style={{ marginRight: 8 }}
+                      >
+                        {uploadingId === item.assignment_id ? '上傳中...' : '上傳'}
+                      </button>
+                      {(filesByAssignment[item.assignment_id] || []).map((file) => (
+                        <div key={file.fileName} style={{ marginTop: 6 }}>
+                          <span>{file.originalName || file.fileName}</span>
+                          <button
+                            onClick={() => handleDeleteFile(file.fileName)}
+                            style={{ marginLeft: 8, color: 'red' }}
+                          >
+                            刪除
+                          </button>
+                        </div>
+                      ))}
+                      {(filesByAssignment[item.assignment_id] || []).length === 0 && (
+                        <span>未上傳</span>
+                      )}
+                    </>
+                  )}
+                </td>
               </tr>
             ))
           )}
