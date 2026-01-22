@@ -5,7 +5,7 @@ import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleListAssignments, handleCreateAssignment, handleUpdateAssignment, handleDeleteAssignment } from '../../api/assignmentsAPI';
-import { apiUrl } from '../../api/apiBase';
+import { handleDeleteHomeworkFile, handleGetAssignmentSubmissions, handleListHomeworkFiles, handleUploadHomeworkFile } from '../../api/homeworkFilesAPI';
 
 const buildDatetimeLocal = (value) => {
   if (!value) return '';
@@ -31,6 +31,13 @@ const EventHomework = () => {
   const [filesByAssignment, setFilesByAssignment] = useState({});
   const [uploadingId, setUploadingId] = useState(null);
   const uploadInputRefs = useRef({});
+
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewError, setViewError] = useState(null);
+  const [viewAssignment, setViewAssignment] = useState(null);
+  const [submittedUsers, setSubmittedUsers] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
@@ -71,11 +78,7 @@ const EventHomework = () => {
       await Promise.all(
         assignments.map(async (item) => {
           try {
-            const response = await fetch(
-              apiUrl(`/api/homework/files?assignmentId=${item.assignment_id}`),
-              { credentials: 'include' }
-            );
-            const payload = await response.json();
+            const payload = await handleListHomeworkFiles(eventId, item.assignment_id);
             results[item.assignment_id] = Array.isArray(payload.files) ? payload.files : [];
           } catch (err) {
             results[item.assignment_id] = [];
@@ -146,18 +149,7 @@ const EventHomework = () => {
     if (!file) return;
     setUploadingId(assignmentId);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('assignmentId', assignmentId);
-      const response = await fetch(apiUrl('/api/homework/upload'), {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      });
-      const payload = await response.json();
-      if (!response.ok || payload?.success === false) {
-        throw new Error(payload?.error || '上傳失敗');
-      }
+      await handleUploadHomeworkFile(eventId, assignmentId, file);
       await fetchAssignments();
     } catch (err) {
       alert(err?.message || '上傳失敗，請稍後再試');
@@ -170,18 +162,36 @@ const EventHomework = () => {
     if (!fileName) return;
     if (!window.confirm('確認要刪除此檔案？')) return;
     try {
-      const response = await fetch(apiUrl(`/api/homework/file/${fileName}`), {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      const payload = await response.json();
-      if (!response.ok || payload?.success === false) {
-        throw new Error(payload?.error || '刪除失敗');
-      }
+      await handleDeleteHomeworkFile(fileName);
       await fetchAssignments();
     } catch (err) {
       alert(err?.message || '刪除失敗，請稍後再試');
     }
+  };
+
+  const handleViewSubmissions = async (assignment) => {
+    if (!assignment || !eventId) return;
+    setViewOpen(true);
+    setViewLoading(true);
+    setViewError(null);
+    setViewAssignment(assignment);
+    try {
+      const payload = await handleGetAssignmentSubmissions(eventId, assignment.assignment_id);
+      setSubmittedUsers(Array.isArray(payload.submitted) ? payload.submitted : []);
+      setPendingUsers(Array.isArray(payload.pending) ? payload.pending : []);
+    } catch (err) {
+      setViewError(err?.message || '載入提交清單失敗');
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  const handleCloseView = () => {
+    setViewOpen(false);
+    setViewAssignment(null);
+    setSubmittedUsers([]);
+    setPendingUsers([]);
+    setViewError(null);
   };
 
   return (
@@ -235,6 +245,7 @@ const EventHomework = () => {
                     <>
                       <button onClick={() => handleOpenModal(item)} style={{ marginRight: 8 }}>編輯</button>
                       <button onClick={() => handleDelete(item.assignment_id)} style={{ color: 'red' }}>刪除</button>
+                      <button onClick={() => handleViewSubmissions(item)} style={{ marginLeft: 8 }}>查看</button>
                     </>
                   ) : (
                     <>
@@ -330,6 +341,90 @@ const EventHomework = () => {
                 <button type="submit">儲存</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {!isMember && viewOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}
+        >
+          <div style={{ background: '#fff', padding: 20, borderRadius: 8, minWidth: 720, maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2>功課提交清單</h2>
+              <button onClick={handleCloseView}>關閉</button>
+            </div>
+
+            {viewAssignment && (
+              <p>功課：{viewAssignment.name || 'N/A'}（ID: {viewAssignment.assignment_id}）</p>
+            )}
+
+            {viewLoading && <p>載入中...</p>}
+            {viewError && <p style={{ color: 'red' }}>{viewError}</p>}
+
+            {!viewLoading && !viewError && (
+              <>
+                <h3>已交功課</h3>
+                <table style={tableStyle}>
+                  <thead>
+                    <tr>
+                      <th style={thTdStyle}>會員 ID</th>
+                      <th style={thTdStyle}>姓名</th>
+                      <th style={thTdStyle}>電話</th>
+                      <th style={thTdStyle}>電郵</th>
+                      <th style={thTdStyle}>檔案</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {submittedUsers.length === 0 ? (
+                      <tr><td style={thTdStyle} colSpan={5}>暫無提交</td></tr>
+                    ) : submittedUsers.map((item) => (
+                      <tr key={item.user?.user_id}>
+                        <td style={thTdStyle}>{item.user?.user_id}</td>
+                        <td style={thTdStyle}>{item.user?.name || 'N/A'}</td>
+                        <td style={thTdStyle}>{item.user?.mobile || ''}</td>
+                        <td style={thTdStyle}>{item.user?.email || ''}</td>
+                        <td style={thTdStyle}>{item.file?.originalName || item.file?.fileName || ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <h3 style={{ marginTop: 20 }}>未交功課</h3>
+                <table style={tableStyle}>
+                  <thead>
+                    <tr>
+                      <th style={thTdStyle}>會員 ID</th>
+                      <th style={thTdStyle}>姓名</th>
+                      <th style={thTdStyle}>電話</th>
+                      <th style={thTdStyle}>電郵</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingUsers.length === 0 ? (
+                      <tr><td style={thTdStyle} colSpan={4}>全部已提交</td></tr>
+                    ) : pendingUsers.map((item) => (
+                      <tr key={item.user?.user_id}>
+                        <td style={thTdStyle}>{item.user?.user_id}</td>
+                        <td style={thTdStyle}>{item.user?.name || 'N/A'}</td>
+                        <td style={thTdStyle}>{item.user?.mobile || ''}</td>
+                        <td style={thTdStyle}>{item.user?.email || ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
           </div>
         </div>
       )}

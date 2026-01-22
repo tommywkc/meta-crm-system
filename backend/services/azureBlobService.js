@@ -78,6 +78,48 @@ class AzureBlobService {
         }
     }
 
+    async uploadHomeworkFile(file, eventId, assignmentId, studentId) {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
+        try {
+            const folderName = `${eventId}_${assignmentId}`;
+            const fileName = `${folderName}/${folderName}_${studentId}`;
+
+            const containerName = this.containers.homework;
+            const containerClient = this.blobServiceClient.getContainerClient(containerName);
+            const blobClient = containerClient.getBlockBlobClient(fileName);
+
+            const uploadResponse = await blobClient.upload(file.buffer, file.size, {
+                blobHTTPHeaders: {
+                    blobContentType: file.mimetype
+                },
+                metadata: {
+                    originalName: file.originalname,
+                    eventId: String(eventId),
+                    assignmentId: String(assignmentId),
+                    studentId: String(studentId),
+                    uploadDate: new Date().toISOString()
+                },
+                overwrite: true
+            });
+
+            return {
+                success: true,
+                fileName,
+                url: blobClient.url,
+                originalName: file.originalname,
+                size: file.size,
+                uploadResponse
+            };
+        } catch (error) {
+            console.error('Azure Blob Storage homework upload error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
     async deleteFile(fileName, containerType = 'homework') {
         const notConfigured = this.ensureConfigured();
         if (notConfigured) return notConfigured;
@@ -188,6 +230,73 @@ class AzureBlobService {
             };
         } catch (error) {
             console.error('Azure Blob Storage list files error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async listHomeworkFilesForStudent(eventId, assignmentId, studentId) {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
+        try {
+            const folderName = `${eventId}_${assignmentId}`;
+            const containerName = this.containers.homework;
+            const containerClient = this.blobServiceClient.getContainerClient(containerName);
+            const prefix = `${folderName}/`;
+            const expectedName = `${folderName}_${studentId}`;
+
+            const files = [];
+            for await (const blob of containerClient.listBlobsFlat({ prefix })) {
+                const baseName = blob.name.split('/').pop();
+                if (baseName !== expectedName) continue;
+                files.push({
+                    name: blob.name,
+                    url: `${containerClient.url}/${blob.name}`,
+                    properties: blob.properties,
+                    metadata: blob.metadata
+                });
+            }
+
+            return {
+                success: true,
+                files
+            };
+        } catch (error) {
+            console.error('Azure Blob Storage list homework files error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async listHomeworkFilesForAssignment(eventId, assignmentId) {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
+        try {
+            const folderName = `${eventId}_${assignmentId}`;
+            const containerName = this.containers.homework;
+            const containerClient = this.blobServiceClient.getContainerClient(containerName);
+            const prefix = `${folderName}/`;
+
+            const files = [];
+            for await (const blob of containerClient.listBlobsFlat({ prefix })) {
+                files.push({
+                    name: blob.name,
+                    url: `${containerClient.url}/${blob.name}`,
+                    properties: blob.properties,
+                    metadata: blob.metadata
+                });
+            }
+
+            return {
+                success: true,
+                files
+            };
+        } catch (error) {
+            console.error('Azure Blob Storage list homework assignment files error:', error);
             return {
                 success: false,
                 error: error.message

@@ -3,6 +3,7 @@ const multer = require('multer');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const azureBlobService = require('../services/azureBlobService');
 const assignmentsDao = require('../dao/assignmentsDao');
+const { listConfirmedUsersByEvent } = require('../dao/eventEnrollmentsDao');
 
 const router = express.Router();
 
@@ -111,15 +112,15 @@ router.post('/homework/upload', authMiddleware, upload.single('file'), async (re
             return res.status(400).json({ error: '未選擇檔案' });
         }
 
-    const { assignmentId } = req.body;
-    const studentId = req.user.sub; // Get user ID from JWT token (sub field)
+        const { assignmentId, eventId } = req.body;
+        const studentId = req.user.sub; // Get user ID from JWT token (sub field)
         
-        if (!assignmentId) {
-            return res.status(400).json({ error: '缺少必要參數: assignmentId' });
+        if (!assignmentId || !eventId) {
+            return res.status(400).json({ error: '缺少必要參數: eventId 或 assignmentId' });
         }
 
-    // Upload file using Azure Blob Storage service
-    const uploadResult = await azureBlobService.uploadFile(req.file, studentId, assignmentId, 'homework');
+        // Upload file using Azure Blob Storage service (eventId_assignmentId folder + eventId_assignmentId_studentId filename)
+        const uploadResult = await azureBlobService.uploadHomeworkFile(req.file, eventId, assignmentId, studentId);
         
         if (uploadResult.success) {
             res.json({
@@ -183,14 +184,21 @@ router.get('/homework/files/admin/all', authMiddleware, roleMiddleware('admin'),
 router.get('/homework/files', authMiddleware, async (req, res) => {
     try {
         const studentId = req.user.sub; // 從 JWT token 中獲取用戶 ID (sub 欄位)
-        const { assignmentId } = req.query;
-        
-        const filesResult = await azureBlobService.listFiles(studentId, assignmentId, 'homework');
+        const { assignmentId, eventId } = req.query;
+        if (!assignmentId || !eventId) {
+            return res.status(400).json({ error: '缺少必要參數: eventId 或 assignmentId' });
+        }
+
+        const filesResult = await azureBlobService.listHomeworkFilesForStudent(eventId, assignmentId, studentId);
         
         if (filesResult.success) {
             res.json({
                 success: true,
-                files: filesResult.files
+                files: (filesResult.files || []).map((file) => ({
+                    fileName: file.name,
+                    url: file.url,
+                    originalName: file.metadata?.originalName || file.name.split('/').pop()
+                }))
             });
         } else {
             res.status(500).json({
@@ -202,6 +210,51 @@ router.get('/homework/files', authMiddleware, async (req, res) => {
     } catch (error) {
         console.error('Get file list error:', error);
         res.status(500).json({ error: '伺服器錯誤' });
+    }
+});
+
+// Admin: list submitted vs pending users for an assignment
+router.get('/homework/admin/submissions', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+    try {
+        const { eventId, assignmentId } = req.query;
+        if (!eventId || !assignmentId) {
+            return res.status(400).json({ error: '缺少必要參數: eventId 或 assignmentId' });
+        }
+
+        const users = await listConfirmedUsersByEvent(Number(eventId));
+        const filesResult = await azureBlobService.listHomeworkFilesForAssignment(eventId, assignmentId);
+        if (!filesResult.success) {
+            return res.status(500).json({ error: filesResult.error || '獲取功課檔案失敗' });
+        }
+
+        const submittedMap = new Map();
+        (filesResult.files || []).forEach((file) => {
+            const baseName = file.name.split('/').pop();
+            const inferredId = baseName?.split('_').pop();
+            const studentId = file.metadata?.studentId || inferredId;
+            if (!studentId) return;
+            submittedMap.set(String(studentId), {
+                fileName: file.name,
+                url: file.url,
+                originalName: file.metadata?.originalName || baseName
+            });
+        });
+
+        const submitted = [];
+        const pending = [];
+        users.forEach((user) => {
+            const file = submittedMap.get(String(user.user_id));
+            if (file) {
+                submitted.push({ user, file });
+            } else {
+                pending.push({ user });
+            }
+        });
+
+        return res.json({ submitted, pending });
+    } catch (error) {
+        console.error('Admin submission list error:', error);
+        return res.status(500).json({ error: '獲取提交清單失敗' });
     }
 });
 
