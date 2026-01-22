@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const azureBlobService = require('../services/azureBlobService');
+const assignmentsDao = require('../dao/assignmentsDao');
 
 const router = express.Router();
 
@@ -43,6 +44,64 @@ router.get('/homework/health', (req, res) => {
         message: 'Homework router is working',
         timestamp: new Date().toISOString()
     });
+});
+
+// List assignments for an event
+router.get('/events/:eventId/assignments', authMiddleware, async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const assignments = await assignmentsDao.listByEventId(eventId);
+        res.json({ assignments });
+    } catch (error) {
+        console.error('List assignments error:', error);
+        res.status(500).json({ error: '獲取功課失敗' });
+    }
+});
+
+// Create assignment
+router.post('/assignments', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+    try {
+        const { event_id, name, description, deadline } = req.body || {};
+        if (!event_id) {
+            return res.status(400).json({ error: '缺少必要參數: event_id' });
+        }
+        const created = await assignmentsDao.createAssignment({
+            event_id,
+            assigned_by_id: req.user.sub,
+            name,
+            description,
+            deadline
+        });
+        res.json({ assignment: created });
+    } catch (error) {
+        console.error('Create assignment error:', error);
+        res.status(500).json({ error: '新增功課失敗' });
+    }
+});
+
+// Update assignment
+router.put('/assignments/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description, deadline } = req.body || {};
+        const updated = await assignmentsDao.updateAssignment(id, { name, description, deadline });
+        res.json({ assignment: updated });
+    } catch (error) {
+        console.error('Update assignment error:', error);
+        res.status(500).json({ error: '更新功課失敗' });
+    }
+});
+
+// Delete assignment
+router.delete('/assignments/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+    try {
+        const { id } = req.params;
+        await assignmentsDao.removeByAssignmentId(id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Delete assignment error:', error);
+        res.status(500).json({ error: '刪除功課失敗' });
+    }
 });
 
 // Upload a homework file

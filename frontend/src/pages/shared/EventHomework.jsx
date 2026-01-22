@@ -1,7 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
+import { handleListAssignments, handleCreateAssignment, handleUpdateAssignment, handleDeleteAssignment } from '../../api/assignmentsAPI';
 
 const buildDatetimeLocal = (value) => {
   if (!value) return '';
@@ -17,31 +20,45 @@ const buildDatetimeLocal = (value) => {
 
 const EventHomework = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id: eventId } = useParams();
+  const { user } = useAuth();
 
-  const [assignments, setAssignments] = useState([
-    {
-      assignment_id: 1,
-      name: '功課 1：課後練習',
-      description: '完成第 1 章練習題，並提交 PDF。',
-      deadline: '2026-01-30T18:00'
-    },
-    {
-      assignment_id: 2,
-      name: '功課 2：實作作業',
-      description: '用所學內容完成一個小專案。',
-      deadline: '2026-02-05T23:59'
-    }
-  ]);
+  const [eventInfo, setEventInfo] = useState(null);
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '', deadline: '' });
 
-  const nextId = useMemo(() => {
-    if (!assignments.length) return 1;
-    return Math.max(...assignments.map((a) => a.assignment_id)) + 1;
-  }, [assignments]);
+  const isMember = (user?.role || '').toLowerCase() === 'member';
+
+  useEffect(() => {
+    if (!eventId) return;
+    handleGetEventById(eventId)
+      .then((res) => setEventInfo(res.event || null))
+      .catch(() => setEventInfo(null));
+  }, [eventId]);
+
+  const fetchAssignments = async () => {
+    if (!eventId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await handleListAssignments(eventId);
+      setAssignments(Array.isArray(res.assignments) ? res.assignments : []);
+    } catch (err) {
+      console.error(err);
+      setError('載入功課失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAssignments();
+  }, [eventId]);
 
   const handleOpenModal = (assignment = null) => {
     if (assignment) {
@@ -63,46 +80,60 @@ const EventHomework = () => {
     setEditingAssignment(null);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     const payload = {
+      event_id: eventId,
       name: formData.name.trim(),
       description: formData.description.trim(),
-      deadline: formData.deadline || ''
+      deadline: formData.deadline || null
     };
 
-    if (editingAssignment) {
-      setAssignments((prev) =>
-        prev.map((item) =>
-          item.assignment_id === editingAssignment.assignment_id
-            ? { ...item, ...payload }
-            : item
-        )
-      );
-    } else {
-      setAssignments((prev) => [
-        { assignment_id: nextId, ...payload },
-        ...prev
-      ]);
+    try {
+      if (editingAssignment) {
+        await handleUpdateAssignment(editingAssignment.assignment_id, payload);
+      } else {
+        await handleCreateAssignment(payload);
+      }
+      handleCloseModal();
+      fetchAssignments();
+    } catch (err) {
+      console.error(err);
+      alert('儲存失敗，請稍後再試');
     }
-    handleCloseModal();
   };
 
-  const handleDelete = (assignmentId) => {
+  const handleDelete = async (assignmentId) => {
     if (!window.confirm('確認要刪除此功課？')) return;
-    setAssignments((prev) => prev.filter((item) => item.assignment_id !== assignmentId));
+    try {
+      await handleDeleteAssignment(assignmentId);
+      fetchAssignments();
+    } catch (err) {
+      console.error(err);
+      alert('刪除失敗，請稍後再試');
+    }
   };
 
   return (
     <div style={{ padding: 20 }}>
       <h1>功課</h1>
-      <p>活動 ID: {id || 'N/A'}</p>
+      {eventInfo ? (
+        <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
+      ) : (
+        <p>活動 ID: {eventId || 'N/A'}</p>
+      )}
 
       <div style={{ marginBottom: 16 }}>
-        <button onClick={() => handleOpenModal()}>新增功課</button>
+        {!isMember && (
+          <button onClick={() => handleOpenModal()}>新增功課</button>
+        )}
         <button onClick={() => navigate(-1)} style={{ marginLeft: 8 }}>返回上一頁</button>
       </div>
 
+      {loading && <p>載入中...</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      {!loading && !error && (
       <table style={tableStyle}>
         <thead>
           <tr>
@@ -110,13 +141,13 @@ const EventHomework = () => {
             <th style={thTdStyle}>名稱</th>
             <th style={thTdStyle}>描述</th>
             <th style={thTdStyle}>截止日期</th>
-            <th style={thTdStyle}>操作</th>
+            {!isMember && <th style={thTdStyle}>操作</th>}
           </tr>
         </thead>
         <tbody>
           {assignments.length === 0 ? (
             <tr>
-              <td style={thTdStyle} colSpan={5}>暫無功課</td>
+              <td style={thTdStyle} colSpan={isMember ? 4 : 5}>暫無功課</td>
             </tr>
           ) : (
             assignments.map((item) => (
@@ -129,17 +160,20 @@ const EventHomework = () => {
                 <td style={thTdStyle}>
                   {item.deadline ? formatDateTimeForDisplay(item.deadline) : 'N/A'}
                 </td>
-                <td style={thTdStyle}>
-                  <button onClick={() => handleOpenModal(item)} style={{ marginRight: 8 }}>編輯</button>
-                  <button onClick={() => handleDelete(item.assignment_id)} style={{ color: 'red' }}>刪除</button>
-                </td>
+                {!isMember && (
+                  <td style={thTdStyle}>
+                    <button onClick={() => handleOpenModal(item)} style={{ marginRight: 8 }}>編輯</button>
+                    <button onClick={() => handleDelete(item.assignment_id)} style={{ color: 'red' }}>刪除</button>
+                  </td>
+                )}
               </tr>
             ))
           )}
         </tbody>
       </table>
+      )}
 
-      {isModalOpen && (
+      {!isMember && isModalOpen && (
         <div
           style={{
             position: 'fixed',

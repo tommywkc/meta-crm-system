@@ -174,6 +174,8 @@ CREATE TABLE IF NOT EXISTS ASSIGNMENTS (
     event_id BIGINT,
     assigned_by_id BIGINT,
     assigned_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    name VARCHAR(255),
+    description TEXT,
     deadline TIMESTAMP,
     PRIMARY KEY (assignment_id),
     FOREIGN KEY (event_id) REFERENCES EVENTS(event_id) ON DELETE SET NULL,
