@@ -63,9 +63,9 @@ const Header = () => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', marginRight: 12 }}>
-            <img 
-              src="https://static.wixstatic.com/media/cbad7d_a495eabce8704cf8b28b817764226baf~mv2.png/v1/fill/w_154,h_154,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20240416093210.png" 
-              alt="Meta Academy Logo" 
+            <img
+              src={process.env.PUBLIC_URL + '/logo.png'}
+              alt="Meta CRM Logo"
               style={{ width: 40, height: 40, marginRight: 8 }}
             />
             Meta Academy
