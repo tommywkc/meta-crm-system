@@ -229,9 +229,10 @@ router.get('/homework/admin/submissions', authMiddleware, roleMiddleware(['admin
 
         const submittedMap = new Map();
         (filesResult.files || []).forEach((file) => {
-            const baseName = file.name.split('/').pop();
-            const inferredId = baseName?.split('_').pop();
-            const studentId = file.metadata?.studentId || inferredId;
+            const pathParts = file.name.split('/');
+            const baseName = pathParts[pathParts.length - 1];
+            const studentIdFromPath = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : null;
+            const studentId = file.metadata?.studentId || studentIdFromPath;
             if (!studentId) return;
             submittedMap.set(String(studentId), {
                 fileName: file.name,

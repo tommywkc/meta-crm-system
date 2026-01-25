@@ -83,7 +83,7 @@ class AzureBlobService {
         if (notConfigured) return notConfigured;
         try {
             const folderName = `${eventId}_${assignmentId}`;
-            const fileName = `${folderName}/${folderName}_${studentId}`;
+            const fileName = `${folderName}/${studentId}/${file.originalname}`;
 
             const containerName = this.containers.homework;
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
@@ -244,13 +244,10 @@ class AzureBlobService {
             const folderName = `${eventId}_${assignmentId}`;
             const containerName = this.containers.homework;
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
-            const prefix = `${folderName}/`;
-            const expectedName = `${folderName}_${studentId}`;
+            const prefix = `${folderName}/${studentId}/`;
 
             const files = [];
             for await (const blob of containerClient.listBlobsFlat({ prefix })) {
-                const baseName = blob.name.split('/').pop();
-                if (baseName !== expectedName) continue;
                 files.push({
                     name: blob.name,
                     url: `${containerClient.url}/${blob.name}`,
