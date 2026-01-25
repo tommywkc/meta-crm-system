@@ -60,7 +60,7 @@ router.get('/events/:eventId/assignments', authMiddleware, async (req, res) => {
 });
 
 // Create assignment
-router.post('/assignments', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+router.post('/assignments', authMiddleware, roleMiddleware('admin'), async (req, res) => {
     try {
         const { event_id, name, description, deadline } = req.body || {};
         if (!event_id) {
@@ -81,7 +81,7 @@ router.post('/assignments', authMiddleware, roleMiddleware(['admin', 'sales', 'l
 });
 
 // Update assignment
-router.put('/assignments/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+router.put('/assignments/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
     try {
         const { id } = req.params;
         const { name, description, deadline } = req.body || {};
@@ -94,7 +94,7 @@ router.put('/assignments/:id', authMiddleware, roleMiddleware(['admin', 'sales',
 });
 
 // Delete assignment
-router.delete('/assignments/:id', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+router.delete('/assignments/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
     try {
         const { id } = req.params;
         await assignmentsDao.removeByAssignmentId(id);
@@ -234,10 +234,13 @@ router.get('/homework/admin/submissions', authMiddleware, roleMiddleware(['admin
             const studentIdFromPath = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : null;
             const studentId = file.metadata?.studentId || studentIdFromPath;
             if (!studentId) return;
+            const submittedAt = file.metadata?.uploadDate
+                || (file.properties?.lastModified ? new Date(file.properties.lastModified).toISOString() : null);
             submittedMap.set(String(studentId), {
                 fileName: file.name,
                 url: file.url,
-                originalName: file.metadata?.originalName || baseName
+                originalName: file.metadata?.originalName || baseName,
+                submittedAt
             });
         });
 

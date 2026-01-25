@@ -4,20 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
-import { handleListAssignments, handleCreateAssignment, handleUpdateAssignment, handleDeleteAssignment } from '../../api/assignmentsAPI';
-import { handleDeleteHomeworkFile, handleGetAssignmentSubmissions, handleListHomeworkFiles, handleUploadHomeworkFile } from '../../api/homeworkFilesAPI';
-
-const buildDatetimeLocal = (value) => {
-  if (!value) return '';
-  const date = new Date(value);
-  const pad = (num) => String(num).padStart(2, '0');
-  const yyyy = date.getFullYear();
-  const mm = pad(date.getMonth() + 1);
-  const dd = pad(date.getDate());
-  const hh = pad(date.getHours());
-  const min = pad(date.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
-};
+import { handleListAssignments, handleDeleteAssignment } from '../../api/assignmentsAPI';
+import { handleDeleteHomeworkFile, handleListHomeworkFiles, handleUploadHomeworkFile } from '../../api/homeworkFilesAPI';
 
 const EventHomework = () => {
   const navigate = useNavigate();
@@ -32,18 +20,10 @@ const EventHomework = () => {
   const [uploadingId, setUploadingId] = useState(null);
   const uploadInputRefs = useRef({});
 
-  const [viewOpen, setViewOpen] = useState(false);
-  const [viewLoading, setViewLoading] = useState(false);
-  const [viewError, setViewError] = useState(null);
-  const [viewAssignment, setViewAssignment] = useState(null);
-  const [submittedUsers, setSubmittedUsers] = useState([]);
-  const [pendingUsers, setPendingUsers] = useState([]);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingAssignment, setEditingAssignment] = useState(null);
-  const [formData, setFormData] = useState({ name: '', description: '', deadline: '' });
-
-  const isMember = (user?.role || '').toLowerCase() === 'member';
+  const userRole = (user?.role || '').toLowerCase();
+  const isMember = userRole === 'member';
+  const isAdmin = userRole === 'admin';
+  const isStaff = !isAdmin && !isMember;
 
   useEffect(() => {
     if (!eventId) return;
@@ -91,47 +71,19 @@ const EventHomework = () => {
     loadFiles();
   }, [assignments, isMember]);
 
-  const handleOpenModal = (assignment = null) => {
-    if (assignment) {
-      setEditingAssignment(assignment);
-      setFormData({
-        name: assignment.name || '',
-        description: assignment.description || '',
-        deadline: buildDatetimeLocal(assignment.deadline)
-      });
-    } else {
-      setEditingAssignment(null);
-      setFormData({ name: '', description: '', deadline: '' });
-    }
-    setIsModalOpen(true);
+  const handleGoCreate = () => {
+    if (!eventId) return;
+    navigate(`/admin/events/${eventId}/homework/create`);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingAssignment(null);
+  const handleGoEdit = (assignmentId) => {
+    if (!eventId || !assignmentId) return;
+    navigate(`/admin/events/${eventId}/homework/${assignmentId}/edit`);
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    const payload = {
-      event_id: eventId,
-      name: formData.name.trim(),
-      description: formData.description.trim(),
-      deadline: formData.deadline || null
-    };
-
-    try {
-      if (editingAssignment) {
-        await handleUpdateAssignment(editingAssignment.assignment_id, payload);
-      } else {
-        await handleCreateAssignment(payload);
-      }
-      handleCloseModal();
-      fetchAssignments();
-    } catch (err) {
-      console.error(err);
-      alert('儲存失敗，請稍後再試');
-    }
+  const handleGoView = (assignmentId) => {
+    if (!eventId || !assignmentId) return;
+    navigate(`/events/${eventId}/homework/${assignmentId}`);
   };
 
   const handleDelete = async (assignmentId) => {
@@ -169,31 +121,6 @@ const EventHomework = () => {
     }
   };
 
-  const handleViewSubmissions = async (assignment) => {
-    if (!assignment || !eventId) return;
-    setViewOpen(true);
-    setViewLoading(true);
-    setViewError(null);
-    setViewAssignment(assignment);
-    try {
-      const payload = await handleGetAssignmentSubmissions(eventId, assignment.assignment_id);
-      setSubmittedUsers(Array.isArray(payload.submitted) ? payload.submitted : []);
-      setPendingUsers(Array.isArray(payload.pending) ? payload.pending : []);
-    } catch (err) {
-      setViewError(err?.message || '載入提交清單失敗');
-    } finally {
-      setViewLoading(false);
-    }
-  };
-
-  const handleCloseView = () => {
-    setViewOpen(false);
-    setViewAssignment(null);
-    setSubmittedUsers([]);
-    setPendingUsers([]);
-    setViewError(null);
-  };
-
   return (
     <div style={{ padding: 20 }}>
       <h1>功課</h1>
@@ -204,8 +131,8 @@ const EventHomework = () => {
       )}
 
       <div style={{ marginBottom: 16 }}>
-        {!isMember && (
-          <button onClick={() => handleOpenModal()}>新增功課</button>
+        {isAdmin && (
+          <button onClick={handleGoCreate}>新增功課</button>
         )}
         <button onClick={() => navigate(-1)} style={{ marginLeft: 8 }}>返回上一頁</button>
       </div>
@@ -241,12 +168,14 @@ const EventHomework = () => {
                   {item.deadline ? formatDateTimeForDisplay(item.deadline) : 'N/A'}
                 </td>
                 <td style={thTdStyle}>
-                  {!isMember ? (
+                  {isAdmin ? (
                     <>
-                      <button onClick={() => handleOpenModal(item)} style={{ marginRight: 8 }}>編輯</button>
+                      <button onClick={() => handleGoView(item.assignment_id)} style={{ marginRight: 8 }}>查看</button>
+                      <button onClick={() => handleGoEdit(item.assignment_id)} style={{ marginRight: 8 }}>編輯</button>
                       <button onClick={() => handleDelete(item.assignment_id)} style={{ color: 'red' }}>刪除</button>
-                      <button onClick={() => handleViewSubmissions(item)} style={{ marginLeft: 8 }}>查看</button>
                     </>
+                  ) : isStaff ? (
+                    <button onClick={() => handleGoView(item.assignment_id)}>查看</button>
                   ) : (
                     <>
                       <input
@@ -286,148 +215,6 @@ const EventHomework = () => {
       </table>
       )}
 
-      {!isMember && isModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
-        >
-          <div style={{ background: '#fff', padding: 20, borderRadius: 8, minWidth: 420 }}>
-            <h2>{editingAssignment ? '編輯功課' : '新增功課'}</h2>
-            <form onSubmit={handleSave}>
-              <div style={{ marginBottom: 12 }}>
-                <label>
-                  名稱
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    style={{ width: '100%', marginTop: 6 }}
-                  />
-                </label>
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <label>
-                  描述
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    style={{ width: '100%', minHeight: 80, marginTop: 6 }}
-                  />
-                </label>
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <label>
-                  截止日期
-                  <input
-                    type="datetime-local"
-                    value={formData.deadline}
-                    onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                    style={{ width: '100%', marginTop: 6 }}
-                  />
-                </label>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <button type="button" onClick={handleCloseModal} style={{ marginRight: 8 }}>取消</button>
-                <button type="submit">儲存</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {!isMember && viewOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
-        >
-          <div style={{ background: '#fff', padding: 20, borderRadius: 8, minWidth: 720, maxHeight: '80vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2>功課提交清單</h2>
-              <button onClick={handleCloseView}>關閉</button>
-            </div>
-
-            {viewAssignment && (
-              <p>功課：{viewAssignment.name || 'N/A'}（ID: {viewAssignment.assignment_id}）</p>
-            )}
-
-            {viewLoading && <p>載入中...</p>}
-            {viewError && <p style={{ color: 'red' }}>{viewError}</p>}
-
-            {!viewLoading && !viewError && (
-              <>
-                <h3>已交功課</h3>
-                <table style={tableStyle}>
-                  <thead>
-                    <tr>
-                      <th style={thTdStyle}>會員 ID</th>
-                      <th style={thTdStyle}>姓名</th>
-                      <th style={thTdStyle}>電話</th>
-                      <th style={thTdStyle}>電郵</th>
-                      <th style={thTdStyle}>檔案</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {submittedUsers.length === 0 ? (
-                      <tr><td style={thTdStyle} colSpan={5}>暫無提交</td></tr>
-                    ) : submittedUsers.map((item) => (
-                      <tr key={item.user?.user_id}>
-                        <td style={thTdStyle}>{item.user?.user_id}</td>
-                        <td style={thTdStyle}>{item.user?.name || 'N/A'}</td>
-                        <td style={thTdStyle}>{item.user?.mobile || ''}</td>
-                        <td style={thTdStyle}>{item.user?.email || ''}</td>
-                        <td style={thTdStyle}>{item.file?.originalName || item.file?.fileName || ''}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                <h3 style={{ marginTop: 20 }}>未交功課</h3>
-                <table style={tableStyle}>
-                  <thead>
-                    <tr>
-                      <th style={thTdStyle}>會員 ID</th>
-                      <th style={thTdStyle}>姓名</th>
-                      <th style={thTdStyle}>電話</th>
-                      <th style={thTdStyle}>電郵</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingUsers.length === 0 ? (
-                      <tr><td style={thTdStyle} colSpan={4}>全部已提交</td></tr>
-                    ) : pendingUsers.map((item) => (
-                      <tr key={item.user?.user_id}>
-                        <td style={thTdStyle}>{item.user?.user_id}</td>
-                        <td style={thTdStyle}>{item.user?.name || 'N/A'}</td>
-                        <td style={thTdStyle}>{item.user?.mobile || ''}</td>
-                        <td style={thTdStyle}>{item.user?.email || ''}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

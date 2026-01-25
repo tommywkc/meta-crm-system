@@ -44,6 +44,9 @@ import Feedback from './pages/shared/Feedback';
 import FeedbackListPage from './pages/admin/FeedbackListPage';
 import EnrolledList from './pages/shared/EnrolledList';
 import EventHomework from './pages/shared/EventHomework';
+import EventHomeworkCreate from './pages/admin/EventHomeworkCreate';
+import EventHomeworkEdit from './pages/admin/EventHomeworkEdit';
+import EventHomeworkView from './pages/shared/EventHomeworkView';
 
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -121,6 +124,21 @@ function App() {
           <Route path="/events/:id/homework" element={
             <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
               <EventHomework />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/events/:id/homework/create" element={
+            <ProtectedRoute allowedRole="admin">
+              <EventHomeworkCreate />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id/homework/:assignmentId" element={
+            <ProtectedRoute allowedRoles={["admin","sales","leader"]}>
+              <EventHomeworkView />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/events/:id/homework/:assignmentId/edit" element={
+            <ProtectedRoute allowedRole="admin">
+              <EventHomeworkEdit />
             </ProtectedRoute>
           } />
           <Route path="/sessions/:sessionId/enrolled" element={
