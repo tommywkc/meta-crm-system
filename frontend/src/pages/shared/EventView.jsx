@@ -252,6 +252,12 @@ const EventView = () => {
             查看名單
           </button>
         )}
+        <button
+          onClick={() => navigate(`/events/${id}/homework`)}
+          style={{ marginLeft: 8 }}
+        >
+          功課
+        </button>
       </div>
 
       {/* Session list table */}

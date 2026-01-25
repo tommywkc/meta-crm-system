@@ -19,7 +19,7 @@ const Header = () => {
     download: { path: '/download', label: '下載名單' },
     reports: { path: '/reports', label: '報表中心' },
     waiting: { path: '/waiting', label: '等待清單' },
-    files: { path: '/files', label: '檔案/訂閱管理' },
+    files: { path: '/files', label: '訂閱管理' },
     notifications: { path: '/notifications', label: '通知中心' },
 
     sales_kpi: { path: '/sales-kpi', label: '團隊&個人 KPI' },
@@ -27,7 +27,6 @@ const Header = () => {
     payments: { path: '/payments', label: '付款/欠款' },
     receipts: { path: '/receipts', label: '查看收據/證書' },
     requests: { path: '/requests', label: '覆課/補堂/請假申請' },
-    homework: { path: '/homework', label: '交功課' },
     myqrcode: { path: '/myqrcode', label: '我的QR code' },
     mycalendar: { path: '/mycalendar', label: '我的日曆' },
     myevents: { path: '/myevents', label: '我的活動' },
@@ -41,7 +40,7 @@ const Header = () => {
     admin: ['customers','events','sessions_enrolled','payments','approvals','scan','waiting','download','reports','files','notifications','feedback'],
     sales: ['customers','events','sessions_enrolled','payments','sales_kpi','notifications','feedback'],
     leader: ['customers','events','sessions_enrolled','payments','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
-    member: ['mycalendar','myevents','sessions_enrolled','events','payments','receipts','requests','homework','notifications','myqrcode','feedback']
+    member: ['mycalendar','myevents','sessions_enrolled','events','payments','receipts','requests','notifications','myqrcode','feedback']
   };
 
   const pages = rolePages[user.role?.toLowerCase()] || [];
@@ -84,7 +83,7 @@ const Header = () => {
                 '/reports': '報表中心',
                 
                 '/waiting': '等待清單',
-                '/files': '檔案/訂閱管理',
+                '/files': '訂閱管理',
                 '/notifications': '通知中心',
 
                 '/sales-kpi': '團隊&個人 KPI',
@@ -93,7 +92,6 @@ const Header = () => {
                 '/payments': '付款/欠款',
                 '/receipts': '查看收據/證書',
                 '/requests': '覆課/補堂/請假申請',
-                '/homework': '交功課',
                 '/myqrcode': '我的QR code',
                 '/mycalendar': '我的日曆',
                 '/myevents': '我的報名活動',

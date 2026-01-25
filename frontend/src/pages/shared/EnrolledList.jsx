@@ -6,6 +6,8 @@ import { handleListConfirmedUsersByEvent } from '../../api/enrollmentAPI';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleGetSessionById, handleListSessionAttendees, handleDeleteSessionRegistration } from '../../api/sessionAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import { handleUploadCertificate } from '../../api/certificatesAPI';
+import { handleUploadReceipt } from '../../api/receiptsAPI';
 
 const EnrolledList = () => {
   const navigate = useNavigate();
@@ -99,6 +101,8 @@ const EnrolledList = () => {
           role: c.role || 'MEMBER',
           mobile: c.mobile || '',
           email: c.email || '',
+          issued_certificate: c.issued_certificate,
+          issued_receipt: c.issued_receipt,
         }));
         setMembers(mapped);
       } catch (err) {
@@ -142,6 +146,74 @@ const EnrolledList = () => {
 
   const isSessionMode = Boolean(sessionId);
 
+  const handleCertificateUpload = (customer) => {
+    if (!eventId) {
+      alert('缺少活動ID，無法上傳證書');
+      return;
+    }
+    if (!customer?.user_id) {
+      alert('缺少使用者ID，無法上傳證書');
+      return;
+    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        await handleUploadCertificate({
+          eventId,
+          userId: customer.user_id,
+          paymentId: customer.payment_id,
+          file
+        });
+        setMembers((prev) => prev.map((m) => (
+          String(m.user_id) === String(customer.user_id)
+            ? { ...m, issued_certificate: true }
+            : m
+        )));
+        alert('證書已上傳');
+      } catch (err) {
+        alert(err?.message || '上傳證書失敗');
+      }
+    };
+    input.click();
+  };
+
+  const handleReceiptUpload = (customer) => {
+    if (!eventId) {
+      alert('缺少活動ID，無法上傳收據');
+      return;
+    }
+    if (!customer?.user_id) {
+      alert('缺少使用者ID，無法上傳收據');
+      return;
+    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        await handleUploadReceipt({
+          eventId,
+          userId: customer.user_id,
+          paymentId: customer.payment_id,
+          file
+        });
+        setMembers((prev) => prev.map((m) => (
+          String(m.user_id) === String(customer.user_id)
+            ? { ...m, issued_receipt: true }
+            : m
+        )));
+        alert('收據已上傳');
+      } catch (err) {
+        alert(err?.message || '上傳收據失敗');
+      }
+    };
+    input.click();
+  };
+
   if (!eventId && !sessionId) {
     return (
       <div style={{ padding: 20 }}>
@@ -182,6 +254,16 @@ const EnrolledList = () => {
               onEdit={null}
               onDelete={null}
               showAdminActions={false}
+              extraColumns={[
+                {
+                  header: '證書',
+                  render: (customer) => (customer.issued_certificate ? '已發放' : '未發放')
+                },
+                {
+                  header: '收據',
+                  render: (customer) => (customer.issued_receipt ? '已發放' : '未發放')
+                }
+              ]}
               renderActions={(customer) => {
                 if (isSessionMode) {
                   return (
@@ -194,18 +276,32 @@ const EnrolledList = () => {
                   );
                 }
                 return (
-                  <button
-                    style={{ color: 'red' }}
-                    onClick={() => {
-                      if (!customer.payment_id) {
-                        alert('找不到付款紀錄，無法退款');
-                        return;
-                      }
-                      handleRefund(customer.payment_id);
-                    }}
-                  >
-                    退款
-                  </button>
+                  <>
+                    <button
+                      style={{ color: 'red' }}
+                      onClick={() => {
+                        if (!customer.payment_id) {
+                          alert('找不到付款紀錄，無法退款');
+                          return;
+                        }
+                        handleRefund(customer.payment_id);
+                      }}
+                    >
+                      退款
+                    </button>
+                    <button
+                      style={{ marginLeft: 8 }}
+                      onClick={() => handleCertificateUpload(customer)}
+                    >
+                      上傳證書
+                    </button>
+                    <button
+                      style={{ marginLeft: 8 }}
+                      onClick={() => handleReceiptUpload(customer)}
+                    >
+                      上傳收據
+                    </button>
+                  </>
                 );
               }}
             />

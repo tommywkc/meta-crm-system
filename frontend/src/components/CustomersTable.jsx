@@ -1,7 +1,7 @@
 import React from 'react';
 import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
 
-const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, renderActions, showAdminActions = true }) => {
+const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, renderActions, showAdminActions = true, extraColumns = [] }) => {
   return (
     <table style={tableStyle}>
       <thead>
@@ -11,6 +11,9 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, render
           <th style={thTdStyle}>角色</th>
           <th style={thTdStyle}>電話</th>
           <th style={thTdStyle}>電子郵件</th>
+          {extraColumns.map((col, idx) => (
+            <th key={`extra-head-${idx}`} style={thTdStyle}>{col.header}</th>
+          ))}
           <th style={thTdStyle}>操作</th>
         </tr>
       </thead>
@@ -22,6 +25,11 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, render
             <td style={thTdStyle}>{c.role}</td>
             <td style={thTdStyle}>{c.mobile}</td>
             <td style={thTdStyle}>{c.email ? c.email : '無'}</td>
+            {extraColumns.map((col, idx) => (
+              <td key={`extra-cell-${c.id}-${idx}`} style={thTdStyle}>
+                {col.render ? col.render(c) : ''}
+              </td>
+            ))}
             <td style={thTdStyle}>
               <button onClick={() => onView && onView(c.user_id)}>詳情</button>
               {role === 'ADMIN' && showAdminActions && (
