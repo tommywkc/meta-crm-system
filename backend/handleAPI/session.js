@@ -12,6 +12,7 @@ const {
   searchUpcomingSessionsAllUsers,
   listSessionsByUserAndYear,
   listRegisteredSessionIdsByUserAndEvent,
+  listBySessionId,
 } = require('../dao/sessionRegistrationsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 
@@ -359,6 +360,80 @@ router.get('/my-sessions/registered-by-event', authMiddleware, async (req, res) 
   } catch (error) {
     console.error('Get registered session IDs by event for current user failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// Get attendance list for a specific session (for downloading attendance sheet)
+router.get('/sessions/:session_id/attendance-list', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+  try {
+    const session_id = parseInt(req.params.session_id, 10);
+    console.log('Attendance list request for session_id:', session_id);
+    
+    if (isNaN(session_id)) {
+      return res.status(400).json({ message: '無效的場次 ID' });
+    }
+
+    // Get session details
+    const session = await findBySessionId(session_id);
+    if (!session) {
+      return res.status(404).json({ message: '場次不存在' });
+    }
+
+    // Get all registrations for this session with user details
+    const { findByUserId } = require('../dao/usersDao');
+    const registrations = await listBySessionId(session_id);
+    console.log('Found', registrations.length, 'registrations for session', session_id);
+    
+    // Enrich registration data with user information
+    const attendanceList = await Promise.all(
+      registrations.map(async (reg, index) => {
+        const user = await findByUserId(reg.user_id);
+        return {
+          no: index + 1,
+          user_id: reg.user_id,
+          name: user?.name || '未知',
+          phone: user?.mobile || '',
+          signature: '',
+          mark: '',
+          registration_id: reg.registration_id,
+          status: reg.status
+        };
+      })
+    );
+
+    console.log('Returning', attendanceList.length, 'attendance records');
+    res.json({
+      session: {
+        session_id: session.session_id,
+        session_name: session.session_name,
+        event_id: session.event_id,
+        datetime_start: session.datetime_start,
+        datetime_end: session.datetime_end
+      },
+      attendanceList
+    });
+  } catch (error) {
+    console.error('Get attendance list failed:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// Get all events for download page
+router.get('/events-for-download', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+  try {
+    console.log('Events-for-download request from user:', req.user.sub);
+    const { listbyEventsId } = require('../dao/eventsDao');
+    const events = await listbyEventsId(1000, 0);
+    console.log('Total events found:', events.length);
+    
+    // Filter to only active/open events
+    const activeEvents = events.filter(e => e.status === 'OPEN' || e.status === 'SCHEDULED');
+    console.log('Active events (OPEN/SCHEDULED):', activeEvents.length);
+    
+    res.json({ events: activeEvents });
+  } catch (error) {
+    console.error('Get events for download failed:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
   }
 });
 

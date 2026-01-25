@@ -208,6 +208,73 @@ async function updateRegistrationById(id, fields = {}) {
   return res.rows[0] || null;
 }
 
+// Get attendance list for a specific session
+// Returns all registrations with user details for a given session_id
+async function getAttendanceListBySession(session_id) {
+  const sql = `
+    SELECT
+      sr.registration_id,
+      sr.session_id,
+      sr.user_id,
+      u.user_name,
+      u.phone,
+      e.event_id,
+      e.event_name,
+      es.session_name,
+      es.datetime_start,
+      es.location,
+      sr.status,
+      sr.registration_time
+    FROM SESSION_REGISTRATIONS sr
+    JOIN USERS u ON sr.user_id = u.user_id
+    JOIN EVENT_SESSIONS es ON sr.session_id = es.session_id
+    JOIN EVENTS e ON es.event_id = e.event_id
+    WHERE sr.session_id = $1
+    ORDER BY sr.registration_id ASC
+  `;
+  const res = await query(sql, [session_id]);
+  return res.rows || [];
+}
+
+// Get all events for dropdown
+async function getAllEvents() {
+  const sql = `
+    SELECT DISTINCT
+      e.event_id,
+      e.event_name,
+      e.type,
+      e.datetime_start,
+      e.datetime_end
+    FROM EVENTS e
+    WHERE e.status != 'CANCELLED'
+    ORDER BY e.event_name ASC
+  `;
+  const res = await query(sql);
+  return res.rows || [];
+}
+
+// Get all sessions for a specific event
+async function getSessionsByEvent(event_id) {
+  const sql = `
+    SELECT
+      es.session_id,
+      es.session_name,
+      es.datetime_start,
+      es.datetime_end,
+      es.location,
+      es.capacity,
+      es.round,
+      e.event_id,
+      e.event_name
+    FROM EVENT_SESSIONS es
+    JOIN EVENTS e ON es.event_id = e.event_id
+    WHERE es.event_id = $1
+    ORDER BY es.datetime_start ASC
+  `;
+  const res = await query(sql, [event_id]);
+  return res.rows || [];
+}
+
 module.exports = {
   createRegistration,
   findByRegistrationId,
@@ -222,4 +289,7 @@ module.exports = {
   findBySessionAndUser,
   listRegisteredSessionIdsByUserAndEvent,
   updateRegistrationById,
+  getAttendanceListBySession,
+  getAllEvents,
+  getSessionsByEvent,
 };
