@@ -370,6 +370,33 @@ router.get('/homework/download', authMiddleware, async (req, res) => {
     }
 });
 
+// Download a file (wildcard path for slashes)
+router.get('/homework/download/*', authMiddleware, async (req, res) => {
+    try {
+        const rawName = req.params[0];
+        if (!rawName) {
+            return res.status(400).json({ error: '缺少檔案名稱' });
+        }
+        const decodedName = decodeURIComponent(rawName);
+        const fileContent = await azureBlobService.downloadFile(decodedName, 'homework');
+
+        if (fileContent.success) {
+            res.setHeader('Content-Type', fileContent.contentType || 'application/octet-stream');
+            res.setHeader('Content-Disposition', `attachment; filename="${fileContent.originalName}"`);
+            res.send(fileContent.data);
+        } else {
+            res.status(500).json({
+                success: false,
+                error: '下載檔案失敗',
+                details: fileContent.error
+            });
+        }
+    } catch (error) {
+        console.error('Download file error (wildcard):', error);
+        res.status(500).json({ error: '伺服器錯誤' });
+    }
+});
+
 // Download a file (path param, legacy)
 router.get('/homework/download/:fileName', authMiddleware, async (req, res) => {
     try {
