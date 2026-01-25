@@ -32,7 +32,8 @@ export async function handleUploadHomeworkFile(eventId, assignmentId, file) {
 
 export async function handleDeleteHomeworkFile(fileName) {
   const encodedName = encodeURIComponent(fileName);
-  const response = await fetch(apiUrl(`/api/homework/file/${encodedName}`), {
+  // Use query param to avoid issues when filename contains slashes that break path params
+  const response = await fetch(apiUrl(`/api/homework/file?fileName=${encodedName}`), {
     method: 'DELETE',
     credentials: 'include'
   });
