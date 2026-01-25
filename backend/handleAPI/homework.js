@@ -343,12 +343,40 @@ router.delete('/homework/file/:fileName', authMiddleware, async (req, res) => {
     }
 });
 
-// Download a file
+// Download a file (query param)
+router.get('/homework/download', authMiddleware, async (req, res) => {
+    try {
+        const fileName = req.query.fileName;
+        if (!fileName) {
+            return res.status(400).json({ error: '缺少檔案名稱' });
+        }
+        const decodedName = decodeURIComponent(fileName);
+        const fileContent = await azureBlobService.downloadFile(decodedName, 'homework');
+
+        if (fileContent.success) {
+            res.setHeader('Content-Type', fileContent.contentType || 'application/octet-stream');
+            res.setHeader('Content-Disposition', `attachment; filename="${fileContent.originalName}"`);
+            res.send(fileContent.data);
+        } else {
+            res.status(500).json({
+                success: false,
+                error: '下載檔案失敗',
+                details: fileContent.error
+            });
+        }
+    } catch (error) {
+        console.error('Download file error:', error);
+        res.status(500).json({ error: '伺服器錯誤' });
+    }
+});
+
+// Download a file (path param, legacy)
 router.get('/homework/download/:fileName', authMiddleware, async (req, res) => {
     try {
         const { fileName } = req.params;
+        const decodedName = decodeURIComponent(fileName);
         
-        const fileContent = await azureBlobService.downloadFile(fileName, 'homework');
+        const fileContent = await azureBlobService.downloadFile(decodedName, 'homework');
         
         if (fileContent.success) {
             res.setHeader('Content-Type', fileContent.contentType || 'application/octet-stream');
