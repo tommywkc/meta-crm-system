@@ -99,6 +99,7 @@ const EnrolledList = () => {
           role: c.role || 'MEMBER',
           mobile: c.mobile || '',
           email: c.email || '',
+          issued_certificate: c.issued_certificate,
         }));
         setMembers(mapped);
       } catch (err) {
@@ -182,6 +183,12 @@ const EnrolledList = () => {
               onEdit={null}
               onDelete={null}
               showAdminActions={false}
+              extraColumns={[
+                {
+                  header: '證書',
+                  render: (customer) => (customer.issued_certificate ? '已發放' : '未發放')
+                }
+              ]}
               renderActions={(customer) => {
                 if (isSessionMode) {
                   return (
@@ -194,18 +201,32 @@ const EnrolledList = () => {
                   );
                 }
                 return (
-                  <button
-                    style={{ color: 'red' }}
-                    onClick={() => {
-                      if (!customer.payment_id) {
-                        alert('找不到付款紀錄，無法退款');
-                        return;
-                      }
-                      handleRefund(customer.payment_id);
-                    }}
-                  >
-                    退款
-                  </button>
+                  <>
+                    <button
+                      style={{ color: 'red' }}
+                      onClick={() => {
+                        if (!customer.payment_id) {
+                          alert('找不到付款紀錄，無法退款');
+                          return;
+                        }
+                        handleRefund(customer.payment_id);
+                      }}
+                    >
+                      退款
+                    </button>
+                    <button
+                      style={{ marginLeft: 8 }}
+                      onClick={() => {
+                        if (!customer.payment_id) {
+                          alert('找不到付款紀錄，無法上傳證書');
+                          return;
+                        }
+                        alert('上傳證書（前端按鈕已加入）');
+                      }}
+                    >
+                      上傳證書
+                    </button>
+                  </>
                 );
               }}
             />
