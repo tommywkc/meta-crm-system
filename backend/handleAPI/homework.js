@@ -4,6 +4,7 @@ const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const azureBlobService = require('../services/azureBlobService');
 const assignmentsDao = require('../dao/assignmentsDao');
 const { listConfirmedUsersByEvent } = require('../dao/eventEnrollmentsDao');
+const { createSubmission, findByAssignmentAndUser, updateSubmissionTimeByAssignmentUser, updateGradeByAssignmentUser, listByAssignmentId } = require('../dao/assignmentSubmissionsDao');
 
 const router = express.Router();
 
@@ -14,23 +15,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
     fileFilter: (req, file, cb) => {
-        // allowed MIME types
-        const allowedTypes = [
-            'application/pdf',
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'text/plain'
-        ];
-        
-        if (allowedTypes.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            // keep the original message string because the code later compares error.message
-            cb(new Error('不支援的檔案類型'), false);
-        }
+        cb(null, true);
     },
     limits: {
         fileSize: 10 * 1024 * 1024 // 10MB limit
@@ -118,11 +103,30 @@ router.post('/homework/upload', authMiddleware, upload.single('file'), async (re
         if (!assignmentId || !eventId) {
             return res.status(400).json({ error: '缺少必要參數: eventId 或 assignmentId' });
         }
+        
+        // Only allow one file per user per assignment
+        const existingFiles = await azureBlobService.listHomeworkFilesForStudent(eventId, assignmentId, studentId);
+        if (existingFiles.success && Array.isArray(existingFiles.files) && existingFiles.files.length > 0) {
+            return res.status(400).json({ error: '每個功課只可提交一個檔案，如需更改請先刪除原有檔案' });
+        }
 
         // Upload file using Azure Blob Storage service (eventId_assignmentId folder + eventId_assignmentId_studentId filename)
         const uploadResult = await azureBlobService.uploadHomeworkFile(req.file, eventId, assignmentId, studentId);
         
         if (uploadResult.success) {
+            const now = new Date().toISOString();
+            const existingSubmission = await findByAssignmentAndUser(assignmentId, studentId);
+            if (!existingSubmission) {
+                await createSubmission({
+                    assignment_id: assignmentId,
+                    user_id: studentId,
+                    submission_time: now,
+                    upload_id: null,
+                    status: 'SUBMITTED'
+                });
+            } else {
+                await updateSubmissionTimeByAssignmentUser(assignmentId, studentId, now);
+            }
             res.json({
                 success: true,
                 message: '檔案上傳成功',
@@ -189,6 +193,9 @@ router.get('/homework/files', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: '缺少必要參數: eventId 或 assignmentId' });
         }
 
+        const submission = await findByAssignmentAndUser(assignmentId, studentId);
+        const hasGrade = Boolean(submission && (submission.score != null || submission.feedback));
+
         const filesResult = await azureBlobService.listHomeworkFilesForStudent(eventId, assignmentId, studentId);
         
         if (filesResult.success) {
@@ -197,7 +204,12 @@ router.get('/homework/files', authMiddleware, async (req, res) => {
                 files: (filesResult.files || []).map((file) => ({
                     fileName: file.name,
                     url: file.url,
-                    originalName: file.metadata?.originalName || file.name.split('/').pop()
+                    originalName: file.metadata?.originalName || file.name.split('/').pop(),
+                    submittedAt: file.metadata?.uploadDate
+                        || (file.properties?.lastModified ? new Date(file.properties.lastModified).toISOString() : null),
+                    graded: hasGrade,
+                    score: submission?.score ?? null,
+                    feedback: submission?.feedback ?? null
                 }))
             });
         } else {
@@ -222,6 +234,11 @@ router.get('/homework/admin/submissions', authMiddleware, roleMiddleware(['admin
         }
 
         const users = await listConfirmedUsersByEvent(Number(eventId));
+        const submissionRows = await listByAssignmentId(assignmentId);
+        const submissionMap = new Map();
+        (submissionRows || []).forEach((row) => {
+            submissionMap.set(String(row.user_id), row);
+        });
         const filesResult = await azureBlobService.listHomeworkFilesForAssignment(eventId, assignmentId);
         if (!filesResult.success) {
             return res.status(500).json({ error: filesResult.error || '獲取功課檔案失敗' });
@@ -248,10 +265,23 @@ router.get('/homework/admin/submissions', authMiddleware, roleMiddleware(['admin
         const pending = [];
         users.forEach((user) => {
             const file = submittedMap.get(String(user.user_id));
+            const submission = submissionMap.get(String(user.user_id));
+            const graded = Boolean(submission && (submission.score != null || submission.feedback));
             if (file) {
-                submitted.push({ user, file });
+                submitted.push({
+                    user,
+                    file,
+                    graded,
+                    score: submission?.score ?? null,
+                    feedback: submission?.feedback ?? null
+                });
             } else {
-                pending.push({ user });
+                pending.push({
+                    user,
+                    graded,
+                    score: submission?.score ?? null,
+                    feedback: submission?.feedback ?? null
+                });
             }
         });
 
@@ -259,6 +289,32 @@ router.get('/homework/admin/submissions', authMiddleware, roleMiddleware(['admin
     } catch (error) {
         console.error('Admin submission list error:', error);
         return res.status(500).json({ error: '獲取提交清單失敗' });
+    }
+});
+
+// Admin: grade homework submission
+router.put('/homework/admin/grade', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+    try {
+        const { assignmentId, userId, score, feedback } = req.body || {};
+        if (!assignmentId || !userId) {
+            return res.status(400).json({ error: '缺少必要參數: assignmentId 或 userId' });
+        }
+
+        const existing = await findByAssignmentAndUser(assignmentId, userId);
+        if (!existing) {
+            return res.status(404).json({ error: '找不到提交紀錄' });
+        }
+
+        const updated = await updateGradeByAssignmentUser(assignmentId, userId, {
+            score: score == null || score === '' ? null : Number(score),
+            feedback: feedback || null,
+            graded_by_id: req.user.sub
+        });
+
+        return res.json({ submission: updated });
+    } catch (error) {
+        console.error('Grade submission error:', error);
+        return res.status(500).json({ error: '批改失敗' });
     }
 });
 

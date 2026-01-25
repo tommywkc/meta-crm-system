@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
@@ -10,6 +11,8 @@ import { apiUrl } from '../../api/apiBase';
 const EventHomeworkView = () => {
   const navigate = useNavigate();
   const { id: eventId, assignmentId } = useParams();
+  const { user } = useAuth();
+  const isAdmin = (user?.role || '').toLowerCase() === 'admin';
 
   const [eventInfo, setEventInfo] = useState(null);
   const [assignment, setAssignment] = useState(null);
@@ -83,12 +86,13 @@ const EventHomeworkView = () => {
                 <th style={thTdStyle}>電郵</th>
                 <th style={thTdStyle}>檔案</th>
                 <th style={thTdStyle}>提交時間</th>
-                <th style={thTdStyle}>下載</th>
+                <th style={thTdStyle}>結果</th>
+                <th style={thTdStyle}>操作</th>
               </tr>
             </thead>
             <tbody>
               {submittedUsers.length === 0 ? (
-                <tr><td style={thTdStyle} colSpan={7}>暫無提交</td></tr>
+                <tr><td style={thTdStyle} colSpan={8}>暫無提交</td></tr>
               ) : submittedUsers.map((item) => (
                 <tr key={item.user?.user_id}>
                   <td style={thTdStyle}>{item.user?.user_id}</td>
@@ -98,10 +102,42 @@ const EventHomeworkView = () => {
                   <td style={thTdStyle}>{item.file?.originalName || item.file?.fileName || ''}</td>
                   <td style={thTdStyle}>{item.file?.submittedAt ? formatDateTimeForDisplay(item.file.submittedAt) : 'N/A'}</td>
                   <td style={thTdStyle}>
+                    {item.graded ? (
+                      <>
+                        已批改
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/events/${eventId}/homework/${assignmentId}/result?userId=${item.user?.user_id}`)}
+                          style={{ marginLeft: 8 }}
+                        >
+                          查看結果
+                        </button>
+                      </>
+                    ) : (
+                      '未批改'
+                    )}
+                  </td>
+                  <td style={thTdStyle}>
                     {item.file?.fileName ? (
-                      <a href={getDownloadUrl(item.file.fileName)} download={item.file?.originalName || undefined}>
-                        下載
-                      </a>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            window.location.href = getDownloadUrl(item.file.fileName);
+                          }}
+                          style={{ marginRight: 8 }}
+                        >
+                          下載
+                        </button>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/admin/events/${eventId}/homework/${assignmentId}/grade/${item.user?.user_id}`)}
+                          >
+                            批改
+                          </button>
+                        )}
+                      </>
                     ) : (
                       'N/A'
                     )}
@@ -119,17 +155,34 @@ const EventHomeworkView = () => {
                 <th style={thTdStyle}>姓名</th>
                 <th style={thTdStyle}>電話</th>
                 <th style={thTdStyle}>電郵</th>
+                <th style={thTdStyle}>結果</th>
               </tr>
             </thead>
             <tbody>
               {pendingUsers.length === 0 ? (
-                <tr><td style={thTdStyle} colSpan={4}>全部已提交</td></tr>
+                <tr><td style={thTdStyle} colSpan={5}>全部已提交</td></tr>
               ) : pendingUsers.map((item) => (
                 <tr key={item.user?.user_id}>
                   <td style={thTdStyle}>{item.user?.user_id}</td>
                   <td style={thTdStyle}>{item.user?.name || 'N/A'}</td>
                   <td style={thTdStyle}>{item.user?.mobile || ''}</td>
                   <td style={thTdStyle}>{item.user?.email || ''}</td>
+                  <td style={thTdStyle}>
+                    {item.graded ? (
+                      <>
+                        已批改
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/events/${eventId}/homework/${assignmentId}/result?userId=${item.user?.user_id}`)}
+                          style={{ marginLeft: 8 }}
+                        >
+                          查看結果
+                        </button>
+                      </>
+                    ) : (
+                      '未批改'
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

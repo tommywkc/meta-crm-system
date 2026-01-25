@@ -54,3 +54,17 @@ export async function handleGetAssignmentSubmissions(eventId, assignmentId) {
   }
   return payload;
 }
+
+export async function handleGradeSubmission({ assignmentId, userId, score, feedback }) {
+  const response = await fetch(apiUrl('/api/homework/admin/grade'), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ assignmentId, userId, score, feedback })
+  });
+  const payload = await response.json();
+  if (!response.ok || payload?.error) {
+    throw new Error(payload?.error || '批改失敗');
+  }
+  return payload;
+}

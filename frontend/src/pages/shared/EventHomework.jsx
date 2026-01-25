@@ -148,13 +148,15 @@ const EventHomework = () => {
             <th style={thTdStyle}>名稱</th>
             <th style={thTdStyle}>描述</th>
             <th style={thTdStyle}>截止日期</th>
+            {isMember && <th style={thTdStyle}>提交時間</th>}
+            {isMember && <th style={thTdStyle}>結果</th>}
             <th style={thTdStyle}>操作</th>
           </tr>
         </thead>
         <tbody>
           {assignments.length === 0 ? (
             <tr>
-              <td style={thTdStyle} colSpan={5}>暫無功課</td>
+              <td style={thTdStyle} colSpan={isMember ? 7 : 5}>暫無功課</td>
             </tr>
           ) : (
             assignments.map((item) => (
@@ -167,6 +169,30 @@ const EventHomework = () => {
                 <td style={thTdStyle}>
                   {item.deadline ? formatDateTimeForDisplay(item.deadline) : 'N/A'}
                 </td>
+                {isMember && (
+                  <td style={thTdStyle}>
+                    {filesByAssignment[item.assignment_id]?.[0]?.submittedAt
+                      ? formatDateTimeForDisplay(filesByAssignment[item.assignment_id][0].submittedAt)
+                      : 'N/A'}
+                  </td>
+                )}
+                {isMember && (
+                  <td style={thTdStyle}>
+                    {filesByAssignment[item.assignment_id]?.[0]?.graded ? (
+                      <>
+                        已批改
+                        <button
+                          onClick={() => navigate(`/events/${eventId}/homework/${item.assignment_id}/result`)}
+                          style={{ marginLeft: 8 }}
+                        >
+                          查看結果
+                        </button>
+                      </>
+                    ) : (
+                      '未批改'
+                    )}
+                  </td>
+                )}
                 <td style={thTdStyle}>
                   {isAdmin ? (
                     <>
@@ -186,11 +212,14 @@ const EventHomework = () => {
                       />
                       <button
                         onClick={() => uploadInputRefs.current[item.assignment_id]?.click()}
-                        disabled={uploadingId === item.assignment_id}
+                        disabled={uploadingId === item.assignment_id || (filesByAssignment[item.assignment_id] || []).length > 0}
                         style={{ marginRight: 8 }}
                       >
                         {uploadingId === item.assignment_id ? '上傳中...' : '上傳'}
                       </button>
+                      {(filesByAssignment[item.assignment_id] || []).length > 0 && (
+                        <span style={{ color: '#666' }}>已提交（如需更改請先刪除）</span>
+                      )}
                       {(filesByAssignment[item.assignment_id] || []).map((file) => (
                         <div key={file.fileName} style={{ marginTop: 6 }}>
                           <span>{file.originalName || file.fileName}</span>

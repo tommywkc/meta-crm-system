@@ -189,6 +189,7 @@ CREATE TABLE IF NOT EXISTS ASSIGNMENT_SUBMISSIONS (
     submission_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     upload_id BIGINT,
     status VARCHAR(50) DEFAULT 'SUBMITTED',
+    score NUMERIC,
     graded_by_id BIGINT,
     feedback TEXT,
     PRIMARY KEY (submission_id),
