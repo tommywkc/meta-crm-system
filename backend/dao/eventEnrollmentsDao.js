@@ -70,7 +70,9 @@ async function listConfirmedUsersByEvent(event_id) {
       u.role,
       u.mobile,
       u.email,
-      p.payment_id
+      p.payment_id,
+      p.issued_certificate,
+      p.issued_receipt
     FROM EVENT_ENROLLMENTS e
     JOIN USERS u ON e.user_id = u.user_id
     LEFT JOIN PAYMENTS p ON p.enrollment_id = e.enrollment_id

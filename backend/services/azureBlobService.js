@@ -18,7 +18,8 @@ class AzureBlobService {
         this.containers = {
             homework: 'homework-files',
             portfolio: 'portfolio-files',
-            certificates: 'certificate-files'
+            certificates: 'certificate-files',
+            receipts: 'receipt-files'
         };
     }
 
@@ -120,6 +121,86 @@ class AzureBlobService {
         }
     }
 
+    async uploadCertificateFile(file, eventId, userId) {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
+        try {
+            const fileName = `${eventId}/${userId}/${file.originalname}`;
+
+            const containerName = this.containers.certificates;
+            const containerClient = this.blobServiceClient.getContainerClient(containerName);
+            const blobClient = containerClient.getBlockBlobClient(fileName);
+
+            const uploadResponse = await blobClient.upload(file.buffer, file.size, {
+                blobHTTPHeaders: {
+                    blobContentType: file.mimetype
+                },
+                metadata: {
+                    originalName: file.originalname,
+                    eventId: String(eventId),
+                    userId: String(userId),
+                    uploadDate: new Date().toISOString()
+                },
+                overwrite: true
+            });
+
+            return {
+                success: true,
+                fileName,
+                url: blobClient.url,
+                originalName: file.originalname,
+                size: file.size,
+                uploadResponse
+            };
+        } catch (error) {
+            console.error('Azure Blob Storage certificate upload error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async uploadReceiptFile(file, eventId, userId) {
+        const notConfigured = this.ensureConfigured();
+        if (notConfigured) return notConfigured;
+        try {
+            const fileName = `${eventId}/${userId}/${file.originalname}`;
+
+            const containerName = this.containers.receipts;
+            const containerClient = this.blobServiceClient.getContainerClient(containerName);
+            const blobClient = containerClient.getBlockBlobClient(fileName);
+
+            const uploadResponse = await blobClient.upload(file.buffer, file.size, {
+                blobHTTPHeaders: {
+                    blobContentType: file.mimetype
+                },
+                metadata: {
+                    originalName: file.originalname,
+                    eventId: String(eventId),
+                    userId: String(userId),
+                    uploadDate: new Date().toISOString()
+                },
+                overwrite: true
+            });
+
+            return {
+                success: true,
+                fileName,
+                url: blobClient.url,
+                originalName: file.originalname,
+                size: file.size,
+                uploadResponse
+            };
+        } catch (error) {
+            console.error('Azure Blob Storage receipt upload error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
     async deleteFile(fileName, containerType = 'homework') {
         const notConfigured = this.ensureConfigured();
         if (notConfigured) return notConfigured;
@@ -195,7 +276,8 @@ class AzureBlobService {
                 success: true,
                 data: fileBuffer,
                 contentType: downloadResponse.contentType,
-                originalName: downloadResponse.metadata?.originalName || fileName.split('/').pop()
+                originalName: downloadResponse.metadata?.originalName || downloadResponse.metadata?.originalname || fileName.split('/').pop(),
+                metadata: downloadResponse.metadata || {}
             };
         } catch (error) {
             console.error('Azure Blob Storage download error:', error);

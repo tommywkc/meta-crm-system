@@ -22,7 +22,7 @@ import Download from './pages/admin/Download';
 import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
 import Waiting from './pages/admin/Waiting';
-import Files from './pages/admin/Files';
+import Subscrip from './pages/admin/Subscrip';
 
 // SalesCustomers removed in favor of shared CustomersList
 import KPI from './pages/sales/KPI';
@@ -33,7 +33,6 @@ import PaymentView from './pages/shared/PaymentView';
 import Receipts from './pages/member/Receipts';
 import Requests from './pages/member/Requests';
 import RequestsForm from './pages/member/RequestsForm';
-import Homework from './pages/member/Homework';
 import MyQRcode from './pages/member/MyQRcode';
 import MemberCalendarPage from './pages/member/Calendar';
 import Apply from './pages/shared/Apply';
@@ -205,7 +204,7 @@ function App() {
           } />
           <Route path="/files" element={
             <ProtectedRoute allowedRole="admin">
-              <Files />
+              <Subscrip />
             </ProtectedRoute>
           } />
 
@@ -260,11 +259,6 @@ function App() {
           <Route path="/requests/create" element={
             <ProtectedRoute allowedRole="member">
               <RequestsForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/homework" element={
-            <ProtectedRoute allowedRole="member">
-              <Homework />
             </ProtectedRoute>
           } />
           <Route path="/myqrcode" element={
