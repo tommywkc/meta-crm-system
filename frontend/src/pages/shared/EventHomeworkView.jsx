@@ -52,7 +52,7 @@ const EventHomeworkView = () => {
 
   const getDownloadUrl = (fileName) => {
     if (!fileName) return null;
-    return apiUrl(`/api/homework/download/${encodeURIComponent(fileName)}`);
+    return apiUrl(`/api/homework/download?fileName=${encodeURIComponent(fileName)}`);
   };
 
   return (
