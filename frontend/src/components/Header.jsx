@@ -49,6 +49,7 @@ const Header = () => {
     const p = pagesMap[key];
     if (p) navigate(p.path);
   };
+  
 
   return (
     <header style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid #eee', background: '#fafafa' }}>

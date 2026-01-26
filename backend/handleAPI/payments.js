@@ -4,6 +4,8 @@ const { authMiddleware } = require('../middleware/auth');
 const { listByUser, listByUserWithSearch, listByPaymentId, findByPaymentId, updatePaymentById, searchPayments } = require('../dao/paymentsDao');
 const { removeByEnrollmentId, updateStatusByEnrollmentId } = require('../dao/eventEnrollmentsDao');
 const { updateRemainingSeats } = require('../dao/eventsDao');
+const { findByUserId } = require('../dao/usersDao');
+const { sendEmail } = require('../services/emailService');
 
 
 router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
@@ -146,6 +148,39 @@ router.put('/payments/:paymentId', authMiddleware, async (req, res) => {
         await updateStatusByEnrollmentId(existingPayment.enrollment_id, 'PENDING');
     }
 
+    // After successfully updating the payment and related enrollment/event,
+    // try to send a notification email and notification to the payment owner.
+    // Failure should NOT break the API response.
+    try {
+      const { createNotification } = require('../dao/notificationsDao');
+      const user = await findByUserId(existingPayment.user_id);
+      const to = user && user.email;
+
+      const subject = '付款資料更新通知';
+      const lines = [
+        '付款資料更新成功',
+        '',
+        `付款編號：${paymentId}`,
+        updatedPayment.status ? `狀態：${updatedPayment.status}` : '',
+        updatedPayment.amount != null ? `金額：${updatedPayment.amount}` : ''
+      ].filter(Boolean);
+      const text = lines.join('\n');
+
+      if (to) {
+        await sendEmail({ to, subject, text });
+      } else {
+        console.warn(`User ${existingPayment.user_id} has no email configured, skip payment update email`);
+      }
+
+      // Also create a notification for the user
+      await createNotification({
+        user_id: existingPayment.user_id,
+        description: text,
+        template: subject
+      });
+    } catch (emailError) {
+      console.error('Failed to send payment update email or notification:', emailError);
+    }
 
     return res.json({ message: '付款資料更新成功', payment: updatedPayment });
 
