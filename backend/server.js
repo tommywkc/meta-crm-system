@@ -79,6 +79,14 @@ const paymentsRouter = require('./handleAPI/payments');
 console.log('Payments router loaded');
 app.use('/api', paymentsRouter); // Use the payments router
 
+const certificatesRouter = require('./handleAPI/certificates');
+console.log('Certificates router loaded');
+app.use('/api', certificatesRouter); // Use the certificates router
+
+const receiptsRouter = require('./handleAPI/receipts');
+console.log('Receipts router loaded');
+app.use('/api', receiptsRouter); // Use the receipts router
+
 const attendanceRouter = require('./handleAPI/attendance');
 console.log('Attendance router loaded');
 app.use('/api', attendanceRouter); // Use the attendance router
@@ -90,6 +98,9 @@ app.use('/api', emailRouter); // Use the email router
 const notificationsRouter = require('./handleAPI/notifications');
 console.log('Notifications router loaded');
 app.use('/api', notificationsRouter); // Use the notifications router
+const feedbackRouter = require('./handleAPI/feedback');
+console.log('Feedback router loaded');
+app.use('/api', feedbackRouter); // Use the feedback router
 
 // Logout endpoint
 app.post('/api/logout', (req, res) => {

@@ -9,24 +9,23 @@ async function readBackendErrorMessage(res) {
   }
 }
 
-export async function listUsers(limit, offset) {
-  console.log('Fetching customers list from backend');
-  const res = await fetch(apiUrl('/api/customers'), {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // allow cookies to be sent across origins
-  });
-  if (!res.ok) {
-    const message = await readBackendErrorMessage(res);
-    throw new Error(message || res.statusText || 'Failed to fetch customers list');
-  }
-  return await res.json();
-}
-
-export async function handleList(limit, offset) {
+export async function handleList(limit = 100, offset = 0, q = '') {
   try {
-    console.log('Attempting to fetch customers list...');
-    const payload = await listUsers(limit, offset);
+    console.log('Attempting to fetch customers list...', { limit, offset, q });
+    const params = new URLSearchParams();
+    params.append('limit', limit);
+    params.append('offset', offset);
+    if (q && q.trim()) params.append('q', q);
+    const res = await fetch(apiUrl(`/api/customers?${params.toString()}`), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // allow cookies to be sent across origins
+    });
+    if (!res.ok) {
+      const message = await readBackendErrorMessage(res);
+      throw new Error(message || res.statusText || 'Failed to fetch customers list');
+    }
+    const payload = await res.json();
     console.log('Customers list response:', payload);
     return payload;
   } catch (err) {
@@ -35,24 +34,19 @@ export async function handleList(limit, offset) {
   }
 }
 
-export async function getUserById(user_id) {
-  console.log(`Fetching customer ${user_id} from backend`);
-  const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // allow cookies to be sent across origins
-  });
-  if (!res.ok) {
-    const message = await readBackendErrorMessage(res);
-    throw new Error(message || res.statusText || `Failed to fetch customer ${user_id}`);
-  }
-  return await res.json();
-}
-
 export async function handleGetById(user_id) {
   try {
     console.log(`Attempting to fetch customer ${user_id}...`);
-    const payload = await getUserById(user_id);
+    const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // allow cookies to be sent across origins
+    });
+    if (!res.ok) {
+      const message = await readBackendErrorMessage(res);
+      throw new Error(message || res.statusText || `Failed to fetch customer ${user_id}`);
+    }
+    const payload = await res.json();
     console.log(`Customer ${user_id} response:`, payload);
     return payload;
   } catch (err) {
@@ -61,25 +55,20 @@ export async function handleGetById(user_id) {
   }
 }
 
-export async function updateUserById(user_id, data) {
-  console.log(`Updating customer ${user_id} on backend`, data);
-  const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // allow cookies to be sent across origins
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) {
-    const message = await readBackendErrorMessage(res);
-    throw new Error(message || res.statusText || `Failed to update customer ${user_id}`);
-  }
-  return await res.json();
-}
-
 export async function handleUpdateById(user_id, data) {
   try {
     console.log(`Attempting to update customer ${user_id}...`, data);
-    const payload = await updateUserById(user_id, data);
+    const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // allow cookies to be sent across origins
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const message = await readBackendErrorMessage(res);
+      throw new Error(message || res.statusText || `Failed to update customer ${user_id}`);
+    }
+    const payload = await res.json();
     console.log(`Customer ${user_id} update response:`, payload);
     return payload;
   } catch (err) {
@@ -88,25 +77,20 @@ export async function handleUpdateById(user_id, data) {
   }
 }
 
-export async function createUser(data) {
-  console.log('Creating new customer on backend', data);
-  const res = await fetch(apiUrl('/api/customers'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // allow cookies to be sent across origins
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) {
-    const message = await readBackendErrorMessage(res);
-    throw new Error(message || res.statusText || 'Failed to create customer');
-  }
-  return await res.json();
-}
-
 export async function handleCreate(data) {
   try {
     console.log('Attempting to create new customer...', data);
-    const payload = await createUser(data);
+    const res = await fetch(apiUrl('/api/customers'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // allow cookies to be sent across origins
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const message = await readBackendErrorMessage(res);
+      throw new Error(message || res.statusText || 'Failed to create customer');
+    }
+    const payload = await res.json();
     console.log('New customer creation response:', payload);
     return payload;
   } catch (err) {
@@ -115,24 +99,19 @@ export async function handleCreate(data) {
   }
 }
 
-export async function deleteUserById(user_id) {
-  console.log(`Deleting customer ${user_id} on backend`);
-  const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // allow cookies to be sent across origins
-  });
-  if (!res.ok) {
-    const message = await readBackendErrorMessage(res);
-    throw new Error(message || res.statusText || `Failed to delete customer ${user_id}`);
-  }
-  return await res.json();
-}
-
 export async function handleDeleteById(user_id) {
   try {
     console.log(`Attempting to delete customer ${user_id}...`);
-    const payload = await deleteUserById(user_id);
+    const res = await fetch(apiUrl(`/api/customers/${user_id}`), {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // allow cookies to be sent across origins
+    });
+    if (!res.ok) {
+      const message = await readBackendErrorMessage(res);
+      throw new Error(message || res.statusText || `Failed to delete customer ${user_id}`);
+    }
+    const payload = await res.json();
     console.log(`Customer ${user_id} deletion response:`, payload);
     return payload;
   } catch (err) {
@@ -143,24 +122,19 @@ export async function handleDeleteById(user_id) {
 
 
 //handle get user detail in scan
-export async function getUserByQRToken(qr_token) { 
-  console.log(`Fetching customer detail by QR token from backend`);
-  const res = await fetch(apiUrl(`/api/customers/scan/${encodeURIComponent(qr_token)}`), {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // allow cookies to be sent across origins
-  });
-  if (!res.ok) {
-    const message = await readBackendErrorMessage(res);
-    throw new Error(message || res.statusText || `Failed to fetch customer detail by QR token`);
-  }
-  return await res.json();
-}
-
 export async function handleGetUserByQRToken(qr_token) {
   try {
     console.log(`Attempting to fetch customer detail by QR token...`);
-    const payload = await getUserByQRToken(qr_token);
+    const res = await fetch(apiUrl(`/api/customers/scan/${encodeURIComponent(qr_token)}`), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // allow cookies to be sent across origins
+    });
+    if (!res.ok) {
+      const message = await readBackendErrorMessage(res);
+      throw new Error(message || res.statusText || `Failed to fetch customer detail by QR token`);
+    }
+    const payload = await res.json();
     console.log(`Customer detail by QR token response:`, payload);
     return payload;
   } catch (err) {
@@ -169,24 +143,19 @@ export async function handleGetUserByQRToken(qr_token) {
   }
 }
 
-export async function findUserByRole(role) {
-  console.log(`Fetching customers with role ${role} from backend`);
-  const res = await fetch(apiUrl(`/api/customers/role/${encodeURIComponent(role)}`), {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // allow cookies to be sent across origins
-  });
-  if (!res.ok) {
-    const message = await readBackendErrorMessage(res);
-    throw new Error(message || res.statusText || `Failed to fetch customers with role ${role}`);
-  }
-  return await res.json();
-}
-
 export async function handleFindUserByRole(role) {
   try {
     console.log(`Attempting to fetch customers with role ${role}...`);
-    const payload = await findUserByRole(role);
+    const res = await fetch(apiUrl(`/api/customers/role/${encodeURIComponent(role)}`), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // allow cookies to be sent across origins
+    });
+    if (!res.ok) {
+      const message = await readBackendErrorMessage(res);
+      throw new Error(message || res.statusText || `Failed to fetch customers with role ${role}`);
+    }
+    const payload = await res.json();
     console.log(`Customers with role ${role} response:`, payload);
     return payload;
   } catch (err) {

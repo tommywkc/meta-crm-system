@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
-const { listByUser, listByPaymentId, findByPaymentId, updatePaymentById } = require('../dao/paymentsDao');
+const { listByUser, listByUserWithSearch, listByPaymentId, findByPaymentId, updatePaymentById, searchPayments } = require('../dao/paymentsDao');
 const { removeByEnrollmentId, updateStatusByEnrollmentId } = require('../dao/eventEnrollmentsDao');
 const { updateRemainingSeats } = require('../dao/eventsDao');
 const { findByUserId } = require('../dao/usersDao');
@@ -17,7 +17,37 @@ router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: '缺少使用者ID' });
     }
 
-    const payments = await listByUser(userId, limit, offset);
+    const q = req.query.q || '';
+    let method = req.query.method || null;
+    // method can be repeated or comma-separated -> normalize to array of upper-case
+    if (method) {
+      if (Array.isArray(method)) {
+        method = method.map(m => String(m).trim().toUpperCase()).filter(Boolean);
+      } else {
+        method = String(method).split(',').map(m => m.trim().toUpperCase()).filter(Boolean);
+      }
+    }
+    // status can be provided as repeated query params or comma-separated
+    let status = req.query.status || null;
+    if (status) {
+      if (Array.isArray(status)) {
+        status = status.map(s => String(s).trim().toUpperCase()).filter(Boolean);
+      } else {
+        status = String(status).split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+      }
+    }
+
+    // Members can only view their own completed payments
+    if (req.user && req.user.role && req.user.role.toLowerCase() === 'member') {
+      if (parseInt(req.user.sub, 10) !== userId) {
+        return res.status(403).json({ message: '無權限' });
+      }
+      const payments = await listByUserWithSearch(userId, limit, offset, q, true, method, status);
+      return res.json({ payments });
+    }
+
+    // Admins and other roles can view payments for the given user (optionally search)
+    const payments = await listByUserWithSearch(userId, limit, offset, q, false, method, status);
     return res.json({ payments });
   } catch (error) {
     console.error('List payments failed:', error);
@@ -30,6 +60,36 @@ router.get('/payments', authMiddleware, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
+    const q = req.query.q || '';
+    let method = req.query.method || null;
+    if (method) {
+      if (Array.isArray(method)) {
+        method = method.map(m => String(m).trim().toUpperCase()).filter(Boolean);
+      } else {
+        method = String(method).split(',').map(m => m.trim().toUpperCase()).filter(Boolean);
+      }
+    }
+    let status = req.query.status || null;
+    if (status) {
+      if (Array.isArray(status)) {
+        status = status.map(s => String(s).trim().toUpperCase()).filter(Boolean);
+      } else {
+        status = String(status).split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+      }
+    }
+
+    // If member -> only return their own completed payments
+    if (req.user && req.user.role && req.user.role.toLowerCase() === 'member') {
+      const userId = parseInt(req.user.sub, 10);
+      const payments = await listByUserWithSearch(userId, limit, offset, q, true, method, status);
+      return res.json({ payments });
+    }
+
+    // Admins: if q provided, search across payments; otherwise return paged list
+    if (q || method || status) {
+      const payments = await searchPayments(limit, offset, q, method, status);
+      return res.json({ payments });
+    }
 
     const payments = await listByPaymentId(limit, offset);
     return res.json({ payments });

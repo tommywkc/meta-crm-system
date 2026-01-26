@@ -14,6 +14,14 @@ async function findBySubmissionId(id) {
   return res.rows[0] || null;
 }
 
+async function findByAssignmentAndUser(assignment_id, user_id) {
+  const res = await query(
+    'SELECT * FROM ASSIGNMENT_SUBMISSIONS WHERE assignment_id = $1 AND user_id = $2 ORDER BY submission_id DESC LIMIT 1',
+    [assignment_id, user_id]
+  );
+  return res.rows[0] || null;
+}
+
 async function listByAssignmentId(assignment_id) {
   const res = await query('SELECT * FROM ASSIGNMENT_SUBMISSIONS WHERE assignment_id = $1 ORDER BY submission_id DESC', [assignment_id]);
   return res.rows;
@@ -24,4 +32,30 @@ async function removeBySubmissionId(id) {
   return true;
 }
 
-module.exports = { createSubmission, findBySubmissionId, listByAssignmentId, removeBySubmissionId };
+async function updateGradeByAssignmentUser(assignment_id, user_id, { score = null, feedback = null, graded_by_id = null }) {
+  const sql = `
+    UPDATE ASSIGNMENT_SUBMISSIONS
+    SET score = $1,
+        feedback = $2,
+        graded_by_id = $3
+    WHERE assignment_id = $4 AND user_id = $5
+    RETURNING *
+  `;
+  const vals = [score, feedback, graded_by_id, assignment_id, user_id];
+  const res = await query(sql, vals);
+  return res.rows[0] || null;
+}
+
+async function updateSubmissionTimeByAssignmentUser(assignment_id, user_id, submission_time = null) {
+  const sql = `
+    UPDATE ASSIGNMENT_SUBMISSIONS
+    SET submission_time = $1
+    WHERE assignment_id = $2 AND user_id = $3
+    RETURNING *
+  `;
+  const vals = [submission_time, assignment_id, user_id];
+  const res = await query(sql, vals);
+  return res.rows[0] || null;
+}
+
+module.exports = { createSubmission, findBySubmissionId, findByAssignmentAndUser, listByAssignmentId, removeBySubmissionId, updateGradeByAssignmentUser, updateSubmissionTimeByAssignmentUser };

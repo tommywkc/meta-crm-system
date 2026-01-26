@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS EVENTS;
 DROP TABLE IF EXISTS NOTIFICATIONS;
 DROP TABLE IF EXISTS NOTICES;
 DROP TABLE IF EXISTS HOLIDAYS;
+DROP TABLE IF EXISTS FEEDBACKS;
 DROP TABLE IF EXISTS USERS;
 DROP SEQUENCE IF EXISTS user_id_seq;
 DROP SEQUENCE IF EXISTS event_id_seq;
@@ -170,12 +171,14 @@ CREATE TABLE IF NOT EXISTS UPLOADS (
 
 CREATE TABLE IF NOT EXISTS ASSIGNMENTS (
     assignment_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
-    session_id BIGINT,
+    event_id BIGINT,
     assigned_by_id BIGINT,
     assigned_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    name VARCHAR(255),
+    description TEXT,
     deadline TIMESTAMP,
     PRIMARY KEY (assignment_id),
-    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id) ON DELETE SET NULL,
+    FOREIGN KEY (event_id) REFERENCES EVENTS(event_id) ON DELETE SET NULL,
     FOREIGN KEY (assigned_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
@@ -186,6 +189,7 @@ CREATE TABLE IF NOT EXISTS ASSIGNMENT_SUBMISSIONS (
     submission_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     upload_id BIGINT,
     status VARCHAR(50) DEFAULT 'SUBMITTED',
+    score NUMERIC,
     graded_by_id BIGINT,
     feedback TEXT,
     PRIMARY KEY (submission_id),
@@ -265,12 +269,24 @@ CREATE TABLE IF NOT EXISTS NOTIFICATIONS (
     FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
-CREATE TABLE holidays (
+CREATE TABLE HOLIDAYS (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   holiday_date DATE UNIQUE,
   name_tc VARCHAR(100),
   uid VARCHAR(50),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS FEEDBACKS (
+    feedback_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+    testing_role VARCHAR(50),
+    rating TEXT,
+    text TEXT,
+    submitted_by_id BIGINT,
+    submit_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (feedback_id),
+    FOREIGN KEY (submitted_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    CONSTRAINT CHKROLE_FEED CHECK (testing_role IN ('ADMIN', 'SALES', 'LEADER', 'MEMBER', 'N/A'))
 );
 
 INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags) VALUES
@@ -391,7 +407,7 @@ INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datet
 -- Insert sample payment records
 INSERT INTO PAYMENTS (event_id, user_id, enrollment_id, amount, method, status, create_time, paid_time, expire_time, receipt_number, issued_receipt, issued_certificate, remarks) VALUES
 -- Completed payments
-(101, 50008, NULL, 5000.00, 'FPS', 'COMPLETED', '2025-11-15 10:30:00', '2025-11-16 14:20:00', '2025-11-18 23:59:59', 'RCP-2025-001', TRUE, FALSE, '已完成付款'),
+(102, 50008, NULL, 5000.00, 'FPS', 'COMPLETED', '2025-11-15 10:30:00', '2025-11-16 14:20:00', '2025-11-18 23:59:59', 'RCP-2025-001', TRUE, FALSE, '已完成付款'),
 (102, 50008, NULL, 3000.00, 'CREDITCARD', 'COMPLETED', '2025-11-20 09:15:00', '2025-11-20 09:20:00', '2025-11-23 23:59:59', 'RCP-2025-002', TRUE, TRUE, '信用卡付款已確認'),
 (103, 50008, NULL, 4500.00, 'PAYME', 'COMPLETED', '2025-11-25 16:45:00', '2025-11-26 10:00:00', '2025-11-28 23:59:59', 'RCP-2025-003', TRUE, FALSE, 'PayMe 轉帳完成'),
 (105, 50012, NULL, 2500.00, 'CASH', 'COMPLETED', '2025-11-28 11:00:00', '2025-11-28 11:00:00', '2025-12-01 23:59:59', 'RCP-2025-004', TRUE, FALSE, '現金付款'),

@@ -17,7 +17,12 @@ const CustomerForm = ({
   const [password, setPassword] = useState(initialData.password || '');
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState(initialData.name || '');
-  const [mobile, setMobile] = useState(initialData.mobile || '');
+  const [mobile, setMobile] = useState(
+    initialData.mobile
+      ? String(initialData.mobile).replace(/\D/g, '').slice(-8)
+      : ''
+  );
+  const [mobileError, setMobileError] = useState(null);
   const [email, setEmail] = useState(initialData.email || '');
   const [role, setRole] = useState(initialData.role || 'MEMBER');
   const [ownerSales, setOwnerSales] = useState(initialData.owner_sales || '');
@@ -49,7 +54,11 @@ const CustomerForm = ({
     if (initialData && Object.keys(initialData).length > 0) {
       setPassword(initialData.password || '');
       setName(initialData.name || '');
-      setMobile(initialData.mobile || '');
+      setMobile(
+        initialData.mobile
+          ? String(initialData.mobile).replace(/\D/g, '').slice(-8)
+          : ''
+      );
       setEmail(initialData.email || '');
       setRole(initialData.role || 'MEMBER');
       setSource(initialData.source || '');
@@ -121,6 +130,13 @@ const CustomerForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!mobile || mobile.length !== 8) {
+      const msg = '請輸入 8 位數字手機號碼';
+      setMobileError(msg);
+      alert(msg);
+      return;
+    }
     // 驗證負責銷售是否有效（若有輸入）
     if (ownerSalesError) {
       alert(ownerSalesError);
@@ -131,10 +147,12 @@ const CustomerForm = ({
       alert(referrerError);
       return;
     }
+    const fullMobile = mobile ? `+852 ${mobile}` : '';
+
     const formData = {
       password,
       name,
-      mobile,
+      mobile: fullMobile,
       email,
       role,
       source,
@@ -187,12 +205,32 @@ const CustomerForm = ({
         <div style={{ marginBottom: 8 }}>
           <label>手機號碼:</label>
           <br />
-          <input 
-            value={mobile} 
-            onChange={(e) => setMobile(e.target.value)} 
-            style={{ width: '100%', padding: 8 }} 
-            required
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span>
+              +852
+            </span>
+            <input
+              type="tel"
+              value={mobile}
+              onChange={(e) => {
+                const onlyDigits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                setMobile(onlyDigits);
+                if (onlyDigits === '') {
+                  setMobileError(null);
+                } else if (onlyDigits.length !== 8) {
+                  setMobileError('請輸入 8 位數字的手機號碼');
+                } else {
+                  setMobileError(null);
+                }
+              }}
+              style={{ flex: 1, padding: 8, borderRadius: '0 4px 4px 0', border: '1px solid #ccc', borderColor: mobileError ? 'red' : '#ccc' }}
+              placeholder="請輸入 +852 後 8 位數字"
+              required
+            />
+          </div>
+          {mobileError && (
+            <small style={{ color: 'red' }}>{mobileError}</small>
+          )}
         </div>
 
         <div style={{ marginBottom: 8 }}>

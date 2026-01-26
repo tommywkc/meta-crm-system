@@ -22,7 +22,7 @@ import Download from './pages/admin/Download';
 import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
 import Waiting from './pages/admin/Waiting';
-import Files from './pages/admin/Files';
+import Subscrip from './pages/admin/Subscrip';
 
 // SalesCustomers removed in favor of shared CustomersList
 import KPI from './pages/sales/KPI';
@@ -33,13 +33,21 @@ import PaymentView from './pages/shared/PaymentView';
 import Receipts from './pages/member/Receipts';
 import Requests from './pages/member/Requests';
 import RequestsForm from './pages/member/RequestsForm';
-import Homework from './pages/member/Homework';
 import MyQRcode from './pages/member/MyQRcode';
 import MemberCalendarPage from './pages/member/Calendar';
 import Apply from './pages/shared/Apply';
 import MyEventList from './pages/member/MyEventList';
 import EnrollSession from './pages/shared/EnrollSession';
 import SessionListPage from './pages/shared/sessionList';
+import Feedback from './pages/shared/Feedback';
+import FeedbackListPage from './pages/admin/FeedbackListPage';
+import EnrolledList from './pages/shared/EnrolledList';
+import EventHomework from './pages/shared/EventHomework';
+import EventHomeworkCreate from './pages/admin/EventHomeworkCreate';
+import EventHomeworkEdit from './pages/admin/EventHomeworkEdit';
+import EventHomeworkView from './pages/shared/EventHomeworkView';
+import EventHomeworkResult from './pages/shared/EventHomeworkResult';
+import EventHomeworkGrade from './pages/admin/EventHomeworkGrade';
 
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -109,6 +117,46 @@ function App() {
               <EventView />
             </ProtectedRoute>
           } />
+          <Route path="/events/:id/enrolled" element={
+            <ProtectedRoute allowedRoles={["admin","sales","leader"]}>
+              <EnrolledList />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id/homework" element={
+            <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
+              <EventHomework />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/events/:id/homework/create" element={
+            <ProtectedRoute allowedRole="admin">
+              <EventHomeworkCreate />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id/homework/:assignmentId" element={
+            <ProtectedRoute allowedRoles={["admin","sales","leader"]}>
+              <EventHomeworkView />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/:id/homework/:assignmentId/result" element={
+            <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
+              <EventHomeworkResult />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/events/:id/homework/:assignmentId/grade/:userId" element={
+            <ProtectedRoute allowedRole="admin">
+              <EventHomeworkGrade />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/events/:id/homework/:assignmentId/edit" element={
+            <ProtectedRoute allowedRole="admin">
+              <EventHomeworkEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="/sessions/:sessionId/enrolled" element={
+            <ProtectedRoute allowedRoles={["admin","sales","leader"]}>
+              <EnrolledList />
+            </ProtectedRoute>
+          } />
           <Route path="/events/:id/apply" element={
             <ProtectedRoute allowedRoles={["member","sales","leader"]}>
               <Apply />
@@ -156,7 +204,7 @@ function App() {
           } />
           <Route path="/files" element={
             <ProtectedRoute allowedRole="admin">
-              <Files />
+              <Subscrip />
             </ProtectedRoute>
           } />
 
@@ -213,11 +261,6 @@ function App() {
               <RequestsForm />
             </ProtectedRoute>
           } />
-          <Route path="/homework" element={
-            <ProtectedRoute allowedRole="member">
-              <Homework />
-            </ProtectedRoute>
-          } />
           <Route path="/myqrcode" element={
             <ProtectedRoute allowedRole="member">
               <MyQRcode />
@@ -236,6 +279,16 @@ function App() {
           <Route path="/sessions/enrolled" element={
             <ProtectedRoute allowedRoles={["admin","sales","leader","member"]}>
               <SessionListPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/feedback" element={
+            <ProtectedRoute allowedRoles={['admin', 'sales', 'leader', 'member']}>
+              <Feedback />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/feedbacks" element={
+            <ProtectedRoute allowedRole="admin">
+              <FeedbackListPage />
             </ProtectedRoute>
           } />
           <Route 

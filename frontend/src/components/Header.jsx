@@ -19,7 +19,7 @@ const Header = () => {
     download: { path: '/download', label: '下載名單' },
     reports: { path: '/reports', label: '報表中心' },
     waiting: { path: '/waiting', label: '等待清單' },
-    files: { path: '/files', label: '檔案/訂閱管理' },
+    files: { path: '/files', label: '訂閱管理' },
     notifications: { path: '/notifications', label: '通知中心' },
 
     sales_kpi: { path: '/sales-kpi', label: '團隊&個人 KPI' },
@@ -27,20 +27,20 @@ const Header = () => {
     payments: { path: '/payments', label: '付款/欠款' },
     receipts: { path: '/receipts', label: '查看收據/證書' },
     requests: { path: '/requests', label: '覆課/補堂/請假申請' },
-    homework: { path: '/homework', label: '交功課' },
     myqrcode: { path: '/myqrcode', label: '我的QR code' },
     mycalendar: { path: '/mycalendar', label: '我的日曆' },
     myevents: { path: '/myevents', label: '我的活動' },
-    sessions_enrolled: { path: '/sessions/enrolled', label: '已報名場次' }
+    sessions_enrolled: { path: '/sessions/enrolled', label: '已報名場次' },
+    feedback: { path: '/feedback', label: '意見回饋' }
   };
 
   // Which pages each role should see (order matters)
   const rolePages = {
     // new admin order requested by user
-    admin: ['customers','events','sessions_enrolled','payments','approvals','scan','waiting','download','reports','files','notifications'],
-    sales: ['customers','events','sessions_enrolled','payments','sales_kpi','notifications'],
-    leader: ['customers','events','sessions_enrolled','payments','sales_kpi','notifications'], // LEADER 角色與 sales 相同權限
-    member: ['mycalendar','myevents','sessions_enrolled','events','payments','receipts','requests','homework','notifications','myqrcode']
+    admin: ['customers','events','sessions_enrolled','payments','approvals','scan','waiting','download','reports','files','notifications','feedback'],
+    sales: ['customers','events','sessions_enrolled','payments','sales_kpi','notifications','feedback'],
+    leader: ['customers','events','sessions_enrolled','payments','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
+    member: ['mycalendar','myevents','sessions_enrolled','events','payments','receipts','requests','notifications','myqrcode','feedback']
   };
 
   const pages = rolePages[user.role?.toLowerCase()] || [];
@@ -64,9 +64,9 @@ const Header = () => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', marginRight: 12 }}>
-            <img 
-              src="https://static.wixstatic.com/media/cbad7d_a495eabce8704cf8b28b817764226baf~mv2.png/v1/fill/w_154,h_154,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20240416093210.png" 
-              alt="Meta Academy Logo" 
+            <img
+              src={process.env.PUBLIC_URL + '/logo.png'}
+              alt="Meta CRM Logo"
               style={{ width: 40, height: 40, marginRight: 8 }}
             />
             Meta Academy
@@ -84,7 +84,7 @@ const Header = () => {
                 '/reports': '報表中心',
                 
                 '/waiting': '等待清單',
-                '/files': '檔案/訂閱管理',
+                '/files': '訂閱管理',
                 '/notifications': '通知中心',
 
                 '/sales-kpi': '團隊&個人 KPI',
@@ -93,11 +93,11 @@ const Header = () => {
                 '/payments': '付款/欠款',
                 '/receipts': '查看收據/證書',
                 '/requests': '覆課/補堂/請假申請',
-                '/homework': '交功課',
                 '/myqrcode': '我的QR code',
                 '/mycalendar': '我的日曆',
                 '/myevents': '我的報名活動',
                 '/sessions/enrolled': '已報名場次',
+                '/feedback': '意見回饋',
                 '/member': '成員頁面',
                 '/sales': '銷售頁面',
                 '/admin': '管理員頁面',

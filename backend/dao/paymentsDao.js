@@ -30,6 +30,128 @@ async function listByUser(user_id, limit = 100, offset = 0) {
   return res.rows;
 }
 
+async function listByUserWithSearch(user_id, limit = 100, offset = 0, q = '', completedOnly = false, method = null, status = null) {
+  const params = [];
+  params.push(user_id); // $1
+
+  const where = [`p.user_id = $1`];
+
+  if (completedOnly) {
+    where.push("upper(p.status) = 'COMPLETED'");
+  }
+
+  if (q && q.trim() !== '') {
+    const pattern = `%${q}%`;
+    params.push(pattern); // will be $n
+    const pidx = `$${params.length}`;
+    where.push(`(
+      CAST(p.payment_id AS TEXT) ILIKE ${pidx} OR
+      CAST(e.event_id AS TEXT) ILIKE ${pidx} OR
+      e.event_name ILIKE ${pidx} OR
+      p.status ILIKE ${pidx} OR
+      p.receipt_number ILIKE ${pidx} OR
+      u.name ILIKE ${pidx} OR
+      u.email ILIKE ${pidx}
+    )`);
+  }
+
+  if (method) {
+    const methodArr = Array.isArray(method) ? method : String(method).split(',').map(s => s.trim()).filter(Boolean);
+    if (methodArr.length > 0) {
+      params.push(methodArr);
+      where.push(`p.method = ANY($${params.length})`);
+    }
+  }
+
+  if (status) {
+    // status may be an array or a single string; normalize to array
+    const statusArr = Array.isArray(status) ? status : String(status).split(',').map(s => s.trim()).filter(Boolean);
+    if (statusArr.length > 0) {
+      params.push(statusArr);
+      where.push(`p.status = ANY($${params.length})`);
+    }
+  }
+
+  // add limit and offset
+  params.push(limit);
+  params.push(offset);
+
+  const sql = `
+    SELECT p.*, 
+           u.name as user_name, u.email as user_email,
+           e.event_name,
+           c.name as casher_name
+    FROM PAYMENTS p
+    LEFT JOIN USERS u ON p.user_id = u.user_id
+    LEFT JOIN EVENTS e ON p.event_id = e.event_id
+    LEFT JOIN USERS c ON p.casher_id = c.user_id
+    WHERE ${where.join(' AND ')}
+    ORDER BY p.payment_id DESC
+    LIMIT $${params.length - 1} OFFSET $${params.length}
+  `;
+
+  const res = await query(sql, params);
+  return res.rows;
+}
+
+async function searchPayments(limit = 100, offset = 0, q = '', method = null, status = null) {
+  const params = [];
+  const where = [];
+
+  if (q && q.trim() !== '') {
+    params.push(`%${q}%`);
+    const pidx = `$1`;
+    where.push(`(
+      CAST(p.payment_id AS TEXT) ILIKE ${pidx} OR
+      CAST(e.event_id AS TEXT) ILIKE ${pidx} OR
+      e.event_name ILIKE ${pidx} OR
+      p.status ILIKE ${pidx} OR
+      p.receipt_number ILIKE ${pidx} OR
+      u.name ILIKE ${pidx} OR
+      u.email ILIKE ${pidx}
+    )`);
+  }
+
+  if (method) {
+    const methodArr = Array.isArray(method) ? method : String(method).split(',').map(s => s.trim()).filter(Boolean);
+    if (methodArr.length > 0) {
+      params.push(methodArr);
+      where.push(`p.method = ANY($${params.length})`);
+    }
+  }
+
+  if (status) {
+    const statusArr = Array.isArray(status) ? status : String(status).split(',').map(s => s.trim()).filter(Boolean);
+    if (statusArr.length > 0) {
+      params.push(statusArr);
+      where.push(`p.status = ANY($${params.length})`);
+    }
+  }
+
+  // push limit and offset
+  params.push(limit);
+  params.push(offset);
+
+  const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  const sql = `
+    SELECT p.*, 
+           u.name as user_name, u.email as user_email,
+           e.event_name,
+           c.name as casher_name
+    FROM PAYMENTS p
+    LEFT JOIN USERS u ON p.user_id = u.user_id
+    LEFT JOIN EVENTS e ON p.event_id = e.event_id
+    LEFT JOIN USERS c ON p.casher_id = c.user_id
+    ${whereClause}
+    ORDER BY p.payment_id DESC
+    LIMIT $${params.length - 1} OFFSET $${params.length}
+  `;
+
+  const res = await query(sql, params);
+  return res.rows;
+}
+
 async function listByPaymentId(limit = 100, offset = 0) {
   const sql = `
     SELECT p.*, 
@@ -63,4 +185,13 @@ async function updatePaymentById(id, fields = {}) {
 }
 
 
-module.exports = { createPayment, findByPaymentId, listByUser, removeByPaymentId, listByPaymentId, updatePaymentById };
+module.exports = {
+  createPayment,
+  findByPaymentId,
+  listByUser,
+  listByUserWithSearch,
+  searchPayments,
+  removeByPaymentId,
+  listByPaymentId,
+  updatePaymentById,
+};

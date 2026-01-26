@@ -59,7 +59,7 @@ function blankProfileTemplate() {
 }
 
 function askTestFirst() {
-  return '請先輸入 Test 取得講座清單。';
+  return '請先輸入「查看免費講座」取得講座清單。';
 }
 
 function missingRequiredProfile() {

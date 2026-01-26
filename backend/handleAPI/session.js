@@ -7,9 +7,13 @@ const {
   createRegistration,
   findBySessionAndUser,
   listUpcomingSessionsByUser,
+  listUpcomingSessionsAllUsers,
+  searchUpcomingSessionsByUser,
+  searchUpcomingSessionsAllUsers,
   listSessionsByUserAndYear,
   listRegisteredSessionIdsByUserAndEvent,
-  listUpcomingSessionsAllUsers,
+  listRegistrationsWithUserBySessionId,
+  removeByRegistrationId,
 } = require('../dao/sessionRegistrationsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 
@@ -278,6 +282,7 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
     const role = (req.user.role || '').toUpperCase();
     const limit = parseInt(req.query.limit, 10) || 100;
     const offset = parseInt(req.query.offset, 10) || 0;
+    const q = req.query.q || '';
 
     if (!userId) {
       return res.status(401).json({ message: '未登入' });
@@ -286,10 +291,18 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
     let sessions = [];
     if (role === 'MEMBER') {
       // 會員只可看到自己的尚未開始場次
-      sessions = await listUpcomingSessionsByUser(userId, limit, offset);
+      if (q && q.trim()) {
+        sessions = await searchUpcomingSessionsByUser(userId, limit, offset, q);
+      } else {
+        sessions = await listUpcomingSessionsByUser(userId, limit, offset);
+      }
     } else if (['ADMIN', 'SALES', 'LEADER'].includes(role)) {
       // 管理員 / 銷售 / 組長可看到全部人的尚未開始場次
-      sessions = await listUpcomingSessionsAllUsers(limit, offset);
+      if (q && q.trim()) {
+        sessions = await searchUpcomingSessionsAllUsers(limit, offset, q);
+      } else {
+        sessions = await listUpcomingSessionsAllUsers(limit, offset);
+      }
     } else {
       return res.status(403).json({ message: '沒有權限查看場次報名列表' });
     }
@@ -347,6 +360,56 @@ router.get('/my-sessions/registered-by-event', authMiddleware, async (req, res) 
     return res.status(200).json({ sessionIds });
   } catch (error) {
     console.error('Get registered session IDs by event for current user failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// List all attendees (users) for a specific session
+router.get('/session-registrations/by-session', authMiddleware, async (req, res) => {
+  try {
+    const { session_id } = req.query;
+
+    if (!session_id) {
+      return res.status(400).json({ message: '缺少場次 ID（session_id）' });
+    }
+
+    const sessionIdNum = parseInt(session_id, 10);
+    if (Number.isNaN(sessionIdNum)) {
+      return res.status(400).json({ message: '無效的場次 ID' });
+    }
+
+    const rows = await listRegistrationsWithUserBySessionId(sessionIdNum);
+    const users = rows.map((r) => ({
+      registration_id: r.registration_id,
+      user_id: r.user_id,
+      name: r.name,
+      role: r.role,
+      mobile: r.mobile,
+      email: r.email,
+      channel: r.channel,
+      status: r.status,
+      registration_time: r.registration_time,
+    }));
+
+    return res.status(200).json({ users });
+  } catch (error) {
+    console.error('List session attendees by session failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// Delete a session registration by registration_id
+router.delete('/session-registrations/:id', authMiddleware, async (req, res) => {
+  try {
+    const registrationId = parseInt(req.params.id, 10);
+    if (Number.isNaN(registrationId)) {
+      return res.status(400).json({ message: '無效的 registration_id' });
+    }
+
+    await removeByRegistrationId(registrationId);
+    return res.status(200).json({ message: '場次報名已刪除' });
+  } catch (error) {
+    console.error('Delete session registration failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
   }
 });

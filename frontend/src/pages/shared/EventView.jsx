@@ -244,6 +244,20 @@ const EventView = () => {
             {hasActiveEnrollment ? '已報名' : (isEnrolling ? '報名中...' : '報名')}
           </button>
         ) : null}
+        {(isAdmin || isSalesOrLeader) && (
+          <button
+            onClick={() => navigate(`/events/${id}/enrolled`)}
+            style={{ marginLeft: 8 }}
+          >
+            查看名單
+          </button>
+        )}
+        <button
+          onClick={() => navigate(`/events/${id}/homework`)}
+          style={{ marginLeft: 8 }}
+        >
+          功課
+        </button>
       </div>
 
       {/* Session list table */}
@@ -311,13 +325,15 @@ const EventView = () => {
                 </select>
               </>
             )}
-            {isAdmin && (
+          </div>
+        )}
+        <div>
+          {isAdmin && (
               <button onClick={() => navigate(`/events/${id}/sessions/create`)}>
                 新增場次
               </button>
             )}
-          </div>
-        )}
+        </div>
         
         <SessionListTable 
           sessions={(() => {

@@ -18,14 +18,14 @@ const CustomersList = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const payload = await handleList(100, 0);
+      const payload = await handleList(100, 0, '');
       setCustomers(payload.customers || []);
     };
     fetchData();
   }, []);
 
   const fetchCustomers = async () => {
-    const payload = await handleList(100, 0);
+    const payload = await handleList(100, 0, '');
     setCustomers(payload.customers || []);
   };
 
@@ -56,9 +56,16 @@ const CustomersList = () => {
   const handleEdit = (user_id) => navigate(`/customers/${user_id}/edit`);
   const handleView = (user_id) => navigate(`/customers/${user_id}`);
 
-  const handleSearch = () => {
-    console.log('Searching for:', searchTerm);
-    // TODO: 實作搜尋邏輯
+  const handleSearch = async () => {
+    try {
+      console.log('Searching for:', searchTerm);
+      const payload = await handleList(100, 0, searchTerm || '');
+      setCustomers(payload.customers || []);
+      setPage(1);
+    } catch (err) {
+      console.error('Search customers failed:', err);
+      alert('搜尋失敗，請稍後再試');
+    }
   };
 
   return (
@@ -88,6 +95,9 @@ const CustomersList = () => {
         />
         <button onClick={handleSearch}>
           搜尋
+        </button>
+        <button onClick={() => { setSearchTerm(''); fetchCustomers(); setPage(1); }}>
+          清除
         </button>
       </div>
 
