@@ -26,7 +26,7 @@ const statusLabel = (s) => {
 	}
 };
 
-const PaymentTable = ({ payments, onView, onDownload, onProcess, showUserColumn = false }) => {
+const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) => {
 	return (
 		<table style={tableStyle}>
 			<thead>
@@ -63,7 +63,6 @@ const PaymentTable = ({ payments, onView, onDownload, onProcess, showUserColumn 
 							<td style={thTdStyle}>
                                 
 								<button onClick={() => onView(p)} style={{ marginRight: 8 }}>查看</button>
-								<button onClick={() => onDownload(p) } style={{ marginRight: 8 }}>下載</button>
 
                                 {showUserColumn && (p.status?.toUpperCase() == 'PENDING' || p.status?.toUpperCase() == 'OUTSTANDING') && (
 									<button onClick={() => onProcess(p)} style={{ ...greenTextStyle, marginRight: 8 }}>付款</button>

@@ -26,7 +26,7 @@ const Header = () => {
 
     payments: { path: '/payments', label: '付款/欠款' },
     receipts: { path: '/receipts', label: '查看收據/證書' },
-    requests: { path: '/requests', label: '覆課/補堂/請假申請' },
+    requests: { path: '/requests/select', label: '覆課/補堂/請假申請' },
     myqrcode: { path: '/myqrcode', label: '我的QR code' },
     mycalendar: { path: '/mycalendar', label: '我的日曆' },
     myevents: { path: '/myevents', label: '我的活動' },
@@ -38,8 +38,8 @@ const Header = () => {
   const rolePages = {
     // new admin order requested by user
     admin: ['customers','events','sessions_enrolled','payments','approvals','scan','waiting','download','reports','files','notifications','feedback'],
-    sales: ['customers','events','sessions_enrolled','payments','sales_kpi','notifications','feedback'],
-    leader: ['customers','events','sessions_enrolled','payments','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
+    sales: ['customers','events','sessions_enrolled','payments','requests','sales_kpi','notifications','feedback'],
+    leader: ['customers','events','sessions_enrolled','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
     member: ['mycalendar','myevents','sessions_enrolled','events','payments','receipts','requests','notifications','myqrcode','feedback']
   };
 
@@ -91,7 +91,7 @@ const Header = () => {
 
                 '/payments': '付款/欠款',
                 '/receipts': '查看收據/證書',
-                '/requests': '覆課/補堂/請假申請',
+                '/requests/select': '覆課/補堂/請假申請',
                 '/myqrcode': '我的QR code',
                 '/mycalendar': '我的日曆',
                 '/myevents': '我的報名活動',
