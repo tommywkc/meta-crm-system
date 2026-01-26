@@ -32,7 +32,16 @@ const RequestForm = ({ onSubmitted, requestType }) => {
   const { user } = useAuth();
 
   useEffect(() => {
-    setForm((f) => ({ ...f, type: requestType || baseForm.type }));
+    // reset entire form and related inputs when request type changes
+    setForm({ ...baseForm, type: requestType || baseForm.type });
+    setMemberInput('');
+    setMemberError(null);
+    setEvents([]);
+    setEventInput('');
+    setEventError(null);
+    setSessions([]);
+    setSessionInput('');
+    setSessionError(null);
   }, [requestType]);
 
   // load members list for selection
