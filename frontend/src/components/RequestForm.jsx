@@ -389,10 +389,15 @@ const RequestForm = ({ onSubmitted, requestType }) => {
         </div>
       )}
 
-      
+      {(isReschedule) && (
+        <div style={{ marginBottom: 10 }}>
+          <label>改期場次</label>
+          
+        </div>
+      )}
 
       <div style={{ marginTop: 12 }}>
-        <button type='submit' disabled={saving} style={{ marginRight: 8 }}>{saving ? '提交中…' : '提交（示範）'}</button>
+        <button type='submit' disabled={saving} style={{ marginRight: 8 }}>{saving ? '提交中…' : '提交'}</button>
         <button type='button' onClick={handleClear}>清空</button>
       </div>
     </form>
