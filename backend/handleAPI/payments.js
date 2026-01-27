@@ -7,6 +7,20 @@ const { updateRemainingSeats } = require('../dao/eventsDao');
 const { findByUserId } = require('../dao/usersDao');
 const { sendEmail } = require('../services/emailService');
 
+function getHongKongTimestamp() {
+  const formatter = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Hong_Kong',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  return formatter.format(new Date()).replace(' ', 'T');
+}
+
 
 router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
   try {
@@ -82,7 +96,7 @@ router.get('/payments/:paymentId', authMiddleware, async (req, res) => {
 router.put('/payments/:paymentId', authMiddleware, async (req, res) => {
   try {
     const paymentId = parseInt(req.params.paymentId, 10);
-    const updateData = req.body;
+    const updateData = { ...req.body };
 
     if (!paymentId) {
       return res.status(400).json({ message: '缺少付款ID' });
@@ -91,6 +105,23 @@ router.put('/payments/:paymentId', authMiddleware, async (req, res) => {
     const existingPayment = await findByPaymentId(paymentId);
     if (!existingPayment) {
       return res.status(404).json({ message: '付款記錄不存在' });
+    }
+
+    const incomingStatus = updateData.status ? String(updateData.status).trim().toUpperCase() : null;
+    const existingPaidAmount = Number(existingPayment.paid_amount || 0);
+    const hasPaidAmountField = Object.prototype.hasOwnProperty.call(updateData, 'paid_amount');
+    const requestedPaidAmount = hasPaidAmountField && updateData.paid_amount != null
+      ? Number(updateData.paid_amount)
+      : null;
+    const paidAmountIncreased = hasPaidAmountField && requestedPaidAmount != null && !Number.isNaN(requestedPaidAmount) && requestedPaidAmount > existingPaidAmount;
+
+    const shouldStampPaidTime = !updateData.paid_time && (
+      (incomingStatus && ['COMPLETED', 'OUTSTANDING'].includes(incomingStatus)) ||
+      paidAmountIncreased
+    );
+
+    if (shouldStampPaidTime) {
+      updateData.paid_time = getHongKongTimestamp();
     }
 
     const updatedPayment = await updatePaymentById(paymentId, updateData);
