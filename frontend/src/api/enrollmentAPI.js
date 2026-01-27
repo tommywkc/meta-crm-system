@@ -92,10 +92,15 @@ export async function handleListMyActiveEnrolledEvents() {
 }
 
 // List confirmed-enrolled users for a specific event (for session enrollment member selection)
-export async function handleListConfirmedUsersByEvent(event_id) {
+export async function handleListConfirmedUsersByEvent(event_id, options = {}) {
   try {
     console.log(`Attempting to list confirmed users for event ${event_id}...`);
-    const response = await fetch(apiUrl(`/api/enrollments/confirmed-users?event_id=${event_id}`), {
+    const params = new URLSearchParams({ event_id });
+    if (options.status) {
+      params.set('status', options.status);
+    }
+
+    const response = await fetch(apiUrl(`/api/enrollments/confirmed-users?${params.toString()}`), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

@@ -6,7 +6,7 @@ const {
   findIfExist,
   checkIsConfirmedEnrolled,
   listConfirmedEnrolled,
-  listConfirmedUsersByEvent,
+  listUsersByEventWithStatuses,
   listActiveEnrolledEventIds,
   updateStatusByEnrollmentId
 } = require('../dao/eventEnrollmentsDao');
@@ -216,7 +216,25 @@ router.get('/enrollments/confirmed-users', authMiddleware, async (req, res) => {
 
     console.log('Received confirmed users list request for event_id:', eventIdNum, 'from user:', req.user.sub);
 
-    const users = await listConfirmedUsersByEvent(eventIdNum);
+    const statusParamRaw = (req.query.status || '').trim();
+    const allowedStatuses = ['PENDING', 'CONFIRMED', 'CANCELLED'];
+    let statusList = ['CONFIRMED'];
+
+    if (statusParamRaw) {
+      if (statusParamRaw.toUpperCase() === 'ALL') {
+        statusList = null; // null => no filtering, return every status
+      } else {
+        const parsedStatuses = statusParamRaw
+          .split(',')
+          .map((s) => s.trim().toUpperCase())
+          .filter((s) => allowedStatuses.includes(s));
+        statusList = parsedStatuses.length > 0 ? parsedStatuses : ['CONFIRMED'];
+      }
+    }
+
+    const users = await (statusList
+      ? listUsersByEventWithStatuses(eventIdNum, statusList)
+      : listUsersByEventWithStatuses(eventIdNum, null));
 
     return res.status(200).json({ users });
   } catch (error) {

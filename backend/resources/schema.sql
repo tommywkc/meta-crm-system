@@ -201,11 +201,13 @@ CREATE TABLE IF NOT EXISTS ASSIGNMENT_SUBMISSIONS (
 
 CREATE TABLE IF NOT EXISTS REQUESTS (
     request_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+    request_type VARCHAR(100),
     registration_id BIGINT,
     user_id BIGINT,
     action TEXT,
     request_by_id BIGINT,
     request_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    marking_time TIMESTAMP,
     status VARCHAR(50) DEFAULT 'PENDING',
     determine_by_id BIGINT,
     determine_time TIMESTAMP,

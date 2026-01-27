@@ -61,10 +61,20 @@ async function listActiveEnrolledEventIds(user_id) {
   return res.rows || [];
 }
 
-async function listConfirmedUsersByEvent(event_id) {
+async function listUsersByEventWithStatuses(event_id, statuses = ['CONFIRMED']) {
+  const hasStatuses = Array.isArray(statuses) && statuses.length > 0;
+  const params = [event_id];
+  let statusClause = '';
+
+  if (hasStatuses) {
+    params.push(statuses);
+    statusClause = `AND e.status = ANY($${params.length})`;
+  }
+
   const sql = `
     SELECT DISTINCT
       e.enrollment_id,
+      e.status,
       u.user_id,
       u.name,
       u.role,
@@ -77,11 +87,16 @@ async function listConfirmedUsersByEvent(event_id) {
     JOIN USERS u ON e.user_id = u.user_id
     LEFT JOIN PAYMENTS p ON p.enrollment_id = e.enrollment_id
     WHERE e.event_id = $1
-      AND e.status = 'CONFIRMED'
+      ${statusClause}
     ORDER BY u.user_id
   `;
-  const res = await query(sql, [event_id]);
+
+  const res = await query(sql, params);
   return res.rows || [];
+}
+
+async function listConfirmedUsersByEvent(event_id) {
+  return listUsersByEventWithStatuses(event_id, ['CONFIRMED']);
 }
 
 module.exports = {
@@ -95,5 +110,6 @@ module.exports = {
   checkIsConfirmedEnrolled,
   listConfirmedEnrolled,
   listConfirmedUsersByEvent,
+  listUsersByEventWithStatuses,
   listActiveEnrolledEventIds,
 };

@@ -283,6 +283,8 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
     const limit = parseInt(req.query.limit, 10) || 100;
     const offset = parseInt(req.query.offset, 10) || 0;
     const q = req.query.q || '';
+    const eventIdParam = req.query.event_id;
+    const eventIdNum = eventIdParam ? parseInt(eventIdParam, 10) : null;
 
     if (!userId) {
       return res.status(401).json({ message: '未登入' });
@@ -305,6 +307,11 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
       }
     } else {
       return res.status(403).json({ message: '沒有權限查看場次報名列表' });
+    }
+
+    // Optional filter by event_id when provided
+    if (eventIdNum) {
+      sessions = sessions.filter((s) => Number(s.event_id) === eventIdNum);
     }
 
     return res.status(200).json({ sessions });

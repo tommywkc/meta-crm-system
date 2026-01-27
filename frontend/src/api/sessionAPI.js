@@ -167,7 +167,7 @@ export async function handleListMyUpcomingSessions(limit = 5, offset = 0) {
 
 // --- Enrolled upcoming sessions list (role-based: member sees own, others see all) ---
 
-export async function handleListEnrolledUpcomingSessions(limit = 100, offset = 0, q = '') {
+export async function handleListEnrolledUpcomingSessions(limit = 100, offset = 0, q = '', eventId) {
   try {
     console.log('Attempting to fetch enrolled upcoming sessions list...', { limit, offset, q });
 
@@ -175,6 +175,7 @@ export async function handleListEnrolledUpcomingSessions(limit = 100, offset = 0
     params.append('limit', limit);
     params.append('offset', offset);
     if (q && q.trim()) params.append('q', q);
+    if (eventId) params.append('event_id', eventId);
 
     const response = await fetch(apiUrl(`/api/session-registrations/enrolled-upcoming?${params.toString()}`), {
       method: 'GET',
