@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
-const { listByUser, listByPaymentId, findByPaymentId, updatePaymentById } = require('../dao/paymentsDao');
+const { listByUser, listByPaymentId, findByPaymentId, updatePaymentById, listByUserWithSearch, searchPayments } = require('../dao/paymentsDao');
 const { removeByEnrollmentId, updateStatusByEnrollmentId } = require('../dao/eventEnrollmentsDao');
 const { updateRemainingSeats } = require('../dao/eventsDao');
 const { findByUserId } = require('../dao/usersDao');
@@ -13,11 +13,22 @@ router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
     const userId = parseInt(req.params.userId, 10);
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
+    const q = req.query.q || '';
+    const method = req.query.method ? (Array.isArray(req.query.method) ? req.query.method : [req.query.method]) : null;
+    const status = req.query.status ? (Array.isArray(req.query.status) ? req.query.status : [req.query.status]) : null;
+
     if (!userId) {
       return res.status(400).json({ message: '缺少使用者ID' });
     }
 
-    const payments = await listByUser(userId, limit, offset);
+    // Use search if q, method or status filters are provided
+    let payments;
+    if (q || method || status) {
+      payments = await listByUserWithSearch(userId, limit, offset, q, false, method, status);
+    } else {
+      payments = await listByUser(userId, limit, offset);
+    }
+    
     return res.json({ payments });
   } catch (error) {
     console.error('List payments failed:', error);
@@ -30,8 +41,18 @@ router.get('/payments', authMiddleware, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
+    const q = req.query.q || '';
+    const method = req.query.method ? (Array.isArray(req.query.method) ? req.query.method : [req.query.method]) : null;
+    const status = req.query.status ? (Array.isArray(req.query.status) ? req.query.status : [req.query.status]) : null;
 
-    const payments = await listByPaymentId(limit, offset);
+    // Use search if q, method or status filters are provided
+    let payments;
+    if (q || method || status) {
+      payments = await searchPayments(limit, offset, q, method, status);
+    } else {
+      payments = await listByPaymentId(limit, offset);
+    }
+    
     return res.json({ payments });
   } catch (error) {
     console.error('List payments failed:', error);
