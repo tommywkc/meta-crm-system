@@ -43,6 +43,7 @@ const EnrolledList = () => {
   const [sessionInfo, setSessionInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   // 載入活動 / 場次資訊（顯示標題用）
   useEffect(() => {
@@ -226,6 +227,42 @@ const EnrolledList = () => {
     input.click();
   };
 
+  const handleDownloadCSV = () => {
+    if (!members || members.length === 0) {
+      alert('沒有會員可下載');
+      return;
+    }
+
+    const eventName = eventInfo?.event_name || '未知活動';
+    const sessionName = sessionInfo?.session_name || '';
+    const sessionDate = sessionInfo?.datetime_start
+      ? new Date(sessionInfo.datetime_start).toLocaleDateString('zh-HK', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')
+      : '';
+
+    const csv = [
+      ['點名表', eventName, sessionName, sessionDate].join(','),
+      ['編號', '姓名', '電話', '簽名', '標記'].join(','),
+      ...members.map((m) => [
+        m.user_id,
+        m.name,
+        m.mobile || '',
+        '',
+        ''
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    const fileName = `點名表_${eventName}${sessionName ? '_' + sessionName : ''}${sessionDate ? '_' + sessionDate : ''}.csv`;
+    link.download = fileName;
+    link.click();
+  };
+
+  const handlePrint = () => {
+    setShowPreview(true);
+  };
+
   if (!eventId && !sessionId) {
     return (
       <div style={{ padding: 20 }}>
@@ -328,9 +365,103 @@ const EnrolledList = () => {
           )}
 
           <div style={{ marginTop: 16 }}>
-            <button onClick={() => navigate(-1)}>返回上一頁</button>
+            <button onClick={() => navigate(-1)} style={{ marginRight: 8 }}>返回上一頁</button>
+            {isSessionMode && members.length > 0 && (
+              <>
+                <button 
+                  onClick={handleDownloadCSV}
+                  style={{ marginRight: 8 }}
+                >
+                  下載 CSV
+                </button>
+                <button 
+                  onClick={handlePrint}
+                >
+                  列印預覽
+                </button>
+              </>
+            )}
           </div>
         </>
+      )}
+
+      {showPreview && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: 20,
+            borderRadius: 8,
+            width: '90%',
+            height: '90%',
+            overflow: 'auto',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <style>{`
+              @media print {
+                body { margin: 0; padding: 0; }
+                .print-container { padding: 0 !important; }
+                .print-buttons { display: none !important; }
+                .print-title { page-break-after: avoid; }
+                .print-table { border: none !important; }
+                .print-table th, .print-table td { 
+                  border: none !important; 
+                  background-color: transparent !important;
+                  padding: 8px 12px !important;
+                  text-align: left !important;
+                }
+              }
+            `}</style>
+            <h2 className="print-title" style={{ marginTop: 0, marginBottom: 20 }}>點名表</h2>
+            <table className="print-table" style={{ borderCollapse: 'collapse', width: '100%', marginBottom: 20, fontSize: 14 }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #000' }}>
+                  <th style={{ padding: 12, textAlign: 'left', borderRight: '1px solid #ccc' }}>編號</th>
+                  <th style={{ padding: 12, textAlign: 'left', borderRight: '1px solid #ccc' }}>姓名</th>
+                  <th style={{ padding: 12, textAlign: 'left', borderRight: '1px solid #ccc' }}>電話</th>
+                  <th style={{ padding: 12, textAlign: 'left', borderRight: '1px solid #ccc' }}>簽名</th>
+                  <th style={{ padding: 12, textAlign: 'left' }}>標記</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m, index) => (
+                  <tr key={index} style={{ borderBottom: '1px solid #ccc' }}>
+                    <td style={{ padding: 12, borderRight: '1px solid #ccc' }}>{m.user_id}</td>
+                    <td style={{ padding: 12, borderRight: '1px solid #ccc' }}>{m.name}</td>
+                    <td style={{ padding: 12, borderRight: '1px solid #ccc' }}>{m.mobile || ''}</td>
+                    <td style={{ padding: 12, borderRight: '1px solid #ccc', height: 40 }}></td>
+                    <td style={{ padding: 12 }}></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ textAlign: 'right', marginTop: 'auto' }} className="print-buttons">
+              <button
+                onClick={() => window.print()}
+                style={{ marginRight: 8 }}
+              >
+                打印
+              </button>
+              <button
+                onClick={() => setShowPreview(false)}
+              >
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

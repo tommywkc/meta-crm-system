@@ -18,7 +18,6 @@ import EventsEdit from './pages/admin/EventsEdit';
 import SessionEdit from './pages/admin/SessionEdit';
 import SessionCreate from './pages/admin/SessionCreate';
 import EventView from './pages/shared/EventView';
-import Download from './pages/admin/Download';
 import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
 import Waiting from './pages/admin/Waiting';
@@ -179,11 +178,6 @@ function App() {
           <Route path="/sessions/:id/edit" element={
             <ProtectedRoute allowedRole="admin">
               <SessionEdit />
-            </ProtectedRoute>
-          } />
-          <Route path="/download" element={
-            <ProtectedRoute allowedRole="admin">
-              <Download />
             </ProtectedRoute>
           } />
           <Route path="/reports" element={

@@ -12,6 +12,8 @@ const {
 } = require('../dao/eventEnrollmentsDao');
 const { findByEventId, updateRemainingSeats } = require('../dao/eventsDao');
 const { createPayment } = require('../dao/paymentsDao');
+const { findByUserId } = require('../dao/usersDao');
+const { sendEmail } = require('../services/emailService');
 
 // Handle create new enrollment
 router.post('/enrollments', authMiddleware, async (req, res) => {
@@ -75,13 +77,48 @@ router.post('/enrollments', authMiddleware, async (req, res) => {
         // Rollback enrollment if payment creation fails
         throw new Error('建立付款記錄失敗：' + paymentError.message);
       }
-    }else if(event && (event.price == null || event.price == 0)) {
+    } else if (event && (event.price == null || event.price == 0)) {
       console.log('Enrollment for free event, no payment needed.');
       await updateStatusByEnrollmentId(newEnrollment.enrollment_id, 'CONFIRMED');
     }
-    
-    res.status(201).json({ 
-      message: '報名成功！', 
+
+    // Try to send a confirmation email and notification to the enrolled user.
+    // Failure to send email/notification should NOT cancel the successful enrollment.
+    try {
+      const { createNotification } = require('../dao/notificationsDao');
+      const user = await findByUserId(user_id);
+      const to = user && user.email;
+
+      const eventName = event ? event.event_name : '';
+      const subject = '報名成功通知';
+      const lines = [
+        '報名成功！',
+        '',
+        eventName ? `活動名稱：${eventName}` : '',
+        `活動 ID：${event_id}`,
+        '',
+        '感謝你的報名！'
+      ].filter(Boolean);
+      const text = lines.join('\n');
+
+      if (to) {
+        await sendEmail({ to, subject, text });
+      } else {
+        console.warn(`User ${user_id} has no email configured, skip enrollment email`);
+      }
+
+      // Also create a notification for the user
+      await createNotification({
+        user_id: user_id,
+        description: text,
+        template: subject
+      });
+    } catch (emailError) {
+      console.error('Failed to send enrollment confirmation email or notification:', emailError);
+    }
+
+    res.status(201).json({
+      message: '報名成功！',
       enrollment: newEnrollment,
       payment: paymentInfo
     });

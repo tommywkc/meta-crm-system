@@ -6,7 +6,7 @@ import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styl
 import { searchInputStyle } from '../../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
-// 場次報名列表頁：顯示所有「尚未開始」的已報名場次
+// 場次報名列表頁：顯示所有「尚未開始」的已報名場次.
 // - 會員：只能看到自己的場次
 // - Admin / Sales / Leader：可以看到全部人的場次
 // TODO: show 60min before - 30min after 可簽到的場次

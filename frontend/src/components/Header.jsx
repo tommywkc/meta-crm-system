@@ -16,7 +16,6 @@ const Header = () => {
     approvals: { path: '/approvals', label: '審批頁' },
     scan: { path: '/scan', label: '掃碼簽到' },
     events: { path: '/events', label: '講座與課堂名單' },
-    download: { path: '/download', label: '下載名單' },
     reports: { path: '/reports', label: '報表中心' },
     waiting: { path: '/waiting', label: '等待清單' },
     files: { path: '/files', label: '訂閱管理' },
@@ -37,7 +36,7 @@ const Header = () => {
   // Which pages each role should see (order matters)
   const rolePages = {
     // new admin order requested by user
-    admin: ['customers','events','sessions_enrolled','payments','approvals','scan','waiting','download','reports','files','notifications','feedback'],
+    admin: ['customers','events','sessions_enrolled','payments','approvals','scan','waiting','reports','files','notifications','feedback'],
     sales: ['customers','events','sessions_enrolled','payments','requests','sales_kpi','notifications','feedback'],
     leader: ['customers','events','sessions_enrolled','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
     member: ['mycalendar','myevents','sessions_enrolled','events','payments','receipts','requests','notifications','myqrcode','feedback']
@@ -49,6 +48,7 @@ const Header = () => {
     const p = pagesMap[key];
     if (p) navigate(p.path);
   };
+  
 
   return (
     <header style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid #eee', background: '#fafafa' }}>
@@ -79,7 +79,6 @@ const Header = () => {
                 '/approvals': '審批頁',
                 '/scan': '掃碼簽到',
                 '/events': '講座與課堂名單',
-                '/download': '下載名單',
                 '/reports': '報表中心',
                 
                 '/waiting': '等待清單',
