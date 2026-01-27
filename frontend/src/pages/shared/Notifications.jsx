@@ -31,8 +31,8 @@ const Notifications = () => {
 	}, [user]);
 
 	const onView = (n) => {
-		const time = n.create_time ? new Date(n.create_time).toLocaleString('zh-HK') : '—';
-		alert(`通知：${n.template}\n時間：${time}\n\n${n.description}`);
+		const datetime = n.create_time ? new Date(n.create_time).toLocaleString('zh-HK') : '—';
+		alert(`日期時間：${datetime}\n通知：${n.template}\n\n${n.description}`);
 	};
 
 	if (loading) {

@@ -5,6 +5,8 @@ const azureBlobService = require('../services/azureBlobService');
 const assignmentsDao = require('../dao/assignmentsDao');
 const { listConfirmedUsersByEvent } = require('../dao/eventEnrollmentsDao');
 const { createSubmission, findByAssignmentAndUser, updateSubmissionTimeByAssignmentUser, updateGradeByAssignmentUser, listByAssignmentId } = require('../dao/assignmentSubmissionsDao');
+const { findUserByRole, findByUserId } = require('../dao/usersDao');
+const { sendEmail } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -126,6 +128,36 @@ router.post('/homework/upload', authMiddleware, upload.single('file'), async (re
                 });
             } else {
                 await updateSubmissionTimeByAssignmentUser(assignmentId, studentId, now);
+            }
+
+            // Notify admins via webapp when a homework is uploaded
+            try {
+                const { createNotification } = require('../dao/notificationsDao');
+
+                const assignment = await assignmentsDao.findByAssignmentId(assignmentId);
+                const student = await findByUserId(studentId);
+
+                const admins = await findUserByRole('ADMIN');
+                const subject = '功課已提交通知';
+                const lines = [
+                    '有學生已上載功課檔案。',
+                    '',
+                    assignment ? `功課名稱：${assignment.name || ''}` : `功課 ID：${assignmentId}`,
+                    `活動 ID：${eventId}`,
+                    student ? `學生：${student.name} (ID: ${student.user_id})` : `學生 ID：${studentId}`,
+                    `檔案名稱：${uploadResult.originalName}`
+                ].filter(Boolean);
+                const text = lines.join('\n');
+
+                for (const admin of admins || []) {
+                    await createNotification({
+                        user_id: admin.user_id,
+                        description: text,
+                        template: subject
+                    });
+                }
+            } catch (notifyError) {
+                console.error('Failed to create admin homework upload notifications:', notifyError);
             }
             res.json({
                 success: true,
@@ -310,6 +342,46 @@ router.put('/homework/admin/grade', authMiddleware, roleMiddleware('admin'), asy
             feedback: feedback || null,
             graded_by_id: req.user.sub
         });
+        // After grading, notify the student by email + webapp
+        try {
+            const { createNotification } = require('../dao/notificationsDao');
+
+            const assignment = await assignmentsDao.findByAssignmentId(assignmentId);
+            const student = await findByUserId(userId);
+
+            if (student) {
+                const to = student.email;
+                const subject = '功課批改結果通知';
+                const displayScore =
+                    updated.score == null || Number.isNaN(Number(updated.score))
+                        ? '未評分'
+                        : String(updated.score);
+                const lines = [
+                    '你的功課已由導師批改。',
+                    '',
+                    assignment ? `功課名稱：${assignment.name || ''}` : `功課 ID：${assignmentId}`,
+                    `分數：${displayScore}`,
+                    updated.feedback ? `老師評語：${updated.feedback}` : ''
+                ].filter(Boolean);
+                const text = lines.join('\n');
+
+                if (to) {
+                    await sendEmail({
+                        to,
+                        subject,
+                        text
+                    });
+                }
+
+                await createNotification({
+                    user_id: student.user_id,
+                    description: text,
+                    template: subject
+                });
+            }
+        } catch (notifyError) {
+            console.error('Failed to send homework grading notification:', notifyError);
+        }
 
         return res.json({ submission: updated });
     } catch (error) {
