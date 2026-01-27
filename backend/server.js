@@ -91,11 +91,16 @@ const attendanceRouter = require('./handleAPI/attendance');
 console.log('Attendance router loaded');
 app.use('/api', attendanceRouter); // Use the attendance router
 
+const emailRouter = require('./handleAPI/email');
+console.log('Email router loaded');
+app.use('/api', emailRouter); // Use the email router
+
+const notificationsRouter = require('./handleAPI/notifications');
+console.log('Notifications router loaded');
+app.use('/api', notificationsRouter); // Use the notifications router
 const feedbackRouter = require('./handleAPI/feedback');
 console.log('Feedback router loaded');
 app.use('/api', feedbackRouter); // Use the feedback router
-
-
 
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
