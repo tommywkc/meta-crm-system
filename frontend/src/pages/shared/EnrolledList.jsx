@@ -9,6 +9,17 @@ import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleUploadCertificate } from '../../api/certificatesAPI';
 import { handleUploadReceipt } from '../../api/receiptsAPI';
 
+const statusTranslations = {
+  PENDING: '待付款',
+  CONFIRMED: '已確認',
+};
+
+const translateStatus = (status) => {
+  if (!status) return '未提供';
+  const key = String(status).trim().toUpperCase();
+  return statusTranslations[key] || status;
+};
+
 const EnrolledList = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -88,7 +99,7 @@ const EnrolledList = () => {
         if (isSessionMode) {
           res = await handleListSessionAttendees(sessionId);
         } else {
-          res = await handleListConfirmedUsersByEvent(eventId);
+          res = await handleListConfirmedUsersByEvent(eventId, { status: 'ALL' });
         }
         const customers = res.users || [];
         const mapped = customers.map((c) => ({
@@ -101,6 +112,7 @@ const EnrolledList = () => {
           role: c.role || 'MEMBER',
           mobile: c.mobile || '',
           email: c.email || '',
+          status: c.status || c.enrollment_status || '',
           issued_certificate: c.issued_certificate,
           issued_receipt: c.issued_receipt,
         }));
@@ -245,7 +257,7 @@ const EnrolledList = () => {
       {!loading && !error && (
         <>
           {members.length === 0 ? (
-            <p>目前沒有已確認報名的會員。</p>
+            <p>目前沒有報名紀錄。</p>
           ) : (
             <CustomersTable
               customers={members}
@@ -256,13 +268,21 @@ const EnrolledList = () => {
               showAdminActions={false}
               extraColumns={[
                 {
-                  header: '證書',
-                  render: (customer) => (customer.issued_certificate ? '已發放' : '未發放')
+                  header: '報名狀態',
+                  render: (customer) => translateStatus(customer.status)
                 },
-                {
-                  header: '收據',
-                  render: (customer) => (customer.issued_receipt ? '已發放' : '未發放')
-                }
+                ...(!isSessionMode
+                  ? [
+                      {
+                        header: '證書',
+                        render: (customer) => (customer.issued_certificate ? '已發放' : '未發放')
+                      },
+                      {
+                        header: '收據',
+                        render: (customer) => (customer.issued_receipt ? '已發放' : '未發放')
+                      }
+                    ]
+                  : [])
               ]}
               renderActions={(customer) => {
                 if (isSessionMode) {
