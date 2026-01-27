@@ -2,7 +2,9 @@ const express = require('express');
 const multer = require('multer');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const azureBlobService = require('../services/azureBlobService');
-const { updatePaymentById } = require('../dao/paymentsDao');
+const { updatePaymentById, findByPaymentId } = require('../dao/paymentsDao');
+const { findByUserId } = require('../dao/usersDao');
+const { sendEmail } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -39,6 +41,54 @@ router.post('/certificates/upload', authMiddleware, roleMiddleware('admin'), upl
     let updatedPayment = null;
     if (paymentId) {
       updatedPayment = await updatePaymentById(paymentId, { issued_certificate: true });
+    }
+
+    // Notify the student that a certificate has been uploaded (email + in-app notification)
+    try {
+      const { createNotification } = require('../dao/notificationsDao');
+
+      let targetUserId = userId;
+      let eventInfo = null;
+
+      if (paymentId) {
+        const payment = await findByPaymentId(paymentId);
+        if (payment) {
+          targetUserId = payment.user_id || targetUserId;
+          eventInfo = payment.event_name ? payment.event_name : null;
+        }
+      }
+
+      const user = await findByUserId(targetUserId);
+      const to = user && user.email;
+
+      const subject = '證書已上載通知';
+      const lines = [
+        '您的課程證書已由管理員上載。',
+        '',
+        eventInfo ? `活動名稱：${eventInfo}` : `活動 ID：${eventId}`,
+        `學員編號：${targetUserId}`,
+        `檔案名稱：${uploadResult.originalName}`
+      ];
+
+      const text = lines.join('\n');
+
+      if (to) {
+        await sendEmail({
+          to,
+          subject,
+          text
+        });
+      } else {
+        console.warn(`User ${targetUserId} has no email configured, skip certificate upload email`);
+      }
+
+      await createNotification({
+        user_id: targetUserId,
+        description: text,
+        template: subject
+      });
+    } catch (notifyError) {
+      console.error('Failed to send certificate upload notification:', notifyError);
     }
 
     return res.json({

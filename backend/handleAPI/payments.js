@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
-const { listByUser, listByUserWithSearch, listByPaymentId, findByPaymentId, updatePaymentById, searchPayments } = require('../dao/paymentsDao');
+const { listByUser, listByPaymentId, findByPaymentId, updatePaymentById } = require('../dao/paymentsDao');
 const { removeByEnrollmentId, updateStatusByEnrollmentId } = require('../dao/eventEnrollmentsDao');
 const { updateRemainingSeats } = require('../dao/eventsDao');
 const { findByUserId } = require('../dao/usersDao');
@@ -17,37 +17,7 @@ router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: '缺少使用者ID' });
     }
 
-    const q = req.query.q || '';
-    let method = req.query.method || null;
-    // method can be repeated or comma-separated -> normalize to array of upper-case
-    if (method) {
-      if (Array.isArray(method)) {
-        method = method.map(m => String(m).trim().toUpperCase()).filter(Boolean);
-      } else {
-        method = String(method).split(',').map(m => m.trim().toUpperCase()).filter(Boolean);
-      }
-    }
-    // status can be provided as repeated query params or comma-separated
-    let status = req.query.status || null;
-    if (status) {
-      if (Array.isArray(status)) {
-        status = status.map(s => String(s).trim().toUpperCase()).filter(Boolean);
-      } else {
-        status = String(status).split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-      }
-    }
-
-    // Members can only view their own completed payments
-    if (req.user && req.user.role && req.user.role.toLowerCase() === 'member') {
-      if (parseInt(req.user.sub, 10) !== userId) {
-        return res.status(403).json({ message: '無權限' });
-      }
-      const payments = await listByUserWithSearch(userId, limit, offset, q, true, method, status);
-      return res.json({ payments });
-    }
-
-    // Admins and other roles can view payments for the given user (optionally search)
-    const payments = await listByUserWithSearch(userId, limit, offset, q, false, method, status);
+    const payments = await listByUser(userId, limit, offset);
     return res.json({ payments });
   } catch (error) {
     console.error('List payments failed:', error);
@@ -60,36 +30,6 @@ router.get('/payments', authMiddleware, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
-    const q = req.query.q || '';
-    let method = req.query.method || null;
-    if (method) {
-      if (Array.isArray(method)) {
-        method = method.map(m => String(m).trim().toUpperCase()).filter(Boolean);
-      } else {
-        method = String(method).split(',').map(m => m.trim().toUpperCase()).filter(Boolean);
-      }
-    }
-    let status = req.query.status || null;
-    if (status) {
-      if (Array.isArray(status)) {
-        status = status.map(s => String(s).trim().toUpperCase()).filter(Boolean);
-      } else {
-        status = String(status).split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-      }
-    }
-
-    // If member -> only return their own completed payments
-    if (req.user && req.user.role && req.user.role.toLowerCase() === 'member') {
-      const userId = parseInt(req.user.sub, 10);
-      const payments = await listByUserWithSearch(userId, limit, offset, q, true, method, status);
-      return res.json({ payments });
-    }
-
-    // Admins: if q provided, search across payments; otherwise return paged list
-    if (q || method || status) {
-      const payments = await searchPayments(limit, offset, q, method, status);
-      return res.json({ payments });
-    }
 
     const payments = await listByPaymentId(limit, offset);
     return res.json({ payments });
@@ -149,25 +89,72 @@ router.put('/payments/:paymentId', authMiddleware, async (req, res) => {
     }
 
     // After successfully updating the payment and related enrollment/event,
-    // try to send a notification email and notification to the payment owner.
-    // Failure should NOT break the API response.
+    // try to send a notification email to the payment owner.
+    // Email failure should NOT break the API response.
     try {
       const { createNotification } = require('../dao/notificationsDao');
       const user = await findByUserId(existingPayment.user_id);
       const to = user && user.email;
 
       const subject = '付款資料更新通知';
+
+      const statusUpper = (updatedPayment.status || existingPayment.status || '').toUpperCase();
+      const totalAmount =
+        updatedPayment.amount !== undefined && updatedPayment.amount !== null
+          ? updatedPayment.amount
+          : existingPayment.amount;
+      const paidAmount =
+        updatedPayment.paid_amount !== undefined && updatedPayment.paid_amount !== null
+          ? updatedPayment.paid_amount
+          : existingPayment.paid_amount || 0;
+
+      const remainingAmount =
+        totalAmount != null && paidAmount != null
+          ? Number(totalAmount) - Number(paidAmount)
+          : null;
+
+      let header;
+      switch (statusUpper) {
+        case 'COMPLETED':
+          header = '付款已完成';
+          break;
+        case 'OUTSTANDING':
+          header = '付款部分完成，仍有未付金額';
+          break;
+        case 'PENDING':
+          header = '付款待處理';
+          break;
+        case 'CANCELLED':
+          header = '付款已取消';
+          break;
+        case 'REFUNDED':
+          header = '付款已退款';
+          break;
+        case 'EXPIRED':
+          header = '付款已過期';
+          break;
+        default:
+          header = '付款資料已更新';
+      }
+
       const lines = [
-        '付款資料更新成功',
+        header,
         '',
         `付款編號：${paymentId}`,
-        updatedPayment.status ? `狀態：${updatedPayment.status}` : '',
-        updatedPayment.amount != null ? `金額：${updatedPayment.amount}` : ''
+        totalAmount != null ? `應付金額：${totalAmount}` : '',
+        paidAmount != null ? `已付金額：${paidAmount}` : '',
+        remainingAmount != null ? `尚需支付：${remainingAmount}` : '',
+        statusUpper ? `狀態：${statusUpper}` : ''
       ].filter(Boolean);
+
       const text = lines.join('\n');
 
       if (to) {
-        await sendEmail({ to, subject, text });
+        await sendEmail({
+          to,
+          subject,
+          text
+        });
       } else {
         console.warn(`User ${existingPayment.user_id} has no email configured, skip payment update email`);
       }
@@ -179,7 +166,7 @@ router.put('/payments/:paymentId', authMiddleware, async (req, res) => {
         template: subject
       });
     } catch (emailError) {
-      console.error('Failed to send payment update email or notification:', emailError);
+      console.error('Failed to send payment update email:', emailError);
     }
 
     return res.json({ message: '付款資料更新成功', payment: updatedPayment });
