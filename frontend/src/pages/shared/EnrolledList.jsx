@@ -230,8 +230,8 @@ const EnrolledList = () => {
     const csv = [
       ['點名表', eventName, sessionName, sessionDate].join(','),
       ['編號', '姓名', '電話', '簽名', '標記'].join(','),
-      ...members.map((m, index) => [
-        index + 1,
+      ...members.map((m) => [
+        m.user_id,
         m.name,
         m.mobile || '',
         '',
@@ -250,6 +250,8 @@ const EnrolledList = () => {
   const handlePrint = () => {
     setShowPreview(true);
   };
+
+  if (!eventId && !sessionId) {
     return (
       <div style={{ padding: 20 }}>
         <h1>已報名會員清單</h1>
@@ -348,13 +350,12 @@ const EnrolledList = () => {
               <>
                 <button 
                   onClick={handleDownloadCSV}
-                  style={{ marginRight: 8, backgroundColor: '#4CAF50', color: 'white', padding: '8px 16px', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                  style={{ marginRight: 8 }}
                 >
                   下載 CSV
                 </button>
                 <button 
                   onClick={handlePrint}
-                  style={{ backgroundColor: '#2196F3', color: 'white', padding: '8px 16px', border: 'none', borderRadius: 4, cursor: 'pointer' }}
                 >
                   列印預覽
                 </button>
@@ -381,44 +382,60 @@ const EnrolledList = () => {
             backgroundColor: 'white',
             padding: 20,
             borderRadius: 8,
-            maxWidth: '90%',
-            maxHeight: '90%',
+            width: '90%',
+            height: '90%',
             overflow: 'auto',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
-            <h2>列印預覽</h2>
-            <table style={{ borderCollapse: 'collapse', width: '100%', marginBottom: 20 }}>
+            <style>{`
+              @media print {
+                body { margin: 0; padding: 0; }
+                .print-container { padding: 0 !important; }
+                .print-buttons { display: none !important; }
+                .print-title { page-break-after: avoid; }
+                .print-table { border: none !important; }
+                .print-table th, .print-table td { 
+                  border: none !important; 
+                  background-color: transparent !important;
+                  padding: 8px 12px !important;
+                  text-align: left !important;
+                }
+              }
+            `}</style>
+            <h2 className="print-title" style={{ marginTop: 0, marginBottom: 20 }}>點名表</h2>
+            <table className="print-table" style={{ borderCollapse: 'collapse', width: '100%', marginBottom: 20, fontSize: 14 }}>
               <thead>
-                <tr style={{ backgroundColor: '#f5f5f5' }}>
-                  <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>編號</th>
-                  <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>姓名</th>
-                  <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>電話</th>
-                  <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>簽名</th>
-                  <th style={{ border: '1px solid #ddd', padding: 8, textAlign: 'left' }}>標記</th>
+                <tr style={{ borderBottom: '2px solid #000' }}>
+                  <th style={{ padding: 12, textAlign: 'left', borderRight: '1px solid #ccc' }}>編號</th>
+                  <th style={{ padding: 12, textAlign: 'left', borderRight: '1px solid #ccc' }}>姓名</th>
+                  <th style={{ padding: 12, textAlign: 'left', borderRight: '1px solid #ccc' }}>電話</th>
+                  <th style={{ padding: 12, textAlign: 'left', borderRight: '1px solid #ccc' }}>簽名</th>
+                  <th style={{ padding: 12, textAlign: 'left' }}>標記</th>
                 </tr>
               </thead>
               <tbody>
                 {members.map((m, index) => (
-                  <tr key={index}>
-                    <td style={{ border: '1px solid #ddd', padding: 8 }}>{index + 1}</td>
-                    <td style={{ border: '1px solid #ddd', padding: 8 }}>{m.name}</td>
-                    <td style={{ border: '1px solid #ddd', padding: 8 }}>{m.mobile || ''}</td>
-                    <td style={{ border: '1px solid #ddd', padding: 8 }}></td>
-                    <td style={{ border: '1px solid #ddd', padding: 8 }}></td>
+                  <tr key={index} style={{ borderBottom: '1px solid #ccc' }}>
+                    <td style={{ padding: 12, borderRight: '1px solid #ccc' }}>{m.user_id}</td>
+                    <td style={{ padding: 12, borderRight: '1px solid #ccc' }}>{m.name}</td>
+                    <td style={{ padding: 12, borderRight: '1px solid #ccc' }}>{m.mobile || ''}</td>
+                    <td style={{ padding: 12, borderRight: '1px solid #ccc', height: 40 }}></td>
+                    <td style={{ padding: 12 }}></td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: 'right', marginTop: 'auto' }} className="print-buttons">
               <button
                 onClick={() => window.print()}
-                style={{ marginRight: 8, backgroundColor: '#2196F3', color: 'white', padding: '8px 16px', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                style={{ marginRight: 8 }}
               >
                 打印
               </button>
               <button
                 onClick={() => setShowPreview(false)}
-                style={{ backgroundColor: '#f44336', color: 'white', padding: '8px 16px', border: 'none', borderRadius: 4, cursor: 'pointer' }}
               >
                 關閉
               </button>
