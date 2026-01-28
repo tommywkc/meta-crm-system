@@ -42,8 +42,8 @@ const Header = () => {
     member: ['mycalendar','myevents','sessions_enrolled','events','payments','receipts','requests','notifications','myqrcode','feedback']
   };
   
-  //const pages = rolePages[user.role?.toLowerCase()] || [];
-  const pages = (rolePages[user.role?.toLowerCase()] || []).filter((k) => k !== 'scan');
+  const pages = rolePages[user.role?.toLowerCase()] || [];
+
 
   const go = (key) => {
     const p = pagesMap[key];
