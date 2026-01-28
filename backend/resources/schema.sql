@@ -406,7 +406,8 @@ INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datet
 (103, '語法入門', 'Python 基礎語法與資料型態', 30, '2026-08-11 09:00:00', '2026-08-11 12:00:00', 50002, 30, 1),
 (103, '語法入門', 'Python 基礎語法與資料型態', 30, '2026-08-12 09:00:00', '2026-08-12 12:00:00', 50002, 30, 1),
 (110, '前端基礎', 'HTML、CSS、JavaScript', 30, '2026-09-21 09:00:00', '2026-09-21 11:30:00', 50014, 30, 1),
-(110, '前端基礎', 'HTML、CSS、JavaScript', 30, '2026-09-22 09:00:00', '2026-09-22 11:30:00', 50014, 30, 1);
+(110, '前端基礎', 'HTML、CSS、JavaScript', 30, '2026-09-22 09:00:00', '2026-09-22 11:30:00', 50014, 30, 1),
+(102, '主題演講', 'Test', 100, '2024-07-05 14:00:00', '2028-07-05 16:00:00', 50001, 100, 1);
 
 -- Insert sample payment records
 INSERT INTO PAYMENTS (event_id, user_id, enrollment_id, amount, method, status, create_time, paid_time, expire_time, receipt_number, issued_receipt, issued_certificate, remarks) VALUES

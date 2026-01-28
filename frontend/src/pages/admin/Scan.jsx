@@ -249,6 +249,17 @@ const Scan = () => {
   const stopScanning = async () => {
     setErrorMsg(null);
     if (!qrRef.current) return;
+    const shouldStop = scanning || hasStartedRef.current;
+    if (!shouldStop) {
+      try {
+        await qrRef.current.clear();
+      } catch (err) {
+        console.warn('Clear warning (scanner inactive):', err);
+      }
+      qrRef.current = null;
+      hasStartedRef.current = false;
+      return;
+    }
     try {
       if (scanning) {
         await qrRef.current.stop();
@@ -316,17 +327,22 @@ const Scan = () => {
 
   useEffect(() => {
     return () => {
-      if (qrRef?.current?.stop) {
-        Promise.resolve(qrRef.current.stop())
-          .catch(err => console.error('Stop failed:', err))
-          .finally(() => {
-            if (qrRef?.current?.clear) {
-              Promise.resolve(qrRef.current.clear())
-                .catch(err => console.error('Clear failed:', err));
-            }
-            qrRef.current = null;
-          });
+      if (!qrRef?.current) return;
+      if (!hasStartedRef.current) {
+        Promise.resolve(qrRef.current.clear())
+          .catch(err => console.error('Clear failed:', err));
+        qrRef.current = null;
+        return;
       }
+      Promise.resolve(qrRef.current.stop())
+        .catch(err => console.error('Stop failed:', err))
+        .finally(() => {
+          if (qrRef?.current?.clear) {
+            Promise.resolve(qrRef.current.clear())
+              .catch(err => console.error('Clear failed:', err));
+          }
+          qrRef.current = null;
+        });
     };
   }, []);
   const selectedEventForCheckin = events.find(e => String(e.event_id) === String(selectedEventId));

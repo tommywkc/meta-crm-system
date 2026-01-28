@@ -204,6 +204,7 @@ const EnrolledList = () => {
           mobile: c.mobile || '',
           email: c.email || '',
           status: c.status || c.enrollment_status || '',
+          attendance_status: c.attendance_status || c.attendanceStatus || '',
           issued_certificate: c.issued_certificate,
           issued_receipt: c.issued_receipt,
         }));
@@ -462,10 +463,14 @@ const EnrolledList = () => {
                   {
                     header: '簽到',
                     render: (customer) => {
-                      const sessionKey = String(sessionId);
-                      const rid = String(customer.registration_id);
-                      const signed = !!(localSignIns && localSignIns[sessionKey] && localSignIns[sessionKey][rid]);
-                      return signed ? 'Y' : 'N';
+                      const status = customer.attendance_status || customer.attendanceStatus;
+                      if (typeof status === 'string' && status.trim()) {
+                        const normalized = status.trim().toUpperCase();
+                        if (normalized === 'G' || normalized === 'Y') return '出席';
+                        if (normalized === 'R') return '遲到/無效';
+                        return normalized;
+                      }
+                      return '未簽到';
                     }
                   }
                 ] : []),

@@ -396,6 +396,7 @@ router.get('/session-registrations/by-session', authMiddleware, async (req, res)
       channel: r.channel,
       status: r.status,
       registration_time: r.registration_time,
+      attendance_status: r.attendance_status,
     }));
 
     return res.status(200).json({ users });

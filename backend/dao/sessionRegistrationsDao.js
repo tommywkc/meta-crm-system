@@ -34,12 +34,21 @@ async function listRegistrationsWithUserBySessionId(session_id) {
       sr.channel,
       sr.status,
       sr.registration_time,
+      ea.status AS attendance_status,
       u.name,
       u.role,
       u.mobile,
       u.email
     FROM SESSION_REGISTRATIONS sr
     JOIN USERS u ON sr.user_id = u.user_id
+    LEFT JOIN EVENT_ATTENDANCE ea ON ea.registration_id = sr.registration_id
+      AND ea.attendance_id = (
+        SELECT attendance_id
+        FROM EVENT_ATTENDANCE
+        WHERE registration_id = sr.registration_id
+        ORDER BY attend_time DESC
+        LIMIT 1
+      )
     WHERE sr.session_id = $1
     ORDER BY sr.registration_id DESC
   `;
