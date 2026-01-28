@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/BatchSessionStyles.css';
-import { formatForDisplay, toISODateTime } from '../utils/dateFormatter';
+import { formatForDisplay, toISODateTime, toLocalISOString } from '../utils/dateFormatter';
 
 const SessionForm = ({
   title = '場次表單',
@@ -70,7 +70,7 @@ const SessionForm = ({
     const startDT = new Date(datetime_start);
     const mins = parseInt(duration, 10) || 60;
     const endDT = new Date(startDT.getTime() + mins * 60 * 1000);
-    const datetime_end = endDT.toISOString();
+    const datetime_end = toLocalISOString(endDT);
 
     const data = {
       session_name: sessionName.trim(),

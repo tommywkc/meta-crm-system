@@ -1,3 +1,5 @@
+import { toLocalISOString } from './dateFormatter';
+
 export const backendSessionToFormState = (backendSession) => {
   const startDate = backendSession.datetime_start ? new Date(backendSession.datetime_start) : null;
   
@@ -32,11 +34,12 @@ export const formSessionToBackendPayload = (formSession) => {
     const dateObj = new Date(d);
     dateObj.setHours(hours, minutes, 0, 0);
     const endDate = new Date(dateObj.getTime() + dur * 60000);
+    endDate.setSeconds(0, 0);
     
     const payload = {
       session_name: formSession.session_name || '',
-      datetime_start: dateObj.toISOString(),
-      datetime_end: endDate.toISOString(),
+      datetime_start: toLocalISOString(dateObj),
+      datetime_end: toLocalISOString(endDate),
       session_description: formSession.session_description || '',
       session_capacity: formSession.session_capacity ? parseInt(formSession.session_capacity, 10) : null
     };
@@ -74,10 +77,10 @@ export const calculateEventDateTimes = (sessionPayloads) => {
   }
   
   const allStartTimes = sessionPayloads.map(s => new Date(s.datetime_start));
-  const datetime_start = new Date(Math.min(...allStartTimes)).toISOString();
+  const datetime_start = toLocalISOString(new Date(Math.min(...allStartTimes)));
   
   const allEndTimes = sessionPayloads.map(s => new Date(s.datetime_end));
-  const datetime_end = new Date(Math.max(...allEndTimes)).toISOString();
+  const datetime_end = toLocalISOString(new Date(Math.max(...allEndTimes)));
   
   return {
     datetime_start,
