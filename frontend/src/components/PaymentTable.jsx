@@ -40,7 +40,7 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) =
 					<th style={thTdStyle}>付款方式</th>
 					<th style={thTdStyle}>狀態</th>
 					<th style={thTdStyle}>付款期限</th>
-					<th style={thTdStyle}>動作</th>
+					<th style={thTdStyle}>操作</th>
 				</tr>
 			</thead>
 			<tbody>

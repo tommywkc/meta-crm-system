@@ -102,6 +102,10 @@ const feedbackRouter = require('./handleAPI/feedback');
 console.log('Feedback router loaded');
 app.use('/api', feedbackRouter); // Use the feedback router
 
+const requestsRouter = require('./handleAPI/requests');
+console.log('Requests router loaded');
+app.use('/api', requestsRouter); // Use the requests router
+
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');

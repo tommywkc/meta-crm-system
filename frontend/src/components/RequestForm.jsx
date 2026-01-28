@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { handleFindUserByRole } from '../api/customersListAPI';
 import { handleConfirmEnrollmentByUser } from '../api/enrollmentAPI';
 import { handleListEnrolledUpcomingSessions, handleListSessionsByEventId } from '../api/sessionAPI';
+import { handleSubmitRequest } from '../api/requestsAPI';
 
 const baseForm = {
   type: '取消申請',
@@ -13,7 +14,8 @@ const baseForm = {
   courseName: '',
   session: '',
   rescheduleSession: '',
-  requestedDate: ''
+  requestedDate: '',
+  cancelRequestId: ''
 };
 
 const RequestForm = ({ onSubmitted, requestType }) => {
@@ -33,6 +35,9 @@ const RequestForm = ({ onSubmitted, requestType }) => {
   const [rescheduleSessions, setRescheduleSessions] = useState([]);
   const [rescheduleSessionInput, setRescheduleSessionInput] = useState('');
   const [rescheduleSessionError, setRescheduleSessionError] = useState(null);
+  const [cancelOptions] = useState([]);
+  const [cancelInput, setCancelInput] = useState('');
+  const [cancelError, setCancelError] = useState(null);
   const { user } = useAuth();
   const userRole = user?.role?.toLowerCase();
   const isMemberUser = userRole === 'member';
@@ -60,6 +65,8 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     setRescheduleSessions([]);
     setRescheduleSessionInput('');
     setRescheduleSessionError(null);
+    setCancelInput('');
+    setCancelError(null);
   }, [requestType, isMemberUser]);
 
   // load members list for selection
@@ -321,6 +328,12 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     }
   };
 
+  const handleCancelRequestInput = (val) => {
+    setCancelInput(val);
+    setForm((f) => ({ ...f, cancelRequestId: val?.trim() || '' }));
+    setCancelError(null);
+  };
+
   const handleRescheduleSessionInput = (val) => {
     setRescheduleSessionInput(val);
     const currentSessionId = form.session ? String(form.session) : null;
@@ -374,32 +387,75 @@ const RequestForm = ({ onSubmitted, requestType }) => {
       alert('請選擇或輸入會員');
       return;
     }
+    if (!isMemberUser) {
+      const memberExists = members.some((m) => String(m.user_id) === String(form.memberId));
+      if (!memberExists) {
+        setMemberError('請從清單內選擇會員');
+        alert('請從清單內選擇會員');
+        return;
+      }
+    }
     if (!form.courseId) {
       alert('請選擇會員已確認的活動');
       return;
     }
-    if ((isCancel || isLeave || isReschedule) && !form.session) {
+    if (!isCancel) {
+      const eventExists = events.some((evt) => String(evt.event_id) === String(form.courseId));
+      if (!eventExists) {
+        setEventError('請從清單內選擇活動');
+        alert('請從清單內選擇活動');
+        return;
+      }
+    }
+    if ((isLeave || isReschedule) && !form.session) {
       alert('請選擇會員已報名的場次');
       return;
+    }
+    if ((isLeave || isReschedule) && form.session) {
+      const sessionExists = sessions.some((s) => String(s.session_id || s.id) === String(form.session));
+      if (!sessionExists) {
+        setSessionError('請從清單內選擇場次');
+        alert('請從清單內選擇場次');
+        return;
+      }
     }
     if ((isReschedule || isMakeup || isRetake) && !form.rescheduleSession) {
       const label = isReschedule ? '欲改期的目標場次' : isMakeup ? '補堂場次' : '覆課場次';
       alert(`請選擇${label}`);
       return;
     }
+    if ((isReschedule || isMakeup || isRetake) && form.rescheduleSession) {
+      const targetExists = rescheduleSessions.some((s) => String(s.session_id || s.id) === String(form.rescheduleSession));
+      if (!targetExists) {
+        setRescheduleSessionError('請從清單內選擇目標場次');
+        alert('請從清單內選擇目標場次');
+        return;
+      }
+    }
     setSaving(true);
-    await new Promise((res) => setTimeout(res, 400));
-    const sessionLabel = form.session || '無';
-    const targetSessionLabel = (isReschedule || isMakeup || isRetake) ? form.rescheduleSession || '未選擇' : '不適用';
-    alert(
-      `提交成功（示範）`
-    );
-    setSaving(false);
-    if (onSubmitted) onSubmitted(form);
+    try {
+      const payload = {
+        requestType: form.type,
+        memberId: form.memberId,
+        eventId: form.courseId || null,
+        sessionId: form.session || null,
+        targetSessionId: form.rescheduleSession || null,
+        reason: form.reason || '',
+      };
+      const res = await handleSubmitRequest(payload);
+      alert(res?.message || '申請已送出');
+      if (onSubmitted) onSubmitted(res.request || form);
+      handleClear();
+    } catch (err) {
+      console.error('Submit request failed', err);
+      alert(err?.message || '申請提交失敗，請稍後再試');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleClear = () => {
-    setForm({ ...baseForm, type: form.type });
+    setForm({ ...baseForm, type: requestType || baseForm.type });
     setMemberInput('');
     setMemberError(null);
     setEvents([]);
@@ -409,6 +465,8 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     setSessionInput('');
     setSessionError(null);
     resetRescheduleSelection({ clearOptions: true });
+    setCancelInput('');
+    setCancelError(null);
   };
 
   return (
@@ -455,42 +513,67 @@ const RequestForm = ({ onSubmitted, requestType }) => {
           </>
         )}
       </div>
+      {!isCancel && (
+        <div style={{ marginBottom: 10 }}>
+          <label>已確認報名的活動</label>
+          <br />
+          <input
+            list="event-list"
+            value={eventInput}
+            onFocus={() => {
+              setEventInput('');
+              setForm((f) => ({ ...f, courseId: '', courseName: '' }));
+              setEventError(null);
+              resetRescheduleSelection({ clearOptions: true });
+            }}
+            onClick={() => {
+              setEventInput('');
+              setForm((f) => ({ ...f, courseId: '', courseName: '' }));
+              setEventError(null);
+              resetRescheduleSelection({ clearOptions: true });
+            }}
+            onChange={(e) => handleEventInput(e.target.value)}
+            placeholder="選擇會員已確認的活動"
+            style={{ width: '30%', padding: 8, borderColor: eventError ? 'red' : '#e5e7eb' }}
+            disabled={!form.memberId}
+          />
+          <datalist id="event-list">
+            {events.map((evt) => (
+              <option key={evt.event_id} value={`${evt.event_id} - ${evt.event_name || evt.title || ''}`} />
+            ))}
+          </datalist>
+          {eventError && <div style={{ color: 'red', marginTop: 4 }}>{eventError}</div>}
+          {!eventError && form.memberId && !eventsLoading && events.length === 0 && (
+            <div style={{ color: 'red', marginTop: 4 }}>此會員沒有已確認的活動。</div>
+          )}
+        </div>
+      )}
 
-      <div style={{ marginBottom: 10 }}>
-        <label>已確認報名的活動</label>
-        <br />
-        <input
-          list="event-list"
-          value={eventInput}
-          onFocus={() => {
-            setEventInput('');
-            setForm((f) => ({ ...f, courseId: '', courseName: '' }));
-            setEventError(null);
-            resetRescheduleSelection({ clearOptions: true });
-          }}
-          onClick={() => {
-            setEventInput('');
-            setForm((f) => ({ ...f, courseId: '', courseName: '' }));
-            setEventError(null);
-            resetRescheduleSelection({ clearOptions: true });
-          }}
-          onChange={(e) => handleEventInput(e.target.value)}
-          placeholder="選擇會員已確認的活動"
-          style={{ width: '30%', padding: 8, borderColor: eventError ? 'red' : '#e5e7eb' }}
-          disabled={!form.memberId}
-        />
-        <datalist id="event-list">
-          {events.map((evt) => (
-            <option key={evt.event_id} value={`${evt.event_id} - ${evt.event_name || evt.title || ''}`} />
-          ))}
-        </datalist>
-        {eventError && <div style={{ color: 'red', marginTop: 4 }}>{eventError}</div>}
-        {!eventError && form.memberId && !eventsLoading && events.length === 0 && (
-          <div style={{ color: 'red', marginTop: 4 }}>此會員沒有已確認的活動。</div>
-        )}
-      </div>
+      {isCancel && (
+        <div style={{ marginBottom: 10 }}>
+          <label>選擇欲取消的申請</label>
+          <br />
+          <input
+            list="cancel-request-list"
+            value={cancelInput}
+            onChange={(e) => handleCancelRequestInput(e.target.value)}
+            placeholder="尚無可取消的申請（示範）"
+            style={{ width: '40%', padding: 8, borderColor: cancelError ? 'red' : '#e5e7eb' }}
+            disabled={cancelOptions.length === 0}
+          />
+          <datalist id="cancel-request-list">
+            {cancelOptions.map((opt) => (
+              <option key={opt.id} value={opt.label} />
+            ))}
+          </datalist>
+          {cancelError && <div style={{ color: 'red', marginTop: 4 }}>{cancelError}</div>}
+          {!cancelError && cancelOptions.length === 0 && (
+            <div style={{ color: '#6b7280', marginTop: 4 }}>尚未載入可取消的申請，稍後將提供。</div>
+          )}
+        </div>
+      )}
 
-      {(isCancel || isLeave || isReschedule) && (
+      {(isLeave || isReschedule) && (
         <div style={{ marginBottom: 10 }}>
           <label>已報名場次</label>
           <br />
@@ -574,7 +657,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
         </div>
       )}
 
-      {(isCancel || isLeave || isReschedule) && (
+      {(isLeave || isReschedule) && (
         <div style={{ marginBottom: 10 }}>
           <label>申請原因</label>
           <br />

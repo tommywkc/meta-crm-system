@@ -41,7 +41,6 @@ const PaymentProcess = () => {
 			return;
 		}
 
-		// TODO: Load payment details from API
 		const loadPayment = async () => {
 			try {
 				// Placeholder: Replace with actual API call

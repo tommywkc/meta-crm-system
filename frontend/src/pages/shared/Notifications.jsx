@@ -66,7 +66,7 @@ const Notifications = () => {
 							<th style={thTdStyle}>日期時間</th>
 							<th style={thTdStyle}>標題</th>
 							<th style={thTdStyle}>內容</th>
-							<th style={thTdStyle}>動作</th>
+							<th style={thTdStyle}>操作</th>
 						</tr>
 					</thead>
 					<tbody>

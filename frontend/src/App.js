@@ -10,7 +10,6 @@ import CustomersList from './pages/shared/CustomersList';
 import CustomerView from './pages/shared/CustomerView';
 import CustomerEdit from './pages/admin/CustomerEdit';
 import CustomerCreate from './pages/admin/CustomerCreate';
-import Approvals from './pages/admin/Approvals';
 import Scan from './pages/admin/Scan';
 import EventList from './pages/shared/EventList';
 import EventCreate from './pages/admin/EventCreate';
@@ -46,6 +45,7 @@ import EventHomeworkEdit from './pages/admin/EventHomeworkEdit';
 import EventHomeworkView from './pages/shared/EventHomeworkView';
 import EventHomeworkResult from './pages/shared/EventHomeworkResult';
 import EventHomeworkGrade from './pages/admin/EventHomeworkGrade';
+import ViewRequest from './pages/admin/ViewRequest';
 
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -93,11 +93,6 @@ function App() {
           <Route path="/customers/create" element={
             <ProtectedRoute allowedRole={'admin'}>
               <CustomerCreate />
-            </ProtectedRoute>
-          } />
-          <Route path="/approvals" element={
-            <ProtectedRoute allowedRole="admin">
-              <Approvals />
             </ProtectedRoute>
           } />
           <Route path="/scan" element={
@@ -198,6 +193,11 @@ function App() {
           <Route path="/files" element={
             <ProtectedRoute allowedRole="admin">
               <Subscrip />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/requests" element={
+            <ProtectedRoute allowedRole="admin">
+              <ViewRequest />
             </ProtectedRoute>
           } />
 
