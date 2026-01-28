@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { createRequest, findPendingByUserAndSession, listAllRequests } = require('../dao/requestsDao');
+const { createRequest, findPendingByUserAndSession, listAllRequests, listRequestsByUser } = require('../dao/requestsDao');
 const { findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
 
 const TYPE_MAP = {
@@ -36,7 +36,8 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
     }
 
     const requesterRole = (req.user.role || '').toUpperCase();
-    if (requesterRole === 'MEMBER' && memberIdNum !== req.user.sub) {
+    const isSameMember = String(memberIdNum) === String(req.user.sub);
+    if (requesterRole === 'MEMBER' && !isSameMember) {
       return res.status(403).json({ message: '會員僅可為自己提交申請' });
     }
 
@@ -106,8 +107,19 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
   }
 });
 
-router.get('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+router.get('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
   try {
+    const requesterRole = (req.user.role || '').toUpperCase();
+
+    if (requesterRole === 'MEMBER') {
+      const userIdNum = parseInt(req.user.sub, 10);
+      if (Number.isNaN(userIdNum)) {
+        return res.status(400).json({ message: '會員資訊有誤' });
+      }
+      const requests = await listRequestsByUser(userIdNum);
+      return res.json({ requests });
+    }
+
     const requests = await listAllRequests();
     return res.json({ requests });
   } catch (error) {

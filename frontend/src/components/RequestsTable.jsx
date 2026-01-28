@@ -1,6 +1,7 @@
 import React from 'react';
 import { tableStyle, thTdStyle } from '../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
+import { useAuth } from '../contexts/AuthContext';
 
 const TYPE_LABELS = {
   LEAVE: '請假',
@@ -65,10 +66,16 @@ const renderSessionInfo = (session) => {
 };
 
 const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
+  const { user } = useAuth();
+  const isAdmin = (user?.role || '').toLowerCase() === 'admin';
+  const columnCount = isAdmin ? 9 : 8;
   const hasData = requests && requests.length > 0;
 
   const handleApprove = (req) => {
-    //TODO: Handle approve action
+    if (!isAdmin) return;
+    if (typeof onApprove === 'function') {
+      onApprove(req);
+    }
   };
 
   return (
@@ -89,7 +96,7 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
       <tbody>
         {loading && (
           <tr>
-            <td style={thTdStyle} colSpan={9}>載入中…</td>
+            <td style={thTdStyle} colSpan={columnCount}>載入中…</td>
           </tr>
         )}
         {!loading && hasData && requests.map((req) => {
@@ -119,20 +126,23 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
               <td style={thTdStyle}>{renderStatus(req.status)}</td>
               <td style={thTdStyle}>{requestTimeLabel}</td>
               <td style={thTdStyle}>{req.remarks || '-'}</td>
-              <td style={{ ...thTdStyle, minWidth: 120 }}>
-                <button
-                  type="button"
-                  onClick={() => handleApprove(req)}
-                >
-                  批核
-                </button>
-              </td>
+                <td style={{ ...thTdStyle, minWidth: 120 }}>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => handleApprove(req)}
+                    >
+                      批核
+                    </button>
+                  )}
+                </td>
+
             </tr>
           );
         })}
         {!loading && !hasData && (
           <tr>
-            <td style={thTdStyle} colSpan={9}>暫無申請紀錄</td>
+            <td style={thTdStyle} colSpan={columnCount}>暫無申請紀錄</td>
           </tr>
         )}
       </tbody>
