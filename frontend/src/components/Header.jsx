@@ -41,8 +41,9 @@ const Header = () => {
     leader: ['customers','events','sessions_enrolled','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
     member: ['mycalendar','myevents','sessions_enrolled','events','payments','receipts','requests','notifications','myqrcode','feedback']
   };
-
-  const pages = rolePages[user.role?.toLowerCase()] || [];
+  
+  //const pages = rolePages[user.role?.toLowerCase()] || [];
+  const pages = (rolePages[user.role?.toLowerCase()] || []).filter((k) => k !== 'scan');
 
   const go = (key) => {
     const p = pagesMap[key];
