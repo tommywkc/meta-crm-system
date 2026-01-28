@@ -4,8 +4,7 @@ import { handleListSessionsByEventId } from '../../api/sessionAPI';
 import { handleScanAttendance } from '../../api/attendanceAPI';
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
-import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
-
+import { formatDateTimeForDisplay, formatDateTimeWithSecondsForDisplay } from '../../utils/dateFormatter';
 
 
 const Scan = () => {
@@ -22,17 +21,6 @@ const Scan = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchSessionTerm, setSearchSessionTerm] = useState('');
 
-  const formatDateTimeWithSecondsForDisplay = (isoString) => {
-    if (!isoString) return '';
-    const date = new Date(isoString);
-    const dd = String(date.getDate()).padStart(2, '0');
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    const hh = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    const ss = String(date.getSeconds()).padStart(2, '0');
-    return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
-  };
 
  
   const handleScanSuccess = useCallback(async (decodedText) => {
