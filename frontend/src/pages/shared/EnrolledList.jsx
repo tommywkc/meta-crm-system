@@ -441,10 +441,14 @@ const EnrolledList = () => {
               onDelete={null}
               showAdminActions={false}
               extraColumns={[
-                {
-                  header: '報名狀態',
-                  render: (customer) => translateStatus(customer.status)
-                },
+                ...(!isSessionMode
+                  ? [
+                      {
+                        header: '報名狀態',
+                        render: (customer) => translateStatus(customer.status)
+                      }
+                    ]
+                  : []),
                 // Add sign-in column only in session mode
                 ...(isSessionMode ? [
                   {

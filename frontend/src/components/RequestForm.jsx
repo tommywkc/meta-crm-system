@@ -13,9 +13,7 @@ const baseForm = {
   courseName: '',
   session: '',
   rescheduleSession: '',
-  requestedDate: '',
-  refund: false,
-  note: ''
+  requestedDate: ''
 };
 
 const RequestForm = ({ onSubmitted, requestType }) => {
@@ -391,8 +389,10 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     }
     setSaving(true);
     await new Promise((res) => setTimeout(res, 400));
+    const sessionLabel = form.session || '無';
+    const targetSessionLabel = (isReschedule || isMakeup || isRetake) ? form.rescheduleSession || '未選擇' : '不適用';
     alert(
-      `提交成功（示範）\n類型：${form.type}\n原因：${form.reason}\n課程：${form.courseId} ${form.courseName}\n場次：${form.session}\n申請日期：${form.requestedDate}\n退款需求：${isCancel ? (form.refund ? '是' : '否') : '不適用'}\n備註：${form.note}`
+      `提交成功（示範）`
     );
     setSaving(false);
     if (onSubmitted) onSubmitted(form);

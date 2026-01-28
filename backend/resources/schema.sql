@@ -204,7 +204,8 @@ CREATE TABLE IF NOT EXISTS REQUESTS (
     request_type VARCHAR(100),
     registration_id BIGINT,
     user_id BIGINT,
-    action TEXT,
+    old_session_id BIGINT,
+    new_session_id BIGINT,
     request_by_id BIGINT,
     request_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     marking_time TIMESTAMP,
@@ -219,6 +220,7 @@ CREATE TABLE IF NOT EXISTS REQUESTS (
     FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     FOREIGN KEY (request_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     FOREIGN KEY (determine_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    CONSTRAINT CHKTYPE_REQ CHECK (request_type IN ('CANCEL','LEAVE','RESCHEDULE','MAKEUP','RETAKE')),
     CONSTRAINT CHKSTATUS_REQ CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))
 );
 
