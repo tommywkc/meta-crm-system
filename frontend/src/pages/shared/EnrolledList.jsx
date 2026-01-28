@@ -8,9 +8,7 @@ import { handleGetSessionById, handleListSessionAttendees, handleDeleteSessionRe
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleUploadCertificate } from '../../api/certificatesAPI';
 import { handleUploadReceipt } from '../../api/receiptsAPI';
-import { Html5Qrcode } from 'html5-qrcode';
-import { handleScanAttendance } from '../../api/attendanceAPI';
-import { handleGetUserByQRToken } from '../../api/customersListAPI';
+import Scanner from '../../components/Scanner';
 
 const statusTranslations = {
   PENDING: '待付款',
@@ -28,8 +26,7 @@ const EnrolledList = () => {
   const location = useLocation();
   const params = useParams();
   const { user } = useAuth();
-  const [scanMessage, setScanMessage] = useState(null); // string message shown next to camera
-  const [scanStatus, setScanStatus] = useState(null); // 'success' | 'fail' | null
+  
 
   const authRole = (user && user.role) ? user.role.toUpperCase() : 'MEMBER';
 
@@ -60,25 +57,13 @@ const EnrolledList = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
-  // QR scanner refs/states (session-mode only)
-  const qrRef = useRef(null);
-  const hasStartedRef = useRef(false);
-  const scanningCooldownRef = useRef(false);
-  const cooldownTimeoutRef = useRef(null);
-  const SCAN_COOLDOWN_MS = 2500;
-  const [scanning, setScanning] = useState(false);
-  const [lastScanResult, setLastScanResult] = useState(null);
-  const [qrErrorMsg, setQrErrorMsg] = useState(null);
-  const [scanUser, setScanUser] = useState(null); // e.g. 林淑芬（50008）
-  const [scanDetail, setScanDetail] = useState(null); // e.g. 簽到時間：...
+  // QR scanner state is encapsulated in the Scanner component
 
   // 轉到快速登記頁面（停止掃描後導向建立用戶，並帶入來源活動/場次）
   const handleQuickRegister = async () => {
     try {
-      await stopQrScanning();
-    } catch (_) {
-      try { await stopAllGlobalInstances(); } catch (_) {}
-    }
+      await stopAllGlobalInstances();
+    } catch (_) {}
 
     const sourceEvent = eventInfo
       ? {
@@ -139,29 +124,7 @@ const EnrolledList = () => {
       delete reg[id];
     }));
   };
-  // Helper: 從各種可能的 error/payload 形態中取出 user 資訊
-  const extractUserFromPayload = (p, err) => {
-    const src = p || (err?.response && err.response.data) || err?.data || err || null;
-    if (!src) return null;
-    // common locations
-    const candidates = [
-      src.user,
-      src.registration && src.registration.user,
-      src.data && src.data.user,
-      src.user_info,
-      src.userData,
-      // fallback to top-level fields
-      { name: src.name, user_id: src.user_id },
-      { name: src.user_name || src.display_name || src.nickname, user_id: src.user_id || src.id },
-    ];
-    for (const c of candidates) {
-      if (!c) continue;
-      const name = c.name || c.user_name || c.display_name || c.nickname || null;
-      const id = c.user_id || c.userId || c.id || null;
-      if (name || id) return { name: name || '未知用戶', id };
-    }
-    return null;
-  };
+  // Helper utilities used by Scanner are encapsulated in the Scanner component
   // 載入活動 / 場次資訊（顯示標題用）
   useEffect(() => {
     // 若為場次模式，先抓場次再抓對應活動
@@ -203,245 +166,7 @@ const EnrolledList = () => {
     }
   }, [sessionId, eventId]);
 
-  // Auto-start QR scanner when in session mode and a session is selected
-  const handleScanSuccess = useCallback(async (decodedText) => {
-    console.log('Scanned:', decodedText);
-    // ignore scans during cooldown to avoid repeated detections
-    if (scanningCooldownRef.current) {
-      console.debug('Scan ignored due to cooldown');
-      return;
-    }
-    scanningCooldownRef.current = true;
-    if (cooldownTimeoutRef.current) clearTimeout(cooldownTimeoutRef.current);
-    cooldownTimeoutRef.current = setTimeout(() => {
-      scanningCooldownRef.current = false;
-      cooldownTimeoutRef.current = null;
-    }, SCAN_COOLDOWN_MS);
-    if (!sessionId) return;
-    const selectedSession = sessionInfo;
-    if (!selectedSession) {
-      try { setScanStatus('fail'); setScanUser(null); setScanDetail('找不到場次資訊，無法簽到'); setLastScanResult('簽到失敗'); } catch (e) {}
-      return;
-    }
-
-    let payload;
-    try {
-      payload = await handleScanAttendance({ qr_token: decodedText, session_id: selectedSession.session_id });
-    } catch (err) {
-      // 支援多種 error/payload 形態 (err.payload, err.response.data, err.data 等)
-      const p = err?.payload || (err?.response && err.response.data) || err?.data || null;
-      // 若後端回傳 payload（例如 409 已簽到），也把 registration 記錄到 localSignIns
-      try {
-        const regId = p?.registration?.registration_id || err?.registration?.registration_id;
-        if (regId) {
-          const sessionKey = String(sessionId);
-          setLocalSignIns((prev) => {
-            const next = { ...(prev || {}) };
-            if (!next[sessionKey]) next[sessionKey] = {};
-            next[sessionKey][regId] = true;
-            try { window.localStorage.setItem('localSignIns', JSON.stringify(next)); } catch (e) { /* ignore */ }
-            return next;
-          });
-        }
-      } catch (e) {
-        console.warn('Failed to mark local sign-in from error payload:', e);
-      }
-
-      try {
-        // 先用 helper 嘗試取得用戶資訊（與成功處理時相同邏輯）
-        const userInfo = extractUserFromPayload(p, err);
-        if (userInfo) {
-          const userName = userInfo.name || '未知用戶';
-          const userId = userInfo.id ? `（${userInfo.id}）` : '';
-          const attendTimeRaw = p?.attendance?.attend_time || p?.attend_time || p?.attendance_time || null;
-          setScanUser(`${userName}${userId}`);
-          setScanDetail(`簽到時間：${attendTimeRaw || '—'}`);
-          try { setScanStatus('success'); } catch (e) {}
-          try { setLastScanResult('簽到成功'); } catch (e) {}
-        } else {
-          // 失敗但嘗試顯示任何可用的用戶資訊
-          setScanStatus('fail');
-          // fallback: 試試用 qr_token 去抓用戶資料
-          try {
-            const fallback = await handleGetUserByQRToken(decodedText);
-            const cust = fallback?.customer || fallback?.user || fallback;
-            if (cust) {
-              const cname = cust.name || cust.user_name || '未知用戶';
-              const cid = cust.user_id || cust.id || null;
-              setScanUser(`${cname}${cid ? `（${cid}）` : ''}`);
-            } else {
-              setScanUser(null);
-            }
-          } catch (e2) {
-            // ignore fallback failure
-            setScanUser(null);
-          }
-          const errAttendTime = p?.attendance?.attend_time || p?.attend_time || p?.attendance_time || null;
-          const errMsg = p?.message || err?.message || '簽到失敗，請稍後再試';
-          const detail = errAttendTime ? `簽到時間：${errAttendTime}` : errMsg;
-          setScanDetail(detail);
-          setLastScanResult('簽到失敗');
-        }
-      } catch (e) {
-        console.warn('Error while handling scan error payload:', e);
-        try { setScanStatus('fail'); setScanUser(null); setScanDetail(err?.message || '簽到失敗'); setLastScanResult('簽到失敗'); } catch (e2) {}
-      }
-      return;
-    }
-
-    const user = payload?.user;
-    // 如果後端回傳 registration，將該 registration_id 標記為已簽到（frontend-only）
-    try {
-      const regId = payload?.registration?.registration_id;
-      if (regId) {
-        const sessionKey = String(sessionId);
-        const rid = String(regId);
-        setLocalSignIns((prev) => {
-          const next = { ...(prev || {}) };
-          if (!next[sessionKey]) next[sessionKey] = {};
-          next[sessionKey] = { ...(next[sessionKey] || {}) };
-          next[sessionKey][rid] = true;
-          try { window.localStorage.setItem('localSignIns', JSON.stringify(next)); } catch (e) { /* ignore */ }
-          return next;
-        });
-      }
-    } catch (e) {
-      console.warn('Failed to mark local sign-in:', e);
-    }
-    const userName = user?.name || '未知用戶';
-    const userId = user?.user_id ? `（${user.user_id}）` : '';
-    const attendStatus = payload?.attendance?.status;
-    const title = payload?.message || (attendStatus === 'G' ? '簽到成功' : '簽到完成');
-    const attendTimeRaw = payload?.attendance?.attend_time;
-    // show success/failure message in UI instead of alert (two-line format)
-    try {
-      setScanUser(`${userName}${userId}`);
-      setScanDetail(`簽到時間：${attendTimeRaw || '—'}`);
-      try { setScanStatus('success'); } catch (e) {}
-      try { setLastScanResult('簽到成功'); } catch (e) {}
-    } catch (e) {}
-  }, [sessionId, sessionInfo]);
-
-  const handleScanFailure = useCallback((err) => {
-    // ignore per-scan failures
-  }, []);
-
-  const startQrScanning = async () => {
-    if (scanning || hasStartedRef.current) return;
-    setQrErrorMsg(null);
-    if (!sessionId) return;
-    try {
-      const containerId = 'reader-enrolled';
-      // Ensure any existing global instances are stopped to avoid duplicate cameras
-      try { await stopAllGlobalInstances(); } catch (e) { /* ignore */ }
-      // If a global instance exists for this container, stop/clear it first
-      const existing = getGlobalInstance(containerId);
-      if (existing && existing !== qrRef.current) {
-        try {
-          try {
-            const stopRes = existing.stop();
-            if (stopRes && typeof stopRes.then === 'function') await stopRes.catch(() => {});
-          } catch (_) {}
-          try {
-            const clearRes = existing.clear();
-            if (clearRes && typeof clearRes.then === 'function') await clearRes.catch(() => {});
-          } catch (_) {}
-        } catch (e) {
-          // ignore
-        }
-        try {
-          const containerCleanup = document.getElementById(containerId);
-          if (containerCleanup) while (containerCleanup.firstChild) containerCleanup.removeChild(containerCleanup.firstChild);
-        } catch (e) {}
-        clearGlobalInstance(containerId);
-      }
-
-      // Defensive: ensure container is clean to avoid duplicate <video> elements
-      const container = document.getElementById(containerId);
-      if (container) {
-        while (container.firstChild) container.removeChild(container.firstChild);
-      }
-      if (!qrRef.current) {
-        qrRef.current = new Html5Qrcode(containerId);
-      }
-      setGlobalInstance(containerId, qrRef.current);
-      hasStartedRef.current = true;
-      await qrRef.current.start(
-        { facingMode: 'environment' },
-        { fps: 10 },
-        handleScanSuccess,
-        handleScanFailure
-      );
-      setScanning(true);
-    } catch (err) {
-      console.error('Failed to start scanning:', err);
-      setQrErrorMsg(err.message || '啟動掃描失敗');
-      hasStartedRef.current = false;
-    }
-  };
-
-  const stopQrScanning = async () => {
-    setQrErrorMsg(null);
-    // Use safe stop/clear to handle both sync throws and rejected promises
-    const containerId = 'reader-enrolled';
-    // prefer local ref, fallback to any global instance
-    const inst = qrRef.current || getGlobalInstance(containerId);
-    if (!inst) return;
-    try {
-      // stop may throw synchronously or return a promise
-      try {
-        const stopRes = inst.stop();
-        if (stopRes && typeof stopRes.then === 'function') {
-          await stopRes.catch((e) => console.warn('stop promise rejected:', e));
-        }
-      } catch (e) {
-        console.warn('stop threw synchronously:', e);
-      }
-
-      try {
-        const clearRes = inst.clear();
-        if (clearRes && typeof clearRes.then === 'function') {
-          await clearRes.catch((e) => console.warn('clear promise rejected:', e));
-        }
-      } catch (e) {
-        console.warn('clear threw synchronously:', e);
-      }
-    } finally {
-      try { clearGlobalInstance(containerId); } catch (e) {}
-      // remove any leftover DOM inside container
-      try {
-        const container = document.getElementById(containerId);
-        if (container) {
-          while (container.firstChild) container.removeChild(container.firstChild);
-        }
-      } catch (e) { /* ignore */ }
-      qrRef.current = null;
-      hasStartedRef.current = false;
-      setScanning(false);
-    }
-  };
-
-  // Do NOT auto-start scanner on mount. Start manually via button.
-  // Ensure we stop/clear any global instances when leaving the page.
-  useEffect(() => {
-    if (!isSessionMode) return;
-    return () => {
-      try {
-        // stopAllGlobalInstances handles sync/async stop+clear and DOM cleanup
-        stopAllGlobalInstances();
-      } catch (e) {
-        console.error('Failed to stop global scanners on unmount:', e);
-      }
-      try {
-        if (cooldownTimeoutRef.current) {
-          clearTimeout(cooldownTimeoutRef.current);
-          cooldownTimeoutRef.current = null;
-          scanningCooldownRef.current = false;
-        }
-      } catch (e) {}
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSessionMode, sessionId]);
+  // Scanner lifecycle and handlers are implemented inside the Scanner component
 
   // 載入已報名會員清單（活動或場次）
   useEffect(() => {
@@ -677,40 +402,26 @@ const EnrolledList = () => {
         </div>
 
         {isSessionMode && (
-          <div style={{ width: 340, border: '1px solid #eee', padding: 12, borderRadius: 4, background: '#fafafa' }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-              <button type="button" onClick={startQrScanning} disabled={scanning || !sessionId}>
-                {scanning ? 'Scanning...' : 'Start Scanner'}
-              </button>
-              <button type="button" onClick={stopQrScanning} disabled={!scanning}>
-                Stop Scanner
-              </button>
-              {/* quick register button moved to activity/session info area */}
-              <div style={{ color: '#555', marginLeft: 'auto' }}>{qrErrorMsg && <span style={{ color: 'red' }}>{qrErrorMsg}</span>}</div>
-            </div>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <div id="reader-enrolled" style={{ width: 160, height: 160, minHeight: 160, background: 'transparent', border: '1px solid #ccc', overflow: 'hidden', borderRadius: 4 }} />
-              <div style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ marginBottom: 6 }}>
-                  <div style={{ marginBottom: 4 }}>
-                    <strong>狀態：</strong> <span style={{ color: scanStatus === 'success' ? 'green' : scanStatus === 'fail' ? 'red' : 'inherit' }}>{lastScanResult || ''}</span>
-                  </div>
-                  <div>
-                    <strong>用戶：</strong> <span>{scanUser || ''}</span>
-                  </div>
-                </div>
-                <div style={{ minHeight: 44 }}>
-                  {scanDetail ? (
-                    <div style={{ padding: '6px 8px', borderRadius: 6, backgroundColor: scanStatus === 'success' ? '#e6ffed' : scanStatus === 'fail' ? '#fff0f0' : '#f5f5f5', color: scanStatus === 'success' ? '#1b8b46' : scanStatus === 'fail' ? '#a12a2a' : '#333', fontSize: 13, lineHeight: '1.2', whiteSpace: 'pre-line' }}>
-                      {scanDetail}
-                    </div>
-                  ) : (
-                    <div style={{ color: '#777', fontSize: 13 }}></div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          <Scanner
+            sessionId={sessionId}
+            sessionInfo={sessionInfo}
+            eventInfo={eventInfo}
+            onQuickRegister={handleQuickRegister}
+            onMarkLocalSignIn={(sessionKey, registrationId) => {
+              try {
+                setLocalSignIns((prev) => {
+                  const next = { ...(prev || {}) };
+                  if (!next[sessionKey]) next[sessionKey] = {};
+                  next[sessionKey] = { ...(next[sessionKey] || {}) };
+                  next[sessionKey][String(registrationId)] = true;
+                  try { window.localStorage.setItem('localSignIns', JSON.stringify(next)); } catch (e) { /* ignore */ }
+                  return next;
+                });
+              } catch (e) {
+                console.warn('Failed to mark local sign-in from Scanner:', e);
+              }
+            }}
+          />
         )}
       </div>
 
