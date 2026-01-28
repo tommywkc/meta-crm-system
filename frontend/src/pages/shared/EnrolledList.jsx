@@ -81,7 +81,15 @@ const EnrolledList = () => {
         }
       : null;
 
-    navigate('/customers/create', { state: { from: 'scan', sourceEvent, sourceSession } });
+    const returnPath = `${location.pathname}${location.search || ''}`;
+    navigate('/customers/create', {
+      state: {
+        from: 'enrolledList',
+        sourceEvent,
+        sourceSession,
+        returnPath,
+      }
+    });
   };
   // Global registry to avoid multiple Html5Qrcode instances on same container
   const ensureGlobalRegistry = () => {

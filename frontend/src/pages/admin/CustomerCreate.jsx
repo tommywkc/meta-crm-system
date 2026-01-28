@@ -13,6 +13,7 @@ const CustomerCreate = () => {
   // 從掃描頁帶入的來源活動，用於預填「來源」欄位（不影響標籤/備註）
   const sourceEvent = location?.state?.sourceEvent;
   const sourceSession = location?.state?.sourceSession;
+  const returnPath = location?.state?.returnPath || '';
   const formattedSource = sourceEvent
     ? `現場登記 - ${sourceEvent.type} ${sourceEvent.event_id} ${sourceEvent.event_name || ''}${sourceEvent.datetime_start ? ` (${formatDateTimeForDisplay(sourceEvent.datetime_start)})` : ''}`.trim()
     : undefined;
@@ -59,6 +60,11 @@ const CustomerCreate = () => {
         alert('客戶新增成功！');
       }
 
+      if (returnPath) {
+        navigate(returnPath, { replace: true });
+        return;
+      }
+
       navigate(`/customers/${newUserId}`);  // after creation, navigate to the new customer's page
     } catch (err) {
       console.error('Create failed:', err);
@@ -68,6 +74,10 @@ const CustomerCreate = () => {
   };
 
   const handleCancel = () => {
+    if (returnPath) {
+      navigate(returnPath);
+      return;
+    }
     navigate(-1);
   };
 

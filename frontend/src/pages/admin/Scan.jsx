@@ -2,15 +2,18 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { handleListEvents } from '../../api/eventListAPI';
 import { handleListSessionsByEventId } from '../../api/sessionAPI';
 import { handleScanAttendance } from '../../api/attendanceAPI';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { formatDateTimeForDisplay, formatDateTimeWithSecondsForDisplay } from '../../utils/dateFormatter';
 
 
 const Scan = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const qrRef = useRef(null);          
   const hasStartedRef = useRef(false);
+  const pendingSessionRestoreRef = useRef(null);
+  const hasRestoredSelectionsRef = useRef(false);
   const [scanning, setScanning] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -20,6 +23,34 @@ const Scan = () => {
   const [selectedSessionId, setSelectedSessionId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchSessionTerm, setSearchSessionTerm] = useState('');
+
+  useEffect(() => {
+    if (hasRestoredSelectionsRef.current) return;
+    try {
+      const cached = window.sessionStorage.getItem('scanReturnState');
+      if (!cached) return;
+      const parsed = JSON.parse(cached);
+      if (parsed.selectedEventId) {
+        setSelectedEventId(String(parsed.selectedEventId));
+        if (typeof parsed.searchTerm === 'string') {
+          setSearchTerm(parsed.searchTerm);
+        }
+      }
+      if (parsed.selectedSessionId) {
+        pendingSessionRestoreRef.current = String(parsed.selectedSessionId);
+      }
+      if (typeof parsed.searchSessionTerm === 'string') {
+        setSearchSessionTerm(parsed.searchSessionTerm);
+      }
+      hasRestoredSelectionsRef.current = true;
+    } catch (err) {
+      console.warn('Failed to restore scan selections', err);
+    } finally {
+      try {
+        window.sessionStorage.removeItem('scanReturnState');
+      } catch (_) {}
+    }
+  }, []);
 
 
  
@@ -107,7 +138,7 @@ const Scan = () => {
   useEffect(() => {
     (async () => {
       try {
-        const payload = await handleListEvents();
+        const payload = await handleListEvents({ status: 'OPEN' });
         const eventsList = payload?.events || [];
         
         const now = new Date();
@@ -157,9 +188,21 @@ const Scan = () => {
         });
         
         setSessions(sortedSessions);
-        
 
         if (sortedSessions.length > 0) {
+          const pendingSessionId = pendingSessionRestoreRef.current;
+          if (pendingSessionId) {
+            const restored = sortedSessions.find((s) => String(s.session_id) === String(pendingSessionId));
+            if (restored) {
+              setSelectedSessionId(restored.session_id);
+              const timeStr = restored.datetime_start ? ` (${formatDateTimeForDisplay(restored.datetime_start)})` : '';
+              setSearchSessionTerm(`${restored.session_name || ''}${timeStr}`);
+              pendingSessionRestoreRef.current = null;
+              return;
+            }
+            pendingSessionRestoreRef.current = null;
+          }
+
           const closestSession = sortedSessions[0];
           setSelectedSessionId(closestSession.session_id);
           const timeStr = closestSession.datetime_start ? ` (${formatDateTimeForDisplay(closestSession.datetime_start)})` : '';
@@ -246,7 +289,29 @@ const Scan = () => {
         }
       : null;
 
-    navigate('/customers/create', { state: { from: 'scan', sourceEvent, sourceSession } });
+    try {
+      window.sessionStorage.setItem(
+        'scanReturnState',
+        JSON.stringify({
+          selectedEventId,
+          selectedSessionId,
+          searchTerm,
+          searchSessionTerm,
+        })
+      );
+    } catch (err) {
+      console.warn('Failed to cache scan state before quick register', err);
+    }
+
+    const returnPath = `${location.pathname}${location.search || ''}`;
+    navigate('/customers/create', {
+      state: {
+        from: 'scan',
+        sourceEvent,
+        sourceSession,
+        returnPath,
+      },
+    });
   };
 
   useEffect(() => {
