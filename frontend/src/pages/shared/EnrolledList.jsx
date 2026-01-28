@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import CustomersTable from '../../components/CustomersTable';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,6 +8,7 @@ import { handleGetSessionById, handleListSessionAttendees, handleDeleteSessionRe
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleUploadCertificate } from '../../api/certificatesAPI';
 import { handleUploadReceipt } from '../../api/receiptsAPI';
+import Scanner from '../../components/Scanner';
 
 const statusTranslations = {
   PENDING: '待付款',
@@ -25,6 +26,7 @@ const EnrolledList = () => {
   const location = useLocation();
   const params = useParams();
   const { user } = useAuth();
+  
 
   const authRole = (user && user.role) ? user.role.toUpperCase() : 'MEMBER';
 
@@ -38,13 +40,91 @@ const EnrolledList = () => {
   const sessionId = sessionIdFromPath || sessionIdFromQuery || null;
   const eventId = eventIdFromPath || eventIdFromQuery || null;
 
+  const isSessionMode = Boolean(sessionId);
+
   const [members, setMembers] = useState([]);
+  // local sign-in state stored per session in localStorage: { [sessionId]: { [registration_id]: true } }
+  const [localSignIns, setLocalSignIns] = useState(() => {
+    try {
+      const raw = window.localStorage.getItem('localSignIns') || '{}';
+      return JSON.parse(raw);
+    } catch (e) {
+      return {};
+    }
+  });
   const [eventInfo, setEventInfo] = useState(null);
   const [sessionInfo, setSessionInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  // QR scanner state is encapsulated in the Scanner component
 
+  // 轉到快速登記頁面（停止掃描後導向建立用戶，並帶入來源活動/場次）
+  const handleQuickRegister = async () => {
+    try {
+      await stopAllGlobalInstances();
+    } catch (_) {}
+
+    const sourceEvent = eventInfo
+      ? {
+          event_id: eventInfo.event_id,
+          event_name: eventInfo.event_name,
+          datetime_start: eventInfo.datetime_start,
+          type: eventInfo.type,
+        }
+      : null;
+    const sourceSession = sessionInfo
+      ? {
+          session_id: sessionInfo.session_id,
+          session_name: sessionInfo.session_name,
+          datetime_start: sessionInfo.datetime_start,
+        }
+      : null;
+
+    navigate('/customers/create', { state: { from: 'scan', sourceEvent, sourceSession } });
+  };
+  // Global registry to avoid multiple Html5Qrcode instances on same container
+  const ensureGlobalRegistry = () => {
+    if (!window.__html5qrcode_instances) window.__html5qrcode_instances = {};
+    return window.__html5qrcode_instances;
+  };
+  const setGlobalInstance = (containerId, inst) => {
+    const reg = ensureGlobalRegistry();
+    reg[containerId] = inst;
+  };
+  const getGlobalInstance = (containerId) => {
+    const reg = ensureGlobalRegistry();
+    return reg[containerId];
+  };
+  const clearGlobalInstance = (containerId) => {
+    const reg = ensureGlobalRegistry();
+    delete reg[containerId];
+  };
+  const stopAllGlobalInstances = async () => {
+    const reg = ensureGlobalRegistry();
+    const ids = Object.keys(reg || {});
+    await Promise.all(ids.map(async (id) => {
+      const inst = reg[id];
+      try {
+        try {
+          const stopRes = inst.stop();
+          if (stopRes && typeof stopRes.then === 'function') await stopRes.catch(() => {});
+        } catch (_) {}
+        try {
+          const clearRes = inst.clear();
+          if (clearRes && typeof clearRes.then === 'function') await clearRes.catch(() => {});
+        } catch (_) {}
+      } catch (e) {
+        // ignore
+      }
+      try {
+        const container = document.getElementById(id);
+        if (container) while (container.firstChild) container.removeChild(container.firstChild);
+      } catch (e) {}
+      delete reg[id];
+    }));
+  };
+  // Helper utilities used by Scanner are encapsulated in the Scanner component
   // 載入活動 / 場次資訊（顯示標題用）
   useEffect(() => {
     // 若為場次模式，先抓場次再抓對應活動
@@ -85,6 +165,8 @@ const EnrolledList = () => {
       fetchEventOnly();
     }
   }, [sessionId, eventId]);
+
+  // Scanner lifecycle and handlers are implemented inside the Scanner component
 
   // 載入已報名會員清單（活動或場次）
   useEffect(() => {
@@ -157,7 +239,27 @@ const EnrolledList = () => {
     }
   };
 
-  const isSessionMode = Boolean(sessionId);
+  // frontend-only: toggle local sign-in for a registration
+  const toggleLocalSignIn = (registration_id) => {
+    if (!sessionId) return; // only meaningful in session mode
+    setLocalSignIns((prev) => {
+      const next = { ...(prev || {}) };
+      const sessionKey = String(sessionId);
+      if (!next[sessionKey]) next[sessionKey] = {};
+      const rid = String(registration_id);
+      // toggle
+      next[sessionKey] = { ...(next[sessionKey] || {}) };
+      next[sessionKey][rid] = !next[sessionKey][rid];
+      try {
+        window.localStorage.setItem('localSignIns', JSON.stringify(next));
+      } catch (e) {
+        console.warn('Failed to persist local sign-ins', e);
+      }
+      return next;
+    });
+  };
+
+  
 
   const handleCertificateUpload = (customer) => {
     if (!eventId) {
@@ -274,19 +376,54 @@ const EnrolledList = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>{isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'}</h1>
+      <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 12 }}>
+        <div style={{ flex: 1 }}>
+          <h1>{isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'}</h1>
+          {eventInfo && (
+            <div>
+              <p>
+                活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}
+              </p>
+              {isSessionMode && sessionInfo && (
+                <p>
+                  場次 ID: {sessionInfo.session_id} ｜ 場次名稱: {sessionInfo.session_name || 'N/A'} ｜ 時間: {sessionInfo.datetime_start ? formatDateTimeForDisplay(sessionInfo.datetime_start) : 'N/A'}
+                </p>
+              )}
+              {eventInfo?.type === 'SEMINAR' && (
+                <div style={{ marginTop: 8 }}>
+                  <button type="button" onClick={handleQuickRegister}>
+                    現場快速登記
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-      {eventInfo && (
-        <p>
-          活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}
-        </p>
-      )}
-
-      {isSessionMode && sessionInfo && (
-        <p>
-          場次 ID: {sessionInfo.session_id} ｜ 場次名稱: {sessionInfo.session_name || 'N/A'} ｜ 時間: {sessionInfo.datetime_start ? formatDateTimeForDisplay(sessionInfo.datetime_start) : 'N/A'}
-        </p>
-      )}
+        {isSessionMode && (
+          <Scanner
+            sessionId={sessionId}
+            sessionInfo={sessionInfo}
+            eventInfo={eventInfo}
+            onQuickRegister={handleQuickRegister}
+            onMarkLocalSignIn={(sessionKey, registrationId) => {
+              try {
+                setLocalSignIns((prev) => {
+                  const next = { ...(prev || {}) };
+                  if (!next[sessionKey]) next[sessionKey] = {};
+                  next[sessionKey] = { ...(next[sessionKey] || {}) };
+                  next[sessionKey][String(registrationId)] = true;
+                  try { window.localStorage.setItem('localSignIns', JSON.stringify(next)); } catch (e) { /* ignore */ }
+                  return next;
+                });
+              } catch (e) {
+                console.warn('Failed to mark local sign-in from Scanner:', e);
+              }
+            }}
+          />
+        )}
+      </div>
 
       {loading && <p>載入中...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -308,6 +445,18 @@ const EnrolledList = () => {
                   header: '報名狀態',
                   render: (customer) => translateStatus(customer.status)
                 },
+                // Add sign-in column only in session mode
+                ...(isSessionMode ? [
+                  {
+                    header: '簽到',
+                    render: (customer) => {
+                      const sessionKey = String(sessionId);
+                      const rid = String(customer.registration_id);
+                      const signed = !!(localSignIns && localSignIns[sessionKey] && localSignIns[sessionKey][rid]);
+                      return signed ? 'Y' : 'N';
+                    }
+                  }
+                ] : []),
                 ...(!isSessionMode
                   ? [
                       {
@@ -324,12 +473,25 @@ const EnrolledList = () => {
               renderActions={(customer) => {
                 if (isSessionMode) {
                   return (
-                    <button
-                      style={{ color: 'red' }}
-                      onClick={() => handleDeleteRegistration(customer.registration_id)}
-                    >
-                      刪除報名
-                    </button>
+                      <>
+                        <button
+                          style={{ marginRight: 8, position: 'relative', zIndex: 2000 }}
+                          onClick={() => toggleLocalSignIn(customer.registration_id)}
+                        >
+                          {(() => {
+                            const sessionKey = String(sessionId);
+                            const rid = String(customer.registration_id);
+                            const signed = !!(localSignIns && localSignIns[sessionKey] && localSignIns[sessionKey][rid]);
+                            return signed ? '取消簽到' : '簽到';
+                          })()}
+                        </button>
+                        <button
+                          style={{ color: 'red', position: 'relative', zIndex: 2000 }}
+                          onClick={() => handleDeleteRegistration(customer.registration_id)}
+                        >
+                          刪除報名
+                        </button>
+                      </>
                   );
                 }
                 return (
@@ -365,7 +527,7 @@ const EnrolledList = () => {
           )}
 
           <div style={{ marginTop: 16 }}>
-            <button onClick={() => navigate(-1)} style={{ marginRight: 8 }}>返回上一頁</button>
+            <button onClick={async () => { try { await stopAllGlobalInstances(); } catch (e) { /* ignore */ } navigate(-1); }} style={{ marginRight: 8 }}>返回上一頁</button>
             {isSessionMode && members.length > 0 && (
               <>
                 <button 
