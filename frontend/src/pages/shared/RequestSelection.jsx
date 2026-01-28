@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import RequestForm from '../../components/RequestForm';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -11,8 +12,11 @@ const requestOptions = [
 ];
 
 const RequestSelection = () => {
+	const navigate = useNavigate();
 	const { user } = useAuth();
-	const isMember = user?.role?.toLowerCase() === 'member';
+	const normalizedRole = (user?.role || '').toLowerCase();
+	const isMember = normalizedRole === 'member';
+	const canViewRequests = ['member', 'sales', 'leader'].includes(normalizedRole);
 	const availableOptions = useMemo(() => {
 		if (isMember) {
 			return requestOptions.filter((opt) => opt !== '改期申請' && opt !== '取消申請');
@@ -33,8 +37,15 @@ const RequestSelection = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>選擇申請類型</h1>
-			<p style={{ marginBottom: 12 }}>請選擇申請種類。</p>
+			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+				<div>
+					<h1>選擇申請類型</h1>
+					<p style={{ marginBottom: 0 }}>請選擇申請種類。</p>
+				</div>
+					<button onClick={() => navigate('/requests/history')} style={{ minWidth: 140 }}>
+						查看申請紀錄
+					</button>
+			</div>
 
 			<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
 				{availableOptions.map((opt) => (

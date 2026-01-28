@@ -13,13 +13,13 @@ const Header = () => {
   // Define all possible pages with path and label
   const pagesMap = {
     customers: { path: '/customers', label: '客戶名單' },
-    approvals: { path: '/approvals', label: '審批頁' },
     scan: { path: '/scan', label: '掃碼簽到' },
     events: { path: '/events', label: '講座與課堂名單' },
     reports: { path: '/reports', label: '報表中心' },
     waiting: { path: '/waiting', label: '等待清單' },
     files: { path: '/files', label: '訂閱管理' },
     notifications: { path: '/notifications', label: '通知中心' },
+    requests_admin: { path: '/admin/requests', label: '申請列表' },
 
     sales_kpi: { path: '/sales-kpi', label: '團隊&個人 KPI' },
 
@@ -36,7 +36,7 @@ const Header = () => {
   // Which pages each role should see (order matters)
   const rolePages = {
     // new admin order requested by user
-    admin: ['customers','events','sessions_enrolled','payments','approvals','scan','waiting','reports','files','notifications','feedback'],
+    admin: ['customers','events','sessions_enrolled','payments','requests_admin','scan','waiting','reports','files','notifications','feedback'],
     sales: ['customers','events','sessions_enrolled','payments','requests','sales_kpi','notifications','feedback'],
     leader: ['customers','events','sessions_enrolled','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
     member: ['mycalendar','myevents','sessions_enrolled','events','payments','receipts','requests','notifications','myqrcode','feedback']
@@ -77,13 +77,13 @@ const Header = () => {
               const { pathname } = location;
               const map = {
                 '/customers': '客戶名單',
-                '/approvals': '審批頁',
                 '/scan': '掃碼簽到',
                 '/events': '講座與課堂名單',
                 '/reports': '報表中心',
                 
                 '/waiting': '等待清單',
                 '/files': '訂閱管理',
+                '/admin/requests': '申請列表',
                 '/notifications': '通知中心',
 
                 '/sales-kpi': '團隊&個人 KPI',

@@ -1,0 +1,48 @@
+import { apiUrl } from './apiBase';
+
+export async function handleSubmitRequest(data) {
+  try {
+    console.log('Submitting request...', data);
+    const response = await fetch(apiUrl('/api/requests'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?.message || '申請提交失敗';
+      throw new Error(message);
+    }
+
+    console.log('Request submitted:', payload);
+    return payload;
+  } catch (err) {
+    console.error('Request submit error:', err);
+    throw err;
+  }
+}
+
+export async function handleListRequests() {
+  try {
+    console.log('Fetching requests list...');
+    const response = await fetch(apiUrl('/api/requests'), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?.message || '無法載入申請列表';
+      throw new Error(message);
+    }
+
+    console.log('Requests list loaded:', payload);
+    return payload;
+  } catch (err) {
+    console.error('List requests error:', err);
+    throw err;
+  }
+}

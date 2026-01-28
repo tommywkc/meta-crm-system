@@ -36,7 +36,7 @@ const SalesPage = () => {
 							<th style={thTdStyle}>尾款日期</th>
 							<th style={thTdStyle}>逾期天數</th>
 							<th style={thTdStyle}>狀態</th>
-							<th style={thTdStyle}>動作</th>
+							<th style={thTdStyle}>操作</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -69,7 +69,7 @@ const SalesPage = () => {
 							<th style={thTdStyle}>上課日期</th>
 							<th style={thTdStyle}>尾款金額</th>
 							<th style={thTdStyle}>狀態</th>
-							<th style={thTdStyle}>動作</th>
+							<th style={thTdStyle}>操作</th>
 						</tr>
 					</thead>
 					<tbody>
