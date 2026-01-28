@@ -72,6 +72,32 @@ const EnrolledList = () => {
   const [scanUser, setScanUser] = useState(null); // e.g. 林淑芬（50008）
   const [scanDetail, setScanDetail] = useState(null); // e.g. 簽到時間：...
 
+  // 轉到快速登記頁面（停止掃描後導向建立用戶，並帶入來源活動/場次）
+  const handleQuickRegister = async () => {
+    try {
+      await stopQrScanning();
+    } catch (_) {
+      try { await stopAllGlobalInstances(); } catch (_) {}
+    }
+
+    const sourceEvent = eventInfo
+      ? {
+          event_id: eventInfo.event_id,
+          event_name: eventInfo.event_name,
+          datetime_start: eventInfo.datetime_start,
+          type: eventInfo.type,
+        }
+      : null;
+    const sourceSession = sessionInfo
+      ? {
+          session_id: sessionInfo.session_id,
+          session_name: sessionInfo.session_name,
+          datetime_start: sessionInfo.datetime_start,
+        }
+      : null;
+
+    navigate('/customers/create', { state: { from: 'scan', sourceEvent, sourceSession } });
+  };
   // Global registry to avoid multiple Html5Qrcode instances on same container
   const ensureGlobalRegistry = () => {
     if (!window.__html5qrcode_instances) window.__html5qrcode_instances = {};
@@ -630,14 +656,23 @@ const EnrolledList = () => {
         <div style={{ flex: 1 }}>
           <h1>{isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'}</h1>
           {eventInfo && (
-            <p>
-              活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}
-            </p>
-          )}
-          {isSessionMode && sessionInfo && (
-            <p>
-              場次 ID: {sessionInfo.session_id} ｜ 場次名稱: {sessionInfo.session_name || 'N/A'} ｜ 時間: {sessionInfo.datetime_start ? formatDateTimeForDisplay(sessionInfo.datetime_start) : 'N/A'}
-            </p>
+            <div>
+              <p>
+                活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}
+              </p>
+              {isSessionMode && sessionInfo && (
+                <p>
+                  場次 ID: {sessionInfo.session_id} ｜ 場次名稱: {sessionInfo.session_name || 'N/A'} ｜ 時間: {sessionInfo.datetime_start ? formatDateTimeForDisplay(sessionInfo.datetime_start) : 'N/A'}
+                </p>
+              )}
+              {eventInfo?.type === 'SEMINAR' && (
+                <div style={{ marginTop: 8 }}>
+                  <button type="button" onClick={handleQuickRegister}>
+                    現場快速登記
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -650,6 +685,7 @@ const EnrolledList = () => {
               <button type="button" onClick={stopQrScanning} disabled={!scanning}>
                 Stop Scanner
               </button>
+              {/* quick register button moved to activity/session info area */}
               <div style={{ color: '#555', marginLeft: 'auto' }}>{qrErrorMsg && <span style={{ color: 'red' }}>{qrErrorMsg}</span>}</div>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
