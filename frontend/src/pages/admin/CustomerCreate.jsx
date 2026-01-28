@@ -5,6 +5,7 @@ import CustomerForm from '../../components/CustomerForm';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleCreateEnrollment } from '../../api/enrollmentAPI';
 import { handleCreateSessionRegistration } from '../../api/sessionAPI';
+import { handleQuickRegistrationAttendance } from '../../api/attendanceAPI';
 
 const CustomerCreate = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const CustomerCreate = () => {
   // 從掃描頁帶入的來源活動，用於預填「來源」欄位（不影響標籤/備註）
   const sourceEvent = location?.state?.sourceEvent;
   const sourceSession = location?.state?.sourceSession;
+  const returnPath = location?.state?.returnPath || '';
   const formattedSource = sourceEvent
     ? `現場登記 - ${sourceEvent.type} ${sourceEvent.event_id} ${sourceEvent.event_name || ''}${sourceEvent.datetime_start ? ` (${formatDateTimeForDisplay(sourceEvent.datetime_start)})` : ''}`.trim()
     : undefined;
@@ -43,7 +45,18 @@ const CustomerCreate = () => {
                 user_id: newUserId,
                 channel: 'SALES', // 現場由工作人員代為報名
               });
-              alert('客戶新增並完成講座與場次報名！');
+              let attendanceMessage = '客戶新增並完成講座與場次報名！';
+              try {
+                await handleQuickRegistrationAttendance({
+                  session_id: sourceSession.session_id,
+                  user_id: newUserId,
+                });
+                attendanceMessage = '客戶新增並完成講座、場次報名與簽到！';
+              } catch (attendanceErr) {
+                console.error('Auto attendance failed:', attendanceErr);
+                attendanceMessage = `客戶新增並完成講座與場次報名，但簽到失敗：${attendanceErr.message || '請稍後再試'}`;
+              }
+              alert(attendanceMessage);
             } catch (sessionErr) {
               console.error('Auto session registration failed:', sessionErr);
               alert(`客戶新增成功，活動報名成功，但場次報名失敗：${sessionErr.message || '請稍後再試'}`);
@@ -59,6 +72,11 @@ const CustomerCreate = () => {
         alert('客戶新增成功！');
       }
 
+      if (returnPath) {
+        navigate(returnPath, { replace: true });
+        return;
+      }
+
       navigate(`/customers/${newUserId}`);  // after creation, navigate to the new customer's page
     } catch (err) {
       console.error('Create failed:', err);
@@ -68,6 +86,10 @@ const CustomerCreate = () => {
   };
 
   const handleCancel = () => {
+    if (returnPath) {
+      navigate(returnPath);
+      return;
+    }
     navigate(-1);
   };
 

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { findUserByQrToken } = require('../dao/usersDao');
+const { findUserByQrToken, findByUserId } = require('../dao/usersDao');
 const { findBySessionId } = require('../dao/eventSessionsDao');
 const { findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
 const { createAttendance, findLatestByRegistrationId, updateStatusAndTouchTime } = require('../dao/eventAttendanceDao');
@@ -25,48 +25,50 @@ function computeAttendanceStatus(session) {
   return now >= windowStart && now <= windowEnd ? 'G' : 'R';
 }
 
-// 掃描簽到：使用 qr_token + session_id 完成以下流程：
-// 1. 找出用戶
-// 2. 檢查場次是否存在
-// 3. 檢查是否已報名該場次
-// 4. 若已報名，寫入 EVENT_ATTENDANCE 一筆出席記錄
+// 掃描或現場快速登記簽到：透過 qr_token 或 user_id 取得用戶，並以 session_id 完成簽到
 router.post('/attendance/scan', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
   try {
-    const { qr_token, session_id } = req.body || {};
-
-    if (!qr_token || !session_id) {
-      return res.status(400).json({ message: '缺少必要資料（qr_token 與 session_id）' });
+    const { qr_token, session_id, user_id } = req.body || {};
+    if (!session_id) {
+      return res.status(400).json({ message: '缺少必要資料（session_id）' });
     }
-
     const sessionId = parseInt(session_id, 10);
     if (Number.isNaN(sessionId)) {
       return res.status(400).json({ message: '無效的 session_id' });
     }
 
-    // 1. 以 QR Token 尋找用戶
-    const user = await findUserByQrToken(qr_token);
-    if (!user) {
-      return res.status(404).json({ message: '無效的 QR Code 或用戶不存在' });
+    const isQuickRegistration = Boolean(user_id && !qr_token);
+
+    let user;
+    if (qr_token) {
+      user = await findUserByQrToken(qr_token);
+      if (!user) {
+        return res.status(404).json({ message: '無效的 QR Code 或用戶不存在' });
+      }
+    } else if (user_id) {
+      const userId = parseInt(user_id, 10);
+      if (Number.isNaN(userId)) {
+        return res.status(400).json({ message: '無效的 user_id' });
+      }
+      user = await findByUserId(userId);
+      if (!user) {
+        return res.status(404).json({ message: '找不到指定的用戶' });
+      }
+    } else {
+      return res.status(400).json({ message: '缺少必要資料（qr_token 或 user_id）' });
     }
 
-    // 2. 確認場次存在
     const session = await findBySessionId(sessionId);
     if (!session) {
       return res.status(404).json({ message: '找不到指定的場次' });
     }
 
-    // 3. 檢查是否已報名該場次
     const registration = await findBySessionAndUser(sessionId, user.user_id);
     if (!registration) {
       return res.status(400).json({ message: '此用戶尚未報名這個場次，無法簽到' });
     }
 
-    // 4. 查詢是否已有出席紀錄
     const existingAttendance = await findLatestByRegistrationId(registration.registration_id);
-
-    // 4.1 若已有紀錄：
-    //   - status = G 或 Y：不需變更
-    //   - status = R：依時間窗重新計算並更新
     if (existingAttendance) {
       const s = String(existingAttendance.status || '').toUpperCase();
       if (s === 'G' || s === 'Y') {
@@ -92,11 +94,10 @@ router.post('/attendance/scan', authMiddleware, roleMiddleware(['admin', 'sales'
         });
       }
 
-      // status = R（或其他/空值）：依規則重新計算
       const nextStatus = computeAttendanceStatus(session);
       const updated = await updateStatusAndTouchTime(existingAttendance.attendance_id, nextStatus);
 
-      return res.status(200).json({
+      const responsePayload = {
         message: nextStatus === 'G'
           ? '簽到成功（由 R 更新為 G）'
           : '不在簽到時間範圍，已記錄為 R',
@@ -117,21 +118,26 @@ router.post('/attendance/scan', authMiddleware, roleMiddleware(['admin', 'sales'
           registration_id: registration.registration_id,
           status: registration.status,
         },
-      });
+      };
+
+      if (isQuickRegistration && nextStatus !== 'G') {
+        return res.status(422).json({
+          ...responsePayload,
+          message: '目前不在簽到時間範圍，無法完成簽到',
+        });
+      }
+
+      return res.status(nextStatus === 'G' ? 200 : 202).json(responsePayload);
     }
 
-    // 4.2 若沒有紀錄：依時間窗計算狀態後新增
     const status = computeAttendanceStatus(session);
-
-
-    // 5. 建立簽到記錄
     const attendance = await createAttendance({
       registration_id: registration.registration_id,
-      status: status,
+      status,
       remarks: null,
     });
 
-    return res.status(201).json({
+    const payload = {
       message: status === 'G' ? '簽到成功' : '不在簽到時間範圍，已記錄為 R',
       attendance,
       user: {
@@ -150,9 +156,18 @@ router.post('/attendance/scan', authMiddleware, roleMiddleware(['admin', 'sales'
         registration_id: registration.registration_id,
         status: registration.status,
       },
-    });
+    };
+
+    if (isQuickRegistration && status !== 'G') {
+      return res.status(422).json({
+        ...payload,
+        message: '目前不在簽到時間範圍，無法完成簽到',
+      });
+    }
+
+    return res.status(status === 'G' ? 201 : 202).json(payload);
   } catch (error) {
-    console.error('Attendance scan failed:', error);
+    console.error('Attendance submission failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
   }
 });

@@ -1,23 +1,35 @@
+const pad = (value) => String(value).padStart(2, '0');
+
+const buildDateTimeString = (isoString, includeSeconds = false) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const dd = pad(date.getDate());
+  const mm = pad(date.getMonth() + 1);
+  const yyyy = date.getFullYear();
+  const hh = pad(date.getHours());
+  const min = pad(date.getMinutes());
+  const ss = pad(date.getSeconds());
+
+  const timePart = includeSeconds ? `${hh}:${min}:${ss}` : `${hh}:${min}`;
+  return `${dd}/${mm}/${yyyy} ${timePart}`;
+};
+
 export const formatForDisplay = (isoString) => {
   if (!isoString) return '';
   const dateObj = new Date(isoString);
-  const dd = String(dateObj.getDate()).padStart(2, '0');
-  const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+  if (Number.isNaN(dateObj.getTime())) return '';
+  const dd = pad(dateObj.getDate());
+  const mm = pad(dateObj.getMonth() + 1);
   const yyyy = dateObj.getFullYear();
   return `${dd}/${mm}/${yyyy}`;
 };
 
 // Format ISO datetime with date and time for display
-export const formatDateTimeForDisplay = (isoString) => {
-  if (!isoString) return '';
-  const date = new Date(isoString);
-  const dd = String(date.getDate()).padStart(2, '0');
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const yyyy = date.getFullYear();
-  const hh = String(date.getHours()).padStart(2, '0');
-  const min = String(date.getMinutes()).padStart(2, '0');
-  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
-};
+export const formatDateTimeForDisplay = (isoString) => buildDateTimeString(isoString, false);
+
+export const formatDateTimeWithSecondsForDisplay = (isoString) => buildDateTimeString(isoString, true);
 
 // Format ISO datetime to time (HH:mm) only
 export const formatTimeForDisplay = (isoString) => {
@@ -56,8 +68,6 @@ export const getTypeDisplay = (type) => {
   };
   return typeMap[type] || type;
 };
-
-const pad = (value) => String(value).padStart(2, '0');
 
 // Convert a Date (local) into a timezone-neutral ISO-like string (no Z suffix)
 export const toLocalISOString = (dateInput) => {

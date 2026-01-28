@@ -204,7 +204,8 @@ CREATE TABLE IF NOT EXISTS REQUESTS (
     request_type VARCHAR(100),
     registration_id BIGINT,
     user_id BIGINT,
-    action TEXT,
+    old_session_id BIGINT,
+    new_session_id BIGINT,
     request_by_id BIGINT,
     request_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     marking_time TIMESTAMP,
@@ -219,6 +220,7 @@ CREATE TABLE IF NOT EXISTS REQUESTS (
     FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     FOREIGN KEY (request_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     FOREIGN KEY (determine_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
+    CONSTRAINT CHKTYPE_REQ CHECK (request_type IN ('CANCEL','LEAVE','RESCHEDULE','MAKEUP','RETAKE')),
     CONSTRAINT CHKSTATUS_REQ CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))
 );
 
@@ -330,7 +332,7 @@ INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, sourc
 
 INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
 ('101', 10000, 'CLASS', '客戶關係管理入門', '客戶關係管理系統的基礎介紹課程', '2026-07-01 10:00:00', '2026-07-01 12:00:00', 60, 20, 'Room 101', 'OPEN', 200, 50000),
-('102', NULL, 'SEMINAR', '進階銷售技巧講座', '深入探討高效銷售策略的講座', '2026-07-05 14:00:00', '2026-07-05 16:00:00', 100, 100, 'Zoom', 'SCHEDULED', 500, 50001),
+('102', NULL, 'SEMINAR', '進階銷售技巧講座', '深入探討高效銷售策略的講座', '2026-07-05 14:00:00', '2026-07-05 16:00:00', 100, 100, 'Zoom', 'OPEN', 500, 50001),
 ('103', 8000, 'CLASS', 'Python 基礎課程', '從零開始學習 Python 程式設計', '2026-08-10 09:00:00', '2026-08-10 17:00:00', 30, 15, 'Room 201', 'OPEN', 300, 50002),
 ('104', 12000, 'CLASS', '數據分析實戰工作坊', '使用真實數據集進行實作練習', '2026-08-15 10:00:00', '2026-08-15 16:00:00', 25, 10, 'Room 301', 'OPEN', 250, 50000),
 ('105', NULL, 'SEMINAR', '數位行銷趨勢分享會', '最新數位行銷趨勢與案例分享', '2026-08-20 14:00:00', '2026-08-20 17:00:00', 100, 50, 'Main Hall', 'SCHEDULED', 500, 50001),
@@ -404,7 +406,8 @@ INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datet
 (103, '語法入門', 'Python 基礎語法與資料型態', 30, '2026-08-11 09:00:00', '2026-08-11 12:00:00', 50002, 30, 1),
 (103, '語法入門', 'Python 基礎語法與資料型態', 30, '2026-08-12 09:00:00', '2026-08-12 12:00:00', 50002, 30, 1),
 (110, '前端基礎', 'HTML、CSS、JavaScript', 30, '2026-09-21 09:00:00', '2026-09-21 11:30:00', 50014, 30, 1),
-(110, '前端基礎', 'HTML、CSS、JavaScript', 30, '2026-09-22 09:00:00', '2026-09-22 11:30:00', 50014, 30, 1);
+(110, '前端基礎', 'HTML、CSS、JavaScript', 30, '2026-09-22 09:00:00', '2026-09-22 11:30:00', 50014, 30, 1),
+(102, '主題演講', 'Test', 100, '2024-07-05 14:00:00', '2028-07-05 16:00:00', 50001, 100, 1);
 
 -- Insert sample payment records
 INSERT INTO PAYMENTS (event_id, user_id, enrollment_id, amount, method, status, create_time, paid_time, expire_time, receipt_number, issued_receipt, issued_certificate, remarks) VALUES

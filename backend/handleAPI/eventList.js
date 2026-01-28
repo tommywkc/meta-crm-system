@@ -47,14 +47,20 @@ router.get('/events', authMiddleware, roleMiddleware(['admin', 'sales', 'leader'
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
     const q = req.query.q || '';
+    const requestedStatus = (req.query.status || '').trim().toUpperCase();
 
     const role = (req.user.role || '').toLowerCase();
     let events = [];
 
     if (role === 'member') {
-      // member: only see OPEN activities; apply search within OPEN when q provided
-      events = await searchEventsByStatus('OPEN', limit, offset, q);
-      console.log(`Member role - returning OPEN events (q=${q}): ${events.length}`);
+      // member: force OPEN when status not explicitly provided
+      const effectiveStatus = requestedStatus || 'OPEN';
+      events = await searchEventsByStatus(effectiveStatus, limit, offset, q);
+      console.log(`Member role - returning ${effectiveStatus} events (q=${q}): ${events.length}`);
+    } else if (requestedStatus) {
+      // explicit status filter for privileged roles
+      events = await searchEventsByStatus(requestedStatus, limit, offset, q);
+      console.log(`Status-filtered events (${requestedStatus}, q=${q}): ${events.length}`);
     } else {
       // non-member: search across all events when q provided
       if (q && q.trim()) {

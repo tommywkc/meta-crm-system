@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { handleFindUserByRole } from '../api/customersListAPI';
 import { handleConfirmEnrollmentByUser } from '../api/enrollmentAPI';
-import { handleListEnrolledUpcomingSessions } from '../api/sessionAPI';
+import { handleListEnrolledUpcomingSessions, handleListSessionsByEventId } from '../api/sessionAPI';
 
 const baseForm = {
   type: '取消申請',
@@ -12,9 +12,8 @@ const baseForm = {
   courseId: '',
   courseName: '',
   session: '',
-  requestedDate: '',
-  refund: false,
-  note: ''
+  rescheduleSession: '',
+  requestedDate: ''
 };
 
 const RequestForm = ({ onSubmitted, requestType }) => {
@@ -24,25 +23,44 @@ const RequestForm = ({ onSubmitted, requestType }) => {
   const [memberInput, setMemberInput] = useState('');
   const [memberError, setMemberError] = useState(null);
   const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
   const [eventInput, setEventInput] = useState('');
   const [eventError, setEventError] = useState(null);
   const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionInput, setSessionInput] = useState('');
   const [sessionError, setSessionError] = useState(null);
+  const [rescheduleSessions, setRescheduleSessions] = useState([]);
+  const [rescheduleSessionInput, setRescheduleSessionInput] = useState('');
+  const [rescheduleSessionError, setRescheduleSessionError] = useState(null);
   const { user } = useAuth();
+  const userRole = user?.role?.toLowerCase();
+  const isMemberUser = userRole === 'member';
 
   useEffect(() => {
     // reset entire form and related inputs when request type changes
-    setForm({ ...baseForm, type: requestType || baseForm.type });
-    setMemberInput('');
-    setMemberError(null);
+    setForm((prev) => ({
+      ...baseForm,
+      type: requestType || baseForm.type,
+      memberId: prev.memberId,
+      memberName: prev.memberName
+    }));
+    if (!isMemberUser) {
+      setMemberInput('');
+      setMemberError(null);
+    }
     setEvents([]);
+    setEventsLoading(false);
     setEventInput('');
     setEventError(null);
     setSessions([]);
+    setSessionsLoading(false);
     setSessionInput('');
     setSessionError(null);
-  }, [requestType]);
+    setRescheduleSessions([]);
+    setRescheduleSessionInput('');
+    setRescheduleSessionError(null);
+  }, [requestType, isMemberUser]);
 
   // load members list for selection
   useEffect(() => {
@@ -59,12 +77,12 @@ const RequestForm = ({ onSubmitted, requestType }) => {
 
   // autofill when current user is member
   useEffect(() => {
-    if (user?.role?.toLowerCase() === 'member') {
+    if (isMemberUser) {
       setForm((f) => ({ ...f, memberId: user.id || '', memberName: user.name || '' }));
       setMemberInput(user.id ? `${user.id} - ${user.name || ''}` : '');
       setMemberError(null);
     }
-  }, [user]);
+  }, [isMemberUser, user]);
 
   // fetch confirmed enrolled events for the selected member
   useEffect(() => {
@@ -73,17 +91,21 @@ const RequestForm = ({ onSubmitted, requestType }) => {
         setEvents([]);
         setEventInput('');
         setEventError(null);
+        setEventsLoading(false);
         return;
       }
       try {
+        setEventsLoading(true);
         const res = await handleConfirmEnrollmentByUser(form.memberId);
         const list = res?.enrollments || res?.events || res?.data || [];
         setEvents(list);
         setEventError(null);
+        setEventsLoading(false);
       } catch (err) {
         console.error('Failed to load confirmed events for member', err);
         setEvents([]);
         setEventError('無法載入已確認的活動，請稍後再試');
+        setEventsLoading(false);
       }
     };
     loadEvents();
@@ -94,12 +116,14 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     const loadSessions = async () => {
       if (!form.memberId) {
         setSessions([]);
+        setSessionsLoading(false);
         setSessionInput('');
         setSessionError(null);
         return;
       }
       if (!form.courseId) {
         setSessions([]);
+        setSessionsLoading(false);
         setSessionInput('');
         setSessionError(null);
         return;
@@ -107,24 +131,29 @@ const RequestForm = ({ onSubmitted, requestType }) => {
       const needSession = isCancel || isLeave || isReschedule;
       if (!needSession) {
         setSessions([]);
+        setSessionsLoading(false);
         setSessionInput('');
         setSessionError(null);
         return;
       }
       try {
-        const res = await handleListEnrolledUpcomingSessions(200, 0, String(form.memberId), form.courseId);
+        setSessionsLoading(true);
+        const queryValue = isMemberUser ? '' : String(form.memberId);
+        const res = await handleListEnrolledUpcomingSessions(200, 0, queryValue, form.courseId);
         const list = res?.sessions || res?.data || res?.items || [];
         setSessions(list);
         setSessionError(null);
+        setSessionsLoading(false);
       } catch (err) {
         console.error('Failed to load sessions for member', err);
         setSessions([]);
         setSessionError('無法載入已報名場次，請稍後再試');
+        setSessionsLoading(false);
       }
     };
     loadSessions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.memberId, form.courseId, form.type]);
+  }, [form.memberId, form.courseId, form.type, isMemberUser]);
 
   const isCancel = form.type === '取消申請';
   const isLeave = form.type === '請假申請';
@@ -132,15 +161,44 @@ const RequestForm = ({ onSubmitted, requestType }) => {
   const isMakeup = form.type === '補堂申請';
   const isRetake = form.type === '覆課申請';
 
-  const reasonLabel = useMemo(() => {
-    if (isCancel) return '取消原因';
-    return '申請原因';
-  }, [isCancel]);
 
   const handleChange = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
+  const resetRescheduleSelection = (options = { clearOptions: false }) => {
+    if (options.clearOptions) {
+      setRescheduleSessions([]);
+    }
+    setRescheduleSessionInput('');
+    setRescheduleSessionError(null);
+    setForm((prev) => (prev.rescheduleSession ? { ...prev, rescheduleSession: '' } : prev));
+  };
+
+  useEffect(() => {
+    const loadRescheduleSessions = async () => {
+      if (!(isReschedule || isMakeup || isRetake) || !form.courseId) {
+        resetRescheduleSelection({ clearOptions: true });
+        return;
+      }
+
+      try {
+        const res = await handleListSessionsByEventId(form.courseId);
+        const list = res?.sessions || [];
+        setRescheduleSessions(list);
+        setRescheduleSessionError(null);
+      } catch (err) {
+        console.error('Failed to load sessions for reschedule/makeup/retake', err);
+        setRescheduleSessions([]);
+        setRescheduleSessionError('無法載入可選場次，請稍後再試');
+      }
+    };
+
+    loadRescheduleSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.courseId, form.type]);
+
   const handleMemberInput = (val) => {
     setMemberInput(val);
+    resetRescheduleSelection({ clearOptions: true });
     const match = members.find((m) => `${m.user_id} - ${m.name}` === val);
     if (match) {
       setForm((f) => ({ ...f, memberId: String(match.user_id), memberName: match.name }));
@@ -188,6 +246,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
 
   const handleEventInput = (val) => {
     setEventInput(val);
+    resetRescheduleSelection({ clearOptions: true });
     const match = events.find((evt) => `${evt.event_id} - ${evt.event_name || evt.title || ''}`.trim() === val.trim());
     if (match) {
       setForm((f) => ({ ...f, courseId: String(match.event_id), courseName: match.event_name || match.title || '', session: '', requestedDate: '' }));
@@ -221,12 +280,21 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     }
   };
 
+  const formatSessionLabel = (session) => {
+    const name = session.title || session.name || session.session_name || '';
+    const start = session.datetime_start || session.start_time || session.startTime;
+    if (!start) {
+      return name.trim();
+    }
+    const dt = new Date(start);
+    const datePart = `${dt.getFullYear()}/${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}`;
+    const timePart = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+    return `${name} (${datePart} ${timePart})`.trim();
+  };
+
   const handleSessionInput = (val) => {
     setSessionInput(val);
-    const match = sessions.find((s) => {
-      const label = `${s.session_id || s.id} - ${s.title || s.name || s.session_name || ''}`.trim();
-      return label === val.trim();
-    });
+    const match = sessions.find((s) => formatSessionLabel(s).trim() === val.trim());
     if (match) {
       setForm((f) => ({ ...f, session: match.session_id || match.id || '', requestedDate: match.start_time || match.startTime || '' }));
       setSessionError(null);
@@ -253,6 +321,49 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     }
   };
 
+  const handleRescheduleSessionInput = (val) => {
+    setRescheduleSessionInput(val);
+    const currentSessionId = form.session ? String(form.session) : null;
+    const match = rescheduleSessions.find((s) => formatSessionLabel(s).trim() === val.trim());
+    if (match) {
+      const matchId = String(match.session_id || match.id || '');
+      if (currentSessionId && matchId === currentSessionId) {
+        setForm((f) => (f.rescheduleSession ? { ...f, rescheduleSession: '' } : f));
+        setRescheduleSessionError('請選擇不同於原場次的目標場次');
+        return;
+      }
+      setForm((f) => ({ ...f, rescheduleSession: matchId }));
+      setRescheduleSessionError(null);
+      return;
+    }
+
+    const trimmed = val.trim();
+    if (trimmed === '') {
+      setForm((f) => ({ ...f, rescheduleSession: '' }));
+      setRescheduleSessionError(null);
+      return;
+    }
+
+    if (/^\d+$/.test(trimmed)) {
+      if (currentSessionId && trimmed === currentSessionId) {
+        setForm((f) => (f.rescheduleSession ? { ...f, rescheduleSession: '' } : f));
+        setRescheduleSessionError('請選擇不同於原場次的目標場次');
+        return;
+      }
+      const exists = rescheduleSessions.find((s) => String(s.session_id || s.id) === trimmed);
+      if (exists) {
+        setForm((f) => ({ ...f, rescheduleSession: trimmed }));
+        setRescheduleSessionError(null);
+      } else {
+        setForm((f) => ({ ...f, rescheduleSession: trimmed }));
+        setRescheduleSessionError('此場次不在活動的可用場次內');
+      }
+    } else {
+      setForm((f) => ({ ...f, rescheduleSession: '' }));
+      setRescheduleSessionError('請輸入場次 ID（數字），或從清單選擇');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.type) {
@@ -271,16 +382,34 @@ const RequestForm = ({ onSubmitted, requestType }) => {
       alert('請選擇會員已報名的場次');
       return;
     }
+    if ((isReschedule || isMakeup || isRetake) && !form.rescheduleSession) {
+      const label = isReschedule ? '欲改期的目標場次' : isMakeup ? '補堂場次' : '覆課場次';
+      alert(`請選擇${label}`);
+      return;
+    }
     setSaving(true);
     await new Promise((res) => setTimeout(res, 400));
+    const sessionLabel = form.session || '無';
+    const targetSessionLabel = (isReschedule || isMakeup || isRetake) ? form.rescheduleSession || '未選擇' : '不適用';
     alert(
-      `提交成功（示範）\n類型：${form.type}\n原因：${form.reason}\n課程：${form.courseId} ${form.courseName}\n場次：${form.session}\n申請日期：${form.requestedDate}\n退款需求：${isCancel ? (form.refund ? '是' : '否') : '不適用'}\n備註：${form.note}`
+      `提交成功（示範）`
     );
     setSaving(false);
     if (onSubmitted) onSubmitted(form);
   };
 
-  const handleClear = () => setForm({ ...baseForm, type: form.type });
+  const handleClear = () => {
+    setForm({ ...baseForm, type: form.type });
+    setMemberInput('');
+    setMemberError(null);
+    setEvents([]);
+    setEventInput('');
+    setEventError(null);
+    setSessions([]);
+    setSessionInput('');
+    setSessionError(null);
+    resetRescheduleSelection({ clearOptions: true });
+  };
 
   return (
     <form onSubmit={handleSubmit} style={{ marginTop: 20, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8, maxWidth: 720 }}>
@@ -289,8 +418,13 @@ const RequestForm = ({ onSubmitted, requestType }) => {
       <div style={{ marginBottom: 10 }}>
         <label>會員</label>
         <br />
-        {user?.role?.toLowerCase() === 'member' ? (
-          <input value={memberInput || form.memberId} readOnly style={{ width: '100%', padding: 8, background: '#f9fafb', border: '1px solid #e5e7eb' }} />
+        {isMemberUser ? (
+          <input
+            value={memberInput || form.memberId}
+            readOnly
+            disabled
+            style={{ width: '100%', padding: 8, background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#6b7280' }}
+          />
         ) : (
           <>
             <input
@@ -300,11 +434,13 @@ const RequestForm = ({ onSubmitted, requestType }) => {
                 setMemberInput('');
                 setForm((f) => ({ ...f, memberId: '', memberName: '' }));
                 setMemberError(null);
+                resetRescheduleSelection({ clearOptions: true });
               }}
               onClick={() => {
                 setMemberInput('');
                 setForm((f) => ({ ...f, memberId: '', memberName: '' }));
                 setMemberError(null);
+                resetRescheduleSelection({ clearOptions: true });
               }}
               onChange={(e) => handleMemberInput(e.target.value)}
               placeholder="輸入會員ID或從清單選擇"
@@ -330,11 +466,13 @@ const RequestForm = ({ onSubmitted, requestType }) => {
             setEventInput('');
             setForm((f) => ({ ...f, courseId: '', courseName: '' }));
             setEventError(null);
+            resetRescheduleSelection({ clearOptions: true });
           }}
           onClick={() => {
             setEventInput('');
             setForm((f) => ({ ...f, courseId: '', courseName: '' }));
             setEventError(null);
+            resetRescheduleSelection({ clearOptions: true });
           }}
           onChange={(e) => handleEventInput(e.target.value)}
           placeholder="選擇會員已確認的活動"
@@ -347,7 +485,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
           ))}
         </datalist>
         {eventError && <div style={{ color: 'red', marginTop: 4 }}>{eventError}</div>}
-        {!eventError && form.memberId && events.length === 0 && (
+        {!eventError && form.memberId && !eventsLoading && events.length === 0 && (
           <div style={{ color: 'red', marginTop: 4 }}>此會員沒有已確認的活動。</div>
         )}
       </div>
@@ -376,23 +514,77 @@ const RequestForm = ({ onSubmitted, requestType }) => {
           />
           <datalist id="session-list">
             {sessions.map((s) => (
-              <option key={s.session_id || s.id} value={`${s.session_id || s.id} - ${s.title || s.name || s.session_name || ''}`} />
+              <option key={s.session_id || s.id} value={formatSessionLabel(s)} />
             ))}
           </datalist>
           {sessionError && <div style={{ color: 'red', marginTop: 4 }}>{sessionError}</div>}
           {!sessionError && form.memberId && !form.courseId && (
             <div style={{ color: '#6b7280', marginTop: 4 }}>請先選擇上方活動以載入場次。</div>
           )}
-          {!sessionError && form.memberId && form.courseId && sessions.length === 0 && (
+          {!sessionError && form.memberId && form.courseId && !sessionsLoading && sessions.length === 0 && (
             <div style={{ color: 'red', marginTop: 4 }}>此會員暫無已報名場次。</div>
           )}
         </div>
       )}
 
-      {(isReschedule) && (
+      {(isReschedule || isMakeup || isRetake) && (
         <div style={{ marginBottom: 10 }}>
-          <label>改期場次</label>
-          
+          <label>
+            {isReschedule && '改期場次'}
+            {!isReschedule && isMakeup && '補堂場次'}
+            {!isReschedule && !isMakeup && isRetake && '覆課場次'}
+          </label>
+          <br />
+          <input
+            list="reschedule-session-list"
+            value={rescheduleSessionInput}
+            onFocus={() => {
+              setRescheduleSessionInput('');
+              setForm((f) => ({ ...f, rescheduleSession: '' }));
+              setRescheduleSessionError(null);
+            }}
+            onClick={() => {
+              setRescheduleSessionInput('');
+              setForm((f) => ({ ...f, rescheduleSession: '' }));
+              setRescheduleSessionError(null);
+            }}
+            onChange={(e) => handleRescheduleSessionInput(e.target.value)}
+            placeholder={
+              isReschedule
+                ? '選擇欲改期的場次'
+                : isMakeup
+                ? '選擇補堂的場次'
+                : '選擇覆課的場次'
+            }
+            style={{ width: '40%', padding: 8, borderColor: rescheduleSessionError ? 'red' : '#e5e7eb' }}
+            disabled={!form.courseId}
+          />
+          <datalist id="reschedule-session-list">
+            {rescheduleSessions.map((s) => (
+              <option key={s.session_id || s.id} value={formatSessionLabel(s)} />
+            ))}
+          </datalist>
+          {rescheduleSessionError && <div style={{ color: 'red', marginTop: 4 }}>{rescheduleSessionError}</div>}
+          {!rescheduleSessionError && form.courseId && rescheduleSessions.length === 0 && (
+            <div style={{ color: 'red', marginTop: 4 }}>此活動目前沒有可供選擇的場次。</div>
+          )}
+          {!rescheduleSessionError && !form.courseId && (
+            <div style={{ color: '#6b7280', marginTop: 4 }}>請先於上方選擇活動以載入場次。</div>
+          )}
+        </div>
+      )}
+
+      {(isCancel || isLeave || isReschedule) && (
+        <div style={{ marginBottom: 10 }}>
+          <label>申請原因</label>
+          <br />
+          <textarea
+            value={form.reason}
+            onChange={(e) => handleChange('reason', e.target.value)}
+            placeholder={'請輸入原因'}
+            rows={4}
+            style={{ width: '60%', padding: 8, border: '1px solid #e5e7eb', resize: 'vertical' }}
+          />
         </div>
       )}
 

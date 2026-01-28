@@ -21,11 +21,12 @@ export async function handleCreateEvent(data) {
 export async function handleListEvents(opts = {}) {
   try {
     console.log('Attempting to fetch event list...', opts);
-    const { limit = 100, offset = 0, q = '' } = opts || {};
+    const { limit = 100, offset = 0, q = '', status = '' } = opts || {};
     const params = new URLSearchParams();
     params.append('limit', limit);
     params.append('offset', offset);
     if (q && q.trim()) params.append('q', q);
+    if (status && status.trim()) params.append('status', status.trim().toUpperCase());
 
     const response = await fetch(apiUrl(`/api/events?${params.toString()}`), {
       method: 'GET',
