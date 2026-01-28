@@ -39,20 +39,6 @@ router.post('/login', async (req, res) => {
 
     const user = await findByUserId(username);
   console.log('User lookup result:', user ? 'found' : 'not found');
-    
-    // Debugging: log representations to diagnose mismatches (local/dev only)
-    if (process.env.NODE_ENV !== 'production') {
-      try {
-        console.log('Stored password repr:', JSON.stringify(user?.password), 'len', String(user?.password || '').length);
-        console.log('Provided password repr:', JSON.stringify(password), 'len', String(password || '').length);
-        const storedCodes = String(user?.password || '').split('').map(c => c.charCodeAt(0));
-        const providedCodes = String(password || '').split('').map(c => c.charCodeAt(0));
-        console.log('Stored password char codes (first 20):', storedCodes.slice(0,20));
-        console.log('Provided password char codes (first 20):', providedCodes.slice(0,20));
-      } catch (e) {
-        console.error('Error while logging password debug info:', e.message);
-      }
-    }
 
     if (!user || user.password !== password) {
       console.log('Invalid username or password');
