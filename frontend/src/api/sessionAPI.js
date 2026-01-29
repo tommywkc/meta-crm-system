@@ -293,3 +293,88 @@ export async function handleDeleteSessionRegistration(registration_id) {
   }
 }
 
+// --- Check-in / Cancel check-in (attendance) ---
+export async function handleCheckinRegistration(registration_id, options = {}) {
+  try {
+    const response = await fetch(apiUrl(`/api/session-registrations/${registration_id}/checkin`), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(options),
+    });
+
+    if (!response.ok) {
+      let message = '簽到失敗';
+      let errPayload = null;
+      try {
+        errPayload = await response.json();
+        if (errPayload?.message) message = errPayload.message;
+      } catch (e) {}
+      const error = new Error(message);
+      error.status = response.status;
+      error.payload = errPayload;
+      throw error;
+    }
+
+    const payload = await response.json();
+    return payload;
+  } catch (err) {
+    console.error('Check-in error:', err);
+    throw err;
+  }
+}
+
+export async function handleCancelCheckinRegistration(registration_id) {
+  try {
+    const response = await fetch(apiUrl(`/api/session-registrations/${registration_id}/checkin`), {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      let message = '取消簽到失敗';
+      let errPayload = null;
+      try {
+        errPayload = await response.json();
+        if (errPayload?.message) message = errPayload.message;
+      } catch (e) {}
+      const error = new Error(message);
+      error.status = response.status;
+      error.payload = errPayload;
+      throw error;
+    }
+
+    const payload = await response.json();
+    return payload;
+  } catch (err) {
+    console.error('Cancel check-in error:', err);
+    throw err;
+  }
+}
+
+// --- Get latest attendance for a registration ---
+export async function handleGetRegistrationAttendance(registration_id) {
+  try {
+    const response = await fetch(apiUrl(`/api/session-registrations/${registration_id}/attendance`), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      const error = new Error(err?.message || '無法取得簽到紀錄');
+      error.status = response.status;
+      error.payload = err;
+      throw error;
+    }
+
+    const payload = await response.json();
+    return payload.attendance;
+  } catch (err) {
+    console.error('Get registration attendance error:', err);
+    throw err;
+  }
+}
+

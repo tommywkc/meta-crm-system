@@ -35,6 +35,7 @@ async function listRegistrationsWithUserBySessionId(session_id) {
       sr.status,
       sr.registration_time,
       ea.status AS attendance_status,
+      ea.attend_time AS attendance_time,
       u.name,
       u.role,
       u.mobile,

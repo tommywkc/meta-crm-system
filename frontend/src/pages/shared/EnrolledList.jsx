@@ -4,8 +4,8 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleListConfirmedUsersByEvent } from '../../api/enrollmentAPI';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
-import { handleGetSessionById, handleListSessionAttendees, handleDeleteSessionRegistration } from '../../api/sessionAPI';
-import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import { handleGetSessionById, handleListSessionAttendees, handleDeleteSessionRegistration, handleCheckinRegistration, handleCancelCheckinRegistration, handleGetRegistrationAttendance } from '../../api/sessionAPI';
+import { formatDateTimeForDisplay, formatTimeForDisplay, formatTimeForDisplayInHK } from '../../utils/dateFormatter';
 import { handleUploadCertificate } from '../../api/certificatesAPI';
 import { handleUploadReceipt } from '../../api/receiptsAPI';
 import Scanner from '../../components/Scanner';
@@ -57,6 +57,9 @@ const EnrolledList = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  // pendingAttendance caches attendance objects (from scanner response) keyed by registration_id
+  const [pendingAttendance, setPendingAttendance] = useState({});
+  const RECENT_PENDING_MS = 60000; // consider pending cache valid for 60s
   // QR scanner state is encapsulated in the Scanner component
 
   // 轉到快速登記頁面（停止掃描後導向建立用戶，並帶入來源活動/場次）
@@ -177,23 +180,45 @@ const EnrolledList = () => {
   // Scanner lifecycle and handlers are implemented inside the Scanner component
 
   // 載入已報名會員清單（活動或場次）
-  useEffect(() => {
-    const fetchMembers = async () => {
-      const isSessionMode = Boolean(sessionId);
-      if (isSessionMode && !sessionId) return;
-      if (!isSessionMode && !eventId) return;
+  const fetchMembers = async () => {
+    const isSessionMode = Boolean(sessionId);
+    if (isSessionMode && !sessionId) return;
+    if (!isSessionMode && !eventId) return;
 
-      setLoading(true);
-      setError(null);
-      try {
-        let res;
-        if (isSessionMode) {
-          res = await handleListSessionAttendees(sessionId);
+    setLoading(true);
+    setError(null);
+    try {
+      let res;
+      if (isSessionMode) {
+        res = await handleListSessionAttendees(sessionId);
+      } else {
+        res = await handleListConfirmedUsersByEvent(eventId, { status: 'ALL' });
+      }
+      const customers = res.users || [];
+      const mapped = customers.map((c) => {
+        const regId = String(c.registration_id);
+        const serverTime = c.attendance_time || c.attend_time || null;
+        const cached = pendingAttendance[regId] || null;
+        const now = Date.now();
+        // Use RECENT_PENDING_MS (defined at top) as cache validity window
+        let finalTime;
+        let finalStatus;
+        if (cached && (now - (cached.ts || 0) < RECENT_PENDING_MS)) {
+          finalTime = cached.attend_time;
+          finalStatus = cached.status || (c.attendance_status || c.attendanceStatus || '');
         } else {
-          res = await handleListConfirmedUsersByEvent(eventId, { status: 'ALL' });
+          finalTime = serverTime || (cached ? cached.attend_time : null);
+          finalStatus = (c.attendance_status || c.attendanceStatus) || (cached ? (cached.status || '') : '');
         }
-        const customers = res.users || [];
-        const mapped = customers.map((c) => ({
+        // if server has now recorded the attendance and it's not being shadowed by recent cached value, clear cache
+        if (serverTime && (!cached || (now - (cached.ts || 0) >= RECENT_PENDING_MS))) {
+          if (pendingAttendance[regId]) setPendingAttendance((prev) => {
+            const next = { ...(prev || {}) };
+            delete next[regId];
+            return next;
+          });
+        }
+        return {
           registration_id: c.registration_id,
           enrollment_id: c.enrollment_id,
           payment_id: c.payment_id,
@@ -204,21 +229,78 @@ const EnrolledList = () => {
           mobile: c.mobile || '',
           email: c.email || '',
           status: c.status || c.enrollment_status || '',
-          attendance_status: c.attendance_status || c.attendanceStatus || '',
+          attendance_status: finalStatus,
+          attendance_time: finalTime,
           issued_certificate: c.issued_certificate,
           issued_receipt: c.issued_receipt,
-        }));
-        setMembers(mapped);
-      } catch (err) {
-        console.error('載入已報名會員清單失敗:', err);
-        setError(err.message || '載入已報名會員清單失敗');
-      } finally {
-        setLoading(false);
-      }
-    };
+        };
+      });
+      setMembers(mapped);
+    } catch (err) {
+      console.error('載入已報名會員清單失敗:', err);
+      setError(err.message || '載入已報名會員清單失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchMembers();
   }, [eventId, sessionId]);
+
+  // If we returned from quick registration, apply quick attendance to UI then clear navigation state
+  useEffect(() => {
+    try {
+      // Handle quick registration via navigation state
+      const qs = location?.state || null;
+      if (qs && qs.quickRegistered) {
+        const att = qs.quickAttendance || null;
+        const regId = qs.quickRegistrationId || (att && att.registration_id) || (att && att.registration && att.registration.registration_id);
+        if (att && regId) {
+          const attendTime = att.attend_time || att.attendance_time || null;
+          const status = att.status || 'G';
+          setPendingAttendance((prev) => ({ ...prev, [String(regId)]: { attend_time: attendTime, status, ts: Date.now() } }));
+          setMembers((prev) => (prev || []).map((m) => (
+            String(m.registration_id) === String(regId)
+              ? { ...m, attendance_status: status || m.attendance_status, attendance_time: attendTime || m.attendance_time }
+              : m
+          )));
+        }
+        // clear navigation state to avoid repeated handling
+        try { navigate(location.pathname + (location.search || ''), { replace: true, state: {} }); } catch (e) { /* ignore */ }
+        // also refresh list to ensure server state is reflected
+        fetchMembers();
+      }
+
+      // If we returned from Scan page with a recent scan, apply it from sessionStorage
+      try {
+        const raw = window.sessionStorage.getItem('scanReturnAttendance');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const regId = parsed && parsed.registrationId;
+          const att = parsed && parsed.attendance;
+          if (regId && att) {
+            const attendTime = att.attend_time || att.attendance_time || null;
+            const status = att.status || att.status || null;
+            setPendingAttendance((prev) => ({ ...prev, [String(regId)]: { attend_time: attendTime, status, ts: Date.now() } }));
+            setMembers((prev) => (prev || []).map((m) => (
+              String(m.registration_id) === String(regId)
+                ? { ...m, attendance_status: status || m.attendance_status, attendance_time: attendTime || m.attendance_time }
+                : m
+            )));
+            // clear marker to avoid re-applying
+            try { window.sessionStorage.removeItem('scanReturnAttendance'); } catch (e) {}
+            // also refresh list to ensure server state is authoritative
+            fetchMembers();
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to apply scanReturnAttendance', e);
+      }
+    } catch (e) {
+      console.warn('Quick registration state handling failed', e);
+    }
+  }, [location?.state]);
 
   const handleView = (user_id) => {
     navigate(`/customers/${user_id}`);
@@ -245,6 +327,82 @@ const EnrolledList = () => {
       alert('場次報名已刪除');
     } catch (err) {
       alert(err?.message || '刪除失敗，請稍後再試');
+    }
+  };
+
+  // server-side check-in/cancel helpers (only for permitted staff roles)
+  const handleServerCheckin = async (registration_id, options = {}) => {
+    try {
+      const res = await handleCheckinRegistration(registration_id, options);
+      const att = res?.attendance || null;
+      if (att) {
+        const attendTime = att.attend_time || att.attendance_time || null;
+        const status = att.status || null;
+        // cache and apply immediately so UI shows the returned attendance time (manual should show session time)
+        setPendingAttendance((prev) => ({ ...prev, [String(registration_id)]: { attend_time: attendTime, status, ts: Date.now() } }));
+        setMembers((prev) => (prev || []).map((m) => (
+          String(m.registration_id) === String(registration_id)
+            ? { ...m, attendance_status: status || m.attendance_status, attendance_time: attendTime || m.attendance_time }
+            : m
+        )));
+      }
+      // give DB a moment then refresh to ensure list is authoritative
+      await new Promise((r) => setTimeout(r, 300));
+      await fetchMembers();
+    } catch (err) {
+      console.error('簽到失敗', err);
+      // If server responded with an attendance payload (e.g., 422 for out-of-window manual checkin), reflect that in UI immediately
+      const payload = err?.payload || (err?.response && err.response.data) || null;
+      try {
+        if (payload) {
+          const att = payload.attendance || null;
+          const attemptStatus = payload.attemptStatus || (att && att.status) || null;
+          if (att) {
+            const attendTime = att.attend_time || att.attendance_time || null;
+            const status = attemptStatus || att.status || null;
+            setPendingAttendance((prev) => ({ ...prev, [String(registration_id)]: { attend_time: attendTime, status, ts: Date.now() } }));
+            setMembers((prev) => (prev || []).map((m) => (
+              String(m.registration_id) === String(registration_id)
+                ? { ...m, attendance_status: status || m.attendance_status, attendance_time: attendTime || m.attendance_time }
+                : m
+            )));
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to apply server returned attendance on error', e);
+      }
+    }
+  };
+
+  const handleServerCancelCheckin = async (registration_id) => {
+    try {
+      await handleCancelCheckinRegistration(registration_id);
+      // give DB a moment then refresh
+      await new Promise((r) => setTimeout(r, 300));
+      await fetchMembers();
+      // clear any pending cache
+      setPendingAttendance((prev) => {
+        const next = { ...(prev || {}) };
+        delete next[String(registration_id)];
+        return next;
+      });
+    } catch (err) {
+      console.error('取消簽到失敗', err);
+      // If server reports no attendance (404) we should clear local pending attendance so UI reflects cancellation
+      const message = err?.message || '';
+      if (err?.status === 404 || message.includes('未有出席紀錄')) {
+        setPendingAttendance((prev) => {
+          const next = { ...(prev || {}) };
+          delete next[String(registration_id)];
+          return next;
+        });
+        // also update members immediately to remove attendance_time/status
+        setMembers((prev) => (prev || []).map((m) => (
+          String(m.registration_id) === String(registration_id)
+            ? { ...m, attendance_status: '', attendance_time: null }
+            : m
+        )));
+      }
     }
   };
 
@@ -383,6 +541,7 @@ const EnrolledList = () => {
     );
   }
 
+
   return (
     <div style={{ padding: 20 }}>
       <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
@@ -399,13 +558,7 @@ const EnrolledList = () => {
                   場次 ID: {sessionInfo.session_id} ｜ 場次名稱: {sessionInfo.session_name || 'N/A'} ｜ 時間: {sessionInfo.datetime_start ? formatDateTimeForDisplay(sessionInfo.datetime_start) : 'N/A'}
                 </p>
               )}
-              {eventInfo?.type === 'SEMINAR' && (
-                <div style={{ marginTop: 8 }}>
-                  <button type="button" onClick={handleQuickRegister}>
-                    現場快速登記
-                  </button>
-                </div>
-              )}
+              
             </div>
           )}
         </div>
@@ -416,7 +569,7 @@ const EnrolledList = () => {
             sessionInfo={sessionInfo}
             eventInfo={eventInfo}
             onQuickRegister={handleQuickRegister}
-            onMarkLocalSignIn={(sessionKey, registrationId) => {
+            onMarkLocalSignIn={async (sessionKey, registrationId, attendance = null) => {
               try {
                 setLocalSignIns((prev) => {
                   const next = { ...(prev || {}) };
@@ -426,6 +579,54 @@ const EnrolledList = () => {
                   try { window.localStorage.setItem('localSignIns', JSON.stringify(next)); } catch (e) { /* ignore */ }
                   return next;
                 });
+
+                // If backend returned attendance info, cache it and update the specific member immediately to show scan time
+                if (attendance) {
+                  const attendTime = attendance.attend_time || attendance.attendance_time || attendance.attendTime || null;
+                  const status = attendance.status || null;
+                  // cache pending attendance to avoid fetchMembers overwriting with empty data
+                  setPendingAttendance((prev) => ({ ...prev, [String(registrationId)]: { attend_time: attendTime, status, ts: Date.now() } }));
+                  setMembers((prev) => (prev || []).map((m) => (
+                    String(m.registration_id) === String(registrationId)
+                      ? { ...m, attendance_status: status || m.attendance_status, attendance_time: attendTime || m.attendance_time }
+                      : m
+                  )));
+                }
+
+                // Start polling for authoritative attendance record (up to ~3s)
+                (async function pollServerForAttendance(regId) {
+                  try {
+                    const attempts = 6;
+                    const interval = 500;
+                    for (let i = 0; i < attempts; i++) {
+                      try {
+                        // Call focused endpoint to get latest attendance for this registration
+                        const attendance = await handleGetRegistrationAttendance(regId).catch(() => null);
+                        const serverTime = attendance && (attendance.attend_time || attendance.attendance_time) ? (attendance.attend_time || attendance.attendance_time) : null;
+                        const status = attendance && attendance.status ? attendance.status : null;
+                        if (serverTime) {
+                          // update member with server time and clear pending cache
+                          setMembers((prev) => (prev || []).map((m) => (
+                            String(m.registration_id) === String(regId)
+                              ? { ...m, attendance_status: status || m.attendance_status, attendance_time: serverTime }
+                              : m
+                          )));
+                          setPendingAttendance((prev) => {
+                            const next = { ...(prev || {}) };
+                            delete next[String(regId)];
+                            return next;
+                          });
+                          break;
+                        }
+                      } catch (e) {
+                        // ignore transient errors
+                      }
+                      await new Promise((r) => setTimeout(r, interval));
+                    }
+                  } catch (e) {
+                    console.warn('Polling attendance failed', e);
+                  }
+                })(registrationId);
               } catch (e) {
                 console.warn('Failed to mark local sign-in from Scanner:', e);
               }
@@ -464,11 +665,17 @@ const EnrolledList = () => {
                     header: '簽到',
                     render: (customer) => {
                       const status = customer.attendance_status || customer.attendanceStatus;
+                      const regId = String(customer.registration_id);
+                      const cached = pendingAttendance[regId] || null;
+                      const now = Date.now();
+                      const displayTime = (cached && (now - (cached.ts || 0) < RECENT_PENDING_MS) && cached.attend_time)
+                        || customer.attendance_time || null;
+                      const timeStr = displayTime ? ` ${formatTimeForDisplayInHK(displayTime)}` : '';
                       if (typeof status === 'string' && status.trim()) {
                         const normalized = status.trim().toUpperCase();
-                        if (normalized === 'G' || normalized === 'Y') return '出席';
-                        if (normalized === 'R') return '遲到/無效';
-                        return normalized;
+                        if (normalized === 'G' || normalized === 'Y') return `出席${timeStr}`;
+                        if (normalized === 'R') return `遲到/無效${timeStr}`;
+                        return `${normalized}${timeStr}`;
                       }
                       return '未簽到';
                     }
@@ -489,17 +696,33 @@ const EnrolledList = () => {
               ]}
               renderActions={(customer) => {
                 if (isSessionMode) {
+                  const serverRoles = ['ADMIN','SALES','LEADER'];
+                  const canServerCheckin = serverRoles.includes(String(authRole || '').toUpperCase());
+                  const status = customer.attendance_status || customer.attendanceStatus || '';
+                  const signed = typeof status === 'string' && (status.trim().toUpperCase() === 'G' || status.trim().toUpperCase() === 'Y');
                   return (
                       <>
                         <button
                           style={{ marginRight: 8, position: 'relative', zIndex: 2000 }}
-                          onClick={() => toggleLocalSignIn(customer.registration_id)}
+                          onClick={async () => {
+                            if (canServerCheckin) {
+                              if (signed) {
+                                await handleServerCancelCheckin(customer.registration_id);
+                              } else {
+                                // manual button press -> use session time
+                                await handleServerCheckin(customer.registration_id, { manual: true });
+                              }
+                            } else {
+                              // fallback to local-only sign-in for non-staff
+                              toggleLocalSignIn(customer.registration_id);
+                            }
+                          }}
                         >
-                          {(() => {
+                          {canServerCheckin ? (signed ? '取消簽到' : '簽到') : (() => {
                             const sessionKey = String(sessionId);
                             const rid = String(customer.registration_id);
-                            const signed = !!(localSignIns && localSignIns[sessionKey] && localSignIns[sessionKey][rid]);
-                            return signed ? '取消簽到' : '簽到';
+                            const signedLocal = !!(localSignIns && localSignIns[sessionKey] && localSignIns[sessionKey][rid]);
+                            return signedLocal ? '取消簽到' : '簽到';
                           })()}
                         </button>
                         <button

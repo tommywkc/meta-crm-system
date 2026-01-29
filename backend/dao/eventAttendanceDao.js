@@ -45,6 +45,15 @@ async function updateStatusAndTouchTime(attendance_id, status) {
   return res.rows[0] || null;
 }
 
+// 更新狀態並設定指定的簽到時間（若傳入 null，使用 CURRENT_TIMESTAMP）
+async function updateStatusAndAttendTime(attendance_id, status, attend_time = null) {
+  const res = await query(
+    'UPDATE EVENT_ATTENDANCE SET status = $2, attend_time = COALESCE($3, CURRENT_TIMESTAMP) WHERE attendance_id = $1 RETURNING *',
+    [attendance_id, status, attend_time]
+  );
+  return res.rows[0] || null;
+}
+
 async function removeByAttendanceId(id) {
   await query('DELETE FROM EVENT_ATTENDANCE WHERE attendance_id = $1', [id]);
   return true;
@@ -55,5 +64,6 @@ module.exports = {
   findByRegistrationAndStatus,
   findLatestByRegistrationId,
   updateStatusAndTouchTime,
+  updateStatusAndAttendTime,
   removeByAttendanceId,
 };

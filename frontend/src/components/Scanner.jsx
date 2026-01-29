@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { handleScanAttendance } from '../api/attendanceAPI';
 import { handleGetUserByQRToken } from '../api/customersListAPI';
-import { formatDateTimeForDisplay } from '../utils/dateFormatter';
+import { formatDateTimeForDisplay, formatTimeForDisplayInHK } from '../utils/dateFormatter';
 
 // A self-contained Scanner component that encapsulates Html5Qrcode lifecycle
 // Props:
@@ -66,9 +66,9 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
     return null;
   };
 
-  const markLocalSignIn = (registration_id) => {
+  const markLocalSignIn = (registration_id, attendance = null) => {
     if (!onMarkLocalSignIn || !sessionId || !registration_id) return;
-    try { onMarkLocalSignIn(String(sessionId), String(registration_id)); } catch (e) { console.warn('markLocalSignIn failed', e); }
+    try { onMarkLocalSignIn(String(sessionId), String(registration_id), attendance); } catch (e) { console.warn('markLocalSignIn failed', e); }
   };
 
   const handleScanSuccess = useCallback(async (decodedText) => {
@@ -86,23 +86,35 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
 
     let payload;
     try {
+      // For scans, do not send client attend_time — let server use its own timestamp to decide validity
       payload = await handleScanAttendance({ qr_token: decodedText, session_id: selectedSession.session_id });
     } catch (err) {
       const p = err?.payload || (err?.response && err.response.data) || err?.data || null;
       try {
         const regId = p?.registration?.registration_id || err?.registration?.registration_id;
-        if (regId) markLocalSignIn(regId);
+        const att = p?.attendance || null;
+        if (regId) {
+          const attWithAttempt = { ...(att || {}), status: p?.attemptStatus || (att && att.status) || null, attend_time: att?.attend_time || p?.attendance?.attend_time || p?.attend_time || null };
+          markLocalSignIn(regId, attWithAttempt);
+        }
       } catch (e) { console.warn(e); }
 
       try {
         const userInfo = extractUserFromPayload(p, err);
+        const attendTimeRaw = p?.attendance?.attend_time || p?.attend_time || p?.attendance_time || null;
+        const attemptStatus = p?.attemptStatus || (p?.attendance?.status ? String(p.attendance.status).trim().toUpperCase() : null);
         if (userInfo) {
           const userName = userInfo.name || '未知用戶';
           const userId = userInfo.id ? `（${userInfo.id}）` : '';
-          const attendTimeRaw = p?.attendance?.attend_time || p?.attend_time || p?.attendance_time || null;
           setScanUser(`${userName}${userId}`);
-          setScanDetail(`簽到時間：${attendTimeRaw || '—'}`);
-          setScanStatus('success'); setLastScanResult('簽到成功');
+          setScanDetail(`簽到時間：${attendTimeRaw ? formatTimeForDisplayInHK(attendTimeRaw) : '—'}`);
+          if (attemptStatus === 'G' || attemptStatus === 'Y') {
+            setScanStatus('success'); setLastScanResult('簽到成功');
+          } else if (attemptStatus === 'R') {
+            setScanStatus('fail'); setLastScanResult('簽到失敗(遲到/無效)');
+          } else {
+            setScanStatus('fail'); setLastScanResult(p?.message || err?.message || '簽到失敗');
+          }
         } else {
           setScanStatus('fail');
           try {
@@ -116,9 +128,10 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
           } catch (e2) { setScanUser(null); }
           const errAttendTime = p?.attendance?.attend_time || p?.attend_time || p?.attendance_time || null;
           const errMsg = p?.message || err?.message || '簽到失敗，請稍後再試';
-          const detail = errAttendTime ? `簽到時間：${errAttendTime}` : errMsg;
+          const detail = errAttendTime ? `簽到時間：${formatTimeForDisplayInHK(errAttendTime)}` : errMsg;
           setScanDetail(detail);
-          setLastScanResult('簽到失敗');
+          const attemptStatus = p?.attemptStatus || (p?.attendance?.status ? String(p.attendance.status).trim().toUpperCase() : null);
+          setLastScanResult(attemptStatus === 'R' ? '簽到失敗(遲到/無效)' : '簽到失敗');
         }
       } catch (e) {
         console.warn('Error handling error payload', e);
@@ -129,16 +142,24 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
 
     try {
       const regId = payload?.registration?.registration_id;
-      if (regId) markLocalSignIn(regId);
+      const att = payload?.attendance || null;
+      if (regId) markLocalSignIn(regId, att);
     } catch (e) {}
 
     const user = payload?.user;
     const userName = user?.name || '未知用戶';
     const userId = user?.user_id ? `（${user.user_id}）` : '';
-    const attendTimeRaw = payload?.attendance?.attend_time;
+    const attendTimeRaw = payload?.attendance?.attend_time || payload?.attendance?.attendance_time || null;
+    const statusNormalized = payload?.attendance?.status ? String(payload.attendance.status).trim().toUpperCase() : null;
     setScanUser(`${userName}${userId}`);
-    setScanDetail(`簽到時間：${attendTimeRaw || '—'}`);
-    setScanStatus('success'); setLastScanResult('簽到成功');
+    setScanDetail(`簽到時間：${attendTimeRaw ? formatTimeForDisplayInHK(attendTimeRaw) : '—'}`);
+    if (statusNormalized === 'G' || statusNormalized === 'Y') {
+      setScanStatus('success'); setLastScanResult('簽到成功');
+    } else if (statusNormalized === 'R') {
+      setScanStatus('fail'); setLastScanResult('簽到失敗(遲到/無效)');
+    } else {
+      setScanStatus('fail'); setLastScanResult(payload?.message || '簽到失敗');
+    }
   }, [sessionId, sessionInfo]);
 
   const handleScanFailure = useCallback((err) => {}, []);

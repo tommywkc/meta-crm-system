@@ -1,17 +1,15 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { handleListEvents } from '../../api/eventListAPI';
-import { handleListSessionsByEventId } from '../../api/sessionAPI';
+import { handleListSessionsByEventId, handleGetRegistrationAttendance } from '../../api/sessionAPI';
 import { handleScanAttendance } from '../../api/attendanceAPI';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Html5Qrcode } from 'html5-qrcode';
+import Scanner from '../../components/Scanner';
 import { formatDateTimeForDisplay, formatDateTimeWithSecondsForDisplay } from '../../utils/dateFormatter';
 
 
 const Scan = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const qrRef = useRef(null);          
-  const hasStartedRef = useRef(false);
   const pendingSessionRestoreRef = useRef(null);
   const hasRestoredSelectionsRef = useRef(false);
   const [scanning, setScanning] = useState(false);
@@ -54,85 +52,8 @@ const Scan = () => {
 
 
  
-  const handleScanSuccess = useCallback(async (decodedText) => {
-    console.log('Scanned:', decodedText);
-
-    if (!selectedEventId) {
-      alert('請先選擇簽到活動');
-      return;
-    }
-    if (!selectedSessionId) {
-      alert('請先選擇簽到場次');
-      return;
-    }
-
-    const selectedEvent = events.find(ev => String(ev.event_id) === String(selectedEventId));
-    const selectedSession = sessions.find(s => String(s.session_id) === String(selectedSessionId));
-    if (!selectedSession) {
-      alert('找不到對應的簽到場次，請重新選擇');
-      return;
-    }
-
-    const eventLine = selectedEvent
-      ? `${selectedEvent.type} ${selectedEvent.event_id} ${selectedEvent.event_name}`
-      : `活動 ID: ${selectedEventId}`;
-    const sessionTime = selectedSession.datetime_start
-      ? ` (${formatDateTimeForDisplay(selectedSession.datetime_start)})`
-      : '';
-    const sessionLine = `${selectedSession.session_name || ''}${sessionTime}`;
-
-    // 呼叫後端：用 qr_token + session_id 完成「找用戶 → 檢查報名 → 新增出席紀錄」
-    let payload;
-    try {
-      payload = await handleScanAttendance({
-        qr_token: decodedText,
-        session_id: selectedSession.session_id,
-      });
-    } catch (err) {
-      // 例如：後端回 409「已簽到」，也在這裡顯示該筆紀錄的簽到時間
-      const p = err?.payload;
-      if (p && (p.user || p.attendance || p.session)) {
-        const user = p.user;
-        const userName = user?.name || '未知用戶';
-        const userId = user?.user_id ? `（${user.user_id}）` : '';
-
-        const attendStatus = p?.attendance?.status;
-        const title = p?.message || err?.message || '簽到失敗，請稍後再試';
-        const statusLine = attendStatus ? `\n狀態：${attendStatus}` : '';
-
-        const attendTimeRaw = p?.attendance?.attend_time;
-        const attendTimeLine = p?.attendance
-          ? `\n簽到時間：${attendTimeRaw ? formatDateTimeWithSecondsForDisplay(attendTimeRaw) : '—'}`
-          : '';
-
-        alert(`${eventLine}\n${sessionLine}\n${title}\n用戶：${userName}${userId}${statusLine}${attendTimeLine}`);
-      } else {
-        alert(err.message || '簽到失敗，請稍後再試');
-      }
-      return;
-    }
-
-  // 後端成功寫入簽到後，才記錄最後一次掃描結果（僅用於畫面顯示）
-  setLastResult(decodedText);
-
-    const user = payload?.user;
-
-    const userName = user?.name || '未知用戶';
-    const userId = user?.user_id ? `（${user.user_id}）` : '';
-
-    const attendStatus = payload?.attendance?.status;
-    const title = payload?.message || (attendStatus === 'G' ? '簽到成功' : '簽到完成');
-    const statusLine = attendStatus ? `\n狀態：${attendStatus}` : '';
-    const attendTimeRaw = payload?.attendance?.attend_time;
-    const attendTimeLine = attendTimeRaw ? `\n簽到時間：${formatDateTimeWithSecondsForDisplay(attendTimeRaw)}` : '';
-
-    // 顯示順序（依需求）：活動 → 場次 → 結果 → 用戶 → 狀態 → 簽到時間
-    alert(`${eventLine}\n${sessionLine}\n${title}\n用戶：${userName}${userId}${statusLine}${attendTimeLine}`);
-  }, [selectedEventId, selectedSessionId, events, sessions]);
-
-
-  const handleScanFailure = useCallback((err) => {
-  }, []);
+  // Scanner component handles the scan lifecycle and server interactions.
+  // Page-level responses are handled via the Scanner callbacks (see onMarkLocalSignIn below).
 
 
   useEffect(() => {
@@ -220,66 +141,33 @@ const Scan = () => {
     })();
   }, [selectedEventId]);
 
-  const startScanning = async () => {
-    if (scanning || hasStartedRef.current) return;
-    setErrorMsg(null);
-    if (!selectedEventId) {
-      setErrorMsg('請先選擇要簽到的活動');
-      return;
-    }
-    try {
-      if (!qrRef.current) {
-        qrRef.current = new Html5Qrcode('reader');
-      }
-      hasStartedRef.current = true;
-      await qrRef.current.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: 250 },
-        handleScanSuccess,
-        handleScanFailure
-      );
-      setScanning(true);
-    } catch (err) {
-      console.error('Failed to start scanning:', err);
-      setErrorMsg(err.message || '啟動掃描失敗');
-      hasStartedRef.current = false;
-    }
+
+
+  // Small helper to stop any Html5Qrcode instances created by Scanner component(s)
+  const ensureGlobalRegistry = () => {
+    if (!window.__html5qrcode_instances) window.__html5qrcode_instances = {};
+    return window.__html5qrcode_instances;
+  };
+  const stopAllGlobalInstances = async () => {
+    const reg = ensureGlobalRegistry();
+    const ids = Object.keys(reg || {});
+    await Promise.all(ids.map(async (id) => {
+      const inst = reg[id];
+      try {
+        try { const stopRes = inst.stop(); if (stopRes && typeof stopRes.then === 'function') await stopRes.catch(() => {}); } catch (_) {}
+        try { const clearRes = inst.clear(); if (clearRes && typeof clearRes.then === 'function') await clearRes.catch(() => {}); } catch (_) {}
+      } catch (e) {}
+      try { const container = document.getElementById(id); if (container) while (container.firstChild) container.removeChild(container.firstChild); } catch (e) {}
+      delete reg[id];
+    }));
   };
 
-  const stopScanning = async () => {
-    setErrorMsg(null);
-    if (!qrRef.current) return;
-    const shouldStop = scanning || hasStartedRef.current;
-    if (!shouldStop) {
-      try {
-        await qrRef.current.clear();
-      } catch (err) {
-        console.warn('Clear warning (scanner inactive):', err);
-      }
-      qrRef.current = null;
-      hasStartedRef.current = false;
-      return;
-    }
-    try {
-      if (scanning) {
-        await qrRef.current.stop();
-      }
-      await qrRef.current.clear();
-      qrRef.current = null;
-      hasStartedRef.current = false;
-      setScanning(false);
-    } catch (err) {
-      console.warn('Stop/clear warning:', err);
-      qrRef.current = null;
-      hasStartedRef.current = false;
-      setScanning(false);
-    }
-  };
+  const [scannerKey, setScannerKey] = useState(0);
 
   // redirect to quick register page
   const handleQuickRegister = async () => {
     try {
-      await stopScanning();
+      await stopAllGlobalInstances();
     } catch (_) {}
 
     const ev = events.find((e) => String(e.event_id) === String(selectedEventId));
@@ -327,28 +215,14 @@ const Scan = () => {
 
   useEffect(() => {
     return () => {
-      if (!qrRef?.current) return;
-      if (!hasStartedRef.current) {
-        Promise.resolve(qrRef.current.clear())
-          .catch(err => console.error('Clear failed:', err));
-        qrRef.current = null;
-        return;
-      }
-      Promise.resolve(qrRef.current.stop())
-        .catch(err => console.error('Stop failed:', err))
-        .finally(() => {
-          if (qrRef?.current?.clear) {
-            Promise.resolve(qrRef.current.clear())
-              .catch(err => console.error('Clear failed:', err));
-          }
-          qrRef.current = null;
-        });
+      try { stopAllGlobalInstances(); } catch (e) { /* ignore */ }
     };
   }, []);
   const selectedEventForCheckin = events.find(e => String(e.event_id) === String(selectedEventId));
   
   return (
     <div style={{ padding: 20 }}>
+      <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
       <h1>QR Code Scanner</h1>
 
       {/* Event select bar with type-to-search */}
@@ -370,15 +244,14 @@ const Scan = () => {
               setSelectedSessionId('');
               setSearchSessionTerm('');
 
-              // 若正在掃描中，切換活動後也重新啟動掃描，
-              // 確保之後簽到都以新的活動／場次設定為準
-              if (scanning) {
-                try {
-                  await stopScanning();
-                  await startScanning();
-                } catch (err) {
-                  console.error('切換活動時重啟掃描失敗:', err);
-                }
+              // 若正在掃描中，切換活動後強制 remount Scanner，
+              // 以確保新活動／場次設定生效並釋放相機資源
+              try {
+                await stopAllGlobalInstances();
+                setScannerKey((k) => k + 1);
+                setLastResult(null);
+              } catch (err) {
+                console.error('切換活動時重啟掃描失敗:', err);
               }
             } else {
               setSelectedEventId('');
@@ -422,15 +295,9 @@ const Scan = () => {
               const timeStr = match.datetime_start ? ` (${formatDateTimeForDisplay(match.datetime_start)})` : '';
               setSearchSessionTerm(`${match.session_name || ''}${timeStr}`);
 
-              // 若正在掃描中，為了讓新的場次設定生效，重啟掃描
-              if (scanning) {
-                try {
-                  await stopScanning();
-                  await startScanning();
-                } catch (err) {
-                  console.error('切換場次時重啟掃描失敗:', err);
-                }
-              }
+              // If scanner is visible, remount it by relying on key change (Scanner handles its own lifecycle)
+              // This ensures new session settings take effect immediately
+              setLastResult(null);
             } else {
               setSelectedSessionId('');
             }
@@ -451,49 +318,61 @@ const Scan = () => {
         </datalist>
       </div>
 
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button type="button" onClick={startScanning} disabled={scanning || !selectedEventId}>
-          {scanning ? 'Scanning...' : 'Start Scanning'}
-        </button>
-        <button type="button" onClick={stopScanning} disabled={!scanning}>
-          Stop Scanning
-        </button>
-        {selectedEventForCheckin?.type === 'SEMINAR' && (
-          <button
-            type="button"
-            onClick={handleQuickRegister}
-            style={{ marginLeft: 8 }}
-          >
-            現場快速登記
-          </button>
-        )}
-      </div>
+      <div style={{ marginBottom: 12 }}>
+        {selectedSessionId ? (
+          <Scanner
+            key={`${selectedSessionId}_${scannerKey}`}
+            sessionId={selectedSessionId}
+            sessionInfo={sessions.find(s => String(s.session_id) === String(selectedSessionId))}
+            eventInfo={events.find(e => String(e.event_id) === String(selectedEventId))}
+            onQuickRegister={handleQuickRegister}
+            onMarkLocalSignIn={async (sessionKey, registrationId, attendance = null) => {
+              try {
+                if (attendance) {
+                  const attendTime = attendance.attend_time || attendance.attendance_time || null;
+                  const status = attendance.status || null;
+                  const statusNorm = status ? String(status).trim().toUpperCase() : null;
+                  const statusLabel = statusNorm === 'G' || statusNorm === 'Y' ? '簽到成功' : (statusNorm === 'R' ? '簽到失敗(遲到/無效)' : (status || '簽到'));
+                  const timeStr = attendTime ? ` ${formatDateTimeWithSecondsForDisplay(attendTime)}` : '';
+                  setLastResult(`${statusLabel}${timeStr}`);
 
-      <div id="reader" style={{ width: 320, minHeight: 240, background: '#00000008', border: '1px solid #ccc' }} />
+                  // Store a short-lived marker so when user returns to the enrolled list the scanned attendance is applied
+                  try {
+                    const marker = { registrationId, attendance };
+                    try { window.sessionStorage.setItem('scanReturnAttendance', JSON.stringify(marker)); } catch (e) { /* ignore */ }
+                  } catch (e) {}
 
-      <div style={{ marginTop: 16 }}>
-        {selectedEventId && (
-          <div style={{ marginBottom: 8, color: '#555' }}>
-            目前簽到活動場次：<br />
-            <strong>
-              {(() => {
-                const ev = events.find(e => String(e.event_id) === String(selectedEventId));
-                const eventLine = ev ? `${ev.type || ''} ${ev.event_id} ${ev.event_name || ''}` : selectedEventId;
-                
-                if (selectedSessionId) {
-                  const session = sessions.find(s => String(s.session_id) === String(selectedSessionId));
-                  if (session) {
-                    const sessionTime = session.datetime_start ? ` (${formatDateTimeForDisplay(session.datetime_start)})` : '';
-                    return `${eventLine}\n${session.session_name || ''}${sessionTime}`;
-                  }
+                  // Poll server for authoritative attendance (up to ~3s), similar to EnrolledList
+                  (async function pollServerForAttendance(regId) {
+                    try {
+                      const attempts = 6;
+                      const interval = 500;
+                      for (let i = 0; i < attempts; i++) {
+                        const attendanceResp = await handleGetRegistrationAttendance(regId).catch(() => null);
+                        const serverTime = attendanceResp && (attendanceResp.attend_time || attendanceResp.attendance_time) ? (attendanceResp.attend_time || attendanceResp.attendance_time) : null;
+                        const serverStatus = attendanceResp && attendanceResp.status ? attendanceResp.status : null;
+                        if (serverTime) {
+                          const serverStatusNorm = serverStatus ? String(serverStatus).trim().toUpperCase() : null;
+                          const serverLabel = serverStatusNorm === 'G' || serverStatusNorm === 'Y' ? '簽到成功' : (serverStatusNorm === 'R' ? '簽到失敗(遲到/無效)' : (serverStatus || '簽到'));
+                          setLastResult(`${serverLabel} ${formatDateTimeWithSecondsForDisplay(serverTime)}`);
+                          break;
+                        }
+                        await new Promise((r) => setTimeout(r, interval));
+                      }
+                    } catch (e) {
+                      // ignore polling errors
+                    }
+                  })(registrationId);
                 }
-                return eventLine;
-              })()}
-            </strong>
-          </div>
+              } catch (e) { console.warn('Scanner callback failed', e); }
+            }}
+          />
+        ) : (
+          <div style={{ padding: 12, color: '#666' }}>請先選擇活動與場次以啟動掃描</div>
         )}
-        <strong>Last Result:</strong> {lastResult ? <span style={{ color: 'green' }}>{lastResult}</span> : '---'}
       </div>
+
+
       {errorMsg && <div style={{ color: 'red', marginTop: 8 }}>{errorMsg}</div>}
     </div>
   );
