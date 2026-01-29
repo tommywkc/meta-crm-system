@@ -31,13 +31,27 @@ export const formatDateTimeForDisplay = (isoString) => buildDateTimeString(isoSt
 
 export const formatDateTimeWithSecondsForDisplay = (isoString) => buildDateTimeString(isoString, true);
 
-// Format ISO datetime to time (HH:mm) only
+// Format ISO datetime to time (HH:mm) only (local time)
 export const formatTimeForDisplay = (isoString) => {
 	if (!isoString) return '';
 	const date = new Date(isoString);
 	const hh = String(date.getHours()).padStart(2, '0');
 	const min = String(date.getMinutes()).padStart(2, '0');
 	return `${hh}:${min}`;
+};
+
+// Format ISO datetime to time (HH:mm) in Hong Kong timezone (Asia/Hong_Kong)
+export const formatTimeForDisplayInHK = (isoString) => {
+  if (!isoString) return '';
+  try {
+    // Use Intl to format in the Asia/Hong_Kong timezone
+    const opts = { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Hong_Kong' };
+    // Use en-GB to get 24-hour format consistently
+    return new Intl.DateTimeFormat('en-GB', opts).format(new Date(isoString));
+  } catch (e) {
+    // fallback to local format
+    return formatTimeForDisplay(isoString);
+  }
 };
 
 // Format a Date object into a canonical YYYY-MM-DD key string

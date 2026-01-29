@@ -47,11 +47,17 @@ const CustomerCreate = () => {
               });
               let attendanceMessage = '客戶新增並完成講座與場次報名！';
               try {
-                await handleQuickRegistrationAttendance({
+                const attendanceRes = await handleQuickRegistrationAttendance({
                   session_id: sourceSession.session_id,
                   user_id: newUserId,
+                  attend_time: sourceSession.datetime_start, // use session start time for quick registration
                 });
                 attendanceMessage = '客戶新增並完成講座、場次報名與簽到！';
+                // When returning to previous page, pass the attendance info so it can update UI immediately
+                if (returnPath) {
+                  navigate(returnPath, { replace: true, state: { quickRegistered: true, quickAttendance: attendanceRes.attendance, quickRegistrationId: attendanceRes.registration?.registration_id || null } });
+                  return;
+                }
               } catch (attendanceErr) {
                 console.error('Auto attendance failed:', attendanceErr);
                 attendanceMessage = `客戶新增並完成講座與場次報名，但簽到失敗：${attendanceErr.message || '請稍後再試'}`;
