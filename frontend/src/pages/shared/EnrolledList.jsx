@@ -29,6 +29,7 @@ const EnrolledList = () => {
   
 
   const authRole = (user && user.role) ? user.role.toUpperCase() : 'MEMBER';
+  const isAdmin = authRole === 'ADMIN';
 
   // 支援從路由參數或 query string 取得 event_id / session_id
   const searchParams = new URLSearchParams(location.search);
@@ -57,6 +58,7 @@ const EnrolledList = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const quickAlertShownRef = useRef(false);
   // pendingAttendance caches attendance objects (from scanner response) keyed by registration_id
   const [pendingAttendance, setPendingAttendance] = useState({});
   const RECENT_PENDING_MS = 60000; // consider pending cache valid for 60s
@@ -250,56 +252,62 @@ const EnrolledList = () => {
 
   // If we returned from quick registration, apply quick attendance to UI then clear navigation state
   useEffect(() => {
-    try {
-      // Handle quick registration via navigation state
-      const qs = location?.state || null;
-      if (qs && qs.quickRegistered) {
-        const att = qs.quickAttendance || null;
-        const regId = qs.quickRegistrationId || (att && att.registration_id) || (att && att.registration && att.registration.registration_id);
-        if (att && regId) {
-          const attendTime = att.attend_time || att.attendance_time || null;
-          const status = att.status || 'G';
-          setPendingAttendance((prev) => ({ ...prev, [String(regId)]: { attend_time: attendTime, status, ts: Date.now() } }));
-          setMembers((prev) => (prev || []).map((m) => (
-            String(m.registration_id) === String(regId)
-              ? { ...m, attendance_status: status || m.attendance_status, attendance_time: attendTime || m.attendance_time }
-              : m
-          )));
-        }
-        // clear navigation state to avoid repeated handling
-        try { navigate(location.pathname + (location.search || ''), { replace: true, state: {} }); } catch (e) { /* ignore */ }
-        // also refresh list to ensure server state is reflected
-        fetchMembers();
-      }
-
-      // If we returned from Scan page with a recent scan, apply it from sessionStorage
+    (async () => {
       try {
-        const raw = window.sessionStorage.getItem('scanReturnAttendance');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const regId = parsed && parsed.registrationId;
-          const att = parsed && parsed.attendance;
-          if (regId && att) {
+        // Handle quick registration via navigation state
+        const qs = location?.state || null;
+        if (qs && qs.quickRegistered) {
+          const att = qs.quickAttendance || null;
+          const regId = qs.quickRegistrationId || (att && att.registration_id) || (att && att.registration && att.registration.registration_id);
+          if (att && regId) {
             const attendTime = att.attend_time || att.attendance_time || null;
-            const status = att.status || att.status || null;
+            const status = att.status || 'G';
             setPendingAttendance((prev) => ({ ...prev, [String(regId)]: { attend_time: attendTime, status, ts: Date.now() } }));
             setMembers((prev) => (prev || []).map((m) => (
               String(m.registration_id) === String(regId)
                 ? { ...m, attendance_status: status || m.attendance_status, attendance_time: attendTime || m.attendance_time }
                 : m
             )));
-            // clear marker to avoid re-applying
-            try { window.sessionStorage.removeItem('scanReturnAttendance'); } catch (e) {}
-            // also refresh list to ensure server state is authoritative
-            fetchMembers();
           }
+          // refresh list first so UI is ready before alert
+          await fetchMembers();
+          if (!quickAlertShownRef.current) {
+            alert('現場快速登記完成\n已自動報名並完成簽到。');
+            quickAlertShownRef.current = true;
+          }
+          // clear navigation state to avoid repeated handling
+          try { navigate(location.pathname + (location.search || ''), { replace: true, state: {} }); } catch (e) { /* ignore */ }
+        }
+
+        // If we returned from Scan page with a recent scan, apply it from sessionStorage
+        try {
+          const raw = window.sessionStorage.getItem('scanReturnAttendance');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const regId = parsed && parsed.registrationId;
+            const att = parsed && parsed.attendance;
+            if (regId && att) {
+              const attendTime = att.attend_time || att.attendance_time || null;
+              const status = att.status || att.status || null;
+              setPendingAttendance((prev) => ({ ...prev, [String(regId)]: { attend_time: attendTime, status, ts: Date.now() } }));
+              setMembers((prev) => (prev || []).map((m) => (
+                String(m.registration_id) === String(regId)
+                  ? { ...m, attendance_status: status || m.attendance_status, attendance_time: attendTime || m.attendance_time }
+                  : m
+              )));
+              // clear marker to avoid re-applying
+              try { window.sessionStorage.removeItem('scanReturnAttendance'); } catch (e) {}
+              // also refresh list to ensure server state is authoritative
+              await fetchMembers();
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to apply scanReturnAttendance', e);
         }
       } catch (e) {
-        console.warn('Failed to apply scanReturnAttendance', e);
+        console.warn('Quick registration state handling failed', e);
       }
-    } catch (e) {
-      console.warn('Quick registration state handling failed', e);
-    }
+    })();
   }, [location?.state]);
 
   const handleView = (user_id) => {
@@ -563,7 +571,7 @@ const EnrolledList = () => {
           )}
         </div>
 
-        {isSessionMode && (
+        {isSessionMode && isAdmin && (
           <Scanner
             sessionId={sessionId}
             sessionInfo={sessionInfo}
@@ -638,7 +646,7 @@ const EnrolledList = () => {
       {loading && <p>載入中...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {!loading && !error && (
+      {!loading && !error && !showPreview && (
         <>
           {members.length === 0 ? (
             <p>目前沒有報名紀錄。</p>

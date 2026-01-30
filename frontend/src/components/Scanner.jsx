@@ -11,7 +11,7 @@ import { formatDateTimeForDisplay, formatTimeForDisplayInHK } from '../utils/dat
 // - onQuickRegister()  (optional) -- parent can stop scanner / navigate
 const SCAN_COOLDOWN_MS = 2500;
 
-const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuickRegister }) => {
+const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuickRegister, scannerWidth = 340, readerSize = 160 }) => {
   const qrRef = useRef(null);
   const hasStartedRef = useRef(false);
   const scanningCooldownRef = useRef(false);
@@ -215,7 +215,7 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
   }, []);
 
   return (
-    <div style={{ width: 340, border: '1px solid #eee', padding: 12, borderRadius: 4, background: '#fafafa' }}>
+    <div style={{ width: scannerWidth, border: '1px solid #eee', padding: 12, borderRadius: 4, background: '#fafafa' }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
         <button type="button" onClick={startQrScanning} disabled={scanning || !sessionId}>{scanning ? 'Scanning...' : 'Start Scanner'}</button>
         <button type="button" onClick={stopQrScanning} disabled={!scanning}>Stop Scanner</button>
@@ -226,7 +226,7 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
       </div>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        <div id="reader-enrolled" style={{ width: 160, height: 160, minHeight: 160, background: 'transparent', border: '1px solid #ccc', overflow: 'hidden', borderRadius: 4 }} />
+        <div id="reader-enrolled" style={{ width: readerSize, height: readerSize, minHeight: readerSize, background: 'transparent', border: '1px solid #ccc', overflow: 'hidden', borderRadius: 4 }} />
         <div style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column' }}>
           <div style={{ marginBottom: 6 }}>
             <div style={{ marginBottom: 4 }}>

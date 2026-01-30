@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleListEnrolledUpcomingSessions } from '../../api/sessionAPI';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
-import { searchInputStyle } from '../../styles/TableStyles';
+import { searchInputStyle, tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 // 場次報名列表頁：顯示所有「尚未開始」的已報名場次.
@@ -11,7 +11,11 @@ import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 // - Admin / Sales / Leader：可以看到全部人的場次
 const SessionListPage = () => {
 	const navigate = useNavigate();
+	const location = useLocation();
 	const { user } = useAuth();
+	const didInitFromQueryRef = React.useRef(false);
+	const lastLoadedQRef = React.useRef(null);
+	const lastLoadedUserIdRef = React.useRef(null);
 
 	const userRole = user?.role?.toLowerCase();
 	const isAdmin = userRole === 'admin';
@@ -26,9 +30,27 @@ const SessionListPage = () => {
 	const [limit, setLimit] = useState(25);
 	const [searchTerm, setSearchTerm] = useState('');
 	const [appliedQ, setAppliedQ] = useState('');
+	const [targetUserId, setTargetUserId] = useState('');
+
+	useEffect(() => {
+		const params = new URLSearchParams(location.search || '');
+		const qParam = (params.get('q') || '').trim();
+		const userIdParam = (params.get('user_id') || '').trim();
+		setSearchTerm(qParam);
+		setAppliedQ(qParam);
+		setTargetUserId(userIdParam);
+		setPage(1);
+		didInitFromQueryRef.current = true;
+	}, [location.search]);
 
 	useEffect(() => {
 		const load = async () => {
+			const params = new URLSearchParams(location.search || '');
+			const qParam = (params.get('q') || '').trim();
+			const userIdParam = (params.get('user_id') || '').trim();
+			if (location.search && !didInitFromQueryRef.current) return;
+			if (location.search && qParam !== appliedQ) return;
+			if (location.search && userIdParam !== targetUserId) return;
 			if (!user?.id) {
 				setLoading(false);
 				return;
@@ -41,7 +63,10 @@ const SessionListPage = () => {
 					return;
 				}
 
-				const res = await handleListEnrolledUpcomingSessions(100, 0, appliedQ);
+				if (lastLoadedQRef.current === appliedQ && lastLoadedUserIdRef.current === targetUserId) return;
+				lastLoadedQRef.current = appliedQ;
+				lastLoadedUserIdRef.current = targetUserId;
+				const res = await handleListEnrolledUpcomingSessions(100, 0, appliedQ, null, targetUserId);
 				const list = Array.isArray(res.sessions) ? res.sessions : [];
 				setSessions(list);
 				setError(null);
@@ -53,16 +78,29 @@ const SessionListPage = () => {
 			}
 		};
 		load();
-	}, [user?.id, isAdmin, isSalesOrLeader, isMember, navigate, appliedQ]);
+	}, [user?.id, isAdmin, isSalesOrLeader, isMember, navigate, appliedQ, targetUserId, location.search]);
 
 	const handleSearch = () => {
 		// Apply search to backend
-		setAppliedQ(searchTerm.trim());
+		const q = searchTerm.trim();
+		const params = new URLSearchParams(location.search || '');
+		if (q) {
+			params.set('q', q);
+		} else {
+			params.delete('q');
+		}
+		const qs = params.toString();
+		navigate(`${location.pathname}${qs ? `?${qs}` : ''}`, { replace: true });
+		setAppliedQ(q);
 		setPage(1);
 	};
 
 	const handleClear = () => {
 		// Reset all filters and reload
+		const params = new URLSearchParams(location.search || '');
+		params.delete('q');
+		const qs = params.toString();
+		navigate(`${location.pathname}${qs ? `?${qs}` : ''}`, { replace: true });
 		setSearchTerm('');
 		setAppliedQ('');
 		setPage(1);
@@ -102,7 +140,7 @@ const SessionListPage = () => {
 				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
 					<input
 						type="text"
-						placeholder="輸入 [課堂名稱/場次/地點/學員ID或姓名] 來搜尋..."
+						placeholder="輸入 [課堂名稱/場次/地點] 來搜尋..."
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 						onKeyDown={(e) => {
@@ -149,41 +187,41 @@ const SessionListPage = () => {
 						</span>
 					</div>
 
-					<table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12 }}>
+					<table style={tableStyle}>
 						<thead>
 							<tr>
-								<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>日期時間(日/月/年)</th>
-								<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>課堂編號與名稱</th>
-								<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>場次</th>
-								<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>地點</th>
+								<th style={thTdStyle}>日期時間(日/月/年)</th>
+								<th style={thTdStyle}>課堂編號與名稱</th>
+								<th style={thTdStyle}>場次</th>
+								<th style={thTdStyle}>地點</th>
 								{(isAdmin || isSalesOrLeader) && (
-									<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>學員</th>
+									<th style={thTdStyle}>學員</th>
 								)}
-								<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>操作</th>
+								<th style={thTdStyle}>操作</th>
 							</tr>
 						</thead>
 						<tbody>
 							{pagedSessions.length === 0 ? (
 								<tr>
-									<td colSpan={isAdmin || isSalesOrLeader ? 5 : 4} style={{ padding: '8px', textAlign: 'center' }}>
+									<td colSpan={isAdmin || isSalesOrLeader ? 5 : 4} style={thTdStyle}>
 										暫時沒有即將開始的已報名場次
 									</td>
 								</tr>
 							) : (
 								pagedSessions.map((s) => (
 									<tr key={s.registration_id}>
-										<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>
+										<td style={thTdStyle}>
 											{s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}
 										</td>
-										<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.event_id} - {s.event_name || '-'}</td>
-										<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.session_name || '-'}</td>
-										<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.location || '-'}</td>
+										<td style={thTdStyle}>{s.event_id} - {s.event_name || '-'}</td>
+										<td style={thTdStyle}>{s.session_name || '-'}</td>
+										<td style={thTdStyle}>{s.location || '-'}</td>
 										{(isAdmin || isSalesOrLeader) && (
-											<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>
+											<td style={thTdStyle}>
 												{s.user_name || s.user_id || '-'}
 											</td>
 										)}
-										<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>
+										<td style={thTdStyle}>
 											{s.event_id ? (
 												<button onClick={() => handleViewEvent(s)}>查看活動</button>
 											) : (

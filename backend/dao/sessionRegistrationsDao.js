@@ -80,6 +80,8 @@ async function listUpcomingSessionsByUser(user_id, limit = 5, offset = 0) {
     SELECT
       sr.registration_id,
       sr.session_id,
+      sr.user_id,
+      u.name AS user_name,
       sr.status AS registration_status,
       s.event_id,
       s.session_name,
@@ -90,6 +92,7 @@ async function listUpcomingSessionsByUser(user_id, limit = 5, offset = 0) {
     FROM SESSION_REGISTRATIONS sr
     JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
     LEFT JOIN EVENTS e ON s.event_id = e.event_id
+    LEFT JOIN USERS u ON sr.user_id = u.user_id
     WHERE sr.user_id = $1
       AND s.datetime_end > NOW() - INTERVAL '30 minutes'
     ORDER BY s.datetime_start ASC
@@ -134,6 +137,8 @@ async function searchUpcomingSessionsByUser(user_id, limit = 100, offset = 0, q 
     SELECT
       sr.registration_id,
       sr.session_id,
+      sr.user_id,
+      u.name AS user_name,
       sr.status AS registration_status,
       s.event_id,
       s.session_name,
@@ -144,6 +149,7 @@ async function searchUpcomingSessionsByUser(user_id, limit = 100, offset = 0, q 
     FROM SESSION_REGISTRATIONS sr
     JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
     LEFT JOIN EVENTS e ON s.event_id = e.event_id
+    LEFT JOIN USERS u ON sr.user_id = u.user_id
     WHERE sr.user_id = $1
       AND s.datetime_end > NOW() - INTERVAL '30 minutes'
       AND (
@@ -151,48 +157,13 @@ async function searchUpcomingSessionsByUser(user_id, limit = 100, offset = 0, q 
         OR e.event_name ILIKE $4
         OR s.session_name ILIKE $4
         OR e.location ILIKE $4
+        OR u.name ILIKE $4
+        OR CAST(u.user_id AS TEXT) ILIKE $4
       )
     ORDER BY s.datetime_start ASC
     LIMIT $2 OFFSET $3
   `;
   const res = await query(sql, [user_id, limit, offset, pattern]);
-  return res.rows || [];
-}
-
-// Search upcoming sessions for all users with query
-async function searchUpcomingSessionsAllUsers(limit = 100, offset = 0, q = '') {
-  const pattern = q && q.trim() ? `%${q}%` : null;
-  if (!pattern) return listUpcomingSessionsAllUsers(limit, offset);
-  
-  const sql = `
-    SELECT
-      sr.registration_id,
-      sr.session_id,
-      sr.user_id,
-      u.name AS user_name,
-      s.event_id,
-      s.session_name,
-      s.datetime_start,
-      s.datetime_end,
-      e.event_name,
-      e.location
-    FROM SESSION_REGISTRATIONS sr
-    JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
-    LEFT JOIN EVENTS e ON s.event_id = e.event_id
-    LEFT JOIN USERS u ON sr.user_id = u.user_id
-    WHERE s.datetime_end > NOW() - INTERVAL '30 minutes'
-      AND (
-        CAST(e.event_id AS TEXT) ILIKE $3
-        OR e.event_name ILIKE $3
-        OR s.session_name ILIKE $3
-        OR e.location ILIKE $3
-        OR u.name ILIKE $3
-        OR CAST(u.user_id AS TEXT) ILIKE $3
-      )
-    ORDER BY s.datetime_start ASC
-    LIMIT $1 OFFSET $2
-  `;
-  const res = await query(sql, [limit, offset, pattern]);
   return res.rows || [];
 }
 
@@ -248,7 +219,6 @@ module.exports = {
   listUpcomingSessionsByUser,
   listUpcomingSessionsAllUsers,
   searchUpcomingSessionsByUser,
-  searchUpcomingSessionsAllUsers,
   listSessionsByUserAndYear,
   removeByRegistrationId,
   findBySessionAndUser,
