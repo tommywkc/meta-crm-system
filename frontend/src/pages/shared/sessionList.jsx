@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleListEnrolledUpcomingSessions } from '../../api/sessionAPI';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
@@ -11,7 +11,10 @@ import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 // - Admin / Sales / Leader：可以看到全部人的場次
 const SessionListPage = () => {
 	const navigate = useNavigate();
+	const location = useLocation();
 	const { user } = useAuth();
+	const didInitFromQueryRef = React.useRef(false);
+	const lastLoadedQRef = React.useRef(null);
 
 	const userRole = user?.role?.toLowerCase();
 	const isAdmin = userRole === 'admin';
@@ -28,7 +31,20 @@ const SessionListPage = () => {
 	const [appliedQ, setAppliedQ] = useState('');
 
 	useEffect(() => {
+		const params = new URLSearchParams(location.search || '');
+		const qParam = (params.get('q') || '').trim();
+		setSearchTerm(qParam);
+		setAppliedQ(qParam);
+		setPage(1);
+		didInitFromQueryRef.current = true;
+	}, [location.search]);
+
+	useEffect(() => {
 		const load = async () => {
+			const params = new URLSearchParams(location.search || '');
+			const qParam = (params.get('q') || '').trim();
+			if (location.search && !didInitFromQueryRef.current) return;
+			if (location.search && qParam !== appliedQ) return;
 			if (!user?.id) {
 				setLoading(false);
 				return;
@@ -41,6 +57,8 @@ const SessionListPage = () => {
 					return;
 				}
 
+				if (lastLoadedQRef.current === appliedQ) return;
+				lastLoadedQRef.current = appliedQ;
 				const res = await handleListEnrolledUpcomingSessions(100, 0, appliedQ);
 				const list = Array.isArray(res.sessions) ? res.sessions : [];
 				setSessions(list);
@@ -53,7 +71,7 @@ const SessionListPage = () => {
 			}
 		};
 		load();
-	}, [user?.id, isAdmin, isSalesOrLeader, isMember, navigate, appliedQ]);
+	}, [user?.id, isAdmin, isSalesOrLeader, isMember, navigate, appliedQ, location.search]);
 
 	const handleSearch = () => {
 		// Apply search to backend

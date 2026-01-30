@@ -209,6 +209,15 @@ const CustomerView = () => {
 
             <div style={{ marginTop: 12 }}>
               <h3>即將到來的5堂課</h3>
+              <button
+                style={{ marginLeft: 8 }}
+                onClick={() => {
+                  const q = (customer.user_id || '').toString();
+                  navigate(`/sessions/enrolled${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+                }}
+              >
+                查看所有即將到來的場次
+              </button>
               {upcomingLoading ? (
                 <p>載入中...</p>
               ) : upcomingError ? (

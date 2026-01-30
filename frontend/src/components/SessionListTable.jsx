@@ -37,6 +37,8 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
           const isSalesOrLeader = lowerRole === 'sales' || lowerRole === 'leader';
           const isAdmin = lowerRole === 'admin';
           const isSessionRegisteredForMember = isMemberRole && registeredSessionIds.some(id => String(id) === String(session.session_id));
+          const endTimeMs = session.datetime_end ? new Date(session.datetime_end).getTime() : null;
+          const isEnded = endTimeMs !== null && !Number.isNaN(endTimeMs) && endTimeMs < Date.now();
 
           return (
             <tr key={session.session_id}>
@@ -71,12 +73,13 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
                         if (!onEnrollSession) return;
                         // 會員且該場次已報名時，不再觸發 onEnrollSession
                         if (isSessionRegisteredForMember) return;
+                        if (isEnded) return;
                         onEnrollSession(session.session_id);
                       }}
                       style={{ marginLeft: 8 }}
-                      disabled={isSessionRegisteredForMember}
+                      disabled={isSessionRegisteredForMember || isEnded}
                     >
-                      {isSessionRegisteredForMember ? '已報名' : '報名'}
+                      {isEnded ? '已完結' : (isSessionRegisteredForMember ? '已報名' : '報名')}
                     </button>
                   ) : null}
                 </td>

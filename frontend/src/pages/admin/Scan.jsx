@@ -385,8 +385,8 @@ const Scan = () => {
             sessionInfo={sessions.find(s => String(s.session_id) === String(selectedSessionId))}
             eventInfo={events.find(e => String(e.event_id) === String(selectedEventId))}
             onQuickRegister={handleQuickRegister}
-            scannerWidth={520}
-            readerSize={240}
+            scannerWidth={680}
+            readerSize={320}
             onMarkLocalSignIn={async (sessionKey, registrationId, attendance = null) => {
               try {
                 if (attendance) {
