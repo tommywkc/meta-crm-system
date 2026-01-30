@@ -12,6 +12,7 @@ const Scan = () => {
   const location = useLocation();
   const pendingSessionRestoreRef = useRef(null);
   const hasRestoredSelectionsRef = useRef(false);
+  const quickAlertShownRef = useRef(false);
   const [scanning, setScanning] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -49,6 +50,64 @@ const Scan = () => {
       } catch (_) {}
     }
   }, []);
+
+  // Show quick-register result when returning from CustomerCreate
+  useEffect(() => {
+    let handled = false;
+    try {
+      const raw = window.sessionStorage.getItem('scanQuickRegisterResult');
+      if (raw) {
+        const result = JSON.parse(raw);
+        if (!quickAlertShownRef.current) {
+          if (result?.success) {
+            const namePart = result.userName ? `（${result.userName}${result.userId ? ` / ${result.userId}` : ''}）` : '';
+            alert(`現場快速登記完成${namePart ? '：' + namePart : ''}\n已自動報名並完成簽到。`);
+            quickAlertShownRef.current = true;
+          } else if (result?.message) {
+            alert(result.message);
+            quickAlertShownRef.current = true;
+          }
+        }
+        handled = true;
+      }
+    } catch (e) {
+      // ignore parse errors
+    } finally {
+      try { window.sessionStorage.removeItem('scanQuickRegisterResult'); } catch (_) {}
+    }
+
+    const qs = location?.state;
+    if (handled && qs && (qs.quickRegistered || qs.quickRegisterMessage)) {
+      // clear state without re-alerting
+      try { navigate(location.pathname + (location.search || ''), { replace: true, state: {} }); } catch (_) {}
+      return;
+    }
+
+    if (!handled && qs) {
+      try {
+        if (!quickAlertShownRef.current) {
+          if (qs.quickRegistered) {
+            const namePart = qs.userName ? `（${qs.userName}${qs.userId ? ` / ${qs.userId}` : ''}）` : '';
+            alert(`現場快速登記完成${namePart ? '：' + namePart : ''}\n已自動報名並完成簽到。`);
+            quickAlertShownRef.current = true;
+            handled = true;
+          } else if (qs.quickRegisterMessage) {
+            alert(qs.quickRegisterMessage);
+            quickAlertShownRef.current = true;
+            handled = true;
+          }
+        } else {
+          handled = true;
+        }
+      } catch (e) {
+        // ignore
+      } finally {
+        if (handled) {
+          try { navigate(location.pathname + (location.search || ''), { replace: true, state: {} }); } catch (_) {}
+        }
+      }
+    }
+  }, [location, navigate]);
 
 
  
@@ -326,6 +385,8 @@ const Scan = () => {
             sessionInfo={sessions.find(s => String(s.session_id) === String(selectedSessionId))}
             eventInfo={events.find(e => String(e.event_id) === String(selectedEventId))}
             onQuickRegister={handleQuickRegister}
+            scannerWidth={520}
+            readerSize={240}
             onMarkLocalSignIn={async (sessionKey, registrationId, attendance = null) => {
               try {
                 if (attendance) {
