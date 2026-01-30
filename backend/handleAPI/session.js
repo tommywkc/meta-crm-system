@@ -373,6 +373,47 @@ router.get('/my-sessions/registered-by-event', authMiddleware, async (req, res) 
   }
 });
 
+// --- Admin/Staff: get upcoming sessions for a specific user (limit)
+router.get('/session-registrations/user/:user_id/upcoming', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
+  try {
+    const userIdParam = parseInt(req.params.user_id, 10);
+    if (Number.isNaN(userIdParam)) return res.status(400).json({ message: '無效的 user_id' });
+
+    // members can only fetch their own upcoming sessions
+    const role = (req.user.role || '').toUpperCase();
+    if (role === 'MEMBER' && Number(req.user.sub) !== Number(userIdParam)) {
+      return res.status(403).json({ message: '沒有權限' });
+    }
+
+    const limit = parseInt(req.query.limit, 10) || 5;
+    const sessions = await listUpcomingSessionsByUser(userIdParam, limit, 0);
+    return res.status(200).json({ sessions });
+  } catch (error) {
+    console.error('Get user upcoming sessions failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// --- Admin/Staff: get sessions for a specific user by year
+router.get('/session-registrations/user/:user_id/sessions-by-year', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
+  try {
+    const userIdParam = parseInt(req.params.user_id, 10);
+    if (Number.isNaN(userIdParam)) return res.status(400).json({ message: '無效的 user_id' });
+
+    const role = (req.user.role || '').toUpperCase();
+    if (role === 'MEMBER' && Number(req.user.sub) !== Number(userIdParam)) {
+      return res.status(403).json({ message: '沒有權限' });
+    }
+
+    const year = parseInt(req.query.year, 10) || (new Date()).getFullYear();
+    const sessions = await listSessionsByUserAndYear(userIdParam, year);
+    return res.status(200).json({ sessions });
+  } catch (error) {
+    console.error('Get user sessions by year failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
 // helper: compute status for a given time (same rules as attendance handler)
 function computeAttendanceStatusForTime(session, timeIso) {
   const time = timeIso ? new Date(timeIso) : new Date();

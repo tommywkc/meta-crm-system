@@ -221,6 +221,51 @@ export async function handleListMySessionsByYear(year) {
   }
 }
 
+// --- Sessions for specific user (admin/staff) ---
+export async function handleListUserUpcomingSessions(user_id, limit = 5) {
+  try {
+    console.log(`Attempting to fetch upcoming sessions for user ${user_id}...`);
+    const response = await fetch(apiUrl(`/api/session-registrations/user/${user_id}/upcoming?limit=${limit}`), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch upcoming sessions for user ${user_id}`);
+    }
+
+    const payload = await response.json();
+    console.log(`Upcoming sessions for user ${user_id}:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Fetch upcoming sessions for user ${user_id} error:`, err);
+    throw err;
+  }
+}
+
+export async function handleListUserSessionsByYear(user_id, year) {
+  try {
+    console.log(`Attempting to fetch sessions for user ${user_id} year ${year}...`);
+    const response = await fetch(apiUrl(`/api/session-registrations/user/${user_id}/sessions-by-year?year=${year}`), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch sessions by year for user ${user_id}`);
+    }
+
+    const payload = await response.json();
+    console.log(`Sessions for user ${user_id} year ${year}:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Fetch sessions by year for user ${user_id} error:`, err);
+    throw err;
+  }
+}
+
 // --- Registered sessions for current user by event ---
 
 export async function handleListMyRegisteredSessionsByEvent(event_id) {
