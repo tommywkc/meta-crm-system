@@ -638,7 +638,7 @@ const EnrolledList = () => {
       {loading && <p>載入中...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {!loading && !error && (
+      {!loading && !error && !showPreview && (
         <>
           {members.length === 0 ? (
             <p>目前沒有報名紀錄。</p>
