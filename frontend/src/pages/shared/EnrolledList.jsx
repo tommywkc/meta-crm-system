@@ -29,6 +29,7 @@ const EnrolledList = () => {
   
 
   const authRole = (user && user.role) ? user.role.toUpperCase() : 'MEMBER';
+  const isAdmin = authRole === 'ADMIN';
 
   // 支援從路由參數或 query string 取得 event_id / session_id
   const searchParams = new URLSearchParams(location.search);
@@ -570,7 +571,7 @@ const EnrolledList = () => {
           )}
         </div>
 
-        {isSessionMode && (
+        {isSessionMode && isAdmin && (
           <Scanner
             sessionId={sessionId}
             sessionInfo={sessionInfo}
