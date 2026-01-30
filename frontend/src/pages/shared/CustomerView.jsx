@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { handleGetById } from '../../api/customersListAPI';
 import Calendar from '../../components/Calendar';
 import { QRCodeCanvas } from 'qrcode.react';
-import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import { formatDateTimeForDisplay, formatDateKey } from '../../utils/dateFormatter';
+import { handleListUserUpcomingSessions, handleListUserSessionsByYear } from '../../api/sessionAPI';
 
 
 
@@ -60,14 +61,76 @@ const CustomerView = () => {
     })();
   }, [customer?.referrer]);
 
-  // Mock calendar events for this customer
-  const customerEvents = {
-    '2025-11-05': ['課堂: XXXXX'],
-    '2025-11-12': ['課堂: XXXX'],
-    '2025-11-20': ['課堂: XXX'],
+  const isMember = customer.role?.toLowerCase() === 'member';
+
+  // Calendar state (per-customer)
+  const today = new Date();
+  const initialYear = today.getFullYear();
+  const [calendarYear, setCalendarYear] = React.useState(initialYear);
+  const [eventsByYear, setEventsByYear] = React.useState({});
+  const [calendarLoading, setCalendarLoading] = React.useState(false);
+  const [calendarError, setCalendarError] = React.useState(null);
+
+  const [upcomingSessions, setUpcomingSessions] = React.useState([]);
+  const [upcomingLoading, setUpcomingLoading] = React.useState(false);
+  const [upcomingError, setUpcomingError] = React.useState(null);
+
+  const loadYearData = async (year) => {
+    if (!customer?.user_id) return;
+    try {
+      setCalendarLoading(true);
+      setCalendarError(null);
+      const res = await handleListUserSessionsByYear(customer.user_id, year);
+      const sessions = res.sessions || [];
+      const map = {};
+      sessions.forEach((s) => {
+        if (!s.datetime_start) return;
+        const key = formatDateKey(s.datetime_start);
+        const labelParts = [];
+        if (s.event_name) labelParts.push(s.event_name);
+        if (s.session_name) labelParts.push(s.session_name);
+        const label = labelParts.join(' - ') || '課堂';
+        if (!map[key]) map[key] = [];
+        map[key].push({ label, start: s.datetime_start, end: s.datetime_end });
+      });
+      setEventsByYear((prev) => ({ ...prev, [year]: map }));
+    } catch (err) {
+      console.error('Failed to load customer calendar sessions for year', year, err);
+      setCalendarError('無法載入此年度的課程');
+    } finally {
+      setCalendarLoading(false);
+    }
   };
 
-  const isMember = customer.role?.toLowerCase() === 'member';
+  React.useEffect(() => {
+    // when customer loads, fetch upcoming sessions and this year's calendar
+    if (!customer?.user_id) return;
+    let mounted = true;
+    (async () => {
+      try {
+        setUpcomingLoading(true);
+        setUpcomingError(null);
+        const res = await handleListUserUpcomingSessions(customer.user_id, 5);
+        if (!mounted) return;
+        setUpcomingSessions(res.sessions || []);
+      } catch (err) {
+        console.error('Failed to load customer upcoming sessions:', err);
+        if (mounted) setUpcomingError('無法載入即將到來的課堂');
+      } finally {
+        if (mounted) setUpcomingLoading(false);
+      }
+    })();
+
+    if (!eventsByYear[initialYear]) {
+      loadYearData(initialYear);
+    }
+    return () => { mounted = false; };
+  }, [customer?.user_id]);
+
+  const handleCalendarYearChange = (year) => {
+    setCalendarYear(year);
+    if (!eventsByYear[year]) loadYearData(year);
+  };
 
   return (
     <div style={{ padding: 20 }}>
@@ -140,7 +203,39 @@ const CustomerView = () => {
         {isMember && (
           <div style={{ flex: 1 }}>
             <h2>會員日曆</h2>
-            <Calendar events={customerEvents} />
+            {calendarError && <p style={{ color: 'red' }}>{calendarError}</p>}
+            <Calendar events={eventsByYear[calendarYear] || {}} onYearChange={handleCalendarYearChange} />
+            {calendarLoading && <p>日曆載入中...</p>}
+
+            <div style={{ marginTop: 12 }}>
+              <h3>即將到來的5堂課</h3>
+              {upcomingLoading ? (
+                <p>載入中...</p>
+              ) : upcomingError ? (
+                <p style={{ color: 'red' }}>{upcomingError}</p>
+              ) : upcomingSessions.length === 0 ? (
+                <p>暫時沒有即將到來的課堂</p>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>日期時間</th>
+                      <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>課堂名稱</th>
+                      <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>場次</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {upcomingSessions.map((s) => (
+                      <tr key={s.registration_id}>
+                        <td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}</td>
+                        <td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.event_name || '-'}</td>
+                        <td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.session_name || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         )}
       </div>
