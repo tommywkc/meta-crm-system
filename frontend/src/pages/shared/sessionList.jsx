@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleListEnrolledUpcomingSessions } from '../../api/sessionAPI';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
-import { searchInputStyle } from '../../styles/TableStyles';
+import { searchInputStyle, tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 // 場次報名列表頁：顯示所有「尚未開始」的已報名場次.
@@ -167,41 +167,41 @@ const SessionListPage = () => {
 						</span>
 					</div>
 
-					<table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12 }}>
+					<table style={tableStyle}>
 						<thead>
 							<tr>
-								<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>日期時間(日/月/年)</th>
-								<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>課堂編號與名稱</th>
-								<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>場次</th>
-								<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>地點</th>
+								<th style={thTdStyle}>日期時間(日/月/年)</th>
+								<th style={thTdStyle}>課堂編號與名稱</th>
+								<th style={thTdStyle}>場次</th>
+								<th style={thTdStyle}>地點</th>
 								{(isAdmin || isSalesOrLeader) && (
-									<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>學員</th>
+									<th style={thTdStyle}>學員</th>
 								)}
-								<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>操作</th>
+								<th style={thTdStyle}>操作</th>
 							</tr>
 						</thead>
 						<tbody>
 							{pagedSessions.length === 0 ? (
 								<tr>
-									<td colSpan={isAdmin || isSalesOrLeader ? 5 : 4} style={{ padding: '8px', textAlign: 'center' }}>
+									<td colSpan={isAdmin || isSalesOrLeader ? 5 : 4} style={thTdStyle}>
 										暫時沒有即將開始的已報名場次
 									</td>
 								</tr>
 							) : (
 								pagedSessions.map((s) => (
 									<tr key={s.registration_id}>
-										<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>
+										<td style={thTdStyle}>
 											{s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}
 										</td>
-										<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.event_id} - {s.event_name || '-'}</td>
-										<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.session_name || '-'}</td>
-										<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.location || '-'}</td>
+										<td style={thTdStyle}>{s.event_id} - {s.event_name || '-'}</td>
+										<td style={thTdStyle}>{s.session_name || '-'}</td>
+										<td style={thTdStyle}>{s.location || '-'}</td>
 										{(isAdmin || isSalesOrLeader) && (
-											<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>
+											<td style={thTdStyle}>
 												{s.user_name || s.user_id || '-'}
 											</td>
 										)}
-										<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>
+										<td style={thTdStyle}>
 											{s.event_id ? (
 												<button onClick={() => handleViewEvent(s)}>查看活動</button>
 											) : (
