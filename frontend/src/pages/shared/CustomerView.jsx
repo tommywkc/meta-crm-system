@@ -212,8 +212,8 @@ const CustomerView = () => {
               <button
                 style={{ marginLeft: 8 }}
                 onClick={() => {
-                  const q = (customer.user_id || '').toString();
-                  navigate(`/sessions/enrolled${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+                  const userIdValue = (customer.user_id || '').toString();
+                  navigate(`/sessions/enrolled${userIdValue ? `?user_id=${encodeURIComponent(userIdValue)}` : ''}`);
                 }}
               >
                 查看所有即將到來的場次
@@ -225,7 +225,7 @@ const CustomerView = () => {
                   navigate(`/events${userIdValue ? `?user_id=${encodeURIComponent(userIdValue)}` : ''}`);
                 }}
               >
-                查看已報名活動
+                查看已確認報名的活動
               </button>
               {upcomingLoading ? (
                 <p>載入中...</p>

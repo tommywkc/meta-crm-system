@@ -15,6 +15,7 @@ const SessionListPage = () => {
 	const { user } = useAuth();
 	const didInitFromQueryRef = React.useRef(false);
 	const lastLoadedQRef = React.useRef(null);
+	const lastLoadedUserIdRef = React.useRef(null);
 
 	const userRole = user?.role?.toLowerCase();
 	const isAdmin = userRole === 'admin';
@@ -29,12 +30,15 @@ const SessionListPage = () => {
 	const [limit, setLimit] = useState(25);
 	const [searchTerm, setSearchTerm] = useState('');
 	const [appliedQ, setAppliedQ] = useState('');
+	const [targetUserId, setTargetUserId] = useState('');
 
 	useEffect(() => {
 		const params = new URLSearchParams(location.search || '');
 		const qParam = (params.get('q') || '').trim();
+		const userIdParam = (params.get('user_id') || '').trim();
 		setSearchTerm(qParam);
 		setAppliedQ(qParam);
+		setTargetUserId(userIdParam);
 		setPage(1);
 		didInitFromQueryRef.current = true;
 	}, [location.search]);
@@ -43,8 +47,10 @@ const SessionListPage = () => {
 		const load = async () => {
 			const params = new URLSearchParams(location.search || '');
 			const qParam = (params.get('q') || '').trim();
+			const userIdParam = (params.get('user_id') || '').trim();
 			if (location.search && !didInitFromQueryRef.current) return;
 			if (location.search && qParam !== appliedQ) return;
+			if (location.search && userIdParam !== targetUserId) return;
 			if (!user?.id) {
 				setLoading(false);
 				return;
@@ -57,9 +63,10 @@ const SessionListPage = () => {
 					return;
 				}
 
-				if (lastLoadedQRef.current === appliedQ) return;
+				if (lastLoadedQRef.current === appliedQ && lastLoadedUserIdRef.current === targetUserId) return;
 				lastLoadedQRef.current = appliedQ;
-				const res = await handleListEnrolledUpcomingSessions(100, 0, appliedQ);
+				lastLoadedUserIdRef.current = targetUserId;
+				const res = await handleListEnrolledUpcomingSessions(100, 0, appliedQ, null, targetUserId);
 				const list = Array.isArray(res.sessions) ? res.sessions : [];
 				setSessions(list);
 				setError(null);
@@ -71,16 +78,29 @@ const SessionListPage = () => {
 			}
 		};
 		load();
-	}, [user?.id, isAdmin, isSalesOrLeader, isMember, navigate, appliedQ, location.search]);
+	}, [user?.id, isAdmin, isSalesOrLeader, isMember, navigate, appliedQ, targetUserId, location.search]);
 
 	const handleSearch = () => {
 		// Apply search to backend
-		setAppliedQ(searchTerm.trim());
+		const q = searchTerm.trim();
+		const params = new URLSearchParams(location.search || '');
+		if (q) {
+			params.set('q', q);
+		} else {
+			params.delete('q');
+		}
+		const qs = params.toString();
+		navigate(`${location.pathname}${qs ? `?${qs}` : ''}`, { replace: true });
+		setAppliedQ(q);
 		setPage(1);
 	};
 
 	const handleClear = () => {
 		// Reset all filters and reload
+		const params = new URLSearchParams(location.search || '');
+		params.delete('q');
+		const qs = params.toString();
+		navigate(`${location.pathname}${qs ? `?${qs}` : ''}`, { replace: true });
 		setSearchTerm('');
 		setAppliedQ('');
 		setPage(1);
@@ -120,7 +140,7 @@ const SessionListPage = () => {
 				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
 					<input
 						type="text"
-						placeholder="輸入 [課堂名稱/場次/地點/學員ID或姓名] 來搜尋..."
+						placeholder="輸入 [課堂名稱/場次/地點] 來搜尋..."
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 						onKeyDown={(e) => {

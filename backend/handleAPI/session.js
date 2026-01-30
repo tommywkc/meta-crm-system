@@ -10,7 +10,6 @@ const {
   listUpcomingSessionsByUser,
   listUpcomingSessionsAllUsers,
   searchUpcomingSessionsByUser,
-  searchUpcomingSessionsAllUsers,
   listSessionsByUserAndYear,
   listRegisteredSessionIdsByUserAndEvent,
   listRegistrationsWithUserBySessionId,
@@ -285,6 +284,7 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
     const limit = parseInt(req.query.limit, 10) || 100;
     const offset = parseInt(req.query.offset, 10) || 0;
     const q = req.query.q || '';
+    const userIdParam = req.query.user_id ? String(req.query.user_id).trim() : '';
     const eventIdParam = req.query.event_id;
     const eventIdNum = eventIdParam ? parseInt(eventIdParam, 10) : null;
 
@@ -301,9 +301,8 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
         sessions = await listUpcomingSessionsByUser(userId, limit, offset);
       }
     } else if (['ADMIN', 'SALES', 'LEADER'].includes(role)) {
-      // 管理員 / 銷售 / 組長可看到全部人的尚未開始場次
-      if (q && q.trim()) {
-        sessions = await searchUpcomingSessionsAllUsers(limit, offset, q);
+      if (userIdParam) {
+        sessions = await searchUpcomingSessionsByUser(userIdParam, limit, offset, q);
       } else {
         sessions = await listUpcomingSessionsAllUsers(limit, offset);
       }
