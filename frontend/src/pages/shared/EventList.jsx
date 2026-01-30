@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import EventsTable from '../../components/EventsTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
 import { handleListEvents, handleDeleteById } from '../../api/eventListAPI';
-import { handleListMyActiveEnrolledEvents } from '../../api/enrollmentAPI';
+import { handleListMyActiveEnrolledEvents, handleConfirmEnrollmentByUser } from '../../api/enrollmentAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 const EventList = () => {
 	const navigate = useNavigate();
+	const location = useLocation();
 	const { user } = useAuth();
 	const userRole = user?.role?.toLowerCase();
 	const isAdmin = userRole === 'admin';
@@ -28,12 +29,28 @@ const EventList = () => {
 
 	useEffect(() => {
 		const fetchData = async () => {
+			const params = new URLSearchParams(location.search || '');
+			const userIdParam = (params.get('user_id') || '').trim();
+			if (userIdParam) {
+				try {
+					const payload = await handleConfirmEnrollmentByUser(userIdParam, 200, 0);
+					const enrolledEvents = payload.enrollments || [];
+					setEvents(enrolledEvents);
+					setFilteredEvents(enrolledEvents);
+					setIsSearching(false);
+					setSearchTerm('');
+					setPage(1);
+					return;
+				} catch (err) {
+					console.error('Failed to load enrolled events for user', err);
+				}
+			}
 			const payload = await handleListEvents({ limit: 100, offset: 0, q: '' });
 			setEvents(payload.events || []);
 			setFilteredEvents(payload.events || []);
 		};
 		fetchData();
-	}, []);
+	}, [location.search]);
 
 	// 從後端讀取目前登入會員已報名 (PENDING / CONFIRMED) 的活動 ID
 		useEffect(() => {

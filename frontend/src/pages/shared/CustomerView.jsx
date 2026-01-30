@@ -206,7 +206,7 @@ const CustomerView = () => {
             {calendarError && <p style={{ color: 'red' }}>{calendarError}</p>}
             <Calendar events={eventsByYear[calendarYear] || {}} onYearChange={handleCalendarYearChange} />
             {calendarLoading && <p>日曆載入中...</p>}
-
+            
             <div style={{ marginTop: 12 }}>
               <h3>即將到來的5堂課</h3>
               <button
@@ -217,6 +217,15 @@ const CustomerView = () => {
                 }}
               >
                 查看所有即將到來的場次
+              </button>
+              <button
+                style={{ marginLeft: 8 }}
+                onClick={() => {
+                  const userIdValue = (customer.user_id || '').toString();
+                  navigate(`/events${userIdValue ? `?user_id=${encodeURIComponent(userIdValue)}` : ''}`);
+                }}
+              >
+                查看已報名活動
               </button>
               {upcomingLoading ? (
                 <p>載入中...</p>
