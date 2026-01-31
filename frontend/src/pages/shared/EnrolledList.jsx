@@ -385,15 +385,23 @@ const EnrolledList = () => {
   const handleServerCancelCheckin = async (registration_id) => {
     try {
       await handleCancelCheckinRegistration(registration_id);
-      // give DB a moment then refresh
-      await new Promise((r) => setTimeout(r, 300));
-      await fetchMembers();
-      // clear any pending cache
+      // 只更新該列：重新查詢該 registration 的 attendance 狀態
+      const att = await handleGetRegistrationAttendance(registration_id).catch(() => null);
       setPendingAttendance((prev) => {
         const next = { ...(prev || {}) };
         delete next[String(registration_id)];
         return next;
       });
+      setMembers((prev) => (prev || []).map((m) => {
+        if (String(m.registration_id) === String(registration_id)) {
+          return {
+            ...m,
+            attendance_status: att && att.status ? att.status : '',
+            attendance_time: att && (att.attend_time || att.attendance_time) ? (att.attend_time || att.attendance_time) : null,
+          };
+        }
+        return m;
+      }));
     } catch (err) {
       console.error('取消簽到失敗', err);
       // If server reports no attendance (404) we should clear local pending attendance so UI reflects cancellation
@@ -404,7 +412,6 @@ const EnrolledList = () => {
           delete next[String(registration_id)];
           return next;
         });
-        // also update members immediately to remove attendance_time/status
         setMembers((prev) => (prev || []).map((m) => (
           String(m.registration_id) === String(registration_id)
             ? { ...m, attendance_status: '', attendance_time: null }

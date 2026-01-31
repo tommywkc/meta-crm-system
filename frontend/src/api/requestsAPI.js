@@ -46,7 +46,7 @@ export async function handleListRequests() {
     throw err;
   }
 }
-
+//TODO: Handle session changes
 export async function handleUpdateRequestById(request_id, data) {
   try {
     console.log(`Attempting to update request ${request_id}...`, data);
