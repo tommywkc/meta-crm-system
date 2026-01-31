@@ -71,11 +71,15 @@ const attachConflictDetails = async (requests = []) => {
     if (!req?.conflict_id) return req;
     const conflictSession = await findBySessionId(req.conflict_id);
     if (!conflictSession) return req;
+    const conflictEvent = conflictSession.event_id
+      ? await findByEventId(conflictSession.event_id)
+      : null;
     return {
       ...req,
       conflict_session_name: conflictSession.session_name || null,
       conflict_session_start: conflictSession.datetime_start || null,
       conflict_session_end: conflictSession.datetime_end || null,
+      conflict_event_name: conflictEvent?.event_name || null,
     };
   }));
 
@@ -219,11 +223,15 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
     if (request?.conflict_id) {
       const conflictSession = await findBySessionId(request.conflict_id);
       if (conflictSession) {
+        const conflictEvent = conflictSession.event_id
+          ? await findByEventId(conflictSession.event_id)
+          : null;
         request = {
           ...request,
           conflict_session_name: conflictSession.session_name || null,
           conflict_session_start: conflictSession.datetime_start || null,
           conflict_session_end: conflictSession.datetime_end || null,
+          conflict_event_name: conflictEvent?.event_name || null,
         };
       }
     }

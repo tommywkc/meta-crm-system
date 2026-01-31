@@ -78,7 +78,7 @@ const RequestViewTable = ({ request }) => {
       { label: '狀態', value: renderStatus(request.status), isNode: true },
       { label: '申請時間', value: request.request_time ? formatDateTimeForDisplay(request.request_time) : '-' },
       { label: '申請發起人', value: requestBy },
-      { label: '活動', value: formatValue(request.old_event_name) },
+      { label: '活動', value: formatValue(request.old_event_name || request.new_event_name) },
       {
         label: '目標場次',
         value: targetSessionLabel,
@@ -92,6 +92,7 @@ const RequestViewTable = ({ request }) => {
           }
           if (request.time_conflict === true) {
             const conflictId = formatValue(request.conflict_id);
+            const conflictEventName = formatValue(request.conflict_event_name);
             const conflictName = formatValue(request.conflict_session_name);
             const conflictTime = request.conflict_session_start
               ? formatDateTimeForDisplay(request.conflict_session_start)
@@ -104,7 +105,8 @@ const RequestViewTable = ({ request }) => {
               const timeText = conflictTime
                 ? ` (${conflictTime}${conflictEndTime ? ` - ${conflictEndTime}` : ''})`
                 : '';
-              messages.push(`與場次 ${conflictId}: ${conflictName}${timeText} 時間衝突`);
+              const eventPrefix = conflictEventName !== '-' ? `${conflictEventName} ` : '';
+              messages.push(`與活動 【${eventPrefix}】場次 ${conflictId}: ${conflictName}${timeText} 時間衝突`);
             } else {
               messages.push(`與場次 ${conflictId} 時間衝突`);
             }
@@ -150,6 +152,7 @@ const RequestViewTable = ({ request }) => {
       'registration_id',
       'under_3bday',
       'conflict_id',
+      'conflict_event_name',
       'conflict_session_name',
       'conflict_session_start',
       'conflict_session_end',
