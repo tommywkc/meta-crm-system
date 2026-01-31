@@ -3,6 +3,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/BatchSessionStyles.css';
 import { formatForDisplay, toISODateTime, toLocalISOString } from '../utils/dateFormatter';
+import { handleListSessionsByEventId } from '../api/sessionAPI';
 
 const SessionForm = ({
   title = '場次表單',
@@ -22,6 +23,7 @@ const SessionForm = ({
   const [duration, setDuration] = useState(60);
   const [capacity, setCapacity] = useState('');
   const [eventId, setEventId] = useState(propEventId || initialData.event_id || null);
+  const [sessionNameOptions, setSessionNameOptions] = useState([]);
 
   // sync from initialData when it changes (edit 模式)
   useEffect(() => {
@@ -45,11 +47,42 @@ const SessionForm = ({
     setEventId(propEventId || s.event_id || null);
   }, [initialData, propEventId]);
 
+  useEffect(() => {
+    let mounted = true;
+    const loadSessionNames = async () => {
+      if (!eventId) {
+        setSessionNameOptions([]);
+        return;
+      }
+      try {
+        const res = await handleListSessionsByEventId(eventId);
+        const sessions = res?.sessions || [];
+        const names = Array.from(
+          new Set(
+            sessions
+              .map((s) => s.session_name)
+              .filter((name) => typeof name === 'string' && name.trim())
+              .map((name) => name.trim())
+          )
+        ).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+        if (mounted) setSessionNameOptions(names);
+      } catch (err) {
+        console.error('Failed to load session names:', err);
+        if (mounted) setSessionNameOptions([]);
+      }
+    };
+
+    loadSessionNames();
+    return () => {
+      mounted = false;
+    };
+  }, [eventId]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!sessionName.trim()) {
-      alert('請輸入場次名稱');
+      alert('請選擇或輸入場次名稱');
       return;
     }
     if (!date) {
@@ -109,8 +142,14 @@ const SessionForm = ({
               value={sessionName}
               onChange={(e) => setSessionName(e.target.value)}
               className="batch-input-field"
+              list="session-name-options"
               required
             />
+            <datalist id="session-name-options">
+              {sessionNameOptions.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
           </div>
 
           <div className="session-desc-block">
