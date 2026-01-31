@@ -83,6 +83,9 @@ const RequestViewTable = ({ request }) => {
         label: '目標場次',
         value: targetSessionLabel,
       },
+      ...(typeKey !== 'LEAVE'
+        ? [{ label: '目標場次名額', value: formatValue(request.new_session_remaining) }]
+        : []),
       {
         label: '衝突',
         value: (() => {
@@ -111,8 +114,18 @@ const RequestViewTable = ({ request }) => {
               messages.push(`與場次 ${conflictId} 時間衝突`);
             }
           }
-          return messages.length ? messages.join('；') : '無衝突';
+          if (messages.length === 0) {
+            return '無衝突';
+          }
+          return (
+            <div>
+              {messages.map((message, index) => (
+                <div key={index}>{message} ;</div>
+              ))}
+            </div>
+          );
         })(),
+        isNode: true,
       },
       ...(typeKey === 'MAKEUP' || typeKey === 'RETAKE'
         ? [{ label: '優先級別', value: formatValue(request.priority_tier) }]
@@ -148,6 +161,7 @@ const RequestViewTable = ({ request }) => {
       'new_session_id',
       'new_session_name',
       'new_session_start',
+      'new_session_remaining',
       'new_event_name',
       'registration_id',
       'under_3bday',

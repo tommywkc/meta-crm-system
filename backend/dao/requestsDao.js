@@ -102,6 +102,7 @@ async function listAllRequests() {
       r.new_session_id,
       new_s.session_name AS new_session_name,
       new_s.datetime_start AS new_session_start,
+      new_s.remaining_seats AS new_session_remaining,
       new_evt.event_name AS new_event_name
     FROM REQUESTS r
     LEFT JOIN USERS u ON r.user_id = u.user_id
@@ -141,6 +142,7 @@ async function listRequestsByUser(userId) {
       r.new_session_id,
       new_s.session_name AS new_session_name,
       new_s.datetime_start AS new_session_start,
+      new_s.remaining_seats AS new_session_remaining,
       new_evt.event_name AS new_event_name
     FROM REQUESTS r
     LEFT JOIN USERS u ON r.user_id = u.user_id
