@@ -119,7 +119,7 @@ const Apply = () => {
       let message = result?.message || '報名成功！';
       if (event?.price != null && Number(event?.price) > 0 && result?.payment?.expire_time) {
         const formattedDateTime = formatDateTimeForDisplay(result.payment.expire_time);
-        message += `\n\n請在 ${formattedDateTime} 之前付款。`;
+        message += `\n\n請在三個工作天 ${formattedDateTime} 之前付款。`;
       }
       
       alert(message);

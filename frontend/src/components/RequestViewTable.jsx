@@ -67,6 +67,10 @@ const RequestViewTable = ({ request }) => {
       ? `${request.user_name} (${request.user_id || '-'})`
       : request.user_id || '-';
 
+    const targetSessionLabel = typeKey === 'LEAVE'
+      ? `${formatValue(request.old_session_id)}: ${formatValue(request.old_session_name)} (${request.old_session_start ? formatDateTimeForDisplay(request.old_session_start) : '-' })`
+      : `${formatValue(request.new_session_id)}: ${formatValue(request.new_session_name)} (${request.new_session_start ? formatDateTimeForDisplay(request.new_session_start) : '-' })`;
+
     const baseRows = [
       { label: '申請編號', value: formatValue(request.request_id) },
       { label: '申請人', value: applicant },
@@ -77,11 +81,40 @@ const RequestViewTable = ({ request }) => {
       { label: '活動', value: formatValue(request.old_event_name) },
       {
         label: '目標場次',
-        value: `${formatValue(request.new_session_id)}: ${formatValue(request.new_session_name)} (${request.new_session_start ? formatDateTimeForDisplay(request.new_session_start) : '-' })`,
+        value: targetSessionLabel,
       },
-      { label: '三個工作天', value: formatValue(request.under_3bday) },
-      { label: '時間衝突', value: formatValue(request.time_conflict) },
-      { label: '優先級別', value: formatValue(request.priority_tier) },
+      {
+        label: '衝突',
+        value: (() => {
+          const messages = [];
+          if (request.under_3bday === true) {
+            messages.push('申請低於三個工作天');
+          }
+          if (request.time_conflict === true) {
+            const conflictId = formatValue(request.conflict_id);
+            const conflictName = formatValue(request.conflict_session_name);
+            const conflictTime = request.conflict_session_start
+              ? formatDateTimeForDisplay(request.conflict_session_start)
+              : '';
+            const conflictEndTime = request.conflict_session_end
+              ? formatDateTimeForDisplay(request.conflict_session_end)
+              : '';
+            const hasDetails = conflictName !== '-' || Boolean(conflictTime);
+            if (hasDetails) {
+              const timeText = conflictTime
+                ? ` (${conflictTime}${conflictEndTime ? ` - ${conflictEndTime}` : ''})`
+                : '';
+              messages.push(`與場次 ${conflictId}: ${conflictName}${timeText} 時間衝突`);
+            } else {
+              messages.push(`與場次 ${conflictId} 時間衝突`);
+            }
+          }
+          return messages.length ? messages.join('；') : '無衝突';
+        })(),
+      },
+      ...(typeKey === 'MAKEUP' || typeKey === 'RETAKE'
+        ? [{ label: '優先級別', value: formatValue(request.priority_tier) }]
+        : []),
       { label: '申請備註', value: formatValue(request.remarks) },
       { label: '批核時間', value: request.determine_time ? formatDateTimeForDisplay(request.determine_time) : '-' },
     ];
@@ -116,6 +149,10 @@ const RequestViewTable = ({ request }) => {
       'new_event_name',
       'registration_id',
       'under_3bday',
+      'conflict_id',
+      'conflict_session_name',
+      'conflict_session_start',
+      'conflict_session_end',
       'priority_tier',
       'time_conflict',
     ]);

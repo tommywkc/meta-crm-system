@@ -72,7 +72,7 @@ const renderRequestContent = (typeKey, oldSession, newSession) => {
       <div>
         <div>{eventName}</div>
         <div style={{ marginTop: 4 }}>{renderSessionInfo(oldSession)}</div>
-        <div style={{ color: '#6b7280', fontSize: 12, margin: '4px 0' }}>→</div>
+        <div style={{ color: '#d97706', fontSize: 16, margin: '4px 0' }}>→</div>
         {renderSessionInfo(newSession)}
       </div>
     );

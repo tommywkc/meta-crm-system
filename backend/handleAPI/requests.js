@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { createRequest, findPendingByUserAndSession, listAllRequests, listRequestsByUser } = require('../dao/requestsDao');
-const { findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
+const { findBySessionAndUser, listSessionsByUserWithTimes } = require('../dao/sessionRegistrationsDao');
+const { findBySessionId } = require('../dao/eventSessionsDao');
+const { findByEventId } = require('../dao/eventsDao');
+const { listHolidays } = require('../dao/holidaysDao');
 
 const TYPE_MAP = {
   '請假申請': 'LEAVE',
@@ -18,6 +21,65 @@ const TYPE_RULES = {
   MAKEUP: { requiresSession: false, requiresTarget: true, oldSessionFor: [] },
   RETAKE: { requiresSession: false, requiresTarget: true, oldSessionFor: [] },
   CANCEL: { requiresSession: true, requiresTarget: false, oldSessionFor: [] },
+};
+
+const toDateOnly = (value) => {
+  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const buildHolidaySet = (holidays = []) => {
+  const set = new Set();
+  holidays.forEach((holiday) => {
+    if (!holiday?.holiday_date) return;
+    const dateKey = new Date(holiday.holiday_date).toISOString().slice(0, 10);
+    set.add(dateKey);
+  });
+  return set;
+};
+
+const countBusinessDays = (startDate, endDate, holidaySet) => {
+  if (!startDate || !endDate) return 0;
+  if (endDate < startDate) return 0;
+  const start = toDateOnly(startDate);
+  const end = toDateOnly(endDate);
+  if (!start || !end) return 0;
+
+  let count = 0;
+  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  cursor.setDate(cursor.getDate() + 1);
+
+  while (cursor <= end) {
+    const day = cursor.getDay();
+    const isWeekend = day === 0 || day === 6;
+    const dateKey = cursor.toISOString().slice(0, 10);
+    const isHoliday = holidaySet.has(dateKey);
+    if (!isWeekend && !isHoliday) {
+      count += 1;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return count;
+};
+
+const attachConflictDetails = async (requests = []) => {
+  if (!Array.isArray(requests) || requests.length === 0) return requests;
+
+  const enriched = await Promise.all(requests.map(async (req) => {
+    if (!req?.conflict_id) return req;
+    const conflictSession = await findBySessionId(req.conflict_id);
+    if (!conflictSession) return req;
+    return {
+      ...req,
+      conflict_session_name: conflictSession.session_name || null,
+      conflict_session_start: conflictSession.datetime_start || null,
+      conflict_session_end: conflictSession.datetime_end || null,
+    };
+  }));
+
+  return enriched;
 };
 
 router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
@@ -74,6 +136,13 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       return res.status(400).json({ message: '此申請需要選擇目標場次' });
     }
 
+    if (targetSessionIdNum) {
+      const existingTarget = await findBySessionAndUser(targetSessionIdNum, memberIdNum);
+      if (existingTarget) {
+        return res.status(400).json({ message: '此會員已報名目標場次，無法提交補堂／覆課申請' });
+      }
+    }
+
     const remarksInput = typeof reason === 'string' ? reason.trim() : '';
     const remarks = remarksInput ? remarksInput.slice(0, 255) : null;
 
@@ -89,7 +158,51 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       return res.status(409).json({ message: '此會員已提交相同場次的申請，請先處理現有申請' });
     }
 
-    const request = await createRequest({
+    let under_3bday = null;
+    if (normalizedType === 'LEAVE' && sessionIdNum) {
+      const session = await findBySessionId(sessionIdNum);
+      if (session?.datetime_start) {
+        const event = session.event_id ? await findByEventId(session.event_id) : null;
+        if (event?.type === 'CLASS') {
+          const holidays = await listHolidays(5000, 0);
+          const holidaySet = buildHolidaySet(holidays);
+          const businessDays = countBusinessDays(new Date(), new Date(session.datetime_start), holidaySet);
+          under_3bday = businessDays < 3;
+        }
+      }
+    }
+
+    let time_conflict = null;
+    let conflict_id = null;
+    if (targetSessionIdNum) {
+      const targetSession = await findBySessionId(targetSessionIdNum);
+      if (targetSession?.datetime_start) {
+        const targetStart = new Date(targetSession.datetime_start);
+        const targetEnd = targetSession.datetime_end ? new Date(targetSession.datetime_end) : new Date(targetSession.datetime_start);
+        const otherSessions = await listSessionsByUserWithTimes(memberIdNum);
+
+        for (const other of otherSessions) {
+          if (!other?.session_id || !other?.datetime_start) continue;
+          if (other.session_id === targetSessionIdNum) continue;
+          if (sessionIdNum && other.session_id === sessionIdNum) continue;
+
+          const otherStart = new Date(other.datetime_start);
+          const otherEnd = other.datetime_end ? new Date(other.datetime_end) : new Date(other.datetime_start);
+
+          if (targetStart < otherEnd && targetEnd > otherStart) {
+            time_conflict = true;
+            conflict_id = other.session_id;
+            break;
+          }
+        }
+
+        if (time_conflict === null) {
+          time_conflict = false;
+        }
+      }
+    }
+
+    let request = await createRequest({
       request_type: normalizedType,
       registration_id: registrationId,
       user_id: memberIdNum,
@@ -98,7 +211,22 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       request_by_id: req.user.sub,
       status: 'PENDING',
       remarks,
+      under_3bday,
+      time_conflict,
+      conflict_id,
     });
+
+    if (request?.conflict_id) {
+      const conflictSession = await findBySessionId(request.conflict_id);
+      if (conflictSession) {
+        request = {
+          ...request,
+          conflict_session_name: conflictSession.session_name || null,
+          conflict_session_start: conflictSession.datetime_start || null,
+          conflict_session_end: conflictSession.datetime_end || null,
+        };
+      }
+    }
 
     return res.status(201).json({ message: '申請已送出', request });
   } catch (error) {
@@ -117,11 +245,13 @@ router.get('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'leade
         return res.status(400).json({ message: '會員資訊有誤' });
       }
       const requests = await listRequestsByUser(userIdNum);
-      return res.json({ requests });
+      const enriched = await attachConflictDetails(requests);
+      return res.json({ requests: enriched });
     }
 
     const requests = await listAllRequests();
-    return res.json({ requests });
+    const enriched = await attachConflictDetails(requests);
+    return res.json({ requests: enriched });
   } catch (error) {
     console.error('List requests failed:', error);
     return res.status(500).json({ message: '無法載入申請列表' });

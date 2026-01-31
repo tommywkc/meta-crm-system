@@ -11,11 +11,13 @@ async function createRequest({
   status = 'PENDING',
   remarks = null,
   under_3bday = null,
+  time_conflict = null,
+  conflict_id = null,
   priority_tier = null,
 }) {
-  const sql = `INSERT INTO requests (request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, priority_tier)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`;
-  const vals = [request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, priority_tier];
+  const sql = `INSERT INTO requests (request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, time_conflict, conflict_id, priority_tier)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`;
+  const vals = [request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, time_conflict, conflict_id, priority_tier];
   const res = await query(sql, vals);
   return res.rows[0];
 }
@@ -84,6 +86,9 @@ async function listAllRequests() {
       r.request_time,
       r.determine_time,
       r.remarks,
+      r.under_3bday,
+      r.time_conflict,
+      r.conflict_id,
       r.user_id,
       u.name AS user_name,
       u.mobile AS user_mobile,
@@ -120,6 +125,9 @@ async function listRequestsByUser(userId) {
       r.request_time,
       r.determine_time,
       r.remarks,
+      r.under_3bday,
+      r.time_conflict,
+      r.conflict_id,
       r.user_id,
       u.name AS user_name,
       u.mobile AS user_mobile,
