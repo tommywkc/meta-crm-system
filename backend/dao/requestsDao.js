@@ -77,6 +77,17 @@ async function findPendingByUserAndSession(user_id, { old_session_id = null, new
   return res.rows[0] || null;
 }
 
+async function updateRequestById(id, fields = {}) {
+  const keys = Object.keys(fields);
+  if (keys.length === 0) return findByRequestId(id);
+  const sets = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+  const vals = keys.map((k) => fields[k]);
+  vals.push(id);
+  const sql = `UPDATE REQUESTS SET ${sets} WHERE request_id = $${vals.length} RETURNING *`;
+  const res = await query(sql, vals);
+  return res.rows[0] || null;
+}
+
 async function listAllRequests() {
   const sql = `
     SELECT
@@ -165,6 +176,7 @@ module.exports = {
   listByUserId,
   removeByRequestId,
   findPendingByUserAndSession,
+  updateRequestById,
   listAllRequests,
   listRequestsByUser,
 };

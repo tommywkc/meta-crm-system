@@ -46,3 +46,32 @@ export async function handleListRequests() {
     throw err;
   }
 }
+
+export async function handleUpdateRequestById(request_id, data) {
+  try {
+    console.log(`Attempting to update request ${request_id}...`, data);
+
+    const response = await fetch(apiUrl(`/api/requests/${request_id}`), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      try {
+        const err = await response.json();
+        throw new Error(err?.message || `無法更新申請 ${request_id}`);
+      } catch (e) {
+        throw new Error(response.statusText || `無法更新申請 ${request_id}`);
+      }
+    }
+
+    const payload = await response.json();
+    console.log(`Request ${request_id} update response:`, payload);
+    return payload;
+  } catch (err) {
+    console.error(`Update request error for ${request_id}:`, err);
+    throw err;
+  }
+}

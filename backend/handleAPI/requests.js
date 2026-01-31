@@ -1,7 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { createRequest, findPendingByUserAndSession, listAllRequests, listRequestsByUser } = require('../dao/requestsDao');
+const {
+  createRequest,
+  findPendingByUserAndSession,
+  listAllRequests,
+  listRequestsByUser,
+  findByRequestId,
+  updateRequestById,
+} = require('../dao/requestsDao');
 const { findBySessionAndUser, listSessionsByUserWithTimes } = require('../dao/sessionRegistrationsDao');
 const { findBySessionId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
@@ -263,6 +270,56 @@ router.get('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'leade
   } catch (error) {
     console.error('List requests failed:', error);
     return res.status(500).json({ message: '無法載入申請列表' });
+  }
+});
+
+router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+  try {
+    const requestId = parseInt(req.params.requestId, 10);
+    if (Number.isNaN(requestId)) {
+      return res.status(400).json({ message: '申請編號有誤' });
+    }
+
+    const existing = await findByRequestId(requestId);
+    if (!existing) {
+      return res.status(404).json({ message: '找不到申請資料' });
+    }
+
+    if ((existing.status || '').toUpperCase() !== 'PENDING') {
+      return res.status(409).json({ message: '此申請已完成審核' });
+    }
+
+    const incomingStatus = req.body?.status ? String(req.body.status).trim().toUpperCase() : '';
+    if (!['APPROVED', 'REJECTED'].includes(incomingStatus)) {
+      return res.status(400).json({ message: '狀態更新僅支援批准或駁回' });
+    }
+
+    let updated = await updateRequestById(requestId, {
+      status: incomingStatus,
+      determine_by_id: req.user.sub,
+      determine_time: new Date(),
+    });
+
+    if (updated?.conflict_id) {
+      const conflictSession = await findBySessionId(updated.conflict_id);
+      if (conflictSession) {
+        const conflictEvent = conflictSession.event_id
+          ? await findByEventId(conflictSession.event_id)
+          : null;
+        updated = {
+          ...updated,
+          conflict_session_name: conflictSession.session_name || null,
+          conflict_session_start: conflictSession.datetime_start || null,
+          conflict_session_end: conflictSession.datetime_end || null,
+          conflict_event_name: conflictEvent?.event_name || null,
+        };
+      }
+    }
+
+    return res.json({ message: '申請已更新', request: updated });
+  } catch (error) {
+    console.error('Update request failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤，請稍後再試' });
   }
 });
 

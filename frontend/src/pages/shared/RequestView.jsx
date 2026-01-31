@@ -13,6 +13,7 @@ const RequestView = () => {
 	const [request, setRequest] = useState(location.state?.request || null);
 	const [loading, setLoading] = useState(!location.state?.request);
 	const [error, setError] = useState('');
+	const isPending = (request?.status || '').toString().toUpperCase() === 'PENDING';
 
 
     
@@ -62,16 +63,16 @@ const RequestView = () => {
 				</div>
 			)}
 			<div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-				<button type="button" onClick={() => navigate(-1)}>返回上一頁</button>
 				{isAdmin && (
 					<button
 						type="button"
-						onClick={() => navigate('/admin/requests')}
-						disabled={!request}
+						onClick={() => navigate(`/admin/requests/${request?.request_id}/approve`, { state: { request } })}
+						disabled={!request || !isPending}
 					>
-						批核
+						{isPending ? '批核' : '已批核'}
 					</button>
 				)}
+                <button type="button" onClick={() => navigate('/admin/requests')}>返回列表</button>
 			</div>
 		</div>
 	);

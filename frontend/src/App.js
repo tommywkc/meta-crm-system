@@ -47,6 +47,7 @@ import EventHomeworkResult from './pages/shared/EventHomeworkResult';
 import EventHomeworkGrade from './pages/admin/EventHomeworkGrade';
 import RequestList from './pages/shared/RequestList';
 import RequestView from './pages/shared/RequestView';
+import RequestApprove from './pages/admin/RequestApprove';
 
 
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -199,6 +200,11 @@ function App() {
           <Route path="/admin/requests" element={
             <ProtectedRoute allowedRole="admin">
               <RequestList />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/requests/:requestId/approve" element={
+            <ProtectedRoute allowedRole="admin">
+              <RequestApprove />
             </ProtectedRoute>
           } />
           <Route path="/requests/history" element={

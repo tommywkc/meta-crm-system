@@ -30,6 +30,11 @@ const RequestList = () => {
     loadRequests();
   }, [loadRequests]);
 
+  const handleApprove = useCallback((req) => {
+    if (!req?.request_id) return;
+    navigate(`/admin/requests/${req.request_id}/approve`, { state: { request: req } });
+  }, [navigate]);
+
   return (
     <div style={{ padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
@@ -51,7 +56,7 @@ const RequestList = () => {
       )}
 
       <div style={{ marginTop: 16 }}>
-        <RequestsTable requests={requests} loading={loading} />
+        <RequestsTable requests={requests} loading={loading} onApprove={handleApprove} />
       </div>
     </div>
   );
