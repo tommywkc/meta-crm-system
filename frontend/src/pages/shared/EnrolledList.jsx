@@ -196,7 +196,7 @@ const EnrolledList = () => {
       } else {
         res = await handleListConfirmedUsersByEvent(eventId, { status: 'ALL' });
       }
-      const customers = res.users || [];
+      const customers = (res.users || []).filter((c) => String(c.status || c.enrollment_status || '').toUpperCase() !== 'CANCELLED');
       const mapped = customers.map((c) => {
         const regId = String(c.registration_id);
         const serverTime = c.attendance_time || c.attend_time || null;

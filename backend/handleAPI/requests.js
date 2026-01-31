@@ -188,7 +188,7 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
         for (const other of otherSessions) {
           if (!other?.session_id || !other?.datetime_start) continue;
           if (other.session_id === targetSessionIdNum) continue;
-          if (sessionIdNum && other.session_id === sessionIdNum) continue;
+          if (sessionIdNum && String(other.session_id) === String(sessionIdNum)) continue;
 
           const otherStart = new Date(other.datetime_start);
           const otherEnd = other.datetime_end ? new Date(other.datetime_end) : new Date(other.datetime_start);
