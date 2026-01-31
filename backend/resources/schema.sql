@@ -214,6 +214,7 @@ CREATE TABLE IF NOT EXISTS REQUESTS (
     determine_time TIMESTAMP,
     remarks VARCHAR(255),
     under_3bday BOOLEAN,
+    time_conflict BOOLEAN,
     priority_tier INT,
     PRIMARY KEY (request_id),
     FOREIGN KEY (registration_id) REFERENCES SESSION_REGISTRATIONS(registration_id) ON DELETE SET NULL,

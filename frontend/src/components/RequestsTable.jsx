@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { tableStyle, thTdStyle } from '../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 import { useAuth } from '../contexts/AuthContext';
@@ -66,6 +67,7 @@ const renderSessionInfo = (session) => {
 };
 
 const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = (user?.role || '').toLowerCase() === 'admin';
   const columnCount = isAdmin ? 9 : 8;
@@ -76,6 +78,11 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
     if (typeof onApprove === 'function') {
       onApprove(req);
     }
+  };
+
+  const handleViewDetail = (req) => {
+    if (!req?.request_id) return;
+    navigate(`/requests/${req.request_id}`, { state: { request: req } });
   };
 
   return (
@@ -126,7 +133,14 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
               <td style={thTdStyle}>{renderStatus(req.status)}</td>
               <td style={thTdStyle}>{requestTimeLabel}</td>
               <td style={thTdStyle}>{req.remarks || '-'}</td>
-                <td style={{ ...thTdStyle, minWidth: 120 }}>
+              <td style={{ ...thTdStyle, minWidth: 160 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleViewDetail(req)}
+                  >
+                    詳情
+                  </button>
                   {isAdmin && (
                     <button
                       type="button"
@@ -135,8 +149,8 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
                       批核
                     </button>
                   )}
-                </td>
-
+                </div>
+              </td>
             </tr>
           );
         })}

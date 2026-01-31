@@ -4,7 +4,7 @@ import RequestsTable from '../../components/RequestsTable';
 import { handleListRequests } from '../../api/requestsAPI';
 import { useAuth } from '../../contexts/AuthContext';
 
-const ViewRequest = () => {
+const RequestList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const normalizedRole = (user?.role || '').toLowerCase();
@@ -57,4 +57,4 @@ const ViewRequest = () => {
   );
 };
 
-export default ViewRequest;
+export default RequestList;
