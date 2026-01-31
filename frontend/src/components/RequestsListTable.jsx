@@ -55,8 +55,7 @@ const renderSessionInfo = (session) => {
   if (!session?.session_id) {
     return '-';
   }
-  const nameParts = [session.event_name, session.session_name].filter(Boolean);
-  const title = nameParts.length > 0 ? nameParts.join(' / ') : `場次 #${session.session_id}`;
+  const title = session.session_name || `場次 #${session.session_id}`;
   const timeLabel = session.datetime_start ? formatDateTimeForDisplay(session.datetime_start) : null;
   return (
     <div>
@@ -66,11 +65,32 @@ const renderSessionInfo = (session) => {
   );
 };
 
+const renderRequestContent = (typeKey, oldSession, newSession) => {
+  const eventName = oldSession?.event_name || newSession?.event_name || '-';
+  if (typeKey === 'RESCHEDULE') {
+    return (
+      <div>
+        <div>{eventName}</div>
+        <div style={{ marginTop: 4 }}>{renderSessionInfo(oldSession)}</div>
+        <div style={{ color: '#6b7280', fontSize: 12, margin: '4px 0' }}>→</div>
+        {renderSessionInfo(newSession)}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div>{eventName}</div>
+      <div style={{ marginTop: 4 }}>{renderSessionInfo(newSession)}</div>
+    </div>
+  );
+};
+
 const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = (user?.role || '').toLowerCase() === 'admin';
-  const columnCount = isAdmin ? 9 : 8;
+  const columnCount = isAdmin ? 8 : 7;
   const hasData = requests && requests.length > 0;
 
   const handleApprove = (req) => {
@@ -92,11 +112,10 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
           <th style={thTdStyle}>申請編號</th>
           <th style={thTdStyle}>申請人</th>
           <th style={thTdStyle}>申請類型</th>
-          <th style={thTdStyle}>原場次</th>
-          <th style={thTdStyle}>目標場次</th>
+          <th style={thTdStyle}>申請內容</th>
           <th style={thTdStyle}>狀態</th>
           <th style={thTdStyle}>申請時間</th>
-          <th style={thTdStyle}>備註</th>
+          <th style={thTdStyle}>條件衝突</th>
           <th style={thTdStyle}>操作</th>
         </tr>
       </thead>
@@ -128,11 +147,10 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
               <td style={thTdStyle}>{req.request_id}</td>
               <td style={thTdStyle}>{applicant}</td>
               <td style={thTdStyle}>{typeLabel || '-'}</td>
-              <td style={thTdStyle}>{renderSessionInfo(oldSession)}</td>
-              <td style={thTdStyle}>{renderSessionInfo(newSession)}</td>
+              <td style={thTdStyle}>{renderRequestContent(typeKey, oldSession, newSession)}</td>
               <td style={thTdStyle}>{renderStatus(req.status)}</td>
               <td style={thTdStyle}>{requestTimeLabel}</td>
-              <td style={thTdStyle}>{req.remarks || '-'}</td>
+              <td style={thTdStyle}>{(req.under_3bday || req.time_conflict) ? '有衝突' : '無衝突'}</td>
               <td style={{ ...thTdStyle, minWidth: 160 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button

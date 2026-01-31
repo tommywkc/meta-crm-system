@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import RequestsTable from '../../components/RequestsTable';
+import RequestsTable from '../../components/RequestsListTable';
 import { handleListRequests } from '../../api/requestsAPI';
 import { useAuth } from '../../contexts/AuthContext';
 
