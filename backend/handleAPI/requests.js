@@ -163,7 +163,7 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
     }
 
     let under_3bday = null;
-    if (normalizedType === 'LEAVE' && sessionIdNum) {
+    if ((normalizedType === 'LEAVE' || normalizedType === 'RESCHEDULE') && sessionIdNum) {
       const session = await findBySessionId(sessionIdNum);
       if (session?.datetime_start) {
         const event = session.event_id ? await findByEventId(session.event_id) : null;
