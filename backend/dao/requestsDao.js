@@ -11,11 +11,13 @@ async function createRequest({
   status = 'PENDING',
   remarks = null,
   under_3bday = null,
+  time_conflict = null,
+  conflict_id = null,
   priority_tier = null,
 }) {
-  const sql = `INSERT INTO requests (request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, priority_tier)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`;
-  const vals = [request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, priority_tier];
+  const sql = `INSERT INTO requests (request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, time_conflict, conflict_id, priority_tier)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`;
+  const vals = [request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, time_conflict, conflict_id, priority_tier];
   const res = await query(sql, vals);
   return res.rows[0];
 }
@@ -75,6 +77,17 @@ async function findPendingByUserAndSession(user_id, { old_session_id = null, new
   return res.rows[0] || null;
 }
 
+async function updateRequestById(id, fields = {}) {
+  const keys = Object.keys(fields);
+  if (keys.length === 0) return findByRequestId(id);
+  const sets = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+  const vals = keys.map((k) => fields[k]);
+  vals.push(id);
+  const sql = `UPDATE REQUESTS SET ${sets} WHERE request_id = $${vals.length} RETURNING *`;
+  const res = await query(sql, vals);
+  return res.rows[0] || null;
+}
+
 async function listAllRequests() {
   const sql = `
     SELECT
@@ -84,6 +97,9 @@ async function listAllRequests() {
       r.request_time,
       r.determine_time,
       r.remarks,
+      r.under_3bday,
+      r.time_conflict,
+      r.conflict_id,
       r.user_id,
       u.name AS user_name,
       u.mobile AS user_mobile,
@@ -97,6 +113,7 @@ async function listAllRequests() {
       r.new_session_id,
       new_s.session_name AS new_session_name,
       new_s.datetime_start AS new_session_start,
+      new_s.remaining_seats AS new_session_remaining,
       new_evt.event_name AS new_event_name
     FROM REQUESTS r
     LEFT JOIN USERS u ON r.user_id = u.user_id
@@ -120,6 +137,9 @@ async function listRequestsByUser(userId) {
       r.request_time,
       r.determine_time,
       r.remarks,
+      r.under_3bday,
+      r.time_conflict,
+      r.conflict_id,
       r.user_id,
       u.name AS user_name,
       u.mobile AS user_mobile,
@@ -133,6 +153,7 @@ async function listRequestsByUser(userId) {
       r.new_session_id,
       new_s.session_name AS new_session_name,
       new_s.datetime_start AS new_session_start,
+      new_s.remaining_seats AS new_session_remaining,
       new_evt.event_name AS new_event_name
     FROM REQUESTS r
     LEFT JOIN USERS u ON r.user_id = u.user_id
@@ -155,6 +176,7 @@ module.exports = {
   listByUserId,
   removeByRequestId,
   findPendingByUserAndSession,
+  updateRequestById,
   listAllRequests,
   listRequestsByUser,
 };

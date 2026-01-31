@@ -657,9 +657,8 @@ const RequestForm = ({ onSubmitted, requestType }) => {
         </div>
       )}
 
-      {(isLeave || isReschedule) && (
         <div style={{ marginBottom: 10 }}>
-          <label>申請原因</label>
+          <label>備註</label>
           <br />
           <textarea
             value={form.reason}
@@ -669,7 +668,6 @@ const RequestForm = ({ onSubmitted, requestType }) => {
             style={{ width: '60%', padding: 8, border: '1px solid #e5e7eb', resize: 'vertical' }}
           />
         </div>
-      )}
 
       <div style={{ marginTop: 12 }}>
         <button type='submit' disabled={saving} style={{ marginRight: 8 }}>{saving ? '提交中…' : '提交'}</button>
