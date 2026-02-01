@@ -293,6 +293,7 @@
   pointer-events: none;
 }
 .session-actions { margin-top: 12px; }
+.session-save-button,
 .session-delete-button {
   padding: 8px 12px;
 }

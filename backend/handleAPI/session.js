@@ -72,9 +72,13 @@ router.post('/sessions', authMiddleware, roleMiddleware('admin'), async (req, re
     const datetime_start = startRaw;
     const datetime_end = endRaw;
 
-    if (body.capacity != null && parseInt(body.capacity, 10)) {
-      remaining_seats = body.capacity;
-    }else{
+    const capacityValue = body.capacity != null
+      ? parseInt(body.capacity, 10)
+      : (body.session_capacity != null ? parseInt(body.session_capacity, 10) : null);
+
+    if (!Number.isNaN(capacityValue) && capacityValue != null) {
+      remaining_seats = capacityValue;
+    } else {
       remaining_seats = null;
     }
 
@@ -85,7 +89,7 @@ router.post('/sessions', authMiddleware, roleMiddleware('admin'), async (req, re
       event_id: body.event_id,
       session_name: body.session_name,
       description: body.description || body.session_description || null,
-      capacity: body.capacity != null ? body.capacity : (body.session_capacity != null ? parseInt(body.session_capacity, 10) : null),
+      capacity: capacityValue,
       remaining_seats: remaining_seats,
       datetime_start,
       datetime_end,
