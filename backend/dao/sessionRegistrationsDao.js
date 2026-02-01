@@ -225,6 +225,11 @@ async function updateRegistrationById(id, fields = {}) {
   return res.rows[0] || null;
 }
 
+async function countRegistrationsBySessionId(session_id) {
+  const res = await query('SELECT COUNT(*)::int AS count FROM SESSION_REGISTRATIONS WHERE session_id = $1', [session_id]);
+  return res.rows[0]?.count ?? 0;
+}
+
 module.exports = {
   createRegistration,
   findByRegistrationId,
@@ -240,4 +245,5 @@ module.exports = {
   listRegisteredSessionIdsByUserAndEvent,
   updateRegistrationById,
   listRegistrationsWithUserBySessionId,
+  countRegistrationsBySessionId,
 };

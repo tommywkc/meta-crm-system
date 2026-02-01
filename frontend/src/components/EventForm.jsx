@@ -130,7 +130,7 @@ const EventForm = ({
 
   // 多場次操作
   const addSession = () => {
-    setSessions(prev => ([{ session_name: '', dates: [], time: '09:00', duration_minutes: 60, session_description: '', session_capacity: capacity || '' }, ...prev]));
+    setSessions(prev => ([{ session_name: '', dates: [], time: '09:00', duration_minutes: 60, session_description: '', session_capacity: capacity ?? 60 }, ...prev]));
   };
   const removeSession = (idx) => {
     setSessions(prev => prev.filter((_, i) => i !== idx));
@@ -440,7 +440,7 @@ const EventForm = ({
                             type="text"
                             inputMode="numeric"
                             placeholder="留空不限制人數"
-                            value={s.session_capacity ?? ''}
+                            value={s.session_capacity == null ? 60 : s.session_capacity}
                             onChange={(e) => updateSession(idx, 'session_capacity', e.target.value)}
                             className="batch-input-field"
                             style={{ borderColor: (s.session_capacity && !/^\d*$/.test(s.session_capacity)) ? 'red' : '' }}

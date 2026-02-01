@@ -1,5 +1,6 @@
 // Event sessions DAO — helpers for creating and managing event sessions
 const { query } = require('../db/pool');
+const { countRegistrationsBySessionId } = require('./sessionRegistrationsDao');
 
 async function resequenceRoundsForGroup(event_id, session_name) {
   if (event_id == null || !session_name) return;
@@ -125,17 +126,12 @@ async function updateSessionById(id, fields = {}) {
   // 則依照新容量調整剩餘位： new_cap - (old_cap - old_remaining)
   if (Object.prototype.hasOwnProperty.call(fields, 'capacity') &&
       !Object.prototype.hasOwnProperty.call(fields, 'remaining_seats')) {
-    if (existing && existing.capacity != null && existing.remaining_seats != null) {
-      const oldCap = Number(existing.capacity);
-      const oldRemain = Number(existing.remaining_seats);
-      const newCap = Number(fields.capacity);
-
-      if (!Number.isNaN(oldCap) && !Number.isNaN(oldRemain) && !Number.isNaN(newCap)) {
-        const used = oldCap - oldRemain; // 已使用名額
-        let newRemain = newCap - used;   // 依照已使用名額計算新剩餘
-        if (newRemain < 0) newRemain = 0; // 不讓剩餘小於 0
-        fields.remaining_seats = newRemain;
-      }
+    const newCap = Number(fields.capacity);
+    if (!Number.isNaN(newCap)) {
+      const enrolledCount = await countRegistrationsBySessionId(id);
+      let newRemain = newCap - enrolledCount;
+      if (newRemain < 0) newRemain = 0;
+      fields.remaining_seats = newRemain;
     }
   }
 
