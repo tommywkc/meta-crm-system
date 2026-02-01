@@ -65,6 +65,8 @@ router.post('/login', async (req, res) => {
         name: safe.name, 
         role: safe.role, 
         username: safe.email || username,
+        email: safe.email || null,
+        mobile: safe.mobile || null,
         qr_token: user.qr_token
       } 
     });
