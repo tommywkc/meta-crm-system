@@ -58,6 +58,11 @@ async function removeByAttendanceId(id) {
   await query('DELETE FROM EVENT_ATTENDANCE WHERE attendance_id = $1', [id]);
   return true;
 }
+
+async function removeByRegistrationId(registration_id) {
+  await query('DELETE FROM EVENT_ATTENDANCE WHERE registration_id = $1', [registration_id]);
+  return true;
+}
 module.exports = {
   createAttendance,
   findByAttendanceId,
@@ -66,4 +71,5 @@ module.exports = {
   updateStatusAndTouchTime,
   updateStatusAndAttendTime,
   removeByAttendanceId,
+  removeByRegistrationId,
 };

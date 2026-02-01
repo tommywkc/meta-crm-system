@@ -512,14 +512,13 @@ router.delete('/session-registrations/:id/checkin', authMiddleware, async (req, 
       return res.status(404).json({ message: '報名紀錄不存在' });
     }
 
-    // Find latest 'G' or 'Y' attendance record
-    let att = await eventAttendanceDao.findByRegistrationAndStatus(registrationId, 'G');
-    if (!att) att = await eventAttendanceDao.findByRegistrationAndStatus(registrationId, 'Y');
-    if (!att) {
+    // Remove all attendance records for this registration
+    const latest = await eventAttendanceDao.findLatestByRegistrationId(registrationId);
+    if (!latest) {
       return res.status(404).json({ message: '未有出席紀錄' });
     }
 
-    await eventAttendanceDao.removeByAttendanceId(att.attendance_id);
+    await eventAttendanceDao.removeByRegistrationId(registrationId);
     return res.status(200).json({ message: '已取消簽到' });
   } catch (error) {
     console.error('Cancel check-in failed:', error);

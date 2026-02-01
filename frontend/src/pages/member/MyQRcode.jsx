@@ -18,7 +18,7 @@ const MyQRcode = () => {
     return (
       <div style={{ padding: 20 }}>
         <h1>我的 QR Code</h1>
-        <p style={{ color: 'red' }}>您還沒有 QR Code，請聯絡管理員生成。</p>
+        <p style={{ color: 'red' }}>您還沒有 QR Code，請聯絡管理員。</p>
       </div>
     );
   }
@@ -44,7 +44,10 @@ const MyQRcode = () => {
           <strong>姓名:</strong> {user?.name}
         </div>
         <div style={{ marginTop: 16 }}>
-          <strong>電子郵件:</strong> {user?.username || user?.email}
+          <strong>電話號碼:</strong> {user?.mobile}
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <strong>電子郵件:</strong> {user?.email || '無'}
         </div>
       </div>
     </div>

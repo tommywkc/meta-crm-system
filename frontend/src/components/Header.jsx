@@ -26,7 +26,7 @@ const Header = () => {
     payments: { path: '/payments', label: '付款/欠款' },
     receipts: { path: '/receipts', label: '查看收據/證書' },
     requests: { path: '/requests/select', label: '覆課/補堂/請假申請' },
-    myqrcode: { path: '/myqrcode', label: '我的QR code' },
+    myqrcode: { path: '/myqrcode', label: '我的資料' },
     mycalendar: { path: '/mycalendar', label: '我的日曆' },
     myevents: { path: '/myevents', label: '我的活動' },
     feedback: { path: '/feedback', label: '意見回饋' }
@@ -91,7 +91,7 @@ const Header = () => {
                 '/payments': '付款/欠款',
                 '/receipts': '查看收據/證書',
                 '/requests/select': '覆課/補堂/請假申請',
-                '/myqrcode': '我的QR code',
+                '/myqrcode': '我的資料',
                 '/mycalendar': '我的日曆',
                 '/myevents': '我的報名活動',
                 '/feedback': '意見回饋',
