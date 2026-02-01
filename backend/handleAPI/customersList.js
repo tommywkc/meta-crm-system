@@ -107,6 +107,10 @@ router.put('/customers/:id', authMiddleware, roleMiddleware('admin'), async (req
       return res.status(404).json({ message: '客戶不存在' });
     }
 
+    if (updateData.mobile) {
+      updateData.mobile = normalizeMobileForStorage(updateData.mobile);
+    }
+
     // 手機／Email 重複檢查（排除自己）
     if (updateData.mobile && String(updateData.mobile) !== String(existing.mobile)) {
       const mobileOwner = await findUserByMobile(updateData.mobile);
@@ -140,14 +144,11 @@ function generateQrToken(mobile) {
   return hash.substring(0, 24);
 }
 
-function normalizeMobileForPassword(mobile) {
+function normalizeMobileForStorage(mobile) {
   if (!mobile) return '';
   const digits = String(mobile).replace(/\D/g, '');
   if (digits.startsWith('852') && digits.length > 8) {
     return digits.slice(3);
-  }
-  if (digits.length > 8) {
-    return digits.slice(-8);
   }
   return digits;
 }
@@ -162,6 +163,8 @@ router.post('/customers', authMiddleware, roleMiddleware('admin'), async (req, r
       return res.status(400).json({ message: '缺少必要的客戶資料' });
     }
 
+    newCustomer.mobile = normalizeMobileForStorage(newCustomer.mobile);
+
     // 手機／Email 重複檢查（給前端清楚訊息）
     const mobileOwner = await findUserByMobile(newCustomer.mobile);
     if (mobileOwner) {
@@ -175,7 +178,7 @@ router.post('/customers', authMiddleware, roleMiddleware('admin'), async (req, r
     }
 
     if (newCustomer.password == null) {
-      newCustomer.password = normalizeMobileForPassword(newCustomer.mobile);
+      newCustomer.password = newCustomer.mobile;
     }
 
     const qr_token = generateQrToken(newCustomer.mobile);
