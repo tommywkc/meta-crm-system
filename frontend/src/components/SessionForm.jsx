@@ -21,7 +21,7 @@ const SessionForm = ({
   const [date, setDate] = useState(null);
   const [time, setTime] = useState('09:00');
   const [duration, setDuration] = useState(60);
-  const [capacity, setCapacity] = useState('');
+  const [capacity, setCapacity] = useState('60');
   const [eventId, setEventId] = useState(propEventId || initialData.event_id || null);
   const [sessionNameOptions, setSessionNameOptions] = useState([]);
 
@@ -43,7 +43,8 @@ const SessionForm = ({
     }
 
     setDuration(s.duration_minutes != null ? s.duration_minutes : 60);
-    setCapacity(s.capacity != null ? String(s.capacity) : '');
+    const isEdit = Boolean(s.session_id);
+    setCapacity(s.capacity != null ? String(s.capacity) : (isEdit ? '' : '60'));
     setEventId(propEventId || s.event_id || null);
   }, [initialData, propEventId]);
 
