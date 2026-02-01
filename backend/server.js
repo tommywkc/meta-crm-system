@@ -125,6 +125,8 @@ app.get('/api/me', authMiddleware, async (req, res) => {
       name: user.name,
       role: user.role,
       username: user.email || req.user.username,
+      email: user.email || null,
+      mobile: user.mobile || null,
       qr_token: user.qr_token || null
     };
     return res.json(profile);

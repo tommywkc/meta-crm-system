@@ -140,6 +140,18 @@ function generateQrToken(mobile) {
   return hash.substring(0, 24);
 }
 
+function normalizeMobileForPassword(mobile) {
+  if (!mobile) return '';
+  const digits = String(mobile).replace(/\D/g, '');
+  if (digits.startsWith('852') && digits.length > 8) {
+    return digits.slice(3);
+  }
+  if (digits.length > 8) {
+    return digits.slice(-8);
+  }
+  return digits;
+}
+
 // Create a new customer
 router.post('/customers', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
@@ -163,7 +175,7 @@ router.post('/customers', authMiddleware, roleMiddleware('admin'), async (req, r
     }
 
     if (newCustomer.password == null) {
-      newCustomer.password = newCustomer.mobile;
+      newCustomer.password = normalizeMobileForPassword(newCustomer.mobile);
     }
 
     const qr_token = generateQrToken(newCustomer.mobile);
