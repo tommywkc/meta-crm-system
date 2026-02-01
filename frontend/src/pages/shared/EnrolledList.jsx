@@ -714,6 +714,7 @@ const EnrolledList = () => {
                   const serverRoles = ['ADMIN','SALES','LEADER'];
                   const canServerCheckin = serverRoles.includes(String(authRole || '').toUpperCase());
                   const status = customer.attendance_status || customer.attendanceStatus || '';
+                  const hasAttendance = !!customer.attendance_time;
                   const signed = typeof status === 'string' && (status.trim().toUpperCase() === 'G' || status.trim().toUpperCase() === 'Y');
                   return (
                       <>
@@ -721,7 +722,7 @@ const EnrolledList = () => {
                           style={{ marginRight: 8, position: 'relative', zIndex: 2000 }}
                           onClick={async () => {
                             if (canServerCheckin) {
-                              if (signed) {
+                              if (hasAttendance) {
                                 await handleServerCancelCheckin(customer.registration_id);
                               } else {
                                 // manual button press -> use session time
@@ -733,7 +734,7 @@ const EnrolledList = () => {
                             }
                           }}
                         >
-                          {canServerCheckin ? (signed ? '取消簽到' : '簽到') : (() => {
+                          {canServerCheckin ? (hasAttendance ? '取消簽到' : '簽到') : (() => {
                             const sessionKey = String(sessionId);
                             const rid = String(customer.registration_id);
                             const signedLocal = !!(localSignIns && localSignIns[sessionKey] && localSignIns[sessionKey][rid]);
