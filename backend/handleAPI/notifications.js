@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
-const { listByUserId } = require('../dao/notificationsDao');
+const { listByUserId, getUnreadCount, markAllAsRead } = require('../dao/notificationsDao');
 
 router.get('/notifications/user', authMiddleware, async (req, res) => {
   try {
@@ -15,6 +15,28 @@ router.get('/notifications/user', authMiddleware, async (req, res) => {
     console.error('Get user notifications failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
   }
+});
+
+router.get('/notifications/unread-count', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.sub;
+        const count = await getUnreadCount(userId);
+        return res.json({ count });
+    } catch (error) {
+        console.error('Get unread count failed:', error);
+        return res.status(500).json({ message: '伺服器錯誤' });
+    }
+});
+
+router.post('/notifications/mark-read-all', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.sub;
+        await markAllAsRead(userId);
+        return res.json({ success: true });
+    } catch (error) {
+        console.error('Mark all readd failed:', error);
+        return res.status(500).json({ message: '伺服器錯誤' });
+    }
 });
 
 module.exports = router;

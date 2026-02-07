@@ -280,6 +280,7 @@ CREATE TABLE IF NOT EXISTS NOTIFICATIONS (
     user_id BIGINT,
     description TEXT NOT NULL,
     template TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by_id BIGINT,
     PRIMARY KEY (notification_id),
