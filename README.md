@@ -1,5 +1,5 @@
 # meta-academy-crm — Local Development and Testing Guide
-
+1
 ## Brief Description
 - This project contains frontend and backend examples:
   - `frontend`: React single-page application (dev server at http://localhost:3000)
