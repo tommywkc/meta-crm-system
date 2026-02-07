@@ -72,7 +72,7 @@ async function listUsersByEventWithStatuses(event_id, statuses = ['CONFIRMED']) 
   }
 
   const sql = `
-    SELECT DISTINCT
+    SELECT
       e.enrollment_id,
       e.status,
       u.user_id,
@@ -80,14 +80,17 @@ async function listUsersByEventWithStatuses(event_id, statuses = ['CONFIRMED']) 
       u.role,
       u.mobile,
       u.email,
-      p.payment_id,
-      p.issued_certificate,
-      p.issued_receipt
+      MAX(p.payment_id) as payment_id,
+      BOOL_OR(p.issued_certificate) as issued_certificate,
+      BOOL_OR(p.issued_receipt) as issued_receipt
     FROM EVENT_ENROLLMENTS e
     JOIN USERS u ON e.user_id = u.user_id
-    LEFT JOIN PAYMENTS p ON p.enrollment_id = e.enrollment_id
+    LEFT JOIN PAYMENTS p
+      ON p.enrollment_id = e.enrollment_id
+      OR (p.enrollment_id IS NULL AND p.event_id = e.event_id AND p.user_id = e.user_id)
     WHERE e.event_id = $1
       ${statusClause}
+    GROUP BY e.enrollment_id, e.status, u.user_id, u.name, u.role, u.mobile, u.email
     ORDER BY u.user_id
   `;
 

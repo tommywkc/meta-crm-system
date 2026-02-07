@@ -6,8 +6,8 @@ import { handleListConfirmedUsersByEvent } from '../../api/enrollmentAPI';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleGetSessionById, handleListSessionAttendees, handleDeleteSessionRegistration, handleCheckinRegistration, handleCancelCheckinRegistration, handleGetRegistrationAttendance } from '../../api/sessionAPI';
 import { formatDateTimeForDisplay, formatTimeForDisplay, formatTimeForDisplayInHK } from '../../utils/dateFormatter';
-import { handleUploadCertificate } from '../../api/certificatesAPI';
-import { handleUploadReceipt } from '../../api/receiptsAPI';
+import { handleUploadCertificate, handleDeleteCertificate } from '../../api/certificatesAPI';
+import { handleUploadReceipt, handleDeleteReceipt } from '../../api/receiptsAPI';
 import Scanner from '../../components/Scanner';
 
 const statusTranslations = {
@@ -511,6 +511,46 @@ const EnrolledList = () => {
     input.click();
   };
 
+  const handleDeleteCert = async (customer) => {
+    if (!eventId || !customer.user_id) return;
+    if (!window.confirm('確認要刪除證書嗎？此動作將刪除雲端檔案並重設狀態。')) return;
+    try {
+      await handleDeleteCertificate({
+         eventId,
+         userId: customer.user_id,
+         paymentId: customer.payment_id
+      });
+        setMembers((prev) => prev.map((m) => (
+          String(m.user_id) === String(customer.user_id)
+            ? { ...m, issued_certificate: false }
+            : m
+        )));
+        alert('證書已刪除');
+    } catch (err) {
+      alert(err.message || '刪除失敗');
+    }
+  };
+
+  const handleDeleteRcpt = async (customer) => {
+    if (!eventId || !customer.user_id) return;
+    if (!window.confirm('確認要刪除收據嗎？此動作將刪除雲端檔案並重設狀態。')) return;
+    try {
+      await handleDeleteReceipt({
+         eventId,
+         userId: customer.user_id,
+         paymentId: customer.payment_id
+      });
+        setMembers((prev) => prev.map((m) => (
+          String(m.user_id) === String(customer.user_id)
+            ? { ...m, issued_receipt: false }
+            : m
+        )));
+        alert('收據已刪除');
+    } catch (err) {
+      alert(err.message || '刪除失敗');
+    }
+  };
+
   const handleDownloadCSV = () => {
     if (!members || members.length === 0) {
       alert('沒有會員可下載');
@@ -700,11 +740,49 @@ const EnrolledList = () => {
                   ? [
                       {
                         header: '證書',
-                        render: (customer) => (customer.issued_certificate ? '已發放' : '未發放')
+                        render: (customer) => (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>{customer.issued_certificate ? '已發放' : '未發放'}</span>
+                            {customer.issued_certificate ? (
+                              <button 
+                                style={{ fontSize: 12, padding: '2px 6px', color: 'red' }} 
+                                onClick={() => handleDeleteCert(customer)}
+                              >
+                                刪除
+                              </button>
+                            ) : (
+                              <button 
+                                style={{ fontSize: 12, padding: '2px 6px' }}
+                                onClick={() => handleCertificateUpload(customer)}
+                              >
+                                上傳
+                              </button>
+                            )}
+                          </div>
+                        )
                       },
                       {
                         header: '收據',
-                        render: (customer) => (customer.issued_receipt ? '已發放' : '未發放')
+                        render: (customer) => (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>{customer.issued_receipt ? '已發放' : '未發放'}</span>
+                            {customer.issued_receipt ? (
+                              <button 
+                                style={{ fontSize: 12, padding: '2px 6px', color: 'red' }} 
+                                onClick={() => handleDeleteRcpt(customer)}
+                              >
+                                刪除
+                              </button>
+                            ) : (
+                              <button 
+                                style={{ fontSize: 12, padding: '2px 6px' }}
+                                onClick={() => handleReceiptUpload(customer)}
+                              >
+                                上傳
+                              </button>
+                            )}
+                          </div>
+                        )
                       }
                     ]
                   : [])
@@ -763,18 +841,6 @@ const EnrolledList = () => {
                       }}
                     >
                       退款
-                    </button>
-                    <button
-                      style={{ marginLeft: 8 }}
-                      onClick={() => handleCertificateUpload(customer)}
-                    >
-                      上傳證書
-                    </button>
-                    <button
-                      style={{ marginLeft: 8 }}
-                      onClick={() => handleReceiptUpload(customer)}
-                    >
-                      上傳收據
                     </button>
                   </>
                 );

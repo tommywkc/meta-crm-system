@@ -21,6 +21,20 @@ export async function handleUploadCertificate({ eventId, userId, paymentId, file
   return payload;
 }
 
+export async function handleDeleteCertificate({ eventId, userId, paymentId }) {
+  const response = await fetch(apiUrl('/api/certificates/delete'), {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ eventId, userId, paymentId })
+  });
+  const payload = await response.json();
+  if (!response.ok || payload?.success === false) {
+    throw new Error(payload?.error || '刪除證書失敗');
+  }
+  return payload;
+}
+
 export async function handleListMyCertificateFiles() {
   const response = await fetch(apiUrl('/api/certificates/my-files'), {
     method: 'GET',
