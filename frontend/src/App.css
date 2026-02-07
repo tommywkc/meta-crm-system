@@ -101,3 +101,95 @@
     display: flex; /* Show buttons on smaller screens */
   }
 }
+
+/* Common Table Styles - "Upcoming 5 Lessons" Theme */
+.common-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+.common-table th {
+  border-bottom: 2px solid #02386f;
+  text-align: left;
+  padding: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+
+
+h2 {
+  color: #333; /* Dark Gray */
+  font-weight: bold;
+  font-size: 20px;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.common-table td {
+  border-bottom: 1px solid #a5a5a5;
+  padding: 8px;
+  vertical-align: middle;
+  color: #333;
+}
+
+/* Global Button Styles */
+button, .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px; /* Reduced padding to match Logout button height */
+  font-size: 13px;   /* Reduced font size to match Logout button */
+  font-weight: 500;
+  line-height: normal;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #ccc; /* Light gray border */
+  background-color: #f0f0f0; /* Light gray background */
+  color: #000000; /* Black text */
+}
+
+button:hover:not(:disabled), .btn:hover:not(:disabled) {
+  background-color: #e0e0e0;
+  border-color: #bbb;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+button:disabled, .btn:disabled {
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Delete / Danger Button */
+button.btn-danger, .btn-danger {
+  background-color: white;
+  color: #dc2626; /* Red 600 */
+  border: 1px solid #dc2626;
+}
+
+button.btn-danger:hover:not(:disabled), .btn-danger:hover:not(:disabled) {
+  background-color: #fef2f2;
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+/* Secondary / Outline Button */
+button.btn-secondary, .btn-secondary {
+  background-color: white;
+  color: #093e73;
+  border: 1px solid #093e73;
+}
+
+button.btn-secondary:hover:not(:disabled), .btn-secondary:hover:not(:disabled) {
+  background-color: #f0f9ff;
+}
+
+/* Margin utility for button groups */
+button + button, .btn + .btn {
+  margin-left: 8px;
+}
+

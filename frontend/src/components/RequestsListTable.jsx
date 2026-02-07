@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { tableStyle, thTdStyle } from '../styles/TableStyles';
+import CommonTable from './CommonTable';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -90,7 +90,6 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = (user?.role || '').toLowerCase() === 'admin';
-  const columnCount = isAdmin ? 8 : 7;
   const hasData = requests && requests.length > 0;
 
   const handleApprove = (req) => {
@@ -105,82 +104,70 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
     navigate(`/requests/${req.request_id}`, { state: { request: req } });
   };
 
+  const headers = ['申請編號', '申請人', '申請類型', '申請內容', '狀態', '申請時間', '條件衝突', '操作'];
+
   return (
-    <table style={tableStyle}>
-      <thead>
+    <CommonTable headers={headers}>
+      {loading && (
         <tr>
-          <th style={thTdStyle}>申請編號</th>
-          <th style={thTdStyle}>申請人</th>
-          <th style={thTdStyle}>申請類型</th>
-          <th style={thTdStyle}>申請內容</th>
-          <th style={thTdStyle}>狀態</th>
-          <th style={thTdStyle}>申請時間</th>
-          <th style={thTdStyle}>條件衝突</th>
-          <th style={thTdStyle}>操作</th>
+          <td colSpan={8}>載入中…</td>
         </tr>
-      </thead>
-      <tbody>
-        {loading && (
-          <tr>
-            <td style={thTdStyle} colSpan={columnCount}>載入中…</td>
-          </tr>
-        )}
-        {!loading && hasData && requests.map((req) => {
-          const typeKey = (req.request_type || '').toString().toUpperCase();
-          const typeLabel = TYPE_LABELS[typeKey] || req.request_type || '-';
-          const requestTimeLabel = req.request_time ? formatDateTimeForDisplay(req.request_time) : '-';
-          const applicant = req.user_name ? `${req.user_name} (${req.user_id})` : req.user_id || '-';
-          const isPending = (req.status || '').toString().toUpperCase() === 'PENDING';
-          const oldSession = {
-            session_id: req.old_session_id,
-            session_name: req.old_session_name,
-            event_name: req.old_event_name,
-            datetime_start: req.old_session_start,
-          };
-          const newSession = {
-            session_id: req.new_session_id,
-            session_name: req.new_session_name,
-            event_name: req.new_event_name,
-            datetime_start: req.new_session_start,
-          };
-          return (
-            <tr key={req.request_id}>
-              <td style={thTdStyle}>{req.request_id}</td>
-              <td style={thTdStyle}>{applicant}</td>
-              <td style={thTdStyle}>{typeLabel || '-'}</td>
-              <td style={thTdStyle}>{renderRequestContent(typeKey, oldSession, newSession)}</td>
-              <td style={thTdStyle}>{renderStatus(req.status)}</td>
-              <td style={thTdStyle}>{requestTimeLabel}</td>
-              <td style={thTdStyle}>{(req.under_3bday || req.time_conflict) ? '有衝突' : '無衝突'}</td>
-              <td style={{ ...thTdStyle, minWidth: 160 }}>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      )}
+      {!loading && hasData && requests.map((req) => {
+        const typeKey = (req.request_type || '').toString().toUpperCase();
+        const typeLabel = TYPE_LABELS[typeKey] || req.request_type || '-';
+        const requestTimeLabel = req.request_time ? formatDateTimeForDisplay(req.request_time) : '-';
+        const applicant = req.user_name ? `${req.user_name} (${req.user_id})` : req.user_id || '-';
+        const isPending = (req.status || '').toString().toUpperCase() === 'PENDING';
+        const oldSession = {
+          session_id: req.old_session_id,
+          session_name: req.old_session_name,
+          event_name: req.old_event_name,
+          datetime_start: req.old_session_start,
+        };
+        const newSession = {
+          session_id: req.new_session_id,
+          session_name: req.new_session_name,
+          event_name: req.new_event_name,
+          datetime_start: req.new_session_start,
+        };
+        return (
+          <tr key={req.request_id}>
+            <td>{req.request_id}</td>
+            <td>{applicant}</td>
+            <td>{typeLabel || '-'}</td>
+            <td>{renderRequestContent(typeKey, oldSession, newSession)}</td>
+            <td>{renderStatus(req.status)}</td>
+            <td>{requestTimeLabel}</td>
+            <td>{(req.under_3bday || req.time_conflict) ? '有衝突' : '無衝突'}</td>
+            <td style={{ minWidth: 160 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => handleViewDetail(req)}
+                >
+                  詳情
+                </button>
+                {isAdmin && (
                   <button
                     type="button"
-                    onClick={() => handleViewDetail(req)}
+                    onClick={() => handleApprove(req)}
+                    disabled={!isPending}
                   >
-                    詳情
+                    {isPending ? '批核' : '已批核'}
                   </button>
-                  {isAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => handleApprove(req)}
-                      disabled={!isPending}
-                    >
-                      {isPending ? '批核' : '已批核'}
-                    </button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          );
-        })}
-        {!loading && !hasData && (
-          <tr>
-            <td style={thTdStyle} colSpan={columnCount}>暫無申請紀錄</td>
+                )}
+              </div>
+            </td>
           </tr>
-        )}
-      </tbody>
-    </table>
+        );
+      })}
+      {!loading && !hasData && (
+        <tr>
+          <td colSpan={8}>暫無申請紀錄</td>
+        </tr>
+      )}
+    </CommonTable>
   );
 };
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { apiUrl } from '../../api/apiBase';
+import CommonTable from '../../components/CommonTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const mockHomework = [
 	{ id: 'H1001', subject: 'AI Animation 9A', assignment: 'Project 1', due: '2025-11-05', status: '未上傳', file: null },
@@ -12,43 +13,48 @@ const Homework = () => {
 	const [uploading, setUploading] = useState({});
 	const [error, setError] = useState('');
 
+    // Mock upload handler
 	const handleFileChange = async (e, item) => {
 		const file = e.target.files && e.target.files[0];
 		if (!file) return;
 
-		// 開始上傳
 		setUploading((s) => ({ ...s, [item.id]: true }));
 		setError('');
+        
+        // Simulate upload delay
+        setTimeout(() => {
+            setUploading((s) => ({ ...s, [item.id]: false }));
+            setList(prev => prev.map(h => h.id === item.id ? { ...h, status: '已上傳', file: file.name } : h ));
+            alert(`已上傳 ${file.name}`);
+        }, 1500);
+	};
 
-		try {
-			const Homework = () => null;
+    const handleDownloadFile = (url) => {
+        window.open(url, '_blank');
+    };
 
-			export default Homework;
-			<table style={tableStyle}>
-				<thead>
-								<tr>
-									<th style={thTdStyle}>課程</th>
-									<th style={thTdStyle}>Assignment</th>
-									<th style={thTdStyle}>截止</th>
-									<th style={thTdStyle}>狀態</th>
-									<th style={thTdStyle}>上傳</th>
-								</tr>
-				</thead>
-				<tbody>
+    const headers = ['課程', 'Assignment', '截止', '狀態', '上傳'];
+
+	return (
+		<PageContainer>
+            <PageHeader title="我的功課 (Member)" />
+            {error && <div style={{ color: 'red', marginBottom: 10 }}>{error}</div>}
+            
+			<CommonTable headers={headers}>
 					{list.map((h) => (
 						<tr key={h.id}>
-							<td style={thTdStyle}>{h.subject}</td>
-							<td style={thTdStyle}>{h.assignment}</td>
-							<td style={thTdStyle}>{h.due}</td>
-							<td style={thTdStyle}>
+							<td>{h.subject}</td>
+							<td>{h.assignment}</td>
+							<td>{h.due}</td>
+							<td>
 								{h.status}
 								{h.file && (
-									<div>
+									<div style={{ fontSize: '0.9em', color: '#666', marginTop: 4 }}>
 										檔案: {h.file}
 										{h.fileUrl && (
 											<button 
 												onClick={() => handleDownloadFile(h.fileUrl)}
-												style={{ marginLeft: '8px', padding: '4px 8px' }}
+												style={{ marginLeft: '8px', padding: '2px 6px', fontSize: '0.8em' }}
 											>
 												下載
 											</button>
@@ -56,20 +62,20 @@ const Homework = () => {
 									</div>
 								)}
 							</td>
-							<td style={thTdStyle}>
+							<td>
 								<input 
 									type="file" 
 									onChange={(e) => handleFileChange(e, h)}
 									disabled={!!uploading[h.id]}
 									accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
+                                    style={{ maxWidth: 200 }}
 								/>
-								{uploading[h.id] && <div>上傳中…</div>}
+								{uploading[h.id] && <span style={{ marginLeft: 8, color: 'blue' }}>上傳中…</span>}
 							</td>
 						</tr>
 					))}
-				</tbody>
-			</table>
-		</div>
+			</CommonTable>
+		</PageContainer>
 	);
 };
 

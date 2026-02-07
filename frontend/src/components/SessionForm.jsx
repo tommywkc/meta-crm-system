@@ -4,6 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/BatchSessionStyles.css';
 import { formatForDisplay, toISODateTime, toLocalISOString } from '../utils/dateFormatter';
 import { handleListSessionsByEventId } from '../api/sessionAPI';
+import { PageContainer, PageHeader } from './CommonPage';
 
 const SessionForm = ({
   title = '場次表單',
@@ -127,8 +128,12 @@ const SessionForm = ({
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>{title}</h1>
+    <PageContainer>
+      <PageHeader 
+        title={title} 
+        showBack={true} 
+        onBack={onCancel} 
+      />
       <form onSubmit={handleSubmit} style={{ marginTop: 12, maxWidth: 700 }}>
         <div className="session-card">
           {showSessionId && initialData.session_id && (
@@ -242,7 +247,7 @@ const SessionForm = ({
           </div>
         </div>
       </form>
-    </div>
+    </PageContainer>
   );
 };
 

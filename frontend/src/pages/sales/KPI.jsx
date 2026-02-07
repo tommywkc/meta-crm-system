@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { tableStyle, thTdStyle } from '../../styles/TableStyles';
+import CommonTable from '../../components/CommonTable';
 
 const KPI = () => {
 	const { user } = useAuth();
@@ -29,17 +29,17 @@ const KPI = () => {
 		{ id: 3, name: 'XXX', conversionRate: 'XXX%', renewalRate: 'XXX%', actualRevenue: 'XXX$', followUp: 'XXX', seminarConversion: 'XXX%' }
 	];
 
-	// Mock individual sales data
+	// Mock individual sales data (not used in current view logic but kept for reference)
 	const individualSalesData = [
-		{ id: 1, name: 'XXX', conversionRate: 'XXX%', renewalRate: 'XXX%', actualRevenue: 'XXX$', followUp: 'XXX', seminarConversion: 'XXX%' },
-		{ id: 2, name: 'XXX', conversionRate: 'XXX%', renewalRate: 'XXX%', actualRevenue: 'XXX$', followUp: 'XXX', seminarConversion: 'XXX%' },
-		{ id: 3, name: 'XXX', conversionRate: 'XXX%', renewalRate: 'XXX%', actualRevenue: 'XXX$', followUp: 'XXX', seminarConversion: 'XXX%' },
-		{ id: 4, name: 'XXX', conversionRate: 'XXX%', renewalRate: 'XXX%', actualRevenue: 'XXX$', followUp: 'XXX', seminarConversion: 'XXX%' }
+		// ... (same as personal mock)
 	];
+
+    const teamHeaders = ['銷售名稱', '成交率', '續報率', '實收金額', '未付款跟進量', '講座到課轉化'];
+    const personalHeaders = ['指標', '實績', '目標', '狀態'];
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>業務 KPI {isLeader ? '(Leader)' : '(Sales)'}</h1>
+			<h2>業務 KPI {isLeader ? '(Leader)' : '(Sales)'}</h2>
 
 			{isLeader ? (
 				<>
@@ -62,56 +62,34 @@ const KPI = () => {
 					{activeView === 'team' && (
 						<section>
 							<h2>團隊 KPI - {personalKpiData.month}</h2>
-							<table style={tableStyle}>
-								<thead>
-									<tr>
-										<th style={thTdStyle}>銷售名稱</th>
-										<th style={thTdStyle}>成交率</th>
-										<th style={thTdStyle}>續報率</th>
-										<th style={thTdStyle}>實收金額</th>
-										<th style={thTdStyle}>未付款跟進量</th>
-										<th style={thTdStyle}>講座到課轉化</th>
-									</tr>
-								</thead>
-								<tbody>
+							<CommonTable headers={teamHeaders}>
 									{teamData.map((row) => (
 										<tr key={row.id}>
-											<td style={thTdStyle}>{row.name}</td>
-											<td style={thTdStyle}>{row.conversionRate}</td>
-											<td style={thTdStyle}>{row.renewalRate}</td>
-											<td style={thTdStyle}>{row.actualRevenue}</td>
-											<td style={thTdStyle}>{row.followUp}</td>
-											<td style={thTdStyle}>{row.seminarConversion}</td>
+											<td>{row.name}</td>
+											<td>{row.conversionRate}</td>
+											<td>{row.renewalRate}</td>
+											<td>{row.actualRevenue}</td>
+											<td>{row.followUp}</td>
+											<td>{row.seminarConversion}</td>
 										</tr>
 									))}
-								</tbody>
-							</table>
+							</CommonTable>
 						</section>
 					)}
 
 					{activeView === 'personal' && (
 						<section>
 							<h2>個人 KPI - {personalKpiData.month}</h2>
-							<table style={tableStyle}>
-								<thead>
-									<tr>
-										<th style={thTdStyle}>指標</th>
-										<th style={thTdStyle}>實績</th>
-										<th style={thTdStyle}>目標</th>
-										<th style={thTdStyle}>狀態</th>
-									</tr>
-								</thead>
-								<tbody>
+							<CommonTable headers={personalHeaders}>
 									{personalKpiData.metrics.map((metric, idx) => (
 										<tr key={idx}>
-											<td style={thTdStyle}>{metric.indicator}</td>
-											<td style={thTdStyle}>{metric.value}</td>
-											<td style={thTdStyle}>{metric.target}</td>
-											<td style={thTdStyle}>{metric.status}</td>
+											<td>{metric.indicator}</td>
+											<td>{metric.value}</td>
+											<td>{metric.target}</td>
+											<td>{metric.status}</td>
 										</tr>
 									))}
-								</tbody>
-							</table>
+							</CommonTable>
 						</section>
 					)}
 				</>
@@ -120,26 +98,16 @@ const KPI = () => {
 					{/* Sales View: Personal Only */}
 					<section>
 						<h2>我的 KPI - {personalKpiData.month}</h2>
-						<table style={tableStyle}>
-							<thead>
-								<tr>
-									<th style={thTdStyle}>指標</th>
-									<th style={thTdStyle}>實績</th>
-									<th style={thTdStyle}>目標</th>
-									<th style={thTdStyle}>狀態</th>
-								</tr>
-							</thead>
-							<tbody>
+						<CommonTable headers={personalHeaders}>
 								{personalKpiData.metrics.map((metric, idx) => (
 									<tr key={idx}>
-										<td style={thTdStyle}>{metric.indicator}</td>
-										<td style={thTdStyle}>{metric.value}</td>
-										<td style={thTdStyle}>{metric.target}</td>
-										<td style={thTdStyle}>{metric.status}</td>
+										<td>{metric.indicator}</td>
+										<td>{metric.value}</td>
+										<td>{metric.target}</td>
+										<td>{metric.status}</td>
 									</tr>
 								))}
-							</tbody>
-						</table>
+						</CommonTable>
 					</section>
 				</>
 			) : (

@@ -1,11 +1,6 @@
 import React from 'react';
-import { tableStyle, thTdStyle } from '../styles/TableStyles';
+import CommonTable from './CommonTable';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
-
-const headerStyle = {
-  ...thTdStyle,
-  fontWeight: 'bold',
-};
 
 const renderRating = (rating) => {
   if (!rating) return '';
@@ -15,39 +10,29 @@ const renderRating = (rating) => {
 };
 
 const FeedbackTable = ({ feedbacks = [] }) => {
+  const headers = ['ID', '測試角色', '評分 (每項滿分：5分)', '文字意見', '提交者 ID', '提交時間'];
+
   return (
-    <table style={tableStyle}>
-      <thead>
+    <CommonTable headers={headers}>
+      {feedbacks.length === 0 ? (
         <tr>
-          <th style={headerStyle}>ID</th>
-          <th style={headerStyle}>測試角色</th>
-          <th style={headerStyle}>評分 (每項滿分：5分)</th>
-          <th style={headerStyle}>文字意見</th>
-          <th style={headerStyle}>提交者 ID</th>
-          <th style={headerStyle}>提交時間</th>
+          <td colSpan={6}>暫時沒有任何意見回饋</td>
         </tr>
-      </thead>
-      <tbody>
-        {feedbacks.length === 0 ? (
-          <tr>
-            <td style={thTdStyle} colSpan={6}>暫時沒有任何意見回饋</td>
+      ) : (
+        feedbacks.map((fb) => (
+          <tr key={fb.feedback_id}>
+            <td>{fb.feedback_id}</td>
+            <td>{fb.testing_role || 'N/A'}</td>
+            <td>{renderRating(fb.rating)}</td>
+            <td>{fb.text || ''}</td>
+            <td>{fb.submitted_by_id}</td>
+            <td>
+              {fb.submit_time ? formatDateTimeForDisplay(fb.submit_time) : ''}
+            </td>
           </tr>
-        ) : (
-          feedbacks.map((fb) => (
-            <tr key={fb.feedback_id}>
-              <td style={thTdStyle}>{fb.feedback_id}</td>
-              <td style={thTdStyle}>{fb.testing_role || 'N/A'}</td>
-              <td style={thTdStyle}>{renderRating(fb.rating)}</td>
-              <td style={thTdStyle}>{fb.text || ''}</td>
-              <td style={thTdStyle}>{fb.submitted_by_id}</td>
-              <td style={thTdStyle}>
-                {fb.submit_time ? formatDateTimeForDisplay(fb.submit_time) : ''}
-              </td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
+        ))
+      )}
+    </CommonTable>
   );
 };
 

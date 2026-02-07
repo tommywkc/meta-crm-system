@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Calendar from '../../components/Calendar';
 import { handleListMyUpcomingSessions, handleListMySessionsByYear } from '../../api/sessionAPI';
 import { formatDateKey, formatDateTimeForDisplay, formatForDisplay } from '../../utils/dateFormatter';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const MemberCalendarPage = () => {
 	const navigate = useNavigate();
@@ -86,9 +87,9 @@ const MemberCalendarPage = () => {
 	};
 
 	return (
-		<div>
-			<h1>我的日曆</h1>
-
+		<PageContainer>
+			<PageHeader title="我的日曆" />
+			{/* Original Title H2 Removed */}
 			<section>
 				<h2>課程日曆</h2>
 				<div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
@@ -138,7 +139,7 @@ const MemberCalendarPage = () => {
 					</div>
 				</div>
 			</section>
-		</div>
+		</PageContainer>
 	);
 };
 

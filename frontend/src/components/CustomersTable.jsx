@@ -1,57 +1,52 @@
 import React from 'react';
-import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
+import CommonTable from './CommonTable';
 
 const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, renderActions, showAdminActions = true, extraColumns = [] }) => {
+  const headers = [
+    '用戶編號',
+    '姓名',
+    '角色',
+    '電話',
+    '電子郵件',
+    ...extraColumns.map(col => col.header),
+    '操作'
+  ];
+
   return (
-    <table style={tableStyle}>
-      <thead>
-        <tr>
-          <th style={thTdStyle}>用戶編號</th>
-          <th style={thTdStyle}>姓名</th>
-          <th style={thTdStyle}>角色</th>
-          <th style={thTdStyle}>電話</th>
-          <th style={thTdStyle}>電子郵件</th>
+    <CommonTable headers={headers}>
+      {customers.map((c) => (
+        <tr key={c.id}>
+          <td>{c.user_id}</td>
+          <td>{c.name}</td>
+          <td>{c.role}</td>
+          <td>{c.mobile}</td>
+          <td>{c.email ? c.email : '無'}</td>
           {extraColumns.map((col, idx) => (
-            <th key={`extra-head-${idx}`} style={thTdStyle}>{col.header}</th>
-          ))}
-          <th style={thTdStyle}>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        {customers.map((c) => (
-          <tr key={c.id}>
-            <td style={thTdStyle}>{c.user_id}</td>
-            <td style={thTdStyle}>{c.name}</td>
-            <td style={thTdStyle}>{c.role}</td>
-            <td style={thTdStyle}>{c.mobile}</td>
-            <td style={thTdStyle}>{c.email ? c.email : '無'}</td>
-            {extraColumns.map((col, idx) => (
-              <td key={`extra-cell-${c.id}-${idx}`} style={thTdStyle}>
-                {col.render ? col.render(c) : ''}
-              </td>
-            ))}
-            <td style={thTdStyle}>
-              <button onClick={() => onView && onView(c.user_id)}>詳情</button>
-              {role === 'ADMIN' && showAdminActions && (
-                <>
-                  <button style={{ marginLeft: 8 }} onClick={() => onEdit && onEdit(c.user_id)}>
-                    編輯
-                  </button>
-                  <button style={{ ...redTextStyle, marginLeft: 8 }} onClick={() => onDelete && onDelete(c.user_id)}>
-                    刪除
-                  </button>
-                </>
-              )}
-              {renderActions && (
-                <span style={{ marginLeft: 8 }}>
-                  {renderActions(c)}
-                </span>
-              )}
+            <td key={`extra-cell-${c.id}-${idx}`}>
+              {col.render ? col.render(c) : ''}
             </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+          ))}
+          <td>
+            <button onClick={() => onView && onView(c.user_id)}>詳情</button>
+            {role === 'ADMIN' && showAdminActions && (
+              <>
+                <button style={{ marginLeft: 8 }} onClick={() => onEdit && onEdit(c.user_id)}>
+                  編輯
+                </button>
+                <button className="btn-danger" style={{ marginLeft: 8 }} onClick={() => onDelete && onDelete(c.user_id)}>
+                  刪除
+                </button>
+              </>
+            )}
+            {renderActions && (
+              <span style={{ marginLeft: 8 }}>
+                {renderActions(c)}
+              </span>
+            )}
+          </td>
+        </tr>
+      ))}
+    </CommonTable>
   );
 };
 

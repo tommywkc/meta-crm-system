@@ -5,6 +5,8 @@ import { handleList, handleFindUserByRole } from '../../api/customersListAPI';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleCreateEnrollment } from '../../api/enrollmentAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import { commonSelectStyle } from '../../styles/SelectStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const Apply = () => {
   const { id } = useParams();
@@ -142,8 +144,8 @@ const Apply = () => {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>講座/課堂報名</h1>
+    <PageContainer>
+      <PageHeader title="講座/課堂報名" />
 
       <form onSubmit={handleSubmit}>
         <div>
@@ -258,7 +260,13 @@ const Apply = () => {
         {event?.price != null && Number(event?.price) > 0 && (
           <div>
             <label>支付方式: </label>
-            <select name="paymentMethod" value={formData.paymentMethod} onChange={handleInputChange} required>
+            <select 
+              name="paymentMethod" 
+              value={formData.paymentMethod} 
+              onChange={handleInputChange} 
+              required
+              style={commonSelectStyle}
+            >
               <option value="CREDITCARD">信用卡 (Credit Card)</option>
               <option value="CASH">現金</option>
               <option value="FPS">轉數快 (FPS)</option>
@@ -276,7 +284,7 @@ const Apply = () => {
           </button>
         </div>
       </form>
-    </div>
+    </PageContainer>
   );
 };
 

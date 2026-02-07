@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleCreateFeedback } from '../../api/feedbackAPI';
- 
+import { commonSelectStyle } from '../../styles/SelectStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
+
  
 const Feedback = () => {
 	const { user } = useAuth();
@@ -86,21 +88,22 @@ const Feedback = () => {
 	};
 
 	return (
-		<div style={{ padding: 20 }}>
-			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-				<h2 style={{ marginTop: 0 }}>意見回饋</h2>
-				{user?.role?.toUpperCase() === 'ADMIN' && (
-					<button
-						style={{ marginLeft: 'auto' }}
+		<PageContainer>
+			<PageHeader
+				title="意見回饋"
+				extra={
+					user?.role?.toUpperCase() === 'ADMIN' && (
+						<button
 							onClick={() => {
 								console.log('View Feedbacks clicked by admin');
 								navigate('/admin/feedbacks');
 							}}
-					>
-						查看所有回饋
-					</button>
-				)}
-			</div>
+						>
+							查看所有回饋
+						</button>
+					)
+				}
+			/>
 			<div style={{ marginTop: 12 , color: '#f59e0b' }}>
 				*選填為項目
 			</div>
@@ -112,7 +115,7 @@ const Feedback = () => {
 					<select
 						value={testRole}
 						onChange={(e) => setTestRole(e.target.value)}
-						style={{ padding: 6, minWidth: 200 }}
+						style={{ ...commonSelectStyle, minWidth: 200 }}
 					>
 						<option value="">請選擇角色</option>
 						<option value="ADMIN">ADMIN</option>
@@ -128,7 +131,7 @@ const Feedback = () => {
 					</label>
 					<select
 						defaultValue=""
-						style={{ padding: 6, minWidth: 200 }}
+						style={{ ...commonSelectStyle, minWidth: 200 }}
 					>
 						<option value="" disabled>請選擇年齡層</option>
 						<option value="under18">18 歲以下</option>
@@ -412,7 +415,7 @@ const Feedback = () => {
 			</div>
 			
 			
-		</div>
+		</PageContainer>
 	);
 };
 

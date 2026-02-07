@@ -9,6 +9,7 @@ import { formatDateTimeForDisplay, formatTimeForDisplay, formatTimeForDisplayInH
 import { handleUploadCertificate, handleDeleteCertificate } from '../../api/certificatesAPI';
 import { handleUploadReceipt, handleDeleteReceipt } from '../../api/receiptsAPI';
 import Scanner from '../../components/Scanner';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const statusTranslations = {
   PENDING: '待付款',
@@ -589,37 +590,42 @@ const EnrolledList = () => {
 
   if (!eventId && !sessionId) {
     return (
-      <div style={{ padding: 20 }}>
-        <h1>已報名會員清單</h1>
+      <PageContainer>
+        <PageHeader title="已報名會員清單" />
         <p>缺少活動或場次 ID，無法載入已報名名單。</p>
-      </div>
+      </PageContainer>
     );
   }
 
 
   return (
-    <div style={{ padding: 20 }}>
+    <PageContainer>
       <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 12 }}>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
         <div style={{ flex: 1 }}>
-          <h1>{isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'}</h1>
+          <PageHeader 
+            title={isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'} 
+            showBack={true} 
+            onBack={async () => { try { await stopAllGlobalInstances(); } catch (e) { /* ignore */ } navigate(-1); }} 
+          />
           {eventInfo && (
-            <div>
-              <p>
+            <div style={{ marginBottom: 4 }}>
+              <p style={{ margin: 0, marginBottom: 4 }}>
                 活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}
               </p>
               {isSessionMode && sessionInfo && (
-                <p>
+                <p style={{ margin: 0 }}>
                   場次 ID: {sessionInfo.session_id} ｜ 場次名稱: {sessionInfo.session_name || 'N/A'} ｜ 時間: {sessionInfo.datetime_start ? formatDateTimeForDisplay(sessionInfo.datetime_start) : 'N/A'}
                 </p>
               )}
-              
             </div>
           )}
         </div>
-
+        
         {isSessionMode && isAdmin && (
-          <Scanner
+          <div style={{ width: 320 }}>
+            <Scanner
             sessionId={sessionId}
             sessionInfo={sessionInfo}
             eventInfo={eventInfo}
@@ -687,7 +693,14 @@ const EnrolledList = () => {
               }
             }}
           />
+          </div>
         )}
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 12 }}>
+        <div style={{ flex: 1 }}>
+          {/* Title Moved Up */}
+        </div>
       </div>
 
       {loading && <p>載入中...</p>}
@@ -849,7 +862,7 @@ const EnrolledList = () => {
           )}
 
           <div style={{ marginTop: 16 }}>
-            <button onClick={async () => { try { await stopAllGlobalInstances(); } catch (e) { /* ignore */ } navigate(-1); }} style={{ marginRight: 8 }}>返回上一頁</button>
+
             {isSessionMode && members.length > 0 && (
               <>
                 <button 
@@ -947,7 +960,7 @@ const EnrolledList = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

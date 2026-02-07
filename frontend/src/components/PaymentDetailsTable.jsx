@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
-import { redTextStyle, greenTextStyle } from '../styles/TableStyles';
+import { commonSelectStyle } from '../styles/SelectStyles';
 
 const currency = new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 });
 
@@ -53,7 +53,7 @@ const PaymentDetailsTable = ({
 			<fieldset>
 				<legend>付款資訊</legend>
 				
-				<table>
+				<table className="common-table">
 					<tbody>
 						<tr>
 							<td><strong>訂單編號：</strong></td>
@@ -120,7 +120,7 @@ const PaymentDetailsTable = ({
 						<fieldset>
 							<legend>更新付款狀態</legend>
 							
-							<table>
+							<table className="common-table">
 								<tbody>
 									<tr>
 										<td><label htmlFor="method">付款方式</label></td>
@@ -130,6 +130,7 @@ const PaymentDetailsTable = ({
 												value={newMethod}
 												onChange={(e) => setNewMethod(e.target.value)}
 												required
+												style={{ ...commonSelectStyle, width: '100%' }}
 											>
 												<option value="">-- 請選擇 --</option>
 												<option value="CREDITCARD">信用卡</option>
@@ -200,6 +201,7 @@ const PaymentDetailsTable = ({
 												value={newStatus}
 												onChange={(e) => setNewStatus(e.target.value)}
 												required
+												style={{ ...commonSelectStyle, width: '100%' }}
 											>
 												<option value="">-- 請選擇 --</option>
 												<option value="PENDING">待付款</option>
@@ -227,17 +229,17 @@ const PaymentDetailsTable = ({
 							
 							<br />
 							
-							<button type="submit" disabled={processing} style={{ ...greenTextStyle }}>
+							<button type="submit" disabled={processing}>
 								{processing ? '處理中...' : (isPending ? '確認付款' : '更新付款')}
 							</button>
 							{' '}
 								<>
-									<button type="button" onClick={onRefund} disabled={processing} style={{ ...redTextStyle }} >
+									<button type="button" onClick={onRefund} disabled={processing} className="btn-danger" >
 										取消並退款
 									</button>
 									{' '}
 								</>
-							<button type="button" onClick={onCancel} disabled={processing}>
+							<button type="button" onClick={onCancel} disabled={processing} className="btn-secondary">
 								取消
 							</button>
 						</fieldset>

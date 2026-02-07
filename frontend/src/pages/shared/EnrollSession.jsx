@@ -5,6 +5,7 @@ import { handleListConfirmedUsersByEvent } from '../../api/enrollmentAPI';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleGetSessionById, handleCreateSessionRegistration } from '../../api/sessionAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const EnrollSession = () => {
   const { id } = useParams(); // event_id from /events/:id/enrollsession
@@ -162,8 +163,12 @@ const EnrollSession = () => {
   // 場次報名頁面不顯示價格與支付方式
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>場次報名</h1>
+    <PageContainer>
+      <PageHeader 
+        title="場次報名" 
+        showBack={true} 
+        onBack={() => navigate(-1)} 
+      />
 
       <form onSubmit={handleSubmit}>
         <div>
@@ -275,7 +280,7 @@ const EnrollSession = () => {
           </button>
         </div>
       </form>
-    </div>
+    </PageContainer>
   );
 };
 

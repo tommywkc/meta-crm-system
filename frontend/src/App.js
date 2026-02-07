@@ -18,7 +18,6 @@ import EventView from './pages/shared/EventView';
 import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
 import Waiting from './pages/admin/Waiting';
-import Subscrip from './pages/admin/Subscrip';
 
 // SalesCustomers removed in favor of shared CustomersList
 import KPI from './pages/sales/KPI';
@@ -188,11 +187,6 @@ function App() {
           <Route path="/waiting" element={
             <ProtectedRoute allowedRole="admin">
               <Waiting />
-            </ProtectedRoute>
-          } />
-          <Route path="/files" element={
-            <ProtectedRoute allowedRole="admin">
-              <Subscrip />
             </ProtectedRoute>
           } />
           <Route path="/admin/requests" element={

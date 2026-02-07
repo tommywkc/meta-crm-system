@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { handleListRequests } from '../../api/requestsAPI';
 import { useAuth } from '../../contexts/AuthContext';
 import RequestViewTable from '../../components/RequestViewTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const RequestView = () => {
 	const { requestId } = useParams();
@@ -41,13 +42,14 @@ const RequestView = () => {
 	}, [request, requestId]);
 
 	return (
-		<div style={{ padding: 20 }}>
-			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-				<div>
-					<h1 style={{ marginBottom: 4 }}>申請詳情</h1>
-					<p style={{ margin: 0, color: '#6b7280' }}>檢視申請的所有欄位資訊。</p>
-				</div>
-			</div>
+		<PageContainer>
+			<PageHeader 
+				title="申請詳情" 
+				showBack={true} 
+				onBack={() => navigate(-1)} 
+			/>
+			<p style={{ marginBottom: 20, color: '#6b7280' }}>檢視申請的所有欄位資訊。</p>
+			{/* Original Title Block Removed */}
 
 			{loading && (
 				<div style={{ marginTop: 16 }}>載入中…</div>
@@ -72,9 +74,8 @@ const RequestView = () => {
 						{isPending ? '批核' : '已批核'}
 					</button>
 				)}
-                <button type="button" onClick={() => navigate('/admin/requests')}>返回列表</button>
 			</div>
-		</div>
+		</PageContainer>
 	);
 };
 

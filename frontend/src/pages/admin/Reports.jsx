@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
+import { commonSelectStyle } from '../../styles/SelectStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const Reports = () => {
 	const [activeTab, setActiveTab] = useState(1);
@@ -70,21 +72,21 @@ const Reports = () => {
 	};
 
 	return (
-		<div style={{ padding: 20 }}>
-			<h1>報表中心 (Admin)</h1>
+		<PageContainer>
+			<PageHeader title="報表中心 (Admin)" />
 
 			{/* Section ① */}
 			<section>
 				<h2>全客戶資料名單</h2>
 				<div>
 					<label>課程篩選: </label>
-					<select>
+					<select style={commonSelectStyle}>
 						<option>全部</option>
 						<option>AI 課</option>
 						<option>AI Agent 課</option>
 					</select>
 					<label>來源: </label>
-					<select>
+					<select style={commonSelectStyle}>
 						<option>全部</option>
 						<option>介紹</option>
 						<option>廣告</option>
@@ -94,7 +96,7 @@ const Reports = () => {
 					到
 					<input type="date" />
 					<label>銷售: </label>
-					<select>
+					<select style={commonSelectStyle}>
 						<option>全部</option>
 						<option>銷售林</option>
 						<option>經理張</option>
@@ -257,7 +259,7 @@ const Reports = () => {
 					<div>
 						<h3>出席過講座名單</h3>
 						<p>課程篩選: 
-							<select>
+							<select style={commonSelectStyle}>
 								<option>全部</option>
 								<option>AI 課</option>
 								<option>AI Agent 課</option>
@@ -290,7 +292,7 @@ const Reports = () => {
 					<div>
 						<h3>未出席講座名單</h3>
 						<p>課程篩選: 
-							<select>
+							<select style={commonSelectStyle}>
 								<option>全部</option>
 								<option>AI 課</option>
 								<option>AI Agent 課</option>
@@ -323,7 +325,10 @@ const Reports = () => {
 				<h2>財務報表</h2>
 				<div>
 					<label>選擇課程: </label>
-					<select onChange={(e) => setSelectedCourse(e.target.value)}>
+					<select 
+						onChange={(e) => setSelectedCourse(e.target.value)}
+						style={commonSelectStyle}
+					>
 						<option>請選擇</option>
 						<option>AI 課</option>
 						<option>AI Agent 課</option>
@@ -364,7 +369,7 @@ const Reports = () => {
 					<p>請選擇課程和月份以查看財務報表</p>
 				)}
 			</section>
-		</div>
+		</PageContainer>
 	);
 };
 

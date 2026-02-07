@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { tableStyle, thTdStyle } from '../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
 const TYPE_LABELS = {
@@ -187,12 +186,12 @@ const RequestViewTable = ({ request }) => {
   if (!request) return null;
 
   return (
-    <table style={tableStyle}>
+    <table className="common-table">
       <tbody>
         {fieldRows.map((row, idx) => (
           <tr key={`${row.label}-${idx}`}>
-            <th style={{ ...thTdStyle, width: 180, textAlign: 'left' }}>{row.label}</th>
-            <td style={thTdStyle}>{row.isNode ? row.value : formatValue(row.value)}</td>
+            <th style={{ width: 180, textAlign: 'left' }}>{row.label}</th>
+            <td>{row.isNode ? row.value : formatValue(row.value)}</td>
           </tr>
         ))}
       </tbody>

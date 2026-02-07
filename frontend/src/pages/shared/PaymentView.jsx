@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleGetPaymentById } from '../../api/paymentAPI';
 import PaymentDetailsTable from '../../components/PaymentDetailsTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const PaymentView = () => {
 	const { paymentId } = useParams();
@@ -55,8 +56,12 @@ const PaymentView = () => {
 	const canEdit = paymentStatus !== 'REFUNDED' && paymentStatus !== 'EXPIRED';
 
 	return (
-		<div>
-			<h1>付款詳情</h1>
+		<PageContainer>
+			<PageHeader 
+				title="付款詳情" 
+				showBack={true} 
+				onBack={handleBack} 
+			/>
 			
 			<PaymentDetailsTable payment={payment} showForm={false} showCasher={isAdmin} />
 			
@@ -68,8 +73,7 @@ const PaymentView = () => {
 					{' '}
 				</>
 			)}
-			<button onClick={handleBack}>返回</button>
-		</div>
+		</PageContainer>
 	);
 };
 

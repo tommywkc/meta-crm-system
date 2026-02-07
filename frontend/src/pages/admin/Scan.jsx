@@ -5,6 +5,7 @@ import { handleScanAttendance } from '../../api/attendanceAPI';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Scanner from '../../components/Scanner';
 import { formatDateTimeForDisplay, formatDateTimeWithSecondsForDisplay } from '../../utils/dateFormatter';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 
 const Scan = () => {
@@ -280,9 +281,9 @@ const Scan = () => {
   const selectedEventForCheckin = events.find(e => String(e.event_id) === String(selectedEventId));
   
   return (
-    <div style={{ padding: 20 }}>
+    <PageContainer>
       <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
-      <h1>QR Code Scanner</h1>
+      <PageHeader title="QR Code Scanner" />
 
       {/* Event select bar with type-to-search */}
       <div style={{ marginBottom: 12 }}>
@@ -325,7 +326,7 @@ const Scan = () => {
             setSearchSessionTerm('');
           }}
           placeholder="輸入或選擇活動..."
-          style={{ padding: 6, minWidth: 400 }}
+          style={{ padding: '4px 12px', fontSize: '13px', border: '1px solid #ccc', borderRadius: '4px', minWidth: 400 }}
         />
         <datalist id="events-list">
           {events.map((ev) => (
@@ -366,7 +367,7 @@ const Scan = () => {
             setSelectedSessionId('');
           }}
           placeholder={selectedEventId ? '輸入或選擇場次...' : '請先選擇活動'}
-          style={{ padding: 6, minWidth: 400 }}
+          style={{ padding: '4px 12px', fontSize: '13px', border: '1px solid #ccc', borderRadius: '4px', minWidth: 400 }}
           disabled={!selectedEventId}
         />
         <datalist id="sessions-list">
@@ -435,7 +436,7 @@ const Scan = () => {
 
 
       {errorMsg && <div style={{ color: 'red', marginTop: 8 }}>{errorMsg}</div>}
-    </div>
+    </PageContainer>
   );
 };
 

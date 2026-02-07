@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { getTypeDisplay } from '../utils/dateFormatter';
-import { redTextStyle } from '../styles/TableStyles';
 import '../styles/BatchSessionStyles.css';
 import { handleFindUsersByRoles } from '../api/customersListAPI';
 import { 
@@ -10,6 +9,8 @@ import {
   formSessionsToBackendPayload, 
   calculateEventDateTimes 
 } from '../utils/sessionDateHelper';
+import { commonSelectStyle } from '../styles/SelectStyles';
+import { PageContainer, PageHeader } from './CommonPage';
 
 const EventForm = ({
   initialData = {},
@@ -141,8 +142,12 @@ const EventForm = ({
   
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>{title}</h1>
+    <PageContainer>
+      <PageHeader 
+        title={title} 
+        showBack={true} 
+        onBack={onCancel} 
+      />
       <form onSubmit={handleSubmit} style={{ marginTop: 12, maxWidth: 700 }}>
         {showEventId && initialData.event_id && (
           <div style={{ marginBottom: 16 }}>
@@ -168,7 +173,7 @@ const EventForm = ({
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              style={{ width: '100%', padding: 8 }}
+              style={{ ...commonSelectStyle, width: '100%' }}
             >
               <option value="">-- 請選擇 --</option>
               <option value="CLASS">課程</option>
@@ -330,7 +335,7 @@ const EventForm = ({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              style={{ width: '100%', padding: 8 }}
+              style={{ ...commonSelectStyle, width: '100%' }}
             >
               <option value="SCHEDULED">已排程</option>
               <option value="CANCELLED">已取消</option>
@@ -468,19 +473,20 @@ const EventForm = ({
   {/* Action buttons */}
         <div style={{ marginTop: 16 }}>
           <button type="submit" style={{ marginRight: 8 }}>{submitButtonText}</button>
-          <button type="button" onClick={onCancel}>取消</button>
+          <button type="button" onClick={onCancel} className="btn-secondary">取消</button>
           {onDelete && (
             <button 
               type="button" 
               onClick={() => onDelete(initialData.event_id)} 
-              style={{ ...redTextStyle, marginLeft: 8 }}
+              className="btn-danger"
+              style={{ marginLeft: 8 }}
             >
               刪除
             </button>
           )}
         </div>
       </form>
-    </div>
+    </PageContainer>
   );
 };
 

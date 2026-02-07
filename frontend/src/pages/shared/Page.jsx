@@ -7,6 +7,7 @@ import { handleListMyActiveEnrolledEvents } from '../../api/enrollmentAPI';
 import { handleListMyUpcomingSessions } from '../../api/sessionAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import StudentWorkWall from '../../components/StudentWorkWall';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const HomePage = () => {
 	const { user } = useAuth();
@@ -92,8 +93,8 @@ const HomePage = () => {
     };
 
 	return (
-		<div style={{ padding: 20 }}>
-			<h2 style={{ marginTop: 30 }}>免費講座</h2>
+		<PageContainer>
+			<PageHeader title="免費講座" />
 			{events.length > 0 ? (
 				<EventsTable 
 					events={events}
@@ -144,7 +145,7 @@ const HomePage = () => {
 			)}
 			
 			<StudentWorkWall />
-		</div>
+		</PageContainer>
 	);
 };
 

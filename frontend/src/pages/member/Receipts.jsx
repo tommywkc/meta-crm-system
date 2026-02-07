@@ -5,7 +5,8 @@ import { handleListMyCertificateFiles } from '../../api/certificatesAPI';
 import { handleListPaymentByUserId } from '../../api/paymentAPI';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { useAuth } from '../../contexts/AuthContext';
-import { tableStyle, thTdStyle } from '../../styles/TableStyles';
+import CommonTable from '../../components/CommonTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const Receipts = () => {
 	const { user } = useAuth();
@@ -120,43 +121,35 @@ const Receipts = () => {
 		document.body.removeChild(link);
 	};
 
-	const renderSection = (title, items) => (
+	const renderSection = (title, items) => {
+        const headers = ['活動名稱', '類型', '檔案名稱', '上傳時間', '操作'];
+        return (
 		<div style={{ marginBottom: 24 }}>
 			<h2 style={{ marginBottom: 8 }}>{title}</h2>
 			{items.length === 0 ? (
 				<p>暫時未有可下載檔案</p>
 			) : (
-				<table style={tableStyle}>
-					<thead>
-						<tr>
-							  <th style={thTdStyle}>活動名稱</th>
-							<th style={thTdStyle}>類型</th>
-							<th style={thTdStyle}>檔案名稱</th>
-							<th style={thTdStyle}>上傳時間</th>
-							  <th style={thTdStyle}>操作</th>
-						</tr>
-					</thead>
-					<tbody>
+				<CommonTable headers={headers}>
 						{items.map((item, idx) => (
 							<tr key={`${title}-${idx}`}>
-								<td style={thTdStyle}>{formatEventName(item.eventId)}</td>
-								<td style={thTdStyle}>{item.type}</td>
-								<td style={thTdStyle}>{item.originalName || item.fileName}</td>
-								<td style={thTdStyle}>{formatUploadTime(item.uploadDate)}</td>
-								<td style={thTdStyle}>
+								<td>{formatEventName(item.eventId)}</td>
+								<td>{item.type}</td>
+								<td>{item.originalName || item.fileName}</td>
+								<td>{formatUploadTime(item.uploadDate)}</td>
+								<td>
 									<button onClick={() => handleDownload(item.type, item.fileName)}>下載</button>
 								</td>
 							</tr>
 						))}
-					</tbody>
-				</table>
+				</CommonTable>
 			)}
 		</div>
-	);
+	    );
+    };
 
 	return (
-		<div style={{ padding: 20 }}>
-			<h1>收據與證書下載 (Member)</h1>
+		<PageContainer>
+			<PageHeader title="收據與證書下載 (Member)" />
 			<p>你可以查看並下載自己已發放的收據與證書。</p>
 
 			{loading && <p>載入中...</p>}
@@ -168,7 +161,7 @@ const Receipts = () => {
 					{renderSection('我的證書', certificateItems)}
 				</>
 			)}
-		</div>
+		</PageContainer>
 	);
 };
 

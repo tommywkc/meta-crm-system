@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleGetPaymentById, handleUpdatePaymentById } from '../../api/paymentAPI';
 import PaymentDetailsTable from '../../components/PaymentDetailsTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const statusLabel = (s) => {
 	switch ((s||'').toUpperCase()) {
@@ -150,8 +151,8 @@ const PaymentProcess = () => {
 	if (!payment) return <div>找不到付款記錄</div>;
 
 	return (
-		<div>
-			<h1>處理付款</h1>
+		<PageContainer>
+			<PageHeader title="處理付款" />
 			
 			<PaymentDetailsTable 
 				payment={payment}
@@ -170,7 +171,7 @@ const PaymentProcess = () => {
 				onCancel={handleCancel}
 				onRefund={handleRefund}
 			/>
-		</div>
+		</PageContainer>
 	);
 };
 

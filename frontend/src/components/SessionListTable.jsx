@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
+import CommonTable from './CommonTable';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
 const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDeleteSession, isEnrolled, registeredSessionIds = [] }) => {
@@ -18,19 +18,17 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
   const isMember = role?.toLowerCase() === 'member';
   const showActionColumn = !isMember || isEnrolled;
 
+  const headers = [
+    '場次名稱',
+    '開始時間',
+    '結束時間',
+    '剩餘座位數',
+    '描述',
+    showActionColumn ? '操作' : null
+  ].filter(Boolean);
+
   return (
-    <table style={tableStyle}>
-      <thead>
-        <tr>
-          <th style={thTdStyle}>場次名稱</th>
-          <th style={thTdStyle}>開始時間</th>
-          <th style={thTdStyle}>結束時間</th>
-          <th style={thTdStyle}>剩餘座位數</th>
-          <th style={thTdStyle}>描述</th>
-          {showActionColumn && <th style={thTdStyle}>操作</th>}
-        </tr>
-      </thead>
-      <tbody>
+    <CommonTable headers={headers}>
         {sortedSessions.map((session) => {
           const lowerRole = role?.toLowerCase();
           const isMemberRole = lowerRole === 'member';
@@ -42,28 +40,27 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
 
           return (
             <tr key={session.session_id}>
-              <td style={thTdStyle}>{session.session_name}</td>
-              <td style={thTdStyle}>{formatDateTimeForDisplay(session.datetime_start) || 'N/A'}</td>
-              <td style={thTdStyle}>{formatDateTimeForDisplay(session.datetime_end) || 'N/A'}</td>
-              <td style={thTdStyle}>{session.remaining_seats || 'N/A'}</td>
-              <td style={thTdStyle}>{session.description || '-'}</td>
+              <td>{session.session_name}</td>
+              <td>{formatDateTimeForDisplay(session.datetime_start) || 'N/A'}</td>
+              <td>{formatDateTimeForDisplay(session.datetime_end) || 'N/A'}</td>
+              <td>{session.remaining_seats || 'N/A'}</td>
+              <td>{session.description || '-'}</td>
               {showActionColumn && (
-                <td style={thTdStyle}>
+                <td>
                   {/* Permissions: same as EventsTable */}
-                  {isAdmin ? (
-                    <>
-                      <button onClick={() => onEditSession && onEditSession(session.session_id)}>編輯</button>
-                      <button onClick={() => onDeleteSession && onDeleteSession(session.session_id)} style={redTextStyle}>刪除</button>
-                    </>
-                  ) : null}
-
                   {(isSalesOrLeader || isAdmin) ? (
                     <button
                       onClick={() => navigate(`/sessions/${session.session_id}/enrolled`)}
-                      style={{ marginLeft: 8 }}
                     >
                       查看名單
                     </button>
+                  ) : null}
+
+                  {isAdmin ? (
+                    <>
+                      <button onClick={() => onEditSession(session.session_id)} style={{ marginLeft: 8 }}>編輯</button>
+                      <button onClick={() => onDeleteSession(session.session_id)} className="btn-danger" style={{ marginLeft: 8 }}>刪除</button>
+                    </>
                   ) : null}
 
                   {/* Sales and Leader or Member (if enrolled) can enroll */}
@@ -87,8 +84,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
             </tr>
           );
         })}
-      </tbody>
-    </table>
+    </CommonTable>
   );
 };
 

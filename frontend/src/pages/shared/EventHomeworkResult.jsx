@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleListAssignments } from '../../api/assignmentsAPI';
 import { handleGetAssignmentSubmissions, handleListHomeworkFiles } from '../../api/homeworkFilesAPI';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const EventHomeworkResult = () => {
   const navigate = useNavigate();
@@ -61,8 +62,12 @@ const EventHomeworkResult = () => {
   }, [eventId, assignmentId, targetUserId, userRole]);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>功課結果</h1>
+    <PageContainer>
+      <PageHeader 
+        title="功課結果" 
+        showBack={true} 
+        onBack={() => navigate(-1)} 
+      />
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
       ) : (
@@ -73,9 +78,7 @@ const EventHomeworkResult = () => {
       )}
       {targetUserId && <p>會員 ID: {targetUserId}</p>}
 
-      <div style={{ marginBottom: 16 }}>
-        <button onClick={() => navigate(-1)}>返回上一頁</button>
-      </div>
+
 
       {loading && <p>載入中...</p>}
       {!loading && (
@@ -93,7 +96,7 @@ const EventHomeworkResult = () => {
           )}
         </>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

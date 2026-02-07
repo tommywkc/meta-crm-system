@@ -11,4 +11,11 @@ export const LowerSelectContainerStyle = {
     justifyContent: 'center' // Center the pagination controls
 };
 
+export const commonSelectStyle = {
+    padding: '2px 12px',
+    fontSize: '14px',
+    border: '1px solid #ccc',
+    borderRadius: '4px'
+};
+
 export default null;

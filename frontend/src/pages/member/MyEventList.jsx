@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import EventsTable from '../../components/EventsTable';
-import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
+import { UpperSelectContainerStyle, LowerSelectContainerStyle, commonSelectStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
 import { handleConfirmEnrollmentByUser } from '../../api/enrollmentAPI';
 import { handleListEvents } from '../../api/eventListAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const MyEventList = () => {
     const navigate = useNavigate();
@@ -105,8 +106,8 @@ const MyEventList = () => {
     const handleHomework = (event_id) => navigate(`/events/${event_id}/homework`);
 
     return (
-        <div>
-            <h2>我的活動</h2>
+        <PageContainer>
+            <PageHeader title="我的活動" />
             <div style={UpperSelectContainerStyle}>
                 <input
                     type="text"
@@ -132,7 +133,11 @@ const MyEventList = () => {
                     <button onClick={() => setPage(prev => Math.max(prev - 1, 1))} disabled={!canPrev}>
                         上一頁
                     </button>
-                    <select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+                    <select 
+                        value={page} 
+                        onChange={(e) => setPage(Number(e.target.value))}
+                        style={commonSelectStyle}
+                    >
                         {Array.from({ length: totalPages }, (_, i) => (
                             <option key={i + 1} value={i + 1}>{i + 1}</option>
                         ))}
@@ -142,7 +147,7 @@ const MyEventList = () => {
                     </button>
                 </div>
             </div>
-        </div>
+        </PageContainer>
     );  
 }
 

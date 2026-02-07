@@ -3,7 +3,6 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 import { useAuth } from "../contexts/AuthContext";
-import { redTextStyle } from '../styles/TableStyles';
 import { handleListStudentWorks, handleCreateStudentWork, handleDeleteStudentWork, handleUpdateStudentWork } from "../api/studentWorksAPI";
 
 // Custom Arrow Components for styling similar to the example image (grey arrow icons)
@@ -195,19 +194,20 @@ const StudentWorkWall = () => {
     return (
         <section style={wallStyle}>
             <style>{`.slick-prev:before, .slick-next:before { color: black !important; }`}</style>
-            <div style={{ width: '100%', margin: '0 auto', position: 'relative' }}>
-                <h2 style={{ fontSize: '24px', marginBottom: '20px' }}>
-                    學生作品牆壁
-                </h2>
-                
-                {isAdmin && (
-                    <button 
-                        onClick={() => setShowModal(true)}
-                        style={{ position: 'absolute', right: 20, top: 0 }}
-                    >
-                        ＋ 新增作品
-                    </button>
-                )}
+            <div style={{ width: '100%', margin: '0 auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <h2 style={{ margin: 0 }}>
+                        學生作品牆壁
+                    </h2>
+                    
+                    {isAdmin && (
+                        <button 
+                            onClick={() => setShowModal(true)}
+                        >
+                            ＋ 新增作品
+                        </button>
+                    )}
+                </div>
 
                 <div style={{ padding: '0 40px', marginTop: 30 }}>
                     {loading ? <p>載入作品中...</p> : (
@@ -238,7 +238,7 @@ const StudentWorkWall = () => {
                                                             e.stopPropagation();
                                                             handleDelete(work.work_id);
                                                         }}
-                                                        style={redTextStyle}
+                                                        className="btn-danger"
                                                     >
                                                         刪除
                                                     </button>
@@ -279,7 +279,7 @@ const StudentWorkWall = () => {
                                 />
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                                <button type="button" onClick={() => setShowModal(false)} disabled={uploading}>
+                                <button type="button" onClick={() => setShowModal(false)} disabled={uploading} className="btn-secondary">
                                     取消
                                 </button>
                                 <button type="submit" disabled={uploading}>
@@ -306,7 +306,7 @@ const StudentWorkWall = () => {
                                 />
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                                <button type="button" onClick={() => setShowEditModal(false)}>
+                                <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">
                                     取消
                                 </button>
                                 <button type="submit">

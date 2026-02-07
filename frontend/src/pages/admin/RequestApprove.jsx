@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { handleListRequests, handleUpdateRequestById } from '../../api/requestsAPI';
 import RequestViewTable from '../../components/RequestViewTable';
+import { commonSelectStyle } from '../../styles/SelectStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const RequestApprove = () => {
 	const { requestId } = useParams();
@@ -66,13 +68,14 @@ const RequestApprove = () => {
 	}, [request, requestId]);
 
 	return (
-		<div style={{ padding: 20 }}>
-			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-				<div>
-					<h1 style={{ marginBottom: 4 }}>申請批核</h1>
-					<p style={{ margin: 0, color: '#6b7280' }}>檢視申請內容並選擇批核結果。</p>
-				</div>
-			</div>
+		<PageContainer>
+			<PageHeader 
+				title="申請批核" 
+				showBack={true} 
+				onBack={() => navigate(-1)} 
+			/>
+			<p style={{ marginTop: -10, marginBottom: 20, color: '#6b7280' }}>檢視申請內容並選擇批核結果。</p>
+			{/* Original Title Block Removed */}
 
 			{loading && (
 				<div style={{ marginTop: 16 }}>載入中…</div>
@@ -101,7 +104,7 @@ const RequestApprove = () => {
 					value={decision}
 					onChange={(event) => setDecision(event.target.value)}
 					disabled={!isPending}
-					style={{ minWidth: 200, padding: '6px 8px' }}
+					style={{ ...commonSelectStyle, minWidth: 200 }}
 				>
 					<option value="">請選擇</option>
 					<option value="APPROVED">批准</option>
@@ -113,9 +116,8 @@ const RequestApprove = () => {
 				<button type="button" onClick={handleConfirmDecision} disabled={!isPending || !decision || submitting}>
 					{isPending ? '確認批核' : '已批核'}
 				</button>
-                <button type="button" onClick={() => navigate('/admin/requests')}>返回列表</button>
 			</div>
-		</div>
+		</PageContainer>
 	);
 };
 
