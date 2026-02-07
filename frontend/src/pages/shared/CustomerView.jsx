@@ -6,6 +6,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { formatDateTimeForDisplay, formatDateKey } from '../../utils/dateFormatter';
 import { handleListUserUpcomingSessions, handleListUserSessionsByYear } from '../../api/sessionAPI';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
+import CommonTable from '../../components/CommonTable';
 
 const CustomerView = () => {
   const { id } = useParams();
@@ -233,27 +234,20 @@ const CustomerView = () => {
                 <p>載入中...</p>
               ) : upcomingError ? (
                 <p style={{ color: 'red' }}>{upcomingError}</p>
-              ) : upcomingSessions.length === 0 ? (
-                <p>暫時沒有即將到來的課堂</p>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
-                  <thead>
-                    <tr>
-                      <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>日期時間</th>
-                      <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>課堂名稱</th>
-                      <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>場次</th>
+                <CommonTable
+                  headers={['日期時間', '課堂名稱', '場次']}
+                  data={upcomingSessions}
+                  emptyMessage="暫時沒有即將到來的課堂"
+                >
+                  {upcomingSessions.map((s) => (
+                    <tr key={s.registration_id}>
+                      <td>{s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}</td>
+                      <td>{s.event_name || '-'}</td>
+                      <td>{s.session_name || '-'}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {upcomingSessions.map((s) => (
-                      <tr key={s.registration_id}>
-                        <td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}</td>
-                        <td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.event_name || '-'}</td>
-                        <td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.session_name || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  ))}
+                </CommonTable>
               )}
             </div>
           </div>
