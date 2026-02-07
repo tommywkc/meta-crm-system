@@ -150,7 +150,7 @@ const PaymentProcess = () => {
 	if (!payment) return <div>找不到付款記錄</div>;
 
 	return (
-		<div>
+		<div style={{ padding: 20 }}>
 			<h2>處理付款</h2>
 			
 			<PaymentDetailsTable 

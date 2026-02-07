@@ -42,13 +42,14 @@ const RequestView = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<button className="btn-secondary" onClick={() => navigate('/admin/requests')} style={{ marginBottom: '16px' }}>返回</button>
-			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+			<div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
+				<button className="btn-secondary" onClick={() => navigate('/admin/requests')} style={{ margin: 0 }}>返回</button>
 				<div>
-					<h2 style={{ marginBottom: 4 }}>申請詳情</h2>
+					<h2 style={{ marginBottom: 4, margin: 0 }}>申請詳情</h2>
 					<p style={{ margin: 0, color: '#6b7280' }}>檢視申請的所有欄位資訊。</p>
 				</div>
 			</div>
+			{/* Original Title Block Removed */}
 
 			{loading && (
 				<div style={{ marginTop: 16 }}>載入中…</div>

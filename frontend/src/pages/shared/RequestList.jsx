@@ -38,16 +38,13 @@ const RequestList = () => {
   return (
     <div style={{ padding: 20 }}>
       {/* Back button standardized */}
-      <div style={{ marginBottom: 16 }}>
-        <button className="btn-secondary" onClick={() => navigate(-1)}>返回</button>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
+        <button className="btn-secondary" onClick={() => navigate(-1)} style={{ margin: 0 }}>返回</button>
         <div>
-          <h2 style={{ marginBottom: 4 }}>申請列表</h2>
-          <p style={{ margin: 0, color: '#6b7280' }}>檢視與追蹤全部會員提出的申請狀態。</p>
+          <h2 style={{ marginBottom: 4, margin: 0 }}>申請列表</h2>
         </div>
-        {/* Removed old inline back button */}
       </div>
+      {/* Removed old Title block */}
 
       {error && (
         <div style={{ color: '#b91c1c', marginTop: 12 }}>

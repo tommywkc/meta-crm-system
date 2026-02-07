@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleListPaymentByUserId, handleListAllPayment } from '../../api/paymentAPI';
 import PaymentTable from '../../components/PaymentTable';
-import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
+import { UpperSelectContainerStyle, LowerSelectContainerStyle, commonSelectStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
 
 
@@ -191,7 +191,11 @@ const Payments = () => {
 
 						<label>
 							每頁付款數量:&nbsp;
-							<select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+							<select 
+								value={limit} 
+								onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+								style={commonSelectStyle}
+							>
 								<option value={25}>25</option>
 								<option value={50}>50</option>
 								<option value={100}>100</option>

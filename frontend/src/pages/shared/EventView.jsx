@@ -9,6 +9,7 @@ import { handleCheckEnrollment, handleListMyActiveEnrolledEvents } from '../../a
 import { getStatusDisplay, getTypeDisplay, formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import WaitingListTable from '../../components/WaitingListTable';
 import SessionListTable from '../../components/SessionListTable';
+import { commonSelectStyle } from '../../styles/SelectStyles';
 
 const EventView = () => {
   const { id } = useParams();
@@ -180,17 +181,21 @@ const EventView = () => {
 
   if (!event || !event.event_id) {
     return (
-      <div>
-        <button className="btn-secondary" onClick={() => navigate('/events')} style={{ marginBottom: '16px' }}>返回</button>
-        <h2>找不到此講座/課堂</h2>
+      <div style={{ padding: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
+          <button className="btn-secondary" onClick={() => navigate('/events')} style={{ margin: 0 }}>返回</button>
+          <h2 style={{ margin: 0 }}>找不到此講座/課堂</h2>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <button className="btn-secondary" onClick={() => navigate('/events')} style={{ marginBottom: '16px' }}>返回</button>
-      <h2>查看講座/課堂詳細資料</h2>
+    <div style={{ padding: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
+        <button className="btn-secondary" onClick={() => navigate('/events')} style={{ margin: 0 }}>返回</button>
+        <h2 style={{ margin: 0 }}>查看講座/課堂詳細資料</h2>
+      </div>
       
       <div>
         <div><strong>ID:</strong> {event.event_id}</div>
@@ -232,7 +237,20 @@ const EventView = () => {
         )}
       </div>
       
-      <div>
+      <div style={{ marginTop: 20 }}>
+        {(isAdmin || isSalesOrLeader) && (
+          <button
+            onClick={() => navigate(`/events/${id}/enrolled`)}
+          >
+            查看名單
+          </button>
+        )}
+        <button
+          onClick={() => navigate(`/events/${id}/homework`)}
+          style={{ marginLeft: (isAdmin || isSalesOrLeader) ? 8 : 0 }}
+        >
+          功課
+        </button>
         {isAdmin ? (
           <button onClick={() => navigate(`/events/${id}/edit`)} style={{ marginLeft: 8 }}>編輯</button>
         ) : isMember || isSalesOrLeader ? (
@@ -244,26 +262,17 @@ const EventView = () => {
             {hasActiveEnrollment ? '已報名' : (isEnrolling ? '報名中...' : '報名')}
           </button>
         ) : null}
-        {(isAdmin || isSalesOrLeader) && (
-          <button
-            onClick={() => navigate(`/events/${id}/enrolled`)}
-            style={{ marginLeft: 8 }}
-          >
-            查看名單
-          </button>
-        )}
-        <button
-          onClick={() => navigate(`/events/${id}/homework`)}
-          style={{ marginLeft: 8 }}
-        >
-          功課
-        </button>
       </div>
 
       {/* Session list table */}
       <div style={{ marginTop: 40 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>場次列表</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+        <h2 style={{ margin: 0 }}>場次列表</h2>
+        {isAdmin && (
+          <button onClick={() => navigate(`/events/${id}/sessions/create`)}>
+            新增場次
+          </button>
+        )}
       </div>
         
         {/* Session name filter */}
@@ -277,10 +286,7 @@ const EventView = () => {
               value={selectedSessionName}
               onChange={(e) => setSelectedSessionName(e.target.value)}
               style={{
-                padding: '6px 12px',
-                fontSize: '14px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
+                ...commonSelectStyle,
                 minWidth: '200px'
               }}
             >
@@ -305,13 +311,7 @@ const EventView = () => {
                   id="round-filter"
                   value={selectedRound}
                   onChange={(e) => setSelectedRound(e.target.value)}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: '14px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    minWidth: '120px'
-                  }}
+                  style={commonSelectStyle}
                 >
                   <option value="all">全部期數</option>
                   {[...new Set(sessions.map(s => s.round))]
@@ -327,13 +327,6 @@ const EventView = () => {
             )}
           </div>
         )}
-        <div>
-          {isAdmin && (
-              <button onClick={() => navigate(`/events/${id}/sessions/create`)}>
-                新增場次
-              </button>
-            )}
-        </div>
         
         <SessionListTable 
           sessions={(() => {

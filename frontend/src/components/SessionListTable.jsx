@@ -48,20 +48,19 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
               {showActionColumn && (
                 <td>
                   {/* Permissions: same as EventsTable */}
-                  {isAdmin ? (
-                    <>
-                      <button onClick={() => onEditSession && onEditSession(session.session_id)}>編輯</button>
-                      <button onClick={() => onDeleteSession && onDeleteSession(session.session_id)} className="btn-danger">刪除</button>
-                    </>
-                  ) : null}
-
                   {(isSalesOrLeader || isAdmin) ? (
                     <button
                       onClick={() => navigate(`/sessions/${session.session_id}/enrolled`)}
-                      style={{ marginLeft: 8 }}
                     >
                       查看名單
                     </button>
+                  ) : null}
+
+                  {isAdmin ? (
+                    <>
+                      <button onClick={() => onEditSession(session.session_id)} style={{ marginLeft: 8 }}>編輯</button>
+                      <button onClick={() => onDeleteSession(session.session_id)} className="btn-danger" style={{ marginLeft: 8 }}>刪除</button>
+                    </>
                   ) : null}
 
                   {/* Sales and Leader or Member (if enrolled) can enroll */}

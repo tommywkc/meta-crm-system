@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
+import { commonSelectStyle } from '../styles/SelectStyles';
 
 const currency = new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 });
 
@@ -129,6 +130,7 @@ const PaymentDetailsTable = ({
 												value={newMethod}
 												onChange={(e) => setNewMethod(e.target.value)}
 												required
+												style={{ ...commonSelectStyle, width: '100%' }}
 											>
 												<option value="">-- 請選擇 --</option>
 												<option value="CREDITCARD">信用卡</option>
@@ -199,6 +201,7 @@ const PaymentDetailsTable = ({
 												value={newStatus}
 												onChange={(e) => setNewStatus(e.target.value)}
 												required
+												style={{ ...commonSelectStyle, width: '100%' }}
 											>
 												<option value="">-- 請選擇 --</option>
 												<option value="PENDING">待付款</option>

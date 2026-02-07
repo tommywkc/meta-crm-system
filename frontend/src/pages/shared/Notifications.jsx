@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getNotifications } from '../../api/notificationsAPI';
-import { tableStyle, thTdStyle } from '../../styles/TableStyles';
+import CommonTable from '../../components/CommonTable';
 
 const Notifications = () => {
 	const { user } = useAuth();
@@ -60,36 +60,26 @@ const Notifications = () => {
 			{notifications.length === 0 ? (
 				<p>暫無通知</p>
 			) : (
-				<table style={tableStyle}>
-					<thead>
-						<tr>
-							<th style={thTdStyle}>日期時間</th>
-							<th style={thTdStyle}>標題</th>
-							<th style={thTdStyle}>內容</th>
-							<th style={thTdStyle}>操作</th>
+				<CommonTable headers={['日期時間', '標題', '內容', '操作']}>
+					{notifications.map((n) => (
+						<tr key={n.notification_id}>
+							<td>
+								{n.create_time ? new Date(n.create_time).toLocaleString('zh-HK') : '—'}
+							</td>
+							<td>{n.template}</td>
+							<td>
+								{n.description && n.description.length > 80
+									? `${n.description.slice(0, 80)}…`
+									: n.description}
+							</td>
+							<td>
+								<button onClick={() => onView(n)} style={{ marginRight: 8 }}>
+									查看
+								</button>
+							</td>
 						</tr>
-					</thead>
-					<tbody>
-						{notifications.map((n) => (
-							<tr key={n.notification_id}>
-								<td style={thTdStyle}>
-									{n.create_time ? new Date(n.create_time).toLocaleString('zh-HK') : '—'}
-								</td>
-								<td style={thTdStyle}>{n.template}</td>
-								<td style={thTdStyle}>
-									{n.description && n.description.length > 80
-										? `${n.description.slice(0, 80)}…`
-										: n.description}
-								</td>
-								<td style={thTdStyle}>
-									<button onClick={() => onView(n)} style={{ marginRight: 8 }}>
-										查看
-									</button>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
+					))}
+				</CommonTable>
 			)}
 		</div>
 	);

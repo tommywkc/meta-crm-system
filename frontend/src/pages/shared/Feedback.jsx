@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleCreateFeedback } from '../../api/feedbackAPI';
+import { commonSelectStyle } from '../../styles/SelectStyles';
  
  
 const Feedback = () => {
@@ -112,7 +113,7 @@ const Feedback = () => {
 					<select
 						value={testRole}
 						onChange={(e) => setTestRole(e.target.value)}
-						style={{ padding: 6, minWidth: 200 }}
+						style={{ ...commonSelectStyle, minWidth: 200 }}
 					>
 						<option value="">請選擇角色</option>
 						<option value="ADMIN">ADMIN</option>
@@ -128,7 +129,7 @@ const Feedback = () => {
 					</label>
 					<select
 						defaultValue=""
-						style={{ padding: 6, minWidth: 200 }}
+						style={{ ...commonSelectStyle, minWidth: 200 }}
 					>
 						<option value="" disabled>請選擇年齡層</option>
 						<option value="under18">18 歲以下</option>

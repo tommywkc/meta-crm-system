@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { handleListFeedbacks } from '../../api/feedbackAPI';
 import FeedbackTable from '../../components/FeedbackTable';
+import { commonSelectStyle } from '../../styles/SelectStyles';
 
 const FeedbackList = () => {
 	const [feedbacks, setFeedbacks] = useState([]);
@@ -50,7 +51,11 @@ const FeedbackList = () => {
 						&nbsp;&nbsp;
 						<label>
 							每頁筆數:&nbsp;
-							<select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+							<select 
+								value={limit} 
+								onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+								style={commonSelectStyle}
+							>
 								<option value={25}>25</option>
 								<option value={50}>50</option>
 								<option value={100}>100</option>

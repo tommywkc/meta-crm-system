@@ -9,6 +9,7 @@ import {
   formSessionsToBackendPayload, 
   calculateEventDateTimes 
 } from '../utils/sessionDateHelper';
+import { commonSelectStyle } from '../styles/SelectStyles';
 
 const EventForm = ({
   initialData = {},
@@ -167,7 +168,7 @@ const EventForm = ({
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              style={{ width: '100%', padding: 8 }}
+              style={{ ...commonSelectStyle, width: '100%' }}
             >
               <option value="">-- 請選擇 --</option>
               <option value="CLASS">課程</option>
@@ -329,7 +330,7 @@ const EventForm = ({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              style={{ width: '100%', padding: 8 }}
+              style={{ ...commonSelectStyle, width: '100%' }}
             >
               <option value="SCHEDULED">已排程</option>
               <option value="CANCELLED">已取消</option>

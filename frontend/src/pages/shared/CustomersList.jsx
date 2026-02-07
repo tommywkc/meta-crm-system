@@ -3,7 +3,7 @@ import CustomersTable from '../../components/CustomersTable';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleList, handleDeleteById } from '../../api/customersListAPI';
-import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
+import { UpperSelectContainerStyle, LowerSelectContainerStyle, commonSelectStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
 
 const CustomersList = () => {
@@ -106,7 +106,11 @@ const CustomersList = () => {
       >
         <label>
           頁數:&nbsp;
-          <select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+          <select 
+            value={page} 
+            onChange={(e) => setPage(Number(e.target.value))}
+            style={commonSelectStyle}
+          >
             {Array.from({ length: Math.max(1, Math.ceil(customers.length / limit)) }, (_, i) => (
               <option key={i + 1} value={i + 1}>{i + 1}</option>
             ))}
@@ -115,7 +119,11 @@ const CustomersList = () => {
 
         <label>
           每頁用戶數量:&nbsp;
-          <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+          <select 
+            value={limit} 
+            onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+            style={commonSelectStyle}
+          >
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
@@ -136,7 +144,11 @@ const CustomersList = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <label>
             頁數:&nbsp;
-            <select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+            <select 
+              value={page} 
+              onChange={(e) => setPage(Number(e.target.value))}
+              style={commonSelectStyle}
+            >
               {Array.from({ length: totalPages }, (_, i) => (
                 <option key={i + 1} value={i + 1}>{i + 1}</option>
               ))}

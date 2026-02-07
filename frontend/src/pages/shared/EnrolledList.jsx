@@ -599,28 +599,31 @@ const EnrolledList = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <button className="btn-secondary" onClick={async () => { try { await stopAllGlobalInstances(); } catch (e) { /* ignore */ } navigate(-1); }} style={{ marginBottom: '16px' }}>返回</button>
       <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 12 }}>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
         <div style={{ flex: 1 }}>
-          <h2>{isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+            <button className="btn-secondary" onClick={async () => { try { await stopAllGlobalInstances(); } catch (e) { /* ignore */ } navigate(-1); }} style={{ margin: 0 }}>返回</button>
+            <h2 style={{ margin: 0 }}>{isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'}</h2>
+          </div>
           {eventInfo && (
-            <div>
-              <p>
+            <div style={{ marginBottom: 4 }}>
+              <p style={{ margin: 0, marginBottom: 4 }}>
                 活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}
               </p>
               {isSessionMode && sessionInfo && (
-                <p>
+                <p style={{ margin: 0 }}>
                   場次 ID: {sessionInfo.session_id} ｜ 場次名稱: {sessionInfo.session_name || 'N/A'} ｜ 時間: {sessionInfo.datetime_start ? formatDateTimeForDisplay(sessionInfo.datetime_start) : 'N/A'}
                 </p>
               )}
-              
             </div>
           )}
         </div>
-
+        
         {isSessionMode && isAdmin && (
-          <Scanner
+          <div style={{ width: 320 }}>
+            <Scanner
             sessionId={sessionId}
             sessionInfo={sessionInfo}
             eventInfo={eventInfo}
@@ -688,7 +691,14 @@ const EnrolledList = () => {
               }
             }}
           />
+          </div>
         )}
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 12 }}>
+        <div style={{ flex: 1 }}>
+          {/* Title Moved Up */}
+        </div>
       </div>
 
       {loading && <p>載入中...</p>}

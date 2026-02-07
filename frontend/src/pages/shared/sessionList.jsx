@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleListEnrolledUpcomingSessions } from '../../api/sessionAPI';
-import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
+import { UpperSelectContainerStyle, LowerSelectContainerStyle, commonSelectStyle } from '../../styles/SelectStyles';
 import { searchInputStyle, tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
@@ -158,7 +158,11 @@ const SessionListPage = () => {
 				</div>					<div style={UpperSelectContainerStyle}>
 						<label>
 							頁數:&nbsp;
-							<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+							<select 
+								value={page} 
+								onChange={(e) => setPage(Number(e.target.value))}
+								style={commonSelectStyle}
+							>
 								{Array.from({ length: totalPages }, (_, i) => (
 									<option key={i + 1} value={i + 1}>
 										{i + 1}
@@ -175,6 +179,7 @@ const SessionListPage = () => {
 									setLimit(Number(e.target.value));
 									setPage(1);
 								}}
+								style={commonSelectStyle}
 							>
 								<option value={25}>25</option>
 								<option value={50}>50</option>
@@ -238,7 +243,11 @@ const SessionListPage = () => {
 						<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 							<label>
 								頁數:&nbsp;
-								<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+								<select 
+									value={page} 
+									onChange={(e) => setPage(Number(e.target.value))}
+									style={commonSelectStyle}
+								>
 									{Array.from({ length: totalPages }, (_, i) => (
 										<option key={i + 1} value={i + 1}>
 											{i + 1}

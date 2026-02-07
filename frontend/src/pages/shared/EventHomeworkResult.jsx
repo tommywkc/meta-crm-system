@@ -62,8 +62,10 @@ const EventHomeworkResult = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <button className="btn-secondary" onClick={() => navigate(-1)} style={{ marginBottom: '16px' }}>返回</button>
-      <h2>功課結果</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
+        <button className="btn-secondary" onClick={() => navigate(-1)} style={{ margin: 0 }}>返回</button>
+        <h2 style={{ margin: 0 }}>功課結果</h2>
+      </div>
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
       ) : (

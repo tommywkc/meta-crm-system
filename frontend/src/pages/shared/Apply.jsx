@@ -5,6 +5,7 @@ import { handleList, handleFindUserByRole } from '../../api/customersListAPI';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleCreateEnrollment } from '../../api/enrollmentAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import { commonSelectStyle } from '../../styles/SelectStyles';
 
 const Apply = () => {
   const { id } = useParams();
@@ -258,7 +259,13 @@ const Apply = () => {
         {event?.price != null && Number(event?.price) > 0 && (
           <div>
             <label>支付方式: </label>
-            <select name="paymentMethod" value={formData.paymentMethod} onChange={handleInputChange} required>
+            <select 
+              name="paymentMethod" 
+              value={formData.paymentMethod} 
+              onChange={handleInputChange} 
+              required
+              style={commonSelectStyle}
+            >
               <option value="CREDITCARD">信用卡 (Credit Card)</option>
               <option value="CASH">現金</option>
               <option value="FPS">轉數快 (FPS)</option>

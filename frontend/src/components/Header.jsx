@@ -247,7 +247,8 @@ const Header = () => {
         </button>
       </div>
     </header>
-    <div style={{ height: '60px' }} />
+
+    <div style={{ height: '30px' }} />
     </>
   );
 };

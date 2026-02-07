@@ -55,9 +55,11 @@ const PaymentView = () => {
 	const canEdit = paymentStatus !== 'REFUNDED' && paymentStatus !== 'EXPIRED';
 
 	return (
-		<div>
-			<button className="btn-secondary" onClick={handleBack} style={{ marginBottom: '16px' }}>返回</button>
-			<h2>付款詳情</h2>
+		<div style={{ padding: 20 }}>
+			<div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
+				<button className="btn-secondary" onClick={handleBack} style={{ margin: 0 }}>返回</button>
+				<h2 style={{ margin: 0 }}>付款詳情</h2>
+			</div>
 			
 			<PaymentDetailsTable payment={payment} showForm={false} showCasher={isAdmin} />
 			

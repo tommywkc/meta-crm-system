@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import EventsTable from '../../components/EventsTable';
-import { UpperSelectContainerStyle, LowerSelectContainerStyle } from '../../styles/SelectStyles';
+import { UpperSelectContainerStyle, LowerSelectContainerStyle, commonSelectStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
 import { handleListEvents, handleDeleteById } from '../../api/eventListAPI';
 import { handleListMyActiveEnrolledEvents, handleConfirmEnrollmentByUser } from '../../api/enrollmentAPI';
@@ -207,7 +207,11 @@ const EventList = () => {
 			<div style={UpperSelectContainerStyle}>
 				<label>
 					頁數:&nbsp;
-					<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+					<select 
+						value={page} 
+						onChange={(e) => setPage(Number(e.target.value))}
+						style={commonSelectStyle}
+					>
 						{Array.from({ length: totalPages }, (_, i) => (
 							<option key={i + 1} value={i + 1}>{i + 1}</option>
 						))}
@@ -216,7 +220,11 @@ const EventList = () => {
 
 				<label>
 					每頁活動數量:&nbsp;
-					<select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+					<select 
+						value={limit} 
+						onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+						style={commonSelectStyle}
+					>
 						<option value={25}>25</option>
 						<option value={50}>50</option>
 						<option value={100}>100</option>
@@ -243,7 +251,11 @@ const EventList = () => {
 					<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 						<label>
 							頁數:&nbsp;
-							<select value={page} onChange={(e) => setPage(Number(e.target.value))}>
+							<select 
+								value={page} 
+								onChange={(e) => setPage(Number(e.target.value))}
+								style={commonSelectStyle}
+							>
 								{Array.from({ length: totalPages }, (_, i) => (
 									<option key={i + 1} value={i + 1}>{i + 1}</option>
 								))}

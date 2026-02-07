@@ -194,19 +194,20 @@ const StudentWorkWall = () => {
     return (
         <section style={wallStyle}>
             <style>{`.slick-prev:before, .slick-next:before { color: black !important; }`}</style>
-            <div style={{ width: '100%', margin: '0 auto', position: 'relative' }}>
-                <h2>
-                    學生作品牆壁
-                </h2>
-                
-                {isAdmin && (
-                    <button 
-                        onClick={() => setShowModal(true)}
-                        style={{ position: 'absolute', right: 20, top: 0 }}
-                    >
-                        ＋ 新增作品
-                    </button>
-                )}
+            <div style={{ width: '100%', margin: '0 auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <h2 style={{ margin: 0 }}>
+                        學生作品牆壁
+                    </h2>
+                    
+                    {isAdmin && (
+                        <button 
+                            onClick={() => setShowModal(true)}
+                        >
+                            ＋ 新增作品
+                        </button>
+                    )}
+                </div>
 
                 <div style={{ padding: '0 40px', marginTop: 30 }}>
                     {loading ? <p>載入作品中...</p> : (
