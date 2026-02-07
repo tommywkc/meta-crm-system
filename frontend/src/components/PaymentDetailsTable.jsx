@@ -53,7 +53,7 @@ const PaymentDetailsTable = ({
 			<fieldset>
 				<legend>付款資訊</legend>
 				
-				<table>
+				<table className="common-table">
 					<tbody>
 						<tr>
 							<td><strong>訂單編號：</strong></td>
@@ -120,7 +120,7 @@ const PaymentDetailsTable = ({
 						<fieldset>
 							<legend>更新付款狀態</legend>
 							
-							<table>
+							<table className="common-table">
 								<tbody>
 									<tr>
 										<td><label htmlFor="method">付款方式</label></td>

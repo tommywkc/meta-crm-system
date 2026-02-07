@@ -101,3 +101,26 @@
     display: flex; /* Show buttons on smaller screens */
   }
 }
+
+/* Common Table Styles - "Upcoming 5 Lessons" Theme */
+.common-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+.common-table th {
+  border-bottom: 1px solid #ccc;
+  text-align: left;
+  padding: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+.common-table td {
+  border-bottom: 1px solid #eee;
+  padding: 8px;
+  vertical-align: middle;
+  color: #333;
+}
+
