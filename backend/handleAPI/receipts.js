@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const azureBlobService = require('../services/azureBlobService');
-const { updatePaymentById, findByPaymentId } = require('../dao/paymentsDao');
+const { updatePaymentById, findByPaymentId, findPaymentByEventAndUser } = require('../dao/paymentsDao');
 const { findByUserId } = require('../dao/usersDao');
 const { sendEmail } = require('../services/emailService');
 
@@ -39,8 +39,17 @@ router.post('/receipts/upload', authMiddleware, roleMiddleware('admin'), upload.
     }
 
     let updatedPayment = null;
-    if (paymentId) {
-      updatedPayment = await updatePaymentById(paymentId, { issued_receipt: true });
+    let targetPaymentId = paymentId;
+
+    if (!targetPaymentId) {
+      const payment = await findPaymentByEventAndUser(eventId, userId);
+      if (payment) {
+        targetPaymentId = payment.payment_id;
+      }
+    }
+
+    if (targetPaymentId) {
+      updatedPayment = await updatePaymentById(targetPaymentId, { issued_receipt: true });
     }
 
     // Notify the student that a receipt has been uploaded (email + in-app notification)
@@ -51,8 +60,8 @@ router.post('/receipts/upload', authMiddleware, roleMiddleware('admin'), upload.
       let targetUserId = userId;
       let eventInfo = null;
 
-      if (paymentId) {
-        const payment = await findByPaymentId(paymentId);
+      if (targetPaymentId) {
+        const payment = await findByPaymentId(targetPaymentId);
         if (payment) {
           targetUserId = payment.user_id || targetUserId;
           eventInfo = payment.event_name ? payment.event_name : null;
@@ -154,6 +163,40 @@ router.get('/receipts/download', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Download receipt failed:', error);
     return res.status(500).json({ error: '伺服器錯誤' });
+  }
+});
+
+router.delete('/receipts/delete', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const { eventId, userId, paymentId } = req.body;
+
+    if (!eventId || !userId) {
+      return res.status(400).json({ error: '缺少活動ID或使用者ID' });
+    }
+
+    // 1. Delete from Azure
+    const deleteResult = await azureBlobService.deleteAllFilesWithPrefix('receipts', `${eventId}/${userId}/`);
+    
+    // 2. Update DB
+    let targetPaymentId = paymentId;
+    if (!targetPaymentId) {
+      const payment = await findPaymentByEventAndUser(eventId, userId);
+      if (payment) {
+        targetPaymentId = payment.payment_id;
+      }
+    }
+
+    if (targetPaymentId) {
+      await updatePaymentById(targetPaymentId, { issued_receipt: false });
+    } else {
+      return res.status(404).json({ error: '找不到付款紀錄，無法更新狀態' });
+    }
+
+    res.json({ success: true, message: '收據已刪除' });
+
+  } catch (err) {
+    console.error('Delete receipt error:', err);
+    res.status(500).json({ error: '系統錯誤' });
   }
 });
 

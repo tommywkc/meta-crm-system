@@ -21,6 +21,20 @@ export async function handleUploadReceipt({ eventId, userId, paymentId, file }) 
   return payload;
 }
 
+export async function handleDeleteReceipt({ eventId, userId, paymentId }) {
+  const response = await fetch(apiUrl('/api/receipts/delete'), {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ eventId, userId, paymentId })
+  });
+  const payload = await response.json();
+  if (!response.ok || payload?.success === false) {
+    throw new Error(payload?.error || '刪除收據失敗');
+  }
+  return payload;
+}
+
 export async function handleListMyReceiptFiles() {
   const response = await fetch(apiUrl('/api/receipts/my-files'), {
     method: 'GET',

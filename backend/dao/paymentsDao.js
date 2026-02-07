@@ -25,6 +25,18 @@ async function findByPaymentId(id) {
   return res.rows[0] || null;
 }
 
+async function findPaymentByEventAndUser(event_id, user_id) {
+  const sql = `
+    SELECT *
+    FROM PAYMENTS
+    WHERE event_id = $1 AND user_id = $2
+    ORDER BY payment_id DESC
+    LIMIT 1
+  `;
+  const res = await query(sql, [event_id, user_id]);
+  return res.rows[0] || null;
+}
+
 async function listByUser(user_id, limit = 100, offset = 0) {
   const res = await query('SELECT * FROM PAYMENTS WHERE user_id = $1 ORDER BY payment_id DESC LIMIT $2 OFFSET $3', [user_id, limit, offset]);
   return res.rows;
@@ -194,6 +206,7 @@ async function findPaymentsByUserAndEvent(user_id, event_id) {
 module.exports = {
   createPayment,
   findByPaymentId,
+  findPaymentByEventAndUser,
   listByUser,
   listByUserWithSearch,
   searchPayments,

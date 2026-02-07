@@ -113,8 +113,8 @@ class AzureBlobService {
     }
 
     async uploadFile(file, userId, resourceId, containerType = 'homework') {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             // generate a unique file name
             const fileExtension = file.originalname.split('.').pop();
@@ -159,8 +159,8 @@ class AzureBlobService {
     }
 
     async uploadHomeworkFile(file, eventId, assignmentId, studentId) {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             const folderName = `${eventId}_${assignmentId}`;
             const fileName = `${folderName}/${studentId}/${file.originalname}`;
@@ -201,8 +201,8 @@ class AzureBlobService {
     }
 
     async uploadCertificateFile(file, eventId, userId) {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             const fileName = `${eventId}/${userId}/${file.originalname}`;
 
@@ -241,8 +241,8 @@ class AzureBlobService {
     }
 
     async uploadReceiptFile(file, eventId, userId) {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             const fileName = `${eventId}/${userId}/${file.originalname}`;
 
@@ -415,8 +415,8 @@ class AzureBlobService {
     }
 
     async listHomeworkFilesForStudent(eventId, assignmentId, studentId) {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             const folderName = `${eventId}_${assignmentId}`;
             const containerName = this.containers.homework;
@@ -447,8 +447,8 @@ class AzureBlobService {
     }
 
     async listHomeworkFilesForAssignment(eventId, assignmentId) {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             const folderName = `${eventId}_${assignmentId}`;
             const containerName = this.containers.homework;
@@ -505,6 +505,33 @@ class AzureBlobService {
             };
         } catch (error) {
             console.error('Azure Blob Storage list all files error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+    async deleteAllFilesWithPrefix(containerType, prefix) {
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
+        try {
+            const containerName = this.containers[containerType];
+            if (!containerName) {
+                throw new Error(`Invalid container type: ${containerType}`);
+            }
+            const containerClient = this.blobServiceClient.getContainerClient(containerName);
+            
+            let deletedCount = 0;
+            // List all blobs with the prefix
+            for await (const blob of containerClient.listBlobsFlat({ prefix })) {
+                const blobClient = containerClient.getBlockBlobClient(blob.name);
+                await blobClient.deleteIfExists();
+                deletedCount++;
+            }
+
+            return { success: true, count: deletedCount };
+        } catch (error) {
+            console.error('Azure Blob Storage delete prefix error:', error);
             return {
                 success: false,
                 error: error.message
