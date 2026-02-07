@@ -6,6 +6,7 @@ const { findUserByQrToken, findByUserId } = require('../dao/usersDao');
 const { findBySessionId } = require('../dao/eventSessionsDao');
 const { findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
 const { createAttendance, findLatestByRegistrationId, updateStatusAndTouchTime } = require('../dao/eventAttendanceDao');
+const { findPaymentsByUserAndEvent } = require('../dao/paymentsDao');
 
 function computeAttendanceStatus(session) {
   // 規則：開始前 60 分鐘 ~ 結束後 30 分鐘：G；否則：R（使用目前時間）
@@ -75,6 +76,14 @@ router.post('/attendance/scan', authMiddleware, roleMiddleware(['admin', 'sales'
     // allow quick registration to pass an explicit attend_time (e.g., session datetime_start)
     const { attend_time } = req.body || {};
 
+    // Fetch extra info for frontend display (Certificate, Special Note, Payment Status)
+    const payments = await findPaymentsByUserAndEvent(user.user_id, session.event_id);
+    const hasIssuedCertificate = payments.some(p => p.issued_certificate === true);
+    const certificateNotIssued = !hasIssuedCertificate; 
+    const paymentOutstanding = payments.some(p => p.status === 'OUTSTANDING');
+    const specialNote = user.note_special || '';
+    const extraInfo = { certificateNotIssued, specialNote, paymentOutstanding };
+
     const existingAttendance = await findLatestByRegistrationId(registration.registration_id);
     if (existingAttendance) {
       const s = String(existingAttendance.status || '').toUpperCase();
@@ -87,6 +96,7 @@ router.post('/attendance/scan', authMiddleware, roleMiddleware(['admin', 'sales'
         return res.status(409).json({
           message: msg,
           attemptStatus,
+          extraInfo,
           attendance: existingAttendance,
           user: {
             user_id: user.user_id,
@@ -113,6 +123,7 @@ router.post('/attendance/scan', authMiddleware, roleMiddleware(['admin', 'sales'
         console.info('[attendance] quick-update:', { sessionStart: session.datetime_start, sessionEnd: session.datetime_end, now: new Date().toISOString(), attend_time, computedStatus });
         const updated = await updateStatusAndAttendTime(existingAttendance.attendance_id, computedStatus, attend_time);
         return res.status(200).json({
+          extraInfo,
           message: computedStatus === 'G' ? '簽到成功' : '簽到已記錄（遲到/無效）',
           attendance: updated,
           user: {
@@ -141,6 +152,7 @@ router.post('/attendance/scan', authMiddleware, roleMiddleware(['admin', 'sales'
         message: nextStatus === 'G'
           ? '簽到成功（由 R 更新為 G）'
           : '不在簽到時間範圍，已記錄為 R',
+        extraInfo,
         attendance: updated || existingAttendance,
         user: {
           user_id: user.user_id,
@@ -183,6 +195,7 @@ router.post('/attendance/scan', authMiddleware, roleMiddleware(['admin', 'sales'
 
       const createPayload = {
         message: computedStatus === 'G' ? '簽到成功（使用指定時間）' : '簽到已記錄（遲到/無效）',
+        extraInfo,
         attendance,
         user: {
           user_id: user.user_id,
@@ -212,9 +225,10 @@ router.post('/attendance/scan', authMiddleware, roleMiddleware(['admin', 'sales'
       status,
       remarks: null,
     });
-
+      
     const payload = {
       message: status === 'G' ? '簽到成功' : '不在簽到時間範圍，已記錄為 R',
+      extraInfo,
       attendance,
       user: {
         user_id: user.user_id,
