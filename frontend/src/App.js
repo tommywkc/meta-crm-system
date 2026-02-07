@@ -2,9 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/shared/LoginPage';
-import MemberPage from './pages/member/Page';
-import SalesPage from './pages/sales/Page';
-import AdminPage from './pages/admin/Page';
+import HomePage from './pages/shared/Page';
 import Header from './components/Header';
 import CustomersList from './pages/shared/CustomersList';
 import CustomerView from './pages/shared/CustomerView';
@@ -300,7 +298,7 @@ function App() {
             path="/member" 
             element={
               <ProtectedRoute allowedRole="member">
-                <MemberPage />
+                <HomePage />
               </ProtectedRoute>
             } 
           />
@@ -308,7 +306,7 @@ function App() {
             path="/sales" 
             element={
               <ProtectedRoute allowedRoles={["sales", "leader"]}>
-                <SalesPage />
+                <HomePage />
               </ProtectedRoute>
             } 
           />
@@ -316,7 +314,7 @@ function App() {
             path="/admin" 
             element={
               <ProtectedRoute allowedRole="admin">
-                <AdminPage />
+                <HomePage />
               </ProtectedRoute>
             } 
           />

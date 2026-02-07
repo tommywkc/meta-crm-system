@@ -9,7 +9,7 @@ function formatKey(date) {
 	return `${y}-${m}-${d}`;
 }
 
-const MemberPage = () => {
+const HomePage = () => {
 	const today = new Date();
 	const todayKey = formatKey(today);
 	const [uploadedWorks, setUploadedWorks] = useState([
@@ -215,4 +215,4 @@ const MemberPage = () => {
 	);
 };
 
-export default MemberPage;
+export default HomePage;

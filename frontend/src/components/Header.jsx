@@ -58,8 +58,14 @@ const Header = () => {
           onClick={() => {
             // Navigate to role-specific main page (admin/sales/member).
             // Fallback to '/' if role is unexpected.
-            const home = user && user.role ? `/${user.role}` : '/';
-            navigate(home);
+            if (!user || !user.role) {
+              navigate('/');
+              return;
+            }
+            let r = user.role.toLowerCase();
+            // leader maps to /sales as per App.js route config
+            if (r === 'leader') r = 'sales';
+            navigate(`/${r}`);
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', marginRight: 12 }}>
