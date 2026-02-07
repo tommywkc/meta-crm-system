@@ -169,11 +169,11 @@ const EventList = () => {
 
 		return (
 			<div style={{ padding: 20 }}>
-				<h1>
+				<h2>
 					{isAdmin ? '建立/編輯講座與課堂 (Admin)' : 
 					 isSalesOrLeader ? `講座與課堂名單 (${user.role})` :
 					 '講座與課堂名單 (Member)'}
-				</h1>
+				</h2>
 		
 
 				{isAdmin && (

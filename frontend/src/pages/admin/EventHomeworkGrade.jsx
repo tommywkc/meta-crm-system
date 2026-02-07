@@ -54,7 +54,7 @@ const EventHomeworkGrade = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>功課批改</h1>
+      <h2>功課批改</h2>
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
       ) : (

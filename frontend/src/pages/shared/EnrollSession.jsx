@@ -163,7 +163,7 @@ const EnrollSession = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>場次報名</h1>
+      <h2>場次報名</h2>
 
       <form onSubmit={handleSubmit}>
         <div>

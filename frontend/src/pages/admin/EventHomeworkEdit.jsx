@@ -76,7 +76,7 @@ const EventHomeworkEdit = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>編輯功課</h1>
+      <h2>編輯功課</h2>
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
       ) : (

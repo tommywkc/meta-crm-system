@@ -8,7 +8,7 @@ const MyQRcode = () => {
   if (!user) {
     return (
       <div style={{ padding: 20 }}>
-        <h1>我的 QR Code</h1>
+        <h2>我的 QR Code</h2>
         <p>請先登入...</p>
       </div>
     );
@@ -17,7 +17,7 @@ const MyQRcode = () => {
   if (!user.qr_token) {
     return (
       <div style={{ padding: 20 }}>
-        <h1>我的 QR Code</h1>
+        <h2>我的 QR Code</h2>
         <p style={{ color: 'red' }}>您還沒有 QR Code，請聯絡管理員。</p>
       </div>
     );
@@ -25,7 +25,7 @@ const MyQRcode = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>我的 QR Code</h1>
+      <h2>我的 QR Code</h2>
       <div style={{ marginTop: 20 }}>
         <QRCodeCanvas value={user.qr_token} size={256} />
         <div style={{ marginTop: 8, fontSize: 16, color: '#666' }}>

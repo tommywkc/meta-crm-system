@@ -1,6 +1,5 @@
 import React from 'react';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
-import { redTextStyle, greenTextStyle } from '../styles/TableStyles';
 
 const currency = new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 });
 
@@ -227,17 +226,17 @@ const PaymentDetailsTable = ({
 							
 							<br />
 							
-							<button type="submit" disabled={processing} style={{ ...greenTextStyle }}>
+							<button type="submit" disabled={processing}>
 								{processing ? '處理中...' : (isPending ? '確認付款' : '更新付款')}
 							</button>
 							{' '}
 								<>
-									<button type="button" onClick={onRefund} disabled={processing} style={{ ...redTextStyle }} >
+									<button type="button" onClick={onRefund} disabled={processing} className="btn-danger" >
 										取消並退款
 									</button>
 									{' '}
 								</>
-							<button type="button" onClick={onCancel} disabled={processing}>
+							<button type="button" onClick={onCancel} disabled={processing} className="btn-secondary">
 								取消
 							</button>
 						</fieldset>

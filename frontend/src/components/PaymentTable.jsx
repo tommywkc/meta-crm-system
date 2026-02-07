@@ -1,6 +1,5 @@
 import React from 'react';
 import CommonTable from './CommonTable';
-import { redTextStyle, greenTextStyle } from '../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
 const currency = new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 });
@@ -64,10 +63,10 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) =
 								<button onClick={() => onView(p)} style={{ marginRight: 8 }}>查看</button>
 
                                 {showUserColumn && (p.status?.toUpperCase() == 'PENDING' || p.status?.toUpperCase() == 'OUTSTANDING') && (
-									<button onClick={() => onProcess(p)} style={{ ...greenTextStyle, marginRight: 8 }}>付款</button>
+									<button onClick={() => onProcess(p)} style={{ marginRight: 8 }}>付款</button>
 								)}
                                 {showUserColumn && p.status?.toUpperCase() == 'COMPLETED' && (
-									<button onClick={() => onProcess(p)} style={{ ...redTextStyle, marginRight: 8 }}>更改</button>
+									<button onClick={() => onProcess(p)} className="btn-danger" style={{ marginRight: 8 }}>更改</button>
 								)}
 							</td>
 						</tr>

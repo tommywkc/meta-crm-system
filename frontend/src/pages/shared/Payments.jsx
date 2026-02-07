@@ -86,7 +86,7 @@ const Payments = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>付款紀錄</h1>
+			<h2>付款紀錄</h2>
 
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}

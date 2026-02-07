@@ -1,6 +1,5 @@
 import React from 'react';
 import CommonTable from './CommonTable';
-import { redTextStyle } from '../styles/TableStyles';
 import { getStatusDisplay, getTypeDisplay, formatForDisplay } from '../utils/dateFormatter';
 
 const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit, onDelete, onEnroll, onHomework, viewButtonLabel = '詳情' }) => {
@@ -42,7 +41,7 @@ const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit,
               {isAdmin ? (
                 <>
                   <button onClick={() => onEdit && onEdit(event.event_id)} style={{ marginLeft: 8 }}>編輯</button>
-                  <button onClick={() => onDelete && onDelete(event.event_id)} style={{ ...redTextStyle, marginLeft: 8 }}>刪除</button>
+                  <button onClick={() => onDelete && onDelete(event.event_id)} className="btn-danger" style={{ marginLeft: 8 }}>刪除</button>
                 </>
               ) : canShowEnrollButton ? (
                 <button

@@ -151,7 +151,7 @@ const PaymentProcess = () => {
 
 	return (
 		<div>
-			<h1>處理付款</h1>
+			<h2>處理付款</h2>
 			
 			<PaymentDetailsTable 
 				payment={payment}

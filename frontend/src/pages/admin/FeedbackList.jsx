@@ -36,7 +36,7 @@ const FeedbackList = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>意見回饋列表</h1>
+			<h2>意見回饋列表</h2>
 
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}

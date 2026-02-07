@@ -123,7 +123,7 @@ const EventHomework = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>功課</h1>
+      <h2>功課</h2>
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
       ) : (
@@ -134,7 +134,7 @@ const EventHomework = () => {
         {isAdmin && (
           <button onClick={handleGoCreate}>新增功課</button>
         )}
-        <button onClick={() => navigate(-1)} style={{ marginLeft: 8 }}>返回上一頁</button>
+        <button onClick={() => navigate(-1)} className="btn-secondary" style={{ marginLeft: 8 }}>返回上一頁</button>
       </div>
 
       {loading && <p>載入中...</p>}
@@ -198,7 +198,7 @@ const EventHomework = () => {
                     <>
                       <button onClick={() => handleGoView(item.assignment_id)} style={{ marginRight: 8 }}>查看</button>
                       <button onClick={() => handleGoEdit(item.assignment_id)} style={{ marginRight: 8 }}>編輯</button>
-                      <button onClick={() => handleDelete(item.assignment_id)} style={{ color: 'red' }}>刪除</button>
+                      <button onClick={() => handleDelete(item.assignment_id)} className="btn-danger">刪除</button>
                     </>
                   ) : isStaff ? (
                     <button onClick={() => handleGoView(item.assignment_id)}>查看</button>
@@ -225,7 +225,8 @@ const EventHomework = () => {
                           <span>{file.originalName || file.fileName}</span>
                           <button
                             onClick={() => handleDeleteFile(file.fileName)}
-                            style={{ marginLeft: 8, color: 'red' }}
+                            className="btn-danger"
+                            style={{ marginLeft: 8 }}
                           >
                             刪除
                           </button>

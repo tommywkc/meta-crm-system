@@ -181,7 +181,7 @@ const EventView = () => {
   if (!event || !event.event_id) {
     return (
       <div>
-        <h1>找不到此講座/課堂</h1>
+        <h2>找不到此講座/課堂</h2>
         <button onClick={() => navigate('/events')}>返回列表</button>
       </div>
     );
@@ -189,7 +189,7 @@ const EventView = () => {
 
   return (
     <div>
-      <h1>查看講座/課堂詳細資料</h1>
+      <h2>查看講座/課堂詳細資料</h2>
       
       <div>
         <div><strong>ID:</strong> {event.event_id}</div>

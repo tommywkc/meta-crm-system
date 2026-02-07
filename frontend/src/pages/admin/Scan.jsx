@@ -282,7 +282,7 @@ const Scan = () => {
   return (
     <div style={{ padding: 20 }}>
       <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
-      <h1>QR Code Scanner</h1>
+      <h2>QR Code Scanner</h2>
 
       {/* Event select bar with type-to-search */}
       <div style={{ marginBottom: 12 }}>

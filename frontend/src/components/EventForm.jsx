@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { getTypeDisplay } from '../utils/dateFormatter';
-import { redTextStyle } from '../styles/TableStyles';
 import '../styles/BatchSessionStyles.css';
 import { handleFindUsersByRoles } from '../api/customersListAPI';
 import { 
@@ -468,12 +467,13 @@ const EventForm = ({
   {/* Action buttons */}
         <div style={{ marginTop: 16 }}>
           <button type="submit" style={{ marginRight: 8 }}>{submitButtonText}</button>
-          <button type="button" onClick={onCancel}>取消</button>
+          <button type="button" onClick={onCancel} className="btn-secondary">取消</button>
           {onDelete && (
             <button 
               type="button" 
               onClick={() => onDelete(initialData.event_id)} 
-              style={{ ...redTextStyle, marginLeft: 8 }}
+              className="btn-danger"
+              style={{ marginLeft: 8 }}
             >
               刪除
             </button>

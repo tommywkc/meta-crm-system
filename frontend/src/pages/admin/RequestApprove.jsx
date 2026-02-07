@@ -69,7 +69,7 @@ const RequestApprove = () => {
 		<div style={{ padding: 20 }}>
 			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
 				<div>
-					<h1 style={{ marginBottom: 4 }}>申請批核</h1>
+					<h2 style={{ marginBottom: 4 }}>申請批核</h2>
 					<p style={{ margin: 0, color: '#6b7280' }}>檢視申請內容並選擇批核結果。</p>
 				</div>
 			</div>

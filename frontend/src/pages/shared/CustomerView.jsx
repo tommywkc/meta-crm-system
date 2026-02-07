@@ -134,7 +134,7 @@ const CustomerView = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>查看客戶</h1>
+      <h2>查看客戶</h2>
       
       <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
   {/* Left: customer information */}

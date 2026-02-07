@@ -39,7 +39,7 @@ const RequestList = () => {
     <div style={{ padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
         <div>
-          <h1 style={{ marginBottom: 4 }}>申請列表</h1>
+          <h2 style={{ marginBottom: 4 }}>申請列表</h2>
           <p style={{ margin: 0, color: '#6b7280' }}>檢視與追蹤全部會員提出的申請狀態。</p>
         </div>
         {!isAdmin && (

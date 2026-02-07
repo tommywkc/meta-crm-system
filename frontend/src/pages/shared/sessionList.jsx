@@ -130,7 +130,7 @@ const SessionListPage = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>已報名場次列表（尚未開始）</h1>
+			<h2>已報名場次列表（尚未開始）</h2>
 
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}

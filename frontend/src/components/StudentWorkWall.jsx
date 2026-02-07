@@ -3,7 +3,6 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 import { useAuth } from "../contexts/AuthContext";
-import { redTextStyle } from '../styles/TableStyles';
 import { handleListStudentWorks, handleCreateStudentWork, handleDeleteStudentWork, handleUpdateStudentWork } from "../api/studentWorksAPI";
 
 // Custom Arrow Components for styling similar to the example image (grey arrow icons)
@@ -238,7 +237,7 @@ const StudentWorkWall = () => {
                                                             e.stopPropagation();
                                                             handleDelete(work.work_id);
                                                         }}
-                                                        style={redTextStyle}
+                                                        className="btn-danger"
                                                     >
                                                         刪除
                                                     </button>
@@ -279,7 +278,7 @@ const StudentWorkWall = () => {
                                 />
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                                <button type="button" onClick={() => setShowModal(false)} disabled={uploading}>
+                                <button type="button" onClick={() => setShowModal(false)} disabled={uploading} className="btn-secondary">
                                     取消
                                 </button>
                                 <button type="submit" disabled={uploading}>
@@ -306,7 +305,7 @@ const StudentWorkWall = () => {
                                 />
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                                <button type="button" onClick={() => setShowEditModal(false)}>
+                                <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary">
                                     取消
                                 </button>
                                 <button type="submit">

@@ -87,7 +87,7 @@ const MemberCalendarPage = () => {
 
 	return (
 		<div>
-			<h1>我的日曆</h1>
+			<h2>我的日曆</h2>
 
 			<section>
 				<h2>課程日曆</h2>

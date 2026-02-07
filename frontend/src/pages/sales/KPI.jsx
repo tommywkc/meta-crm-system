@@ -39,7 +39,7 @@ const KPI = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>業務 KPI {isLeader ? '(Leader)' : '(Sales)'}</h1>
+			<h2>業務 KPI {isLeader ? '(Leader)' : '(Sales)'}</h2>
 
 			{isLeader ? (
 				<>

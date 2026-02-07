@@ -36,7 +36,7 @@ const Homework = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-            <h1>我的功課 (Member)</h1>
+            <h2>我的功課 (Member)</h2>
             {error && <div style={{ color: 'red', marginBottom: 10 }}>{error}</div>}
             
 			<CommonTable headers={headers}>

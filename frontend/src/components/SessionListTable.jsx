@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonTable from './CommonTable';
-import { redTextStyle } from '../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
 const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDeleteSession, isEnrolled, registeredSessionIds = [] }) => {
@@ -52,7 +51,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
                   {isAdmin ? (
                     <>
                       <button onClick={() => onEditSession && onEditSession(session.session_id)}>編輯</button>
-                      <button onClick={() => onDeleteSession && onDeleteSession(session.session_id)} style={redTextStyle}>刪除</button>
+                      <button onClick={() => onDeleteSession && onDeleteSession(session.session_id)} className="btn-danger">刪除</button>
                     </>
                   ) : null}
 

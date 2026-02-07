@@ -143,7 +143,7 @@ const Apply = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>講座/課堂報名</h1>
+      <h2>講座/課堂報名</h2>
 
       <form onSubmit={handleSubmit}>
         <div>

@@ -71,7 +71,7 @@ const Reports = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>報表中心 (Admin)</h1>
+			<h2>報表中心 (Admin)</h2>
 
 			{/* Section ① */}
 			<section>

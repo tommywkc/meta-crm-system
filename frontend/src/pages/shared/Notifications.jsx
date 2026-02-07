@@ -38,7 +38,7 @@ const Notifications = () => {
 	if (loading) {
 		return (
 			<div style={{ padding: 20 }}>
-				<h1>通知中心 (All role)</h1>
+				<h2>通知中心 (All role)</h2>
 				<p>載入中...</p>
 			</div>
 		);
@@ -47,7 +47,7 @@ const Notifications = () => {
 	if (error) {
 		return (
 			<div style={{ padding: 20 }}>
-				<h1>通知中心 (All role)</h1>
+				<h2>通知中心 (All role)</h2>
 				<p style={{ color: 'red' }}>{error}</p>
 			</div>
 		);
@@ -55,7 +55,7 @@ const Notifications = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>通知中心 (All role)</h1>
+			<h2>通知中心 (All role)</h2>
 
 			{notifications.length === 0 ? (
 				<p>暫無通知</p>

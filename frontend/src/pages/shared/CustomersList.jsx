@@ -70,7 +70,7 @@ const CustomersList = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>客戶名單</h1>
+      <h2>客戶名單</h2>
       
 
       {authRole === 'ADMIN' && (

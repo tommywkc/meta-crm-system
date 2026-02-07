@@ -1,6 +1,5 @@
 import React from 'react';
 import CommonTable from './CommonTable';
-import { redTextStyle } from '../styles/TableStyles';
 
 const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, renderActions, showAdminActions = true, extraColumns = [] }) => {
   const headers = [
@@ -34,7 +33,7 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, render
                 <button style={{ marginLeft: 8 }} onClick={() => onEdit && onEdit(c.user_id)}>
                   編輯
                 </button>
-                <button style={{ ...redTextStyle, marginLeft: 8 }} onClick={() => onDelete && onDelete(c.user_id)}>
+                <button className="btn-danger" style={{ marginLeft: 8 }} onClick={() => onDelete && onDelete(c.user_id)}>
                   刪除
                 </button>
               </>

@@ -56,7 +56,7 @@ const PaymentView = () => {
 
 	return (
 		<div>
-			<h1>付款詳情</h1>
+			<h2>付款詳情</h2>
 			
 			<PaymentDetailsTable payment={payment} showForm={false} showCasher={isAdmin} />
 			

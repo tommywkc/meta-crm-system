@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { redTextStyle } from '../styles/TableStyles';
 import { handleFindUsersByRoles } from '../api/customersListAPI';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
@@ -409,14 +408,15 @@ const CustomerForm = ({
           <button type="submit" style={{ marginRight: 8 }}>
             {submitButtonText}
           </button>
-          <button type="button" onClick={onCancel} style={{ marginRight: 8 }}>
+          <button type="button" onClick={onCancel} className="btn-secondary" style={{ marginRight: 8 }}>
             取消
           </button>
           {onDelete && (
             <button 
               type="button" 
               onClick={() => onDelete(initialData.user_id)} 
-              style={{ ...redTextStyle, marginLeft: 8 }}
+              className="btn-danger"
+              style={{ marginLeft: 8 }}
             >
               刪除
             </button>

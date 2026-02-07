@@ -148,7 +148,7 @@ const Receipts = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>收據與證書下載 (Member)</h1>
+			<h2>收據與證書下載 (Member)</h2>
 			<p>你可以查看並下載自己已發放的收據與證書。</p>
 
 			{loading && <p>載入中...</p>}

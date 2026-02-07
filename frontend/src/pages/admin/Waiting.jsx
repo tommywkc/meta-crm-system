@@ -31,7 +31,7 @@ const mockWaiting = [
 const Waiting = () => {
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>等待清單 (Admin)</h1>
+			<h2>等待清單 (Admin)</h2>
 			<WaitingListTable data={mockWaiting} />
 		</div>
 	);

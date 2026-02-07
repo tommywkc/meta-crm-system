@@ -44,7 +44,7 @@ const RequestView = () => {
 		<div style={{ padding: 20 }}>
 			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
 				<div>
-					<h1 style={{ marginBottom: 4 }}>申請詳情</h1>
+					<h2 style={{ marginBottom: 4 }}>申請詳情</h2>
 					<p style={{ margin: 0, color: '#6b7280' }}>檢視申請的所有欄位資訊。</p>
 				</div>
 			</div>

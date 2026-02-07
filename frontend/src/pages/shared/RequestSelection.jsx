@@ -39,7 +39,7 @@ const RequestSelection = () => {
 		<div style={{ padding: 20 }}>
 			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12 }}>
 				<div>
-					<h1>選擇申請類型</h1>
+					<h2>選擇申請類型</h2>
 					<p style={{ marginBottom: 0 }}>請選擇申請種類。</p>
 				</div>
 					<button onClick={() => navigate('/requests/history')} style={{ minWidth: 140 }}>

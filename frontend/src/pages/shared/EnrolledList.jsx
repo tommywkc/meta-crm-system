@@ -590,7 +590,7 @@ const EnrolledList = () => {
   if (!eventId && !sessionId) {
     return (
       <div style={{ padding: 20 }}>
-        <h1>已報名會員清單</h1>
+        <h2>已報名會員清單</h2>
         <p>缺少活動或場次 ID，無法載入已報名名單。</p>
       </div>
     );
@@ -602,7 +602,7 @@ const EnrolledList = () => {
       <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 12 }}>
         <div style={{ flex: 1 }}>
-          <h1>{isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'}</h1>
+          <h2>{isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'}</h2>
           {eventInfo && (
             <div>
               <p>
