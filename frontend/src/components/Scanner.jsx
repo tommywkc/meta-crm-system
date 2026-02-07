@@ -22,6 +22,7 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
   const [qrErrorMsg, setQrErrorMsg] = useState(null);
   const [scanUser, setScanUser] = useState(null);
   const [scanDetail, setScanDetail] = useState(null);
+  const [scanWarning, setScanWarning] = useState(null);
   const [scanStatus, setScanStatus] = useState(null);
 
   const ensureGlobalRegistry = () => {
@@ -90,6 +91,7 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
       payload = await handleScanAttendance({ qr_token: decodedText, session_id: selectedSession.session_id });
     } catch (err) {
       const p = err?.payload || (err?.response && err.response.data) || err?.data || null;
+      setScanWarning(null);
       try {
         const regId = p?.registration?.registration_id || err?.registration?.registration_id;
         const att = p?.attendance || null;
@@ -100,6 +102,13 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
       } catch (e) { console.warn(e); }
 
       try {
+        const extra = p?.extraInfo || {};
+        const parts = [];
+        if (extra.certificateNotIssued) parts.push('證書未發放');
+        if (extra.specialNote) parts.push(`特殊(${extra.specialNote})`);
+        if (extra.paymentOutstanding) parts.push('欠款');
+        if (parts.length > 0) setScanWarning(`備註: ${parts.join(', ')}`);
+
         const userInfo = extractUserFromPayload(p, err);
         const attendTimeRaw = p?.attendance?.attend_time || p?.attend_time || p?.attendance_time || null;
         const attemptStatus = p?.attemptStatus || (p?.attendance?.status ? String(p.attendance.status).trim().toUpperCase() : null);
@@ -146,6 +155,14 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
       if (regId) markLocalSignIn(regId, att);
     } catch (e) {}
 
+    setScanWarning(null);
+    const extra = payload?.extraInfo || {};
+    const parts = [];
+    if (extra.certificateNotIssued) parts.push('證書未發放');
+    if (extra.specialNote) parts.push(`特殊(${extra.specialNote})`);
+    if (extra.paymentOutstanding) parts.push('欠款');
+    if (parts.length > 0) setScanWarning(`備註: ${parts.join(', ')}`);
+
     const user = payload?.user;
     const userName = user?.name || '未知用戶';
     const userId = user?.user_id ? `（${user.user_id}）` : '';
@@ -167,6 +184,7 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
   const startQrScanning = async () => {
     if (scanning || hasStartedRef.current) return;
     setQrErrorMsg(null);
+    setScanWarning(null);
     if (!sessionId) return;
     try {
       const containerId = 'reader-enrolled';
@@ -241,6 +259,11 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
               <div style={{ padding: '6px 8px', borderRadius: 6, backgroundColor: scanStatus === 'success' ? '#e6ffed' : scanStatus === 'fail' ? '#fff0f0' : '#f5f5f5', color: scanStatus === 'success' ? '#1b8b46' : scanStatus === 'fail' ? '#a12a2a' : '#333', fontSize: 13, lineHeight: '1.2', whiteSpace: 'pre-line' }}>{scanDetail}</div>
             ) : (
               <div style={{ color: '#777', fontSize: 13 }}></div>
+            )}
+            {scanWarning && (
+              <div style={{ marginTop: 4, padding: '6px 8px', borderRadius: 6, backgroundColor: '#fffbe6', color: '#d48806', border: '1px solid #ffe58f', fontSize: 13, lineHeight: '1.2', whiteSpace: 'pre-line', fontWeight: 'bold' }}>
+                {scanWarning}
+              </div>
             )}
           </div>
         </div>

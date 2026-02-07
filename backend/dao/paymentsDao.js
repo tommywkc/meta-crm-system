@@ -184,6 +184,12 @@ async function updatePaymentById(id, fields = {}) {
   return res.rows[0] || null;
 }
 
+async function findPaymentsByUserAndEvent(user_id, event_id) {
+  const sql = `SELECT * FROM PAYMENTS WHERE user_id = $1 AND event_id = $2 ORDER BY payment_id DESC`;
+  const res = await query(sql, [user_id, event_id]);
+  return res.rows;
+}
+
 
 module.exports = {
   createPayment,
@@ -194,4 +200,5 @@ module.exports = {
   removeByPaymentId,
   listByPaymentId,
   updatePaymentById,
+  findPaymentsByUserAndEvent,
 };
