@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import EventsTable from '../../components/EventsTable';
 import { handleListEvents, handleDeleteById } from '../../api/eventListAPI';
 import { handleListMyActiveEnrolledEvents } from '../../api/enrollmentAPI';
+import { handleListMyUpcomingSessions } from '../../api/sessionAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
 const HomePage = () => {
@@ -11,6 +12,8 @@ const HomePage = () => {
 	const navigate = useNavigate();
 	const [events, setEvents] = useState([]);
 	const [enrolledEventIds, setEnrolledEventIds] = useState([]);
+	const [upcomingSessions, setUpcomingSessions] = useState([]);
+	const [upcomingLoading, setUpcomingLoading] = useState(false);
     const isAdmin = user?.role?.toLowerCase() === 'admin';
 
 	const loadEvents = async () => {
@@ -44,6 +47,23 @@ const HomePage = () => {
 			}
 		};
 		fetchEnrolled();
+	}, [user]);
+
+	useEffect(() => {
+		if (user?.role?.toLowerCase() === 'member') {
+			const fetchUpcoming = async () => {
+				setUpcomingLoading(true);
+				try {
+					const res = await handleListMyUpcomingSessions(5);
+					setUpcomingSessions(res.sessions || []);
+				} catch (e) {
+					console.error('Failed to load upcoming sessions', e);
+				} finally {
+					setUpcomingLoading(false);
+				}
+			};
+			fetchUpcoming();
+		}
 	}, [user]);
 
 	const handleView = (id) => navigate(`/events/${id}`);
@@ -88,6 +108,41 @@ const HomePage = () => {
 				/>
 			) : (
 				<div style={{ padding: 10, color: '#666' }}>目前沒有開放中的講座。</div>
+			)}
+
+			{user?.role?.toLowerCase() === 'member' && (
+				<div style={{ marginTop: 30, marginBottom: 30 }}>
+					<h3>即將到來的5堂課</h3>
+					{upcomingLoading ? (
+						<p>載入中...</p>
+					) : upcomingSessions.length > 0 ? (
+						<>
+							<table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
+								<thead>
+									<tr>
+										<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '8px' }}>日期時間(日/月/年)</th>
+										<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '8px' }}>課堂名稱</th>
+										<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '8px' }}>場次</th>
+									</tr>
+								</thead>
+								<tbody>
+									{upcomingSessions.map((s) => (
+										<tr key={s.registration_id}>
+											<td style={{ borderBottom: '1px solid #eee', padding: '8px' }}>
+												{s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}
+											</td>
+											<td style={{ borderBottom: '1px solid #eee', padding: '8px' }}>{s.event_name || '-'}</td>
+											<td style={{ borderBottom: '1px solid #eee', padding: '8px' }}>{s.session_name || '-'}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+							<button onClick={() => navigate('/sessions/enrolled')}>查看所有即將到來的場次</button>
+						</>
+					) : (
+						<p>暫時沒有即將到來的課堂</p>
+					)}
+				</div>
 			)}
 		</div>
 	);
