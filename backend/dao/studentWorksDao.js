@@ -28,8 +28,29 @@ const deleteStudentWork = async (workId) => {
     return rows[0];
 };
 
+const updateStudentWorkCaption = async (workId, caption) => {
+    const query = `
+        UPDATE STUDENT_WORKS 
+        SET caption = $2 
+        WHERE work_id = $1 
+        RETURNING *;
+    `;
+    const { rows } = await db.query(query, [workId, caption]);
+    return rows[0];
+};
+
+const getStudentWorkByUrl = async (imageUrl) => {
+    // Basic lookup to find if a record exists for this URL
+    // We use LIKE to handle potential slight URL variations or exact match
+    const query = `SELECT * FROM STUDENT_WORKS WHERE image_url = $1;`;
+    const { rows } = await db.query(query, [imageUrl]);
+    return rows[0];
+};
+
 module.exports = {
     createStudentWork,
     getAllStudentWorks,
-    deleteStudentWork
+    deleteStudentWork,
+    updateStudentWorkCaption,
+    getStudentWorkByUrl
 };

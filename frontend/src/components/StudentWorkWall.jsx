@@ -3,7 +3,8 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 import { useAuth } from "../contexts/AuthContext";
-import { handleListStudentWorks, handleCreateStudentWork, handleDeleteStudentWork } from "../api/studentWorksAPI";
+import { redTextStyle } from '../styles/TableStyles';
+import { handleListStudentWorks, handleCreateStudentWork, handleDeleteStudentWork, handleUpdateStudentWork } from "../api/studentWorksAPI";
 
 // Custom Arrow Components for styling similar to the example image (grey arrow icons)
 const NextArrow = ({ className, style, onClick }) => {
@@ -37,6 +38,12 @@ const StudentWorkWall = () => {
     const [uploadFile, setUploadFile] = useState(null);
     const [uploadCaption, setUploadCaption] = useState("");
     const [uploading, setUploading] = useState(false);
+
+    // Edit Modal state
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editWorkId, setEditWorkId] = useState(null);
+    const [editCaption, setEditCaption] = useState("");
+    const [editImageUrl, setEditImageUrl] = useState("");
 
     useEffect(() => {
         loadWorks();
@@ -88,6 +95,26 @@ const StudentWorkWall = () => {
         } catch (error) {
             console.error("Delete failed", error);
             alert("刪除失敗");
+        }
+    };
+
+    const openEditModal = (work) => {
+         setEditWorkId(work.work_id);
+         setEditCaption(work.caption || "");
+         setEditImageUrl(work.image_url); // Store URL to help backend identify non-DB blobs
+         setShowEditModal(true);
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await handleUpdateStudentWork(editWorkId, editCaption, editImageUrl);
+            alert("更新成功！");
+            setShowEditModal(false);
+            loadWorks();
+        } catch (error) {
+            console.error("Update failed", error);
+            alert("更新失敗");
         }
     };
 
@@ -196,19 +223,26 @@ const StudentWorkWall = () => {
                                                 {work.caption}
                                             </div>
                                             {isAdmin && (
-                                                <button 
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(work.work_id);
-                                                    }}
-                                                    style={{ 
-                                                        marginTop: 5, 
-                                                        color: 'red',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                >
-                                                    刪除
-                                                </button>
+                                                <div style={{ marginTop: 5 }}>
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            openEditModal(work);
+                                                        }}
+                                                        style={{ marginRight: 8 }}
+                                                    >
+                                                        編輯
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDelete(work.work_id);
+                                                        }}
+                                                        style={redTextStyle}
+                                                    >
+                                                        刪除
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -250,6 +284,33 @@ const StudentWorkWall = () => {
                                 </button>
                                 <button type="submit" disabled={uploading}>
                                     {uploading ? '上傳中...' : '確認上傳'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {showEditModal && (
+                <div style={modalOverlayStyle}>
+                    <div style={modalContentStyle}>
+                        <h3>編輯作品資訊</h3>
+                        <form onSubmit={handleEditSubmit}>
+                            <div style={{ marginBottom: 15 }}>
+                                <label style={{ display: 'block', marginBottom: 5 }}>簡介 caption:</label>
+                                <textarea 
+                                    value={editCaption} 
+                                    onChange={(e) => setEditCaption(e.target.value)}
+                                    style={{ width: '100%', height: 60 }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                                <button type="button" onClick={() => setShowEditModal(false)}>
+                                    取消
+                                </button>
+                                <button type="submit">
+                                    儲存更改
                                 </button>
                             </div>
                         </form>

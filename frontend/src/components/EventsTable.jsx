@@ -2,7 +2,7 @@ import React from 'react';
 import { tableStyle, thTdStyle, redTextStyle } from '../styles/TableStyles';
 import { getStatusDisplay, getTypeDisplay, formatForDisplay } from '../utils/dateFormatter';
 
-const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit, onDelete, onEnroll }) => {
+const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit, onDelete, onEnroll, onHomework, viewButtonLabel = '詳情' }) => {
   const userRole = role?.toLowerCase();
   const isAdmin = userRole === 'admin';
   const isMember = userRole === 'member';
@@ -42,7 +42,10 @@ const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit,
               </td>
               {!isMember && <td style={thTdStyle}>{getStatusDisplay(event.status)}</td>}
               <td style={thTdStyle}>
-                <button onClick={() => onView && onView(event.event_id)}>詳情</button>
+                <button onClick={() => onView && onView(event.event_id)}>{viewButtonLabel}</button>
+                {onHomework && (
+                  <button onClick={() => onHomework(event.event_id)} style={{ marginLeft: 8 }}>功課</button>
+                )}
                 {isAdmin ? (
                   <>
                     <button onClick={() => onEdit && onEdit(event.event_id)} style={{ marginLeft: 8 }}>編輯</button>

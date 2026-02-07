@@ -1,7 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { createStudentWork, getAllStudentWorks, deleteStudentWork } = require('../dao/studentWorksDao');
+const { 
+    createStudentWork, 
+    getAllStudentWorks, 
+    deleteStudentWork, 
+    updateStudentWorkCaption,
+    getStudentWorkByUrl
+} = require('../dao/studentWorksDao');
 const blobService = require('../services/azureBlobService');
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -156,6 +162,54 @@ router.delete('/:id', async (req, res) => {
     } catch (error) {
         console.error('Delete student work error:', error);
         res.status(500).json({ success: false, message: 'Failed to delete' });
+    }
+});
+
+// Update caption
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { caption, image_url } = req.body;
+        const userId = req.user ? req.user.user_id : null;
+
+        // Handler for "Virtual Blob" updates
+        if (id.startsWith('blob_')) {
+             // It's a blob-only record. We need to "realize" it by inserting into DB.
+             // We need original URL (without SAS token if possible, but here we just need consistency).
+             // However, the frontend might send SAS URL. We should store the NON-SAS URL if possible.
+             // But for simplicity, we'll try to use what we get. Ideally, we reconstruct URL from blob name if provided.
+             
+             // Extract plain URL from SAS URL if present
+             let plainUrl = image_url;
+             if (image_url && image_url.includes('?')) {
+                 plainUrl = image_url.split('?')[0];
+             }
+             
+             // Check if already exists (race condition check)
+             let existing = await getStudentWorkByUrl(plainUrl);
+             
+             if (existing) {
+                 // Already exists, just update
+                 const updated = await updateStudentWorkCaption(existing.work_id, caption);
+                 return res.json({ success: true, work: updated });
+             } else {
+                 // Create new record
+                 const newWork = await createStudentWork(plainUrl, caption, userId);
+                 return res.json({ success: true, work: newWork });
+             }
+        }
+
+        // Normal DB update
+        const updatedWork = await updateStudentWorkCaption(id, caption);
+        
+        if (!updatedWork) {
+            return res.status(404).json({ success: false, message: 'Work not found' });
+        }
+        
+        res.json({ success: true, work: updatedWork });
+    } catch (error) {
+        console.error('Update student work error:', error);
+        res.status(500).json({ success: false, message: 'Failed to update' });
     }
 });
 

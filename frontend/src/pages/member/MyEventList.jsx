@@ -102,6 +102,8 @@ const MyEventList = () => {
 
     const handleView = (event_id) => navigate(`/events/${event_id}`);
 
+    const handleHomework = (event_id) => navigate(`/events/${event_id}/homework`);
+
     return (
         <div>
             <h2>我的活動</h2>
@@ -119,6 +121,8 @@ const MyEventList = () => {
             <EventsTable
                 events={pagedEvents}
                 onView={handleView}
+                onHomework={handleHomework}
+                viewButtonLabel="詳情/報名場次"
             />
             <div style={LowerSelectContainerStyle}>
                 <div>
