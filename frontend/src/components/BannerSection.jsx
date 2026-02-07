@@ -112,21 +112,15 @@ const BannerSection = () => {
                 .banner-section-wrapper .slick-prev { left: 20px !important; }
                 .banner-section-wrapper .slick-next { right: 20px !important; }
             `}</style>
-            {/* Header / Admin Controls */}
-            {isAdmin && (
-                <div style={{ padding: '10px 16px', marginBottom: '0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                         <h3 style={{ margin: 0 }}>Banner 管理</h3>
-                         <button onClick={() => setShowModal(true)}>+ 上傳新 Banner</button>
-                    </div>
-                </div>
-            )}
 
             {loading && <p>Banner 載入中...</p>}
 
             {!loading && banners.length === 0 && (
                 <div style={{ padding: '40px', textAlign: 'center', background: '#f5f5f5', borderRadius: '8px' }}>
-                    暫無 Banner
+                    <p>暫無 Banner</p>
+                    {isAdmin && (
+                        <button onClick={() => setShowModal(true)}>+ 上傳新 Banner</button>
+                    )}
                 </div>
             )}
 
@@ -151,21 +145,32 @@ const BannerSection = () => {
                                     style={{ width: '100%', height: '100%', objectFit: 'fill' }} 
                                 />
                                 {isAdmin && (
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation(); // prevent drag/click of slider
-                                            handleDelete(banner.id, banner.blobName);
-                                        }}
-                                        className="btn-danger"
-                                        style={{
-                                            position: 'absolute',
-                                            top: '10px',
-                                            left: '10px',
-                                            zIndex: 10
-                                        }}
-                                    >
-                                        刪除
-                                    </button>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '10px',
+                                        left: '10px',
+                                        zIndex: 10,
+                                        display: 'flex',
+                                        gap: '10px'
+                                    }}>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // prevent drag/click of slider
+                                                setShowModal(true);
+                                            }}
+                                        >
+                                            + 上傳新 Banner
+                                        </button>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // prevent drag/click of slider
+                                                handleDelete(banner.id, banner.blobName);
+                                            }}
+                                            className="btn-danger"
+                                        >
+                                            刪除
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>
