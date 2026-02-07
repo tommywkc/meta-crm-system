@@ -6,6 +6,7 @@ import { handleListEvents, handleDeleteById } from '../../api/eventListAPI';
 import { handleListMyActiveEnrolledEvents } from '../../api/enrollmentAPI';
 import { handleListMyUpcomingSessions } from '../../api/sessionAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import StudentWorkWall from '../../components/StudentWorkWall';
 
 const HomePage = () => {
 	const { user } = useAuth();
@@ -92,9 +93,6 @@ const HomePage = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
-			<h1>Meta Academy</h1>
-            <p>Welcome to Meta Academy CRM System.</p>
-
 			<h2 style={{ marginTop: 30 }}>免費講座</h2>
 			{events.length > 0 ? (
 				<EventsTable 
@@ -144,6 +142,8 @@ const HomePage = () => {
 					)}
 				</div>
 			)}
+			
+			<StudentWorkWall />
 		</div>
 	);
 };
