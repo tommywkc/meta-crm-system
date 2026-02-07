@@ -5,11 +5,8 @@ import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
 const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDeleteSession, isEnrolled, registeredSessionIds = [] }) => {
   const navigate = useNavigate();
-  if (!sessions || sessions.length === 0) {
-    return <div style={{ marginTop: 12, color: '#666' }}>此活動暫無場次</div>;
-  }
 
-  const sortedSessions = [...sessions].sort((a, b) => {
+  const sortedSessions = [...(sessions || [])].sort((a, b) => {
     const dateA = new Date(a.datetime_start);
     const dateB = new Date(b.datetime_start);
     return dateA - dateB;
@@ -28,62 +25,62 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
   ].filter(Boolean);
 
   return (
-    <CommonTable headers={headers}>
-        {sortedSessions.map((session) => {
-          const lowerRole = role?.toLowerCase();
-          const isMemberRole = lowerRole === 'member';
-          const isSalesOrLeader = lowerRole === 'sales' || lowerRole === 'leader';
-          const isAdmin = lowerRole === 'admin';
-          const isSessionRegisteredForMember = isMemberRole && registeredSessionIds.some(id => String(id) === String(session.session_id));
-          const endTimeMs = session.datetime_end ? new Date(session.datetime_end).getTime() : null;
-          const isEnded = endTimeMs !== null && !Number.isNaN(endTimeMs) && endTimeMs < Date.now();
+    <CommonTable headers={headers} data={sortedSessions} emptyMessage="此活動暫無場次">
+      {sortedSessions.map((session) => {
+        const lowerRole = role?.toLowerCase();
+        const isMemberRole = lowerRole === 'member';
+        const isSalesOrLeader = lowerRole === 'sales' || lowerRole === 'leader';
+        const isAdmin = lowerRole === 'admin';
+        const isSessionRegisteredForMember = isMemberRole && registeredSessionIds.some(id => String(id) === String(session.session_id));
+        const endTimeMs = session.datetime_end ? new Date(session.datetime_end).getTime() : null;
+        const isEnded = endTimeMs !== null && !Number.isNaN(endTimeMs) && endTimeMs < Date.now();
 
-          return (
-            <tr key={session.session_id}>
-              <td>{session.session_name}</td>
-              <td>{formatDateTimeForDisplay(session.datetime_start) || 'N/A'}</td>
-              <td>{formatDateTimeForDisplay(session.datetime_end) || 'N/A'}</td>
-              <td>{session.remaining_seats || 'N/A'}</td>
-              <td>{session.description || '-'}</td>
-              {showActionColumn && (
-                <td>
-                  {/* Permissions: same as EventsTable */}
-                  {(isSalesOrLeader || isAdmin) ? (
-                    <button
-                      onClick={() => navigate(`/sessions/${session.session_id}/enrolled`)}
-                    >
-                      查看名單
-                    </button>
-                  ) : null}
+        return (
+          <tr key={session.session_id}>
+            <td>{session.session_name}</td>
+            <td>{formatDateTimeForDisplay(session.datetime_start) || 'N/A'}</td>
+            <td>{formatDateTimeForDisplay(session.datetime_end) || 'N/A'}</td>
+            <td>{session.remaining_seats || 'N/A'}</td>
+            <td>{session.description || '-'}</td>
+            {showActionColumn && (
+              <td>
+                {/* Permissions: same as EventsTable */}
+                {(isSalesOrLeader || isAdmin) ? (
+                  <button
+                    onClick={() => navigate(`/sessions/${session.session_id}/enrolled`)}
+                  >
+                    查看名單
+                  </button>
+                ) : null}
 
-                  {isAdmin ? (
-                    <>
-                      <button onClick={() => onEditSession(session.session_id)} style={{ marginLeft: 8 }}>編輯</button>
-                      <button onClick={() => onDeleteSession(session.session_id)} className="btn-danger" style={{ marginLeft: 8 }}>刪除</button>
-                    </>
-                  ) : null}
+                {isAdmin ? (
+                  <>
+                    <button onClick={() => onEditSession(session.session_id)} style={{ marginLeft: 8 }}>編輯</button>
+                    <button onClick={() => onDeleteSession(session.session_id)} className="btn-danger" style={{ marginLeft: 8 }}>刪除</button>
+                  </>
+                ) : null}
 
-                  {/* Sales and Leader or Member (if enrolled) can enroll */}
-                  {(isSalesOrLeader || (isMemberRole && isEnrolled)) ? (
-                    <button
-                      onClick={() => {
-                        if (!onEnrollSession) return;
-                        // 會員且該場次已報名時，不再觸發 onEnrollSession
-                        if (isSessionRegisteredForMember) return;
-                        if (isEnded) return;
-                        onEnrollSession(session.session_id);
-                      }}
-                      style={{ marginLeft: 8 }}
-                      disabled={isSessionRegisteredForMember || isEnded}
-                    >
-                      {isEnded ? '已完結' : (isSessionRegisteredForMember ? '已報名' : '報名')}
-                    </button>
-                  ) : null}
-                </td>
-              )}
-            </tr>
-          );
-        })}
+                {/* Sales and Leader or Member (if enrolled) can enroll */}
+                {(isSalesOrLeader || (isMemberRole && isEnrolled)) ? (
+                  <button
+                    onClick={() => {
+                      if (!onEnrollSession) return;
+                      // 會員且該場次已報名時，不再觸發 onEnrollSession
+                      if (isSessionRegisteredForMember) return;
+                      if (isEnded) return;
+                      onEnrollSession(session.session_id);
+                    }}
+                    style={{ marginLeft: 8 }}
+                    disabled={isSessionRegisteredForMember || isEnded}
+                  >
+                    {isEnded ? '已完結' : (isSessionRegisteredForMember ? '已報名' : '報名')}
+                  </button>
+                ) : null}
+              </td>
+            )}
+          </tr>
+        );
+      })}
     </CommonTable>
   );
 };

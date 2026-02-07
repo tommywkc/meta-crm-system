@@ -58,30 +58,26 @@ const Notifications = () => {
 		<PageContainer>
 			<PageHeader title="通知中心 (All role)" />
 
-			{notifications.length === 0 ? (
-				<p>暫無通知</p>
-			) : (
-				<CommonTable headers={['日期時間', '標題', '內容', '操作']}>
-					{notifications.map((n) => (
-						<tr key={n.notification_id}>
-							<td>
-								{n.create_time ? new Date(n.create_time).toLocaleString('zh-HK') : '—'}
-							</td>
-							<td>{n.template}</td>
-							<td>
-								{n.description && n.description.length > 80
-									? `${n.description.slice(0, 80)}…`
-									: n.description}
-							</td>
-							<td>
-								<button onClick={() => onView(n)} style={{ marginRight: 8 }}>
-									查看
-								</button>
-							</td>
-						</tr>
-					))}
-				</CommonTable>
-			)}
+			<CommonTable headers={['日期時間', '標題', '內容', '操作']} data={notifications} emptyMessage="暫無通知">
+				{notifications.map((n) => (
+					<tr key={n.notification_id}>
+						<td>
+							{n.create_time ? new Date(n.create_time).toLocaleString('zh-HK') : '—'}
+						</td>
+						<td>{n.template}</td>
+						<td>
+							{n.description && n.description.length > 80
+								? `${n.description.slice(0, 80)}…`
+								: n.description}
+						</td>
+						<td>
+							<button onClick={() => onView(n)} style={{ marginRight: 8 }}>
+								查看
+							</button>
+						</td>
+					</tr>
+				))}
+			</CommonTable>
 		</PageContainer>
 	);
 };

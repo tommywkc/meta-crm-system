@@ -122,30 +122,28 @@ const Receipts = () => {
 	};
 
 	const renderSection = (title, items) => {
-        const headers = ['活動名稱', '類型', '檔案名稱', '上傳時間', '操作'];
-        return (
-		<div style={{ marginBottom: 24 }}>
-			<h2 style={{ marginBottom: 8 }}>{title}</h2>
-			{items.length === 0 ? (
-				<p>暫時未有可下載檔案</p>
-			) : (
-				<CommonTable headers={headers}>
-						{items.map((item, idx) => (
-							<tr key={`${title}-${idx}`}>
-								<td>{formatEventName(item.eventId)}</td>
-								<td>{item.type}</td>
-								<td>{item.originalName || item.fileName}</td>
-								<td>{formatUploadTime(item.uploadDate)}</td>
-								<td>
-									<button onClick={() => handleDownload(item.type, item.fileName)}>下載</button>
-								</td>
-							</tr>
-						))}
+		const headers = ['活動名稱', '類型', '檔案名稱', '上傳時間', '操作'];
+		return (
+			<div style={{ marginBottom: 24 }}>
+				<h2 style={{ marginBottom: 8 }}>{title}</h2>
+				<CommonTable headers={headers} data={items} emptyMessage="暫時未有可下載檔案">
+					{items.map((item, idx) => (
+						<tr key={`${title}-${idx}`}>
+							<td>{formatEventName(item.eventId)}</td>
+							<td>{item.type}</td>
+							<td>{item.originalName || item.fileName}</td>
+							<td>{formatUploadTime(item.uploadDate)}</td>
+							<td>
+								<button onClick={() => handleDownload(item.type, item.fileName)}>
+									下載
+								</button>
+							</td>
+						</tr>
+					))}
 				</CommonTable>
-			)}
-		</div>
-	    );
-    };
+			</div>
+		);
+	};
 
 	return (
 		<PageContainer>

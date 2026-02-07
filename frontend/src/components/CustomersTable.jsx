@@ -13,7 +13,7 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, render
   ];
 
   return (
-    <CommonTable headers={headers}>
+    <CommonTable headers={headers} data={customers} emptyMessage="暫無客戶資料">
       {customers.map((c) => (
         <tr key={c.id}>
           <td>{c.user_id}</td>

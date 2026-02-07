@@ -13,25 +13,19 @@ const FeedbackTable = ({ feedbacks = [] }) => {
   const headers = ['ID', '測試角色', '評分 (每項滿分：5分)', '文字意見', '提交者 ID', '提交時間'];
 
   return (
-    <CommonTable headers={headers}>
-      {feedbacks.length === 0 ? (
-        <tr>
-          <td colSpan={6}>暫時沒有任何意見回饋</td>
+    <CommonTable headers={headers} data={feedbacks} emptyMessage="暫時沒有任何意見回饋">
+      {feedbacks.map((fb) => (
+        <tr key={fb.feedback_id}>
+          <td>{fb.feedback_id}</td>
+          <td>{fb.testing_role || 'N/A'}</td>
+          <td>{renderRating(fb.rating)}</td>
+          <td>{fb.text || ''}</td>
+          <td>{fb.submitted_by_id}</td>
+          <td>
+            {fb.submit_time ? formatDateTimeForDisplay(fb.submit_time) : ''}
+          </td>
         </tr>
-      ) : (
-        feedbacks.map((fb) => (
-          <tr key={fb.feedback_id}>
-            <td>{fb.feedback_id}</td>
-            <td>{fb.testing_role || 'N/A'}</td>
-            <td>{renderRating(fb.rating)}</td>
-            <td>{fb.text || ''}</td>
-            <td>{fb.submitted_by_id}</td>
-            <td>
-              {fb.submit_time ? formatDateTimeForDisplay(fb.submit_time) : ''}
-            </td>
-          </tr>
-        ))
-      )}
+      ))}
     </CommonTable>
   );
 };

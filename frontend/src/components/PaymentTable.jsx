@@ -41,44 +41,37 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) =
     ].filter(Boolean);
 
 	return (
-		<CommonTable headers={headers}>
-				{payments.map((p) => {
-					// Display user as "Name (ID)"; if no name but has ID, show "(Deleted User) (ID)"; if neither, show '-'
-					const userDisplay = p.user_name
-						? `${p.user_name} (${p.user_id})`
-						: '(Delected User)';
-					return (
-						<tr key={p.payment_id}>
-							<td>{formatDateTimeForDisplay(p.paid_time || p.create_time)}</td>
-							<td>{p.payment_id ?? '-'}</td>
-							{showUserColumn && <td>{userDisplay}</td>}
-							<td>{p.event_id || '-'}</td>
-							<td>{currency.format(Number(p.amount || 0))}</td>
-							<td>{currency.format(Number((p.paid_amount ?? p.amount) || 0))}</td>
-							<td>{methodLabel(p.method)}</td>
-							<td>{statusLabel(p.status)}</td>
-							<td>{p.expire_time ? formatDateTimeForDisplay(p.expire_time) : '-'}</td>
-							<td>
-                                
-								<button onClick={() => onView(p)} style={{ marginRight: 8 }}>查看</button>
+		<CommonTable headers={headers} data={payments} emptyMessage="暫無付款紀錄">
+			{payments.map((p) => {
+				// Display user as "Name (ID)"; if no name but has ID, show "(Deleted User) (ID)"; if neither, show '-'
+				const userDisplay = p.user_name
+					? `${p.user_name} (${p.user_id})`
+					: '(Delected User)';
+				return (
+					<tr key={p.payment_id}>
+						<td>{formatDateTimeForDisplay(p.paid_time || p.create_time)}</td>
+						<td>{p.payment_id ?? '-'}</td>
+						{showUserColumn && <td>{userDisplay}</td>}
+						<td>{p.event_id || '-'}</td>
+						<td>{currency.format(Number(p.amount || 0))}</td>
+						<td>{currency.format(Number((p.paid_amount ?? p.amount) || 0))}</td>
+						<td>{methodLabel(p.method)}</td>
+						<td>{statusLabel(p.status)}</td>
+						<td>{p.expire_time ? formatDateTimeForDisplay(p.expire_time) : '-'}</td>
+						<td>
+							
+							<button onClick={() => onView(p)} style={{ marginRight: 8 }}>查看</button>
 
-                                {showUserColumn && (p.status?.toUpperCase() == 'PENDING' || p.status?.toUpperCase() == 'OUTSTANDING') && (
-									<button onClick={() => onProcess(p)} style={{ marginRight: 8 }}>付款</button>
-								)}
-                                {showUserColumn && p.status?.toUpperCase() == 'COMPLETED' && (
-									<button onClick={() => onProcess(p)} className="btn-danger" style={{ marginRight: 8 }}>更改</button>
-								)}
-							</td>
-						</tr>
-					);
-				})}
-				{payments.length === 0 && (
-					<tr>
-						<td colSpan={showUserColumn ? 9 : 8}>
-							暫無付款紀錄
+							{showUserColumn && (p.status?.toUpperCase() == 'PENDING' || p.status?.toUpperCase() == 'OUTSTANDING') && (
+								<button onClick={() => onProcess(p)} style={{ marginRight: 8 }}>付款</button>
+							)}
+							{showUserColumn && p.status?.toUpperCase() == 'COMPLETED' && (
+								<button onClick={() => onProcess(p)} className="btn-danger" style={{ marginRight: 8 }}>更改</button>
+							)}
 						</td>
 					</tr>
-				)}
+				);
+			})}
 		</CommonTable>
 	);
 };

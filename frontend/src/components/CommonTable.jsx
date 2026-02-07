@@ -9,7 +9,9 @@ import '../App.css';
  * - children: The <tbody> content (rows)
  * - className: Optional extra classes
  */
-const CommonTable = ({ headers = [], children, className = '' }) => {
+const CommonTable = ({ headers = [], children, className = '', data, emptyMessage = '暫無資料' }) => {
+  const showEmpty = Array.isArray(data) && data.length === 0;
+
   return (
     <table className={`common-table ${className}`}>
       <thead>
@@ -20,7 +22,15 @@ const CommonTable = ({ headers = [], children, className = '' }) => {
         </tr>
       </thead>
       <tbody>
-        {children}
+        {showEmpty ? (
+          <tr>
+            <td colSpan={headers.length} style={{ textAlign: 'center', padding: '10px' }}>
+              {emptyMessage}
+            </td>
+          </tr>
+        ) : (
+          children
+        )}
       </tbody>
     </table>
   );
