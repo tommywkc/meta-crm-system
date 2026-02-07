@@ -8,6 +8,7 @@ import { handleListMyUpcomingSessions } from '../../api/sessionAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import StudentWorkWall from '../../components/StudentWorkWall';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
+import CommonTable from '../../components/CommonTable';
 
 const HomePage = () => {
 	const { user } = useAuth();
@@ -114,32 +115,27 @@ const HomePage = () => {
 					<h3>即將到來的5堂課</h3>
 					{upcomingLoading ? (
 						<p>載入中...</p>
-					) : upcomingSessions.length > 0 ? (
-						<>
-							<table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
-								<thead>
-									<tr>
-										<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '8px' }}>日期時間(日/月/年)</th>
-										<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '8px' }}>課堂名稱</th>
-										<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '8px' }}>場次</th>
-									</tr>
-								</thead>
-								<tbody>
-									{upcomingSessions.map((s) => (
-										<tr key={s.registration_id}>
-											<td style={{ borderBottom: '1px solid #eee', padding: '8px' }}>
-												{s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}
-											</td>
-											<td style={{ borderBottom: '1px solid #eee', padding: '8px' }}>{s.event_name || '-'}</td>
-											<td style={{ borderBottom: '1px solid #eee', padding: '8px' }}>{s.session_name || '-'}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-							<button onClick={() => navigate('/sessions/enrolled')}>查看所有即將到來的場次</button>
-						</>
 					) : (
-						<p>暫時沒有即將到來的課堂</p>
+						<>
+							<CommonTable
+								headers={['日期時間(日/月/年)', '課堂名稱', '場次']}
+								data={upcomingSessions}
+								emptyMessage="暫時沒有即將到來的課堂"
+							>
+								{upcomingSessions.map((s) => (
+									<tr key={s.registration_id}>
+										<td>
+											{s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}
+										</td>
+										<td>{s.event_name || '-'}</td>
+										<td>{s.session_name || '-'}</td>
+									</tr>
+								))}
+							</CommonTable>
+							{upcomingSessions.length > 0 && (
+								<button onClick={() => navigate('/sessions/enrolled')}>查看所有即將到來的場次</button>
+							)}
+						</>
 					)}
 				</div>
 			)}

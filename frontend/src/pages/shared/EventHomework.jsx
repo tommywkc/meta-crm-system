@@ -156,13 +156,8 @@ const EventHomework = () => {
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {!loading && !error && (
-      <CommonTable headers={headers}>
-          {assignments.length === 0 ? (
-            <tr>
-              <td colSpan={headers.length}>暫無功課</td>
-            </tr>
-          ) : (
-            assignments.map((item) => (
+      <CommonTable headers={headers} data={assignments} emptyMessage="暫無功課">
+            {assignments.map((item) => (
               <tr key={item.assignment_id}>
                 <td>{item.assignment_id}</td>
                 <td>{item.name}</td>
@@ -242,8 +237,7 @@ const EventHomework = () => {
                   )}
                 </td>
               </tr>
-            ))
-          )}
+            ))}
       </CommonTable>
       )}
 

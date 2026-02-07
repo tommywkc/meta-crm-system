@@ -40,40 +40,40 @@ const Homework = () => {
             <PageHeader title="我的功課 (Member)" />
             {error && <div style={{ color: 'red', marginBottom: 10 }}>{error}</div>}
             
-			<CommonTable headers={headers}>
-					{list.map((h) => (
-						<tr key={h.id}>
-							<td>{h.subject}</td>
-							<td>{h.assignment}</td>
-							<td>{h.due}</td>
-							<td>
-								{h.status}
-								{h.file && (
-									<div style={{ fontSize: '0.9em', color: '#666', marginTop: 4 }}>
-										檔案: {h.file}
-										{h.fileUrl && (
-											<button 
-												onClick={() => handleDownloadFile(h.fileUrl)}
-												style={{ marginLeft: '8px', padding: '2px 6px', fontSize: '0.8em' }}
-											>
-												下載
-											</button>
-										)}
-									</div>
-								)}
-							</td>
-							<td>
-								<input 
-									type="file" 
-									onChange={(e) => handleFileChange(e, h)}
-									disabled={!!uploading[h.id]}
-									accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
-                                    style={{ maxWidth: 200 }}
-								/>
-								{uploading[h.id] && <span style={{ marginLeft: 8, color: 'blue' }}>上傳中…</span>}
-							</td>
-						</tr>
-					))}
+			<CommonTable headers={headers} data={list} emptyMessage="暫無功課">
+				{list.map((h) => (
+					<tr key={h.id}>
+						<td>{h.subject}</td>
+						<td>{h.assignment}</td>
+						<td>{h.due}</td>
+						<td>
+							{h.status}
+							{h.file && (
+								<div style={{ fontSize: '0.9em', color: '#666', marginTop: 4 }}>
+									檔案: {h.file}
+									{h.fileUrl && (
+										<button 
+											onClick={() => handleDownloadFile(h.fileUrl)}
+											style={{ marginLeft: '8px', padding: '2px 6px', fontSize: '0.8em' }}
+										>
+											下載
+										</button>
+									)}
+								</div>
+							)}
+						</td>
+						<td>
+							<input 
+								type="file" 
+								onChange={(e) => handleFileChange(e, h)}
+								disabled={!!uploading[h.id]}
+								accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
+                                style={{ maxWidth: 200 }}
+							/>
+							{uploading[h.id] && <span style={{ marginLeft: 8, color: 'blue' }}>上傳中…</span>}
+						</td>
+					</tr>
+				))}
 			</CommonTable>
 		</PageContainer>
 	);

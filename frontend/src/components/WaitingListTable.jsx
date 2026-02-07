@@ -23,7 +23,7 @@ const WaitingListTable = ({ data }) => {
     const headers = ['候補編號', '姓名', '連絡電話', '申請課堂', '申請日期', '課堂現在空位', '送出時間', '動作'];
 
 	return (
-		<CommonTable headers={headers}>
+		<CommonTable headers={headers} data={data} emptyMessage="暫無候補資料">
 			{data.map((r) => (
 				<tr key={r.id}>
 					<td>{r.id}</td>
@@ -34,9 +34,15 @@ const WaitingListTable = ({ data }) => {
 					<td>{r.currentSeats}</td>
 					<td>{r.submittedAt}</td>
 					<td>
-						<button onClick={() => handleApprove(r)} style={{ marginRight: 8 }}>核准</button>
-						<button onClick={() => handleNotify(r)} style={{ marginRight: 8 }}>通知</button>
-						<button onClick={() => handleReject(r)} style={{ marginRight: 8 }}>拒絕</button>
+						<button onClick={() => handleApprove(r)} style={{ marginRight: 8 }}>
+							核准
+						</button>
+						<button onClick={() => handleNotify(r)} style={{ marginRight: 8 }}>
+							通知
+						</button>
+						<button onClick={() => handleReject(r)} style={{ marginRight: 8 }}>
+							拒絕
+						</button>
 						<button onClick={() => handleViewCustomer(r)}>查看客戶</button>
 					</td>
 				</tr>

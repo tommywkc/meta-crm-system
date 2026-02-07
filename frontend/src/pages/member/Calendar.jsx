@@ -4,6 +4,7 @@ import Calendar from '../../components/Calendar';
 import { handleListMyUpcomingSessions, handleListMySessionsByYear } from '../../api/sessionAPI';
 import { formatDateKey, formatDateTimeForDisplay, formatForDisplay } from '../../utils/dateFormatter';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
+import CommonTable from '../../components/CommonTable';
 
 const MemberCalendarPage = () => {
 	const navigate = useNavigate();
@@ -107,29 +108,22 @@ const MemberCalendarPage = () => {
 							<p>載入中...</p>
 						) : error ? (
 							<p style={{ color: 'red' }}>{error}</p>
-						) : upcomingSessions.length === 0 ? (
-							<p>暫時沒有即將到來的課堂</p>
 						) : (
-							<table style={{ width: '100%', borderCollapse: 'collapse' }}>
-								<thead>
-									<tr>
-										<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>日期時間(日/月/年)</th>
-										<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>課堂名稱</th>
-										<th style={{ borderBottom: '1px solid #ccc', textAlign: 'left', padding: '4px 8px' }}>場次</th>
+							<CommonTable
+								headers={['日期時間(日/月/年)', '課堂名稱', '場次']}
+								data={upcomingSessions}
+								emptyMessage="暫時沒有即將到來的課堂"
+							>
+								{upcomingSessions.map((s) => (
+									<tr key={s.registration_id}>
+										<td>
+											{s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}
+										</td>
+										<td>{s.event_name || '-'}</td>
+										<td>{s.session_name || '-'}</td>
 									</tr>
-								</thead>
-								<tbody>
-									{upcomingSessions.map((s) => (
-										<tr key={s.registration_id}>
-											<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>
-												{s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}
-											</td>
-											<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.event_name || '-'}</td>
-											<td style={{ borderBottom: '1px solid #eee', padding: '4px 8px' }}>{s.session_name || '-'}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
+								))}
+							</CommonTable>
 						)}
 						<div style={{ marginTop: 12 }}>
 							<button onClick={() => navigate('/sessions/enrolled')}>

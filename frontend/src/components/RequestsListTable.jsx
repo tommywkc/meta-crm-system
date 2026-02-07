@@ -107,13 +107,13 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
   const headers = ['申請編號', '申請人', '申請類型', '申請內容', '狀態', '申請時間', '條件衝突', '操作'];
 
   return (
-    <CommonTable headers={headers}>
+    <CommonTable headers={headers} data={loading ? null : requests} emptyMessage="暫無申請紀錄">
       {loading && (
         <tr>
           <td colSpan={8}>載入中…</td>
         </tr>
       )}
-      {!loading && hasData && requests.map((req) => {
+      {!loading && requests.map((req) => {
         const typeKey = (req.request_type || '').toString().toUpperCase();
         const typeLabel = TYPE_LABELS[typeKey] || req.request_type || '-';
         const requestTimeLabel = req.request_time ? formatDateTimeForDisplay(req.request_time) : '-';
@@ -162,11 +162,6 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
           </tr>
         );
       })}
-      {!loading && !hasData && (
-        <tr>
-          <td colSpan={8}>暫無申請紀錄</td>
-        </tr>
-      )}
     </CommonTable>
   );
 };

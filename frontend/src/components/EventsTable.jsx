@@ -15,7 +15,7 @@ const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit,
   ].filter(Boolean);
 
   return (
-    <CommonTable headers={headers}>
+    <CommonTable headers={headers} data={events} emptyMessage="暫無活動資料">
       {events.map((event) => {
         const isEnrolledForMember = isMember && enrolledEventIds.some((id) => String(id) === String(event.event_id));
         const canShowEnrollButton = isMember || isSalesOrLeader;
