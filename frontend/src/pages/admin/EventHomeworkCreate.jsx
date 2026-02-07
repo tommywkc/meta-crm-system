@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleCreateAssignment } from '../../api/assignmentsAPI';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const EventHomeworkCreate = () => {
   const navigate = useNavigate();
@@ -38,8 +39,8 @@ const EventHomeworkCreate = () => {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>新增功課</h2>
+    <PageContainer>
+      <PageHeader title="新增功課" showBack={true} onBack={() => navigate(-1)} />
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
       ) : (
@@ -85,7 +86,7 @@ const EventHomeworkCreate = () => {
           <button type="submit" disabled={saving}>{saving ? '儲存中...' : '儲存'}</button>
         </div>
       </form>
-    </div>
+    </PageContainer>
   );
 };
 

@@ -5,6 +5,7 @@ import { handleListPaymentByUserId, handleListAllPayment } from '../../api/payme
 import PaymentTable from '../../components/PaymentTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle, commonSelectStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 
 const Payments = () => {
@@ -85,8 +86,8 @@ const Payments = () => {
 	const canNext = !lastPageReached;
 
 	return (
-		<div style={{ padding: 20 }}>
-			<h2>付款紀錄</h2>
+		<PageContainer>
+			<PageHeader title="付款紀錄" />
 
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}
@@ -223,7 +224,7 @@ const Payments = () => {
 					</div>
 				</>
 			)}
-		</div>
+		</PageContainer>
 	);
 };
 

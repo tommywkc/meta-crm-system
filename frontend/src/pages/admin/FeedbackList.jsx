@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { handleListFeedbacks } from '../../api/feedbackAPI';
 import FeedbackTable from '../../components/FeedbackTable';
 import { commonSelectStyle } from '../../styles/SelectStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const FeedbackList = () => {
 	const [feedbacks, setFeedbacks] = useState([]);
@@ -36,8 +37,8 @@ const FeedbackList = () => {
 	const canNext = !lastPageReached;
 
 	return (
-		<div style={{ padding: 20 }}>
-			<h2>意見回饋列表</h2>
+		<PageContainer>
+			<PageHeader title="意見回饋列表" />
 
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}
@@ -76,7 +77,7 @@ const FeedbackList = () => {
 					</div>
 				</>
 			)}
-		</div>
+		</PageContainer>
 	);
 };
 

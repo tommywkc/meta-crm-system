@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleListAssignments } from '../../api/assignmentsAPI';
 import { handleGradeSubmission } from '../../api/homeworkFilesAPI';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const EventHomeworkGrade = () => {
   const navigate = useNavigate();
@@ -53,8 +54,8 @@ const EventHomeworkGrade = () => {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>功課批改</h2>
+    <PageContainer>
+      <PageHeader title="功課批改" showBack={true} onBack={() => navigate(-1)} />
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
       ) : (
@@ -96,7 +97,7 @@ const EventHomeworkGrade = () => {
           </div>
         </form>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

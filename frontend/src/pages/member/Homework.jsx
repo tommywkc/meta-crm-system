@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { apiUrl } from '../../api/apiBase';
 import CommonTable from '../../components/CommonTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const mockHomework = [
 	{ id: 'H1001', subject: 'AI Animation 9A', assignment: 'Project 1', due: '2025-11-05', status: '未上傳', file: null },
@@ -35,8 +36,8 @@ const Homework = () => {
     const headers = ['課程', 'Assignment', '截止', '狀態', '上傳'];
 
 	return (
-		<div style={{ padding: 20 }}>
-            <h2>我的功課 (Member)</h2>
+		<PageContainer>
+            <PageHeader title="我的功課 (Member)" />
             {error && <div style={{ color: 'red', marginBottom: 10 }}>{error}</div>}
             
 			<CommonTable headers={headers}>
@@ -74,7 +75,7 @@ const Homework = () => {
 						</tr>
 					))}
 			</CommonTable>
-		</div>
+		</PageContainer>
 	);
 };
 

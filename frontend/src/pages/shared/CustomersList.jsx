@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { handleList, handleDeleteById } from '../../api/customersListAPI';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle, commonSelectStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const CustomersList = () => {
   const navigate = useNavigate();
@@ -69,8 +70,8 @@ const CustomersList = () => {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>客戶名單</h2>
+    <PageContainer>
+      <PageHeader title="客戶名單" />
       
 
       {authRole === 'ADMIN' && (
@@ -162,7 +163,7 @@ const CustomersList = () => {
           </button>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

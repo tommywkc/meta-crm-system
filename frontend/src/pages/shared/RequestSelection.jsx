@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RequestForm from '../../components/RequestForm';
 import { useAuth } from '../../contexts/AuthContext';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const requestOptions = [
 	'覆課申請',
@@ -36,16 +37,16 @@ const RequestSelection = () => {
 	}, [availableOptions, selected]);
 
 	return (
-		<div style={{ padding: 20 }}>
-			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-				<div>
-					<h2>選擇申請類型</h2>
-					<p style={{ marginBottom: 0 }}>請選擇申請種類。</p>
-				</div>
+		<PageContainer>
+			<PageHeader 
+				title="選擇申請類型"
+				extra={
 					<button onClick={() => navigate('/requests/history')} style={{ minWidth: 140 }}>
 						查看申請紀錄
 					</button>
-			</div>
+				}
+			/>
+			<p style={{ marginBottom: 20 }}>請選擇申請種類。</p>
 
 			<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
 				{availableOptions.map((opt) => (
@@ -69,7 +70,7 @@ const RequestSelection = () => {
 			{selected && (
 				<RequestForm key={selected} requestType={selected} />
 			)}
-		</div>
+		</PageContainer>
 	);
 };
 

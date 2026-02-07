@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { handleListRequests } from '../../api/requestsAPI';
 import { useAuth } from '../../contexts/AuthContext';
 import RequestViewTable from '../../components/RequestViewTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const RequestView = () => {
 	const { requestId } = useParams();
@@ -41,14 +42,13 @@ const RequestView = () => {
 	}, [request, requestId]);
 
 	return (
-		<div style={{ padding: 20 }}>
-			<div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
-				<button className="btn-secondary" onClick={() => navigate('/admin/requests')} style={{ margin: 0 }}>返回</button>
-				<div>
-					<h2 style={{ marginBottom: 4, margin: 0 }}>申請詳情</h2>
-					<p style={{ margin: 0, color: '#6b7280' }}>檢視申請的所有欄位資訊。</p>
-				</div>
-			</div>
+		<PageContainer>
+			<PageHeader 
+				title="申請詳情" 
+				showBack={true} 
+				onBack={() => navigate(-1)} 
+			/>
+			<p style={{ marginBottom: 20, color: '#6b7280' }}>檢視申請的所有欄位資訊。</p>
 			{/* Original Title Block Removed */}
 
 			{loading && (
@@ -75,7 +75,7 @@ const RequestView = () => {
 					</button>
 				)}
 			</div>
-		</div>
+		</PageContainer>
 	);
 };
 

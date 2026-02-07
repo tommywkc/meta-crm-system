@@ -5,6 +5,7 @@ import { handleScanAttendance } from '../../api/attendanceAPI';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Scanner from '../../components/Scanner';
 import { formatDateTimeForDisplay, formatDateTimeWithSecondsForDisplay } from '../../utils/dateFormatter';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 
 const Scan = () => {
@@ -280,9 +281,9 @@ const Scan = () => {
   const selectedEventForCheckin = events.find(e => String(e.event_id) === String(selectedEventId));
   
   return (
-    <div style={{ padding: 20 }}>
+    <PageContainer>
       <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
-      <h2>QR Code Scanner</h2>
+      <PageHeader title="QR Code Scanner" />
 
       {/* Event select bar with type-to-search */}
       <div style={{ marginBottom: 12 }}>
@@ -435,7 +436,7 @@ const Scan = () => {
 
 
       {errorMsg && <div style={{ color: 'red', marginTop: 8 }}>{errorMsg}</div>}
-    </div>
+    </PageContainer>
   );
 };
 

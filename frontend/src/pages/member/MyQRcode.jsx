@@ -1,31 +1,32 @@
 import React from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useAuth } from '../../contexts/AuthContext';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const MyQRcode = () => {
   const { user } = useAuth();
 
   if (!user) {
     return (
-      <div style={{ padding: 20 }}>
-        <h2>我的 QR Code</h2>
+      <PageContainer>
+        <PageHeader title="我的 QR Code" />
         <p>請先登入...</p>
-      </div>
+      </PageContainer>
     );
   }
 
   if (!user.qr_token) {
     return (
-      <div style={{ padding: 20 }}>
-        <h2>我的 QR Code</h2>
+      <PageContainer>
+        <PageHeader title="我的 QR Code" />
         <p style={{ color: 'red' }}>您還沒有 QR Code，請聯絡管理員。</p>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>我的 QR Code</h2>
+    <PageContainer>
+      <PageHeader title="我的 QR Code" />
       <div style={{ marginTop: 20 }}>
         <QRCodeCanvas value={user.qr_token} size={256} />
         <div style={{ marginTop: 8, fontSize: 16, color: '#666' }}>
@@ -50,7 +51,7 @@ const MyQRcode = () => {
           <strong>電子郵件:</strong> {user?.email || '無'}
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

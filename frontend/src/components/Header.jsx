@@ -248,7 +248,7 @@ const Header = () => {
       </div>
     </header>
 
-    <div style={{ height: '30px' }} />
+    <div style={{ height: '50px' }} />
     </>
   );
 };

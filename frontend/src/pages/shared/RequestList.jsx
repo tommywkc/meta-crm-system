@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import RequestsTable from '../../components/RequestsListTable';
 import { handleListRequests } from '../../api/requestsAPI';
 import { useAuth } from '../../contexts/AuthContext';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const RequestList = () => {
   const navigate = useNavigate();
@@ -36,15 +37,8 @@ const RequestList = () => {
   }, [navigate]);
 
   return (
-    <div style={{ padding: 20 }}>
-      {/* Back button standardized */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
-        <button className="btn-secondary" onClick={() => navigate(-1)} style={{ margin: 0 }}>返回</button>
-        <div>
-          <h2 style={{ marginBottom: 4, margin: 0 }}>申請列表</h2>
-        </div>
-      </div>
-      {/* Removed old Title block */}
+    <PageContainer>
+      <PageHeader title="申請列表" />
 
       {error && (
         <div style={{ color: '#b91c1c', marginTop: 12 }}>
@@ -55,7 +49,7 @@ const RequestList = () => {
       <div style={{ marginTop: 16 }}>
         <RequestsTable requests={requests} loading={loading} onApprove={handleApprove} />
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

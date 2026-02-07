@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleListAssignments } from '../../api/assignmentsAPI';
 import { handleGetAssignmentSubmissions, handleListHomeworkFiles } from '../../api/homeworkFilesAPI';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const EventHomeworkResult = () => {
   const navigate = useNavigate();
@@ -61,11 +62,12 @@ const EventHomeworkResult = () => {
   }, [eventId, assignmentId, targetUserId, userRole]);
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
-        <button className="btn-secondary" onClick={() => navigate(-1)} style={{ margin: 0 }}>返回</button>
-        <h2 style={{ margin: 0 }}>功課結果</h2>
-      </div>
+    <PageContainer>
+      <PageHeader 
+        title="功課結果" 
+        showBack={true} 
+        onBack={() => navigate(-1)} 
+      />
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
       ) : (
@@ -94,7 +96,7 @@ const EventHomeworkResult = () => {
           )}
         </>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

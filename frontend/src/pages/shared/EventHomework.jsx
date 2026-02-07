@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import CommonTable from '../../components/CommonTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleListAssignments, handleDeleteAssignment } from '../../api/assignmentsAPI';
@@ -132,11 +133,12 @@ const EventHomework = () => {
   ].filter(Boolean);
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
-        <button className="btn-secondary" onClick={() => navigate(-1)} style={{ margin: 0 }}>返回</button>
-        <h2 style={{ margin: 0 }}>功課</h2>
-      </div>
+    <PageContainer>
+      <PageHeader 
+        title="功課" 
+        showBack={true} 
+        onBack={() => navigate(-1)} 
+      />
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
       ) : (
@@ -245,7 +247,7 @@ const EventHomework = () => {
       </CommonTable>
       )}
 
-    </div>
+    </PageContainer>
   );
 };
 

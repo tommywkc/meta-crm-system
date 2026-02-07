@@ -6,6 +6,7 @@ import { handleGetById } from '../../api/eventListAPI';
 import { handleCreateEnrollment } from '../../api/enrollmentAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { commonSelectStyle } from '../../styles/SelectStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const Apply = () => {
   const { id } = useParams();
@@ -143,8 +144,8 @@ const Apply = () => {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>講座/課堂報名</h2>
+    <PageContainer>
+      <PageHeader title="講座/課堂報名" />
 
       <form onSubmit={handleSubmit}>
         <div>
@@ -283,7 +284,7 @@ const Apply = () => {
           </button>
         </div>
       </form>
-    </div>
+    </PageContainer>
   );
 };
 

@@ -5,8 +5,7 @@ import Calendar from '../../components/Calendar';
 import { QRCodeCanvas } from 'qrcode.react';
 import { formatDateTimeForDisplay, formatDateKey } from '../../utils/dateFormatter';
 import { handleListUserUpcomingSessions, handleListUserSessionsByYear } from '../../api/sessionAPI';
-
-
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const CustomerView = () => {
   const { id } = useParams();
@@ -133,11 +132,12 @@ const CustomerView = () => {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
-        <button className="btn-secondary" onClick={() => navigate('/customers')} style={{ margin: 0 }}>返回</button>
-        <h2 style={{ margin: 0 }}>查看客戶</h2>
-      </div>
+    <PageContainer>
+      <PageHeader 
+        title="查看客戶"
+        showBack={true}
+        onBack={() => navigate('/customers')}
+      />
       
       <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
   {/* Left: customer information */}
@@ -259,7 +259,7 @@ const CustomerView = () => {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

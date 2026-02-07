@@ -10,6 +10,7 @@ import { getStatusDisplay, getTypeDisplay, formatDateTimeForDisplay } from '../.
 import WaitingListTable from '../../components/WaitingListTable';
 import SessionListTable from '../../components/SessionListTable';
 import { commonSelectStyle } from '../../styles/SelectStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const EventView = () => {
   const { id } = useParams();
@@ -191,11 +192,12 @@ const EventView = () => {
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
-        <button className="btn-secondary" onClick={() => navigate('/events')} style={{ margin: 0 }}>返回</button>
-        <h2 style={{ margin: 0 }}>查看講座/課堂詳細資料</h2>
-      </div>
+    <PageContainer>
+      <PageHeader 
+        title="查看講座/課堂詳細資料" 
+        showBack={true} 
+        onBack={() => navigate('/events')} 
+      />
       
       <div>
         <div><strong>ID:</strong> {event.event_id}</div>
@@ -355,7 +357,7 @@ const EventView = () => {
           <WaitingListTable data={mockWaiting} />
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

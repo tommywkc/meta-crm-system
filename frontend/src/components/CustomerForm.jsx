@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { handleFindUsersByRoles } from '../api/customersListAPI';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 import { commonSelectStyle } from '../styles/SelectStyles';
+import { PageContainer, PageHeader } from './CommonPage';
 
 
 const CustomerForm = ({ 
@@ -166,8 +167,12 @@ const CustomerForm = ({
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>{title}</h1>
+    <PageContainer>
+      <PageHeader 
+        title={title} 
+        showBack={true} 
+        onBack={onCancel} 
+      />
       <form onSubmit={handleSubmit} style={{ marginTop: 12, maxWidth: 600 }}>
         {showUserId && initialData.user_id && (
           <div>
@@ -424,7 +429,7 @@ const CustomerForm = ({
           )}
         </div>
       </form>
-    </div>
+    </PageContainer>
   );
 };
 

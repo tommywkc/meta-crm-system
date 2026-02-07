@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { handleListRequests, handleUpdateRequestById } from '../../api/requestsAPI';
 import RequestViewTable from '../../components/RequestViewTable';
 import { commonSelectStyle } from '../../styles/SelectStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const RequestApprove = () => {
 	const { requestId } = useParams();
@@ -67,14 +68,13 @@ const RequestApprove = () => {
 	}, [request, requestId]);
 
 	return (
-		<div style={{ padding: 20 }}>
-			<div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
-				<button className="btn-secondary" onClick={() => navigate(-1)} style={{ margin: 0 }}>返回</button>
-				<div>
-					<h2 style={{ marginBottom: 4, margin: 0 }}>申請批核</h2>
-					<p style={{ margin: 0, color: '#6b7280' }}>檢視申請內容並選擇批核結果。</p>
-				</div>
-			</div>
+		<PageContainer>
+			<PageHeader 
+				title="申請批核" 
+				showBack={true} 
+				onBack={() => navigate(-1)} 
+			/>
+			<p style={{ marginTop: -10, marginBottom: 20, color: '#6b7280' }}>檢視申請內容並選擇批核結果。</p>
 			{/* Original Title Block Removed */}
 
 			{loading && (
@@ -117,7 +117,7 @@ const RequestApprove = () => {
 					{isPending ? '確認批核' : '已批核'}
 				</button>
 			</div>
-		</div>
+		</PageContainer>
 	);
 };
 

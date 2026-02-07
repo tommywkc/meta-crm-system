@@ -1,5 +1,6 @@
 import React from 'react';
 import WaitingListTable from '../../components/WaitingListTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const mockWaiting = [
 	{
@@ -30,10 +31,10 @@ const mockWaiting = [
 
 const Waiting = () => {
 	return (
-		<div style={{ padding: 20 }}>
-			<h2>等待清單 (Admin)</h2>
+		<PageContainer>
+			<PageHeader title="等待清單 (Admin)" />
 			<WaitingListTable data={mockWaiting} />
-		</div>
+		</PageContainer>
 	);
 };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getNotifications } from '../../api/notificationsAPI';
 import CommonTable from '../../components/CommonTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const Notifications = () => {
 	const { user } = useAuth();
@@ -37,25 +38,25 @@ const Notifications = () => {
 
 	if (loading) {
 		return (
-			<div style={{ padding: 20 }}>
-				<h2>通知中心 (All role)</h2>
+			<PageContainer>
+				<PageHeader title="通知中心 (All role)" />
 				<p>載入中...</p>
-			</div>
+			</PageContainer>
 		);
 	}
 
 	if (error) {
 		return (
-			<div style={{ padding: 20 }}>
-				<h2>通知中心 (All role)</h2>
+			<PageContainer>
+				<PageHeader title="通知中心 (All role)" />
 				<p style={{ color: 'red' }}>{error}</p>
-			</div>
+			</PageContainer>
 		);
 	}
 
 	return (
-		<div style={{ padding: 20 }}>
-			<h2>通知中心 (All role)</h2>
+		<PageContainer>
+			<PageHeader title="通知中心 (All role)" />
 
 			{notifications.length === 0 ? (
 				<p>暫無通知</p>
@@ -81,7 +82,7 @@ const Notifications = () => {
 					))}
 				</CommonTable>
 			)}
-		</div>
+		</PageContainer>
 	);
 };
 

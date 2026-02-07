@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { commonSelectStyle } from '../../styles/SelectStyles';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const Reports = () => {
 	const [activeTab, setActiveTab] = useState(1);
@@ -71,8 +72,8 @@ const Reports = () => {
 	};
 
 	return (
-		<div style={{ padding: 20 }}>
-			<h2>報表中心 (Admin)</h2>
+		<PageContainer>
+			<PageHeader title="報表中心 (Admin)" />
 
 			{/* Section ① */}
 			<section>
@@ -368,7 +369,7 @@ const Reports = () => {
 					<p>請選擇課程和月份以查看財務報表</p>
 				)}
 			</section>
-		</div>
+		</PageContainer>
 	);
 };
 

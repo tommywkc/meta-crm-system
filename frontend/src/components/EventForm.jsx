@@ -10,6 +10,7 @@ import {
   calculateEventDateTimes 
 } from '../utils/sessionDateHelper';
 import { commonSelectStyle } from '../styles/SelectStyles';
+import { PageContainer, PageHeader } from './CommonPage';
 
 const EventForm = ({
   initialData = {},
@@ -141,8 +142,12 @@ const EventForm = ({
   
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>{title}</h1>
+    <PageContainer>
+      <PageHeader 
+        title={title} 
+        showBack={true} 
+        onBack={onCancel} 
+      />
       <form onSubmit={handleSubmit} style={{ marginTop: 12, maxWidth: 700 }}>
         {showEventId && initialData.event_id && (
           <div style={{ marginBottom: 16 }}>
@@ -481,7 +486,7 @@ const EventForm = ({
           )}
         </div>
       </form>
-    </div>
+    </PageContainer>
   );
 };
 

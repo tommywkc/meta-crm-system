@@ -6,6 +6,7 @@ import { handleListPaymentByUserId } from '../../api/paymentAPI';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { useAuth } from '../../contexts/AuthContext';
 import CommonTable from '../../components/CommonTable';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const Receipts = () => {
 	const { user } = useAuth();
@@ -147,8 +148,8 @@ const Receipts = () => {
     };
 
 	return (
-		<div style={{ padding: 20 }}>
-			<h2>收據與證書下載 (Member)</h2>
+		<PageContainer>
+			<PageHeader title="收據與證書下載 (Member)" />
 			<p>你可以查看並下載自己已發放的收據與證書。</p>
 
 			{loading && <p>載入中...</p>}
@@ -160,7 +161,7 @@ const Receipts = () => {
 					{renderSection('我的證書', certificateItems)}
 				</>
 			)}
-		</div>
+		</PageContainer>
 	);
 };
 

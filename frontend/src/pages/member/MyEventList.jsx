@@ -7,6 +7,7 @@ import { searchInputStyle } from '../../styles/TableStyles';
 import { handleConfirmEnrollmentByUser } from '../../api/enrollmentAPI';
 import { handleListEvents } from '../../api/eventListAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const MyEventList = () => {
     const navigate = useNavigate();
@@ -105,8 +106,8 @@ const MyEventList = () => {
     const handleHomework = (event_id) => navigate(`/events/${event_id}/homework`);
 
     return (
-        <div>
-            <h2>我的活動</h2>
+        <PageContainer>
+            <PageHeader title="我的活動" />
             <div style={UpperSelectContainerStyle}>
                 <input
                     type="text"
@@ -146,7 +147,7 @@ const MyEventList = () => {
                     </button>
                 </div>
             </div>
-        </div>
+        </PageContainer>
     );  
 }
 

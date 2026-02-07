@@ -7,6 +7,7 @@ import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleListAssignments } from '../../api/assignmentsAPI';
 import { handleGetAssignmentSubmissions } from '../../api/homeworkFilesAPI';
 import { apiUrl } from '../../api/apiBase';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const EventHomeworkView = () => {
   const navigate = useNavigate();
@@ -56,11 +57,12 @@ const EventHomeworkView = () => {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
-        <button className="btn-secondary" onClick={() => navigate(-1)} style={{ margin: 0 }}>返回</button>
-        <h2 style={{ margin: 0 }}>功課提交清單</h2>
-      </div>
+    <PageContainer>
+      <PageHeader 
+        title="功課提交清單" 
+        showBack={true} 
+        onBack={() => navigate(-1)} 
+      />
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
       ) : (
@@ -190,7 +192,7 @@ const EventHomeworkView = () => {
           </table>
         </>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

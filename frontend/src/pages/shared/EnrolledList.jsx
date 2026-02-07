@@ -9,6 +9,7 @@ import { formatDateTimeForDisplay, formatTimeForDisplay, formatTimeForDisplayInH
 import { handleUploadCertificate, handleDeleteCertificate } from '../../api/certificatesAPI';
 import { handleUploadReceipt, handleDeleteReceipt } from '../../api/receiptsAPI';
 import Scanner from '../../components/Scanner';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const statusTranslations = {
   PENDING: '待付款',
@@ -589,24 +590,25 @@ const EnrolledList = () => {
 
   if (!eventId && !sessionId) {
     return (
-      <div style={{ padding: 20 }}>
-        <h2>已報名會員清單</h2>
+      <PageContainer>
+        <PageHeader title="已報名會員清單" />
         <p>缺少活動或場次 ID，無法載入已報名名單。</p>
-      </div>
+      </PageContainer>
     );
   }
 
 
   return (
-    <div style={{ padding: 20 }}>
+    <PageContainer>
       <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px', marginTop: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
-            <button className="btn-secondary" onClick={async () => { try { await stopAllGlobalInstances(); } catch (e) { /* ignore */ } navigate(-1); }} style={{ margin: 0 }}>返回</button>
-            <h2 style={{ margin: 0 }}>{isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'}</h2>
-          </div>
+          <PageHeader 
+            title={isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'} 
+            showBack={true} 
+            onBack={async () => { try { await stopAllGlobalInstances(); } catch (e) { /* ignore */ } navigate(-1); }} 
+          />
           {eventInfo && (
             <div style={{ marginBottom: 4 }}>
               <p style={{ margin: 0, marginBottom: 4 }}>
@@ -958,7 +960,7 @@ const EnrolledList = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

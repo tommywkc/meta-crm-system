@@ -5,6 +5,7 @@ import { handleListEnrolledUpcomingSessions } from '../../api/sessionAPI';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle, commonSelectStyle } from '../../styles/SelectStyles';
 import { searchInputStyle, tableStyle, thTdStyle } from '../../styles/TableStyles';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
+import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 // 場次報名列表頁：顯示所有「尚未開始」的已報名場次.
 // - 會員：只能看到自己的場次
@@ -129,8 +130,8 @@ const SessionListPage = () => {
 	};
 
 	return (
-		<div style={{ padding: 20 }}>
-			<h2>已報名場次列表（尚未開始）</h2>
+		<PageContainer>
+			<PageHeader title="已報名場次列表（尚未開始）" />
 
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}
@@ -265,7 +266,7 @@ const SessionListPage = () => {
 					</div>
 				</>
 			)}
-		</div>
+		</PageContainer>
 	);
 };
 
