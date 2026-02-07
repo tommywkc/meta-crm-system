@@ -1,5 +1,6 @@
 const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
 const { randomUUID } = require('crypto');
+const { URL } = require('url');
 require('dotenv').config();
 
 // Azure Blob Storage helper: upload, delete, download and list files with metadata
@@ -20,7 +21,8 @@ class AzureBlobService {
             portfolio: 'portfolio-files',
             certificates: 'certificate-files',
             receipts: 'receipt-files',
-            studentWorks: 'student-work-files'
+            studentWorks: 'student-work-files',
+            banners: 'banner-files'
         };
     }
 
@@ -73,6 +75,80 @@ class AzureBlobService {
         } catch (e) {
             console.error('SAS generation failed', e);
             return blobUrl;
+        }
+    }
+
+    /**
+     * Generate SAS URL.
+     * Supports:
+     * 1. getSasUrl(fullBlobUrl) - Parses URL to find container/blob.
+     * 2. getSasUrl(containerKey, blobName) - Uses explicit keys.
+     */
+    getSasUrl(containerKeyOrUrl, optionalBlobName) {
+        try {
+            const conn = process.env.AZURE_STORAGE_CONNECTION_STRING;
+            // If connection string missing, just return input (best effort fallback)
+            if (!conn) return containerKeyOrUrl;
+
+            let containerName;
+            let blobName;
+
+            // Scenario 1: First arg is a URL
+            if (typeof containerKeyOrUrl === 'string' && containerKeyOrUrl.startsWith('http')) {
+                try {
+                    const urlObj = new URL(containerKeyOrUrl);
+                    // Pathname is /container-name/blob-name...
+                    const pathParts = urlObj.pathname.split('/').slice(1);
+                    if (pathParts.length >= 2) {
+                        containerName = pathParts[0];
+                        // Join rest as blob name.
+                        // SDK's 'url' property is encoded. 'pathname' is also encoded typically?
+                        // URL.pathname "percentage-decodes" some stuff? No.
+                        // decodeURIComponent to get raw blob name for SAS signing.
+                        blobName = decodeURIComponent(pathParts.slice(1).join('/')); 
+                    } else {
+                        return containerKeyOrUrl;
+                    }
+                } catch (err) {
+                    console.warn('[AzureBlobService] Failed to parse URL:', err);
+                    return containerKeyOrUrl;
+                }
+            } 
+            // Scenario 2: Explicit args
+            else {
+                const containerKey = containerKeyOrUrl;
+                containerName = this.containers[containerKey] || containerKey;
+                blobName = optionalBlobName;
+            }
+
+            if (!containerName || !blobName) return containerKeyOrUrl;
+
+            // Generate SAS
+            const accountMatch = conn.match(/AccountName=([^;]+)/);
+            const keyMatch = conn.match(/AccountKey=([^;]+)/);
+            if (!accountMatch || !keyMatch) return containerKeyOrUrl;
+            
+            const credential = new StorageSharedKeyCredential(accountMatch[1], keyMatch[1]);
+            const permissions = BlobSASPermissions.parse("r"); 
+            const expiresOn = new Date(new Date().valueOf() + 86400 * 1000); // 24h
+
+            const sasToken = generateBlobSASQueryParameters({
+                containerName,
+                blobName,
+                permissions,
+                expiresOn
+            }, credential).toString();
+
+            // Construct Final URL using SDK to be safe (client handles encoding)
+            const containerClient = this.blobServiceClient.getContainerClient(containerName);
+            const blobClient = containerClient.getBlockBlobClient(blobName);
+            
+            return `${blobClient.url}?${sasToken}`;
+        } catch (e) {
+            console.error('[AzureBlobService] getSasUrl error:', e);
+            return (typeof containerKeyOrUrl === 'string' && containerKeyOrUrl.startsWith('http')) 
+                ? containerKeyOrUrl 
+                : null;
         }
     }
 

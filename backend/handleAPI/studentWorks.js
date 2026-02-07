@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
             // Or empty? Let's return DB works to be safe though images might be broken.
             const worksWithSas = dbWorks.map(work => ({
                 ...work,
-                image_url: blobService.getSasUrl(work.image_url) // Generate SAS even if list failed
+                image_url: work.image_url // Leave as is if we can't generate SAS cleanly or just trust DB url
             }));
             return res.json({ success: true, works: worksWithSas });
         }

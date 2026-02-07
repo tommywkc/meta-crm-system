@@ -5,24 +5,54 @@ import "slick-carousel/slick/slick-theme.css";
 import { useAuth } from "../contexts/AuthContext";
 import { handleListStudentWorks, handleCreateStudentWork, handleDeleteStudentWork, handleUpdateStudentWork } from "../api/studentWorksAPI";
 
-// Custom Arrow Components for styling similar to the example image (grey arrow icons)
-const NextArrow = ({ className, style, onClick }) => {
+// Custom Arrow Components with simple dark grey chevrons
+const NextArrow = ({ onClick }) => {
   return (
     <div
-      className={className}
-      style={{ ...style, display: "block", right: "-25px", zIndex: 1 }}
       onClick={onClick}
-    />
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "absolute",
+        right: "-45px",
+        top: "50%",
+        transform: "translateY(-50%)",
+        zIndex: 1,
+        cursor: "pointer",
+        width: "50px",
+        height: "50px"
+      }}
+    >
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </div>
   );
 };
 
-const PrevArrow = ({ className, style, onClick }) => {
+const PrevArrow = ({ onClick }) => {
   return (
     <div
-      className={className}
-      style={{ ...style, display: "block", left: "-25px", zIndex: 1 }}
       onClick={onClick}
-    />
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "absolute",
+        left: "-45px",
+        top: "50%",
+        transform: "translateY(-50%)",
+        zIndex: 1,
+        cursor: "pointer",
+        width: "50px",
+        height: "50px"
+      }}
+    >
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </div>
   );
 };
 
@@ -193,7 +223,7 @@ const StudentWorkWall = () => {
 
     return (
         <section style={wallStyle}>
-            <style>{`.slick-prev:before, .slick-next:before { color: black !important; }`}</style>
+            {/* Removed custom style override for slick-prev/next before since we use custom SVG arrows now */}
             <div style={{ width: '100%', margin: '0 auto' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <h2 style={{ margin: 0 }}>
