@@ -62,6 +62,7 @@ const EventHomeworkResult = () => {
 
   return (
     <div style={{ padding: 20 }}>
+      <button className="btn-secondary" onClick={() => navigate(-1)} style={{ marginBottom: '16px' }}>返回</button>
       <h2>功課結果</h2>
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
@@ -73,9 +74,7 @@ const EventHomeworkResult = () => {
       )}
       {targetUserId && <p>會員 ID: {targetUserId}</p>}
 
-      <div style={{ marginBottom: 16 }}>
-        <button onClick={() => navigate(-1)}>返回上一頁</button>
-      </div>
+
 
       {loading && <p>載入中...</p>}
       {!loading && (

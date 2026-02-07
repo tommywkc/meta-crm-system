@@ -181,14 +181,15 @@ const EventView = () => {
   if (!event || !event.event_id) {
     return (
       <div>
+        <button className="btn-secondary" onClick={() => navigate('/events')} style={{ marginBottom: '16px' }}>返回</button>
         <h2>找不到此講座/課堂</h2>
-        <button onClick={() => navigate('/events')}>返回列表</button>
       </div>
     );
   }
 
   return (
     <div>
+      <button className="btn-secondary" onClick={() => navigate('/events')} style={{ marginBottom: '16px' }}>返回</button>
       <h2>查看講座/課堂詳細資料</h2>
       
       <div>
@@ -232,7 +233,6 @@ const EventView = () => {
       </div>
       
       <div>
-        <button onClick={() => navigate('/events')}>返回列表</button>
         {isAdmin ? (
           <button onClick={() => navigate(`/events/${id}/edit`)} style={{ marginLeft: 8 }}>編輯</button>
         ) : isMember || isSalesOrLeader ? (

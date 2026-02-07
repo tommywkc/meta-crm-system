@@ -67,6 +67,7 @@ const RequestApprove = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
+			<button className="btn-secondary" onClick={() => navigate(-1)} style={{ marginBottom: '16px' }}>返回</button>
 			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
 				<div>
 					<h2 style={{ marginBottom: 4 }}>申請批核</h2>
@@ -113,7 +114,6 @@ const RequestApprove = () => {
 				<button type="button" onClick={handleConfirmDecision} disabled={!isPending || !decision || submitting}>
 					{isPending ? '確認批核' : '已批核'}
 				</button>
-                <button type="button" onClick={() => navigate('/admin/requests')}>返回列表</button>
 			</div>
 		</div>
 	);

@@ -27,8 +27,8 @@ export const greenTextStyle = {
 // Search bar styles
 export const searchInputStyle = {
   flex: 1,
-  padding: '8px 12px',
-  fontSize: '14px',
+  padding: '4px 12px',
+  fontSize: '13px',
   border: '1px solid #ccc',
   borderRadius: '4px'
 };

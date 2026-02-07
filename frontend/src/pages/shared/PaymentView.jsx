@@ -56,6 +56,7 @@ const PaymentView = () => {
 
 	return (
 		<div>
+			<button className="btn-secondary" onClick={handleBack} style={{ marginBottom: '16px' }}>返回</button>
 			<h2>付款詳情</h2>
 			
 			<PaymentDetailsTable payment={payment} showForm={false} showCasher={isAdmin} />
@@ -68,7 +69,6 @@ const PaymentView = () => {
 					{' '}
 				</>
 			)}
-			<button onClick={handleBack}>返回</button>
 		</div>
 	);
 };

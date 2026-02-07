@@ -134,6 +134,7 @@ const CustomerView = () => {
 
   return (
     <div style={{ padding: 20 }}>
+      <button className="btn-secondary" onClick={() => navigate('/customers')} style={{ marginBottom: '16px' }}>返回</button>
       <h2>查看客戶</h2>
       
       <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
@@ -194,7 +195,6 @@ const CustomerView = () => {
           </div>
           
           <div style={{ marginTop: 16 }}>
-            <button style={{ marginRight: 8 }} onClick={() => navigate('/customers')}>返回列表</button>
             <button onClick={() => navigate(`/customers/${id}/edit`)}>編輯</button>
           </div>
         </div>

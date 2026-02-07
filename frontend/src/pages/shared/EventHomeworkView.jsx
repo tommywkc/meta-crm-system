@@ -57,6 +57,7 @@ const EventHomeworkView = () => {
 
   return (
     <div style={{ padding: 20 }}>
+      <button className="btn-secondary" onClick={() => navigate(-1)} style={{ marginBottom: '16px' }}>返回</button>
       <h2>功課提交清單</h2>
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
@@ -67,9 +68,7 @@ const EventHomeworkView = () => {
         <p>功課：{assignment.name || 'N/A'}（ID: {assignment.assignment_id}）</p>
       )}
 
-      <div style={{ marginBottom: 16 }}>
-        <button onClick={() => navigate(-1)}>返回上一頁</button>
-      </div>
+
 
       {loading && <p>載入中...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}

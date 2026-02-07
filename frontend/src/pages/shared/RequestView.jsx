@@ -42,6 +42,7 @@ const RequestView = () => {
 
 	return (
 		<div style={{ padding: 20 }}>
+			<button className="btn-secondary" onClick={() => navigate('/admin/requests')} style={{ marginBottom: '16px' }}>返回</button>
 			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
 				<div>
 					<h2 style={{ marginBottom: 4 }}>申請詳情</h2>
@@ -72,7 +73,6 @@ const RequestView = () => {
 						{isPending ? '批核' : '已批核'}
 					</button>
 				)}
-                <button type="button" onClick={() => navigate('/admin/requests')}>返回列表</button>
 			</div>
 		</div>
 	);

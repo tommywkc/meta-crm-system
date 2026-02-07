@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { tableStyle, thTdStyle } from '../../styles/TableStyles';
+import CommonTable from '../../components/CommonTable';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { handleListAssignments, handleDeleteAssignment } from '../../api/assignmentsAPI';
@@ -121,8 +121,19 @@ const EventHomework = () => {
     }
   };
 
+  const headers = [
+    'ID',
+    '名稱',
+    '描述',
+    '截止日期',
+    isMember ? '提交時間' : null,
+    isMember ? '結果' : null,
+    '操作'
+  ].filter(Boolean);
+
   return (
     <div style={{ padding: 20 }}>
+      <button className="btn-secondary" onClick={() => navigate(-1)} style={{ marginBottom: '16px' }}>返回</button>
       <h2>功課</h2>
       {eventInfo ? (
         <p>活動 ID: {eventInfo.event_id} ｜ 課堂/講座名稱: {eventInfo.event_name}</p>
@@ -134,50 +145,38 @@ const EventHomework = () => {
         {isAdmin && (
           <button onClick={handleGoCreate}>新增功課</button>
         )}
-        <button onClick={() => navigate(-1)} className="btn-secondary" style={{ marginLeft: 8 }}>返回上一頁</button>
+
       </div>
 
       {loading && <p>載入中...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {!loading && !error && (
-      <table style={tableStyle}>
-        <thead>
-          <tr>
-            <th style={thTdStyle}>ID</th>
-            <th style={thTdStyle}>名稱</th>
-            <th style={thTdStyle}>描述</th>
-            <th style={thTdStyle}>截止日期</th>
-            {isMember && <th style={thTdStyle}>提交時間</th>}
-            {isMember && <th style={thTdStyle}>結果</th>}
-            <th style={thTdStyle}>操作</th>
-          </tr>
-        </thead>
-        <tbody>
+      <CommonTable headers={headers}>
           {assignments.length === 0 ? (
             <tr>
-              <td style={thTdStyle} colSpan={isMember ? 7 : 5}>暫無功課</td>
+              <td colSpan={headers.length}>暫無功課</td>
             </tr>
           ) : (
             assignments.map((item) => (
               <tr key={item.assignment_id}>
-                <td style={thTdStyle}>{item.assignment_id}</td>
-                <td style={thTdStyle}>{item.name}</td>
-                <td style={thTdStyle}>
+                <td>{item.assignment_id}</td>
+                <td>{item.name}</td>
+                <td>
                   <pre style={{ margin: 0, fontFamily: 'inherit', whiteSpace: 'pre-wrap' }}>{item.description}</pre>
                 </td>
-                <td style={thTdStyle}>
+                <td>
                   {item.deadline ? formatDateTimeForDisplay(item.deadline) : 'N/A'}
                 </td>
                 {isMember && (
-                  <td style={thTdStyle}>
+                  <td>
                     {filesByAssignment[item.assignment_id]?.[0]?.submittedAt
                       ? formatDateTimeForDisplay(filesByAssignment[item.assignment_id][0].submittedAt)
                       : 'N/A'}
                   </td>
                 )}
                 {isMember && (
-                  <td style={thTdStyle}>
+                  <td>
                     {filesByAssignment[item.assignment_id]?.[0]?.graded ? (
                       <>
                         已批改
@@ -193,7 +192,7 @@ const EventHomework = () => {
                     )}
                   </td>
                 )}
-                <td style={thTdStyle}>
+                <td>
                   {isAdmin ? (
                     <>
                       <button onClick={() => handleGoView(item.assignment_id)} style={{ marginRight: 8 }}>查看</button>
@@ -241,8 +240,7 @@ const EventHomework = () => {
               </tr>
             ))
           )}
-        </tbody>
-      </table>
+      </CommonTable>
       )}
 
     </div>

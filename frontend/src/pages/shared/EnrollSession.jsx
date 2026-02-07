@@ -163,6 +163,7 @@ const EnrollSession = () => {
 
   return (
     <div style={{ padding: 20 }}>
+      <button className="btn-secondary" onClick={() => navigate(-1)} style={{ marginBottom: '16px' }}>返回</button>
       <h2>場次報名</h2>
 
       <form onSubmit={handleSubmit}>

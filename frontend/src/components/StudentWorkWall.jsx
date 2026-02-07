@@ -195,7 +195,7 @@ const StudentWorkWall = () => {
         <section style={wallStyle}>
             <style>{`.slick-prev:before, .slick-next:before { color: black !important; }`}</style>
             <div style={{ width: '100%', margin: '0 auto', position: 'relative' }}>
-                <h2 style={{ fontSize: '24px', marginBottom: '20px' }}>
+                <h2>
                     學生作品牆壁
                 </h2>
                 

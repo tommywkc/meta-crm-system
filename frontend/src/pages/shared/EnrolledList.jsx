@@ -599,6 +599,7 @@ const EnrolledList = () => {
 
   return (
     <div style={{ padding: 20 }}>
+      <button className="btn-secondary" onClick={async () => { try { await stopAllGlobalInstances(); } catch (e) { /* ignore */ } navigate(-1); }} style={{ marginBottom: '16px' }}>返回</button>
       <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, marginBottom: 12 }}>
         <div style={{ flex: 1 }}>
@@ -849,7 +850,7 @@ const EnrolledList = () => {
           )}
 
           <div style={{ marginTop: 16 }}>
-            <button onClick={async () => { try { await stopAllGlobalInstances(); } catch (e) { /* ignore */ } navigate(-1); }} style={{ marginRight: 8 }}>返回上一頁</button>
+
             {isSessionMode && members.length > 0 && (
               <>
                 <button 

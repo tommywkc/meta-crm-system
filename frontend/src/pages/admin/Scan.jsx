@@ -325,7 +325,7 @@ const Scan = () => {
             setSearchSessionTerm('');
           }}
           placeholder="輸入或選擇活動..."
-          style={{ padding: 6, minWidth: 400 }}
+          style={{ padding: '4px 12px', fontSize: '13px', border: '1px solid #ccc', borderRadius: '4px', minWidth: 400 }}
         />
         <datalist id="events-list">
           {events.map((ev) => (
@@ -366,7 +366,7 @@ const Scan = () => {
             setSelectedSessionId('');
           }}
           placeholder={selectedEventId ? '輸入或選擇場次...' : '請先選擇活動'}
-          style={{ padding: 6, minWidth: 400 }}
+          style={{ padding: '4px 12px', fontSize: '13px', border: '1px solid #ccc', borderRadius: '4px', minWidth: 400 }}
           disabled={!selectedEventId}
         />
         <datalist id="sessions-list">
