@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import BannerSection from './BannerSection';
 import '../App.css';
 
 const Header = () => {
@@ -21,6 +22,9 @@ const Header = () => {
 
   // Do not render header when no user
   if (!user) return null;
+
+  // Show Banner only on main dashboard pages
+  const showBanner = ['/admin', '/sales', '/member', '/leader'].includes(location.pathname);
 
   // Define all possible pages with path and label
   const pagesMap = {
@@ -62,13 +66,8 @@ const Header = () => {
   
 
   return (
-    <>
+    <div style={{ position: 'sticky', top: 0, zIndex: 1000, width: '100%' }}>
       <header style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0,
-        right: 0,
-        zIndex: 1000, 
         display: 'flex', 
         alignItems: 'center', 
         padding: '0 16px', 
@@ -248,8 +247,12 @@ const Header = () => {
       </div>
     </header>
 
-    <div style={{ height: '60px' }} />
-    </>
+      {showBanner && (
+        <div style={{ background: '#fff' }}>
+            <BannerSection />
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -95,6 +95,7 @@ const HomePage = () => {
 
 	return (
 		<PageContainer>
+
 			<PageHeader title="免費講座" />
 			{events.length > 0 ? (
 				<EventsTable 
