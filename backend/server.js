@@ -106,6 +106,10 @@ const requestsRouter = require('./handleAPI/requests');
 console.log('Requests router loaded');
 app.use('/api', requestsRouter); // Use the requests router
 
+const studentWorksRouter = require('./handleAPI/studentWorks');
+console.log('Student Works router loaded');
+app.use('/api/student-works', authMiddleware, studentWorksRouter);
+
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');

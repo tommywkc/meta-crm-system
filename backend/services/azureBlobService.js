@@ -1,4 +1,4 @@
-const { BlobServiceClient } = require('@azure/storage-blob');
+const { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } = require('@azure/storage-blob');
 const { randomUUID } = require('crypto');
 require('dotenv').config();
 
@@ -19,7 +19,8 @@ class AzureBlobService {
             homework: 'homework-files',
             portfolio: 'portfolio-files',
             certificates: 'certificate-files',
-            receipts: 'receipt-files'
+            receipts: 'receipt-files',
+            studentWorks: 'student-work-files'
         };
     }
 
@@ -30,7 +31,85 @@ class AzureBlobService {
                 error: 'Azure Blob Storage 未設定 (missing AZURE_STORAGE_CONNECTION_STRING)'
             };
         }
-        return null;
+        return { success: true };
+    }
+
+    getSasUrl(blobUrl) {
+        if (!process.env.AZURE_STORAGE_CONNECTION_STRING) return blobUrl;
+
+        try {
+            // Parse connection string to get key and account name
+            const conn = process.env.AZURE_STORAGE_CONNECTION_STRING;
+            const accountMatch = conn.match(/AccountName=([^;]+)/);
+            const keyMatch = conn.match(/AccountKey=([^;]+)/);
+            
+            if (!accountMatch || !keyMatch) return blobUrl;
+            
+            const accountName = accountMatch[1];
+            const accountKey = keyMatch[1];
+            const credential = new StorageSharedKeyCredential(accountName, accountKey);
+
+            // Parse blob URL to get container and blob name
+            // Example: https://account.blob.core.windows.net/container/path/to/blob
+            const url = new URL(blobUrl);
+            const pathParts = url.pathname.split('/').filter(p => p.length > 0);
+            
+            if (pathParts.length < 2) return blobUrl;
+            
+            const containerName = pathParts[0];
+            const blobName = decodeURIComponent(pathParts.slice(1).join('/'));
+
+            const permissions = BlobSASPermissions.parse("r"); // Read permission
+            const expiresOn = new Date(new Date().valueOf() + 86400 * 1000); // 24 hours
+
+            const sasToken = generateBlobSASQueryParameters({
+                containerName,
+                blobName,
+                permissions,
+                expiresOn
+            }, credential).toString();
+
+            return `${blobUrl}?${sasToken}`;
+        } catch (e) {
+            console.error('SAS generation failed', e);
+            return blobUrl;
+        }
+    }
+
+    /**
+     * Generic upload for Student Work Wall (and potentially others)
+     */
+    async uploadGenericFile(containerKey, fileBuffer, fileName, mimeType) {
+        const check = this.ensureConfigured();
+        if (!check.success) return check;
+
+        try {
+            // Use key mapping from containers
+            let containerName = this.containers[containerKey] || containerKey;
+
+            const containerClient = this.blobServiceClient.getContainerClient(containerName);
+            // Ensure container exists
+            await containerClient.createIfNotExists();
+            
+            // Determine blob name (just the filename with UUID, no folder prefix)
+            const blobName = `${randomUUID()}-${fileName}`;
+
+            const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+            
+            // Upload
+            await blockBlobClient.uploadData(fileBuffer, {
+                blobHTTPHeaders: { blobContentType: mimeType }
+            });
+
+            return {
+                success: true,
+                url: blockBlobClient.url,
+                blobName
+            };
+        } catch (err) {
+            console.error('[AzureBlobService] Upload error:', err);
+            return { success: false, error: err.message };
+        }
     }
 
     async uploadFile(file, userId, resourceId, containerType = 'homework') {
@@ -202,15 +281,31 @@ class AzureBlobService {
     }
 
     async deleteFile(fileName, containerType = 'homework') {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             const containerName = this.containers[containerType];
+            console.log(`[AzureBlobService] Deleting file: ${fileName} from container: ${containerName}`);
+            
+            if (!containerName) {
+                throw new Error(`Invalid container type: ${containerType}`);
+            }
+
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
             const blobClient = containerClient.getBlockBlobClient(fileName);
             
-            const deleteResponse = await blobClient.delete();
+            // Check if exists first to be sure
+            const exists = await blobClient.exists();
+            console.log(`[AzureBlobService] Blob exists before delete? ${exists}`);
             
+            if (!exists) {
+                return { success: true, message: 'Blob already does not exist' };
+            }
+
+            // Delete blob and its snapshots if any
+            const deleteResponse = await blobClient.delete({ deleteSnapshots: 'include' });
+            console.log(`[AzureBlobService] Delete response requestId: ${deleteResponse.requestId}`);
+
             return {
                 success: true,
                 deleteResponse
@@ -225,8 +320,8 @@ class AzureBlobService {
     }
 
     async getFileUrl(fileName, containerType = 'homework') {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             const containerName = this.containers[containerType];
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
@@ -246,8 +341,8 @@ class AzureBlobService {
     }
 
     async downloadFile(fileName, containerType = 'homework') {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             const containerName = this.containers[containerType];
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
@@ -289,8 +384,8 @@ class AzureBlobService {
     }
 
     async listFiles(userId, resourceId = null, containerType = 'homework') {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             const containerName = this.containers[containerType];
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
@@ -384,8 +479,8 @@ class AzureBlobService {
     }
 
     async listAllFiles(containerType = 'homework') {
-        const notConfigured = this.ensureConfigured();
-        if (notConfigured) return notConfigured;
+        const configCheck = this.ensureConfigured();
+        if (!configCheck.success) return configCheck;
         try {
             const containerName = this.containers[containerType];
             const containerClient = this.blobServiceClient.getContainerClient(containerName);
