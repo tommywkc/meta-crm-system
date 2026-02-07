@@ -17,6 +17,26 @@ export async function handleListStudentWorks() {
   }
 }
 
+export async function handleUpdateStudentWork(id, caption, imageUrl) {
+    try {
+        const response = await fetch(apiUrl(`/api/student-works/${id}`), {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ caption, image_url: imageUrl })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (err) {
+        console.error('Update student work error:', err);
+        throw err;
+    }
+}
+
 export async function handleCreateStudentWork(formData) {
   try {
     // Note: Do NOT set Content-Type header when sending FormData with fetch.
