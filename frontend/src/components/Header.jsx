@@ -29,7 +29,6 @@ const Header = () => {
     events: { path: '/events', label: '講座與課堂名單' },
     reports: { path: '/reports', label: '報表中心' },
     waiting: { path: '/waiting', label: '等待清單' },
-    files: { path: '/files', label: '訂閱管理' },
     notifications: { path: '/notifications', label: '通知中心' },
     requests_admin: { path: '/admin/requests', label: '申請列表' },
 
@@ -47,7 +46,7 @@ const Header = () => {
   // Which pages each role should see (order matters)
   const rolePages = {
     // new admin order requested by user
-    admin: ['customers','events','payments','requests_admin','scan','waiting','reports','files','notifications','feedback'],
+    admin: ['customers','events','payments','requests_admin','scan','waiting','reports','notifications','feedback'],
     sales: ['customers','events','payments','requests','sales_kpi','notifications','feedback'],
     leader: ['customers','events','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
     member: ['mycalendar','myevents','events','payments','receipts','requests','notifications','myqrcode','feedback']
