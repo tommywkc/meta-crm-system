@@ -24,9 +24,24 @@ async function listByUserId(user_id, limit = 50, offset = 0) {
   return res.rows;
 }
 
+async function getUnreadCount(user_id) {
+  const res = await query('SELECT COUNT(*) FROM NOTIFICATIONS WHERE user_id = $1 AND is_read = FALSE', [user_id]);
+  return parseInt(res.rows[0].count, 10);
+}
+
+async function markAsRead(notification_id) {
+  await query('UPDATE NOTIFICATIONS SET is_read = TRUE WHERE notification_id = $1', [notification_id]);
+  return true;
+}
+
+async function markAllAsRead(user_id) {
+  await query('UPDATE NOTIFICATIONS SET is_read = TRUE WHERE user_id = $1', [user_id]);
+  return true;
+}
+
 async function removeByNotificationId(id) {
   await query('DELETE FROM NOTIFICATIONS WHERE notification_id = $1', [id]);
   return true;
 }
 
-module.exports = { createNotification, findByNotificationId, listByNotificationId, listByUserId, removeByNotificationId };
+module.exports = { createNotification, findByNotificationId, listByNotificationId, listByUserId, removeByNotificationId, getUnreadCount, markAsRead, markAllAsRead };

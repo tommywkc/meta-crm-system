@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getNotifications } from '../../api/notificationsAPI';
+import { getNotifications, markAllAsRead } from '../../api/notificationsAPI';
 import CommonTable from '../../components/CommonTable';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 
@@ -16,6 +16,8 @@ const Notifications = () => {
 				setLoading(true);
 				const data = await getNotifications(50, 0);
 				setNotifications(data.notifications || []);
+                // Mark all as read when page loads
+                await markAllAsRead();
 				setError(null);
 			} catch (err) {
 				console.error('Error fetching notifications:', err);

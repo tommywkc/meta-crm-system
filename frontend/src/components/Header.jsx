@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getUnreadCount } from '../api/notificationsAPI';
 import BannerSection from './BannerSection';
 import '../App.css';
 
@@ -9,6 +10,24 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const navRef = React.useRef(null);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  const fetchUnreadCount = React.useCallback(() => {
+    if (user) {
+      getUnreadCount().then(res => {
+        if (res && typeof res.count === 'number') setUnreadCount(res.count);
+      });
+    }
+  }, [user]);
+
+  React.useEffect(() => {
+    fetchUnreadCount(); // Initial fetch
+    
+    // Poll every 10 seconds for real-time updates
+    const intervalId = setInterval(fetchUnreadCount, 10000);
+
+    return () => clearInterval(intervalId);
+  }, [fetchUnreadCount, location.pathname]); // Re-fetch when changing pages or user changes
 
   const scrollNav = (direction) => {
     if (navRef.current) {
@@ -197,11 +216,33 @@ const Header = () => {
             onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             title="通知中心"
+            style={{ 
+              cursor: 'pointer', 
+              color: location.pathname.startsWith('/notifications') ? '#093e73' : '#666',
+              display: 'flex', 
+              alignItems: 'center',
+              padding: '8px',
+              borderRadius: '50%',
+              transition: 'background 0.2s',
+              position: 'relative'
+            }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '4px',
+                right: '4px',
+                width: '8px',
+                height: '8px',
+                backgroundColor: 'red',
+                borderRadius: '50%',
+                border: '1px solid white'
+              }}></span>
+            )}
           </div>
         )}
         
