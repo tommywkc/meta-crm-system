@@ -7,6 +7,9 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Do not render header on login page
+  if (location.pathname === '/login') return null;
+
   // Do not render header when no user
   if (!user) return null;
 
