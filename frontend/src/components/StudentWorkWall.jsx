@@ -7,6 +7,7 @@ import { handleListStudentWorks, handleCreateStudentWork, handleDeleteStudentWor
 
 // Custom Arrow Components with simple dark grey chevrons
 const NextArrow = ({ onClick }) => {
+  const isMobile = window.innerWidth <= 768; // simple check
   return (
     <div
       onClick={onClick}
@@ -15,7 +16,7 @@ const NextArrow = ({ onClick }) => {
         alignItems: "center",
         justifyContent: "center",
         position: "absolute",
-        right: "-45px",
+        right: isMobile ? "-10px" : "-45px",
         top: "50%",
         transform: "translateY(-50%)",
         zIndex: 1,
@@ -32,6 +33,7 @@ const NextArrow = ({ onClick }) => {
 };
 
 const PrevArrow = ({ onClick }) => {
+  const isMobile = window.innerWidth <= 768;
   return (
     <div
       onClick={onClick}
@@ -40,7 +42,7 @@ const PrevArrow = ({ onClick }) => {
         alignItems: "center",
         justifyContent: "center",
         position: "absolute",
-        left: "-45px",
+        left: isMobile ? "-10px" : "-45px",
         top: "50%",
         transform: "translateY(-50%)",
         zIndex: 1,
@@ -176,7 +178,8 @@ const StudentWorkWall = () => {
                 breakpoint: 768,
                 settings: {
                     slidesToShow: 1,
-                    slidesToScroll: 1
+                    slidesToScroll: 1,
+                    arrows: false // Disable arrows on mobile to prevent overlap/overflow
                 }
             }
         ]
