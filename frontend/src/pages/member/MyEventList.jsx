@@ -108,31 +108,31 @@ const MyEventList = () => {
     return (
         <PageContainer>
             <PageHeader title="我的活動" />
-            <div style={UpperSelectContainerStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
                 <input
                     type="text"
-                    placeholder="搜尋活動編號、名稱、類型、狀態"
+                    placeholder="輸入[活動編號/名稱]來搜尋."
                     value={searchTerm}
                     onChange={handleSearchInputChange}
                     onKeyDown={handleSearchKeyDown}
                     style={searchInputStyle}
                 />
-                <button onClick={handleSearch}>搜尋</button>
+                <button onClick={handleSearch}>
+                    搜尋
+                </button>
+                <button onClick={() => { setSearchTerm(''); setFilteredEvents(events); setPage(1); setIsSearching(false); }}>
+                    清除
+                </button>
+                {isSearching && (
+                    <span style={{ color: '#666', fontSize: '14px' }}>
+                        找到 {totalResults} 筆結果
+                    </span>
+                )}
             </div>
-            <EventsTable
-                events={pagedEvents}
-                onView={handleView}
-                onHomework={handleHomework}
-                viewButtonLabel="詳情/報名場次"
-            />
-            <div style={LowerSelectContainerStyle}>
-                <div>
-                    第 {startIndex + 1} - {Math.min(startIndex + limit, totalResults)} 筆，共 {totalResults} 筆結果
-                </div>
-                <div>
-                    <button onClick={() => setPage(prev => Math.max(prev - 1, 1))} disabled={!canPrev}>
-                        上一頁
-                    </button>
+
+            <div style={UpperSelectContainerStyle}>
+                <label>
+                    頁數:&nbsp;
                     <select 
                         value={page} 
                         onChange={(e) => setPage(Number(e.target.value))}
@@ -142,7 +142,51 @@ const MyEventList = () => {
                             <option key={i + 1} value={i + 1}>{i + 1}</option>
                         ))}
                     </select>
-                    <button onClick={() => setPage(prev => Math.min(prev + 1, totalPages))} disabled={!canNext}>
+                </label>
+
+                <label>
+                    每頁活動數量:&nbsp;
+                    <select 
+                        value={limit} 
+                        onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                        style={commonSelectStyle}
+                    >
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                    </select>
+                </label>
+
+                <span style={{ marginLeft: '20px', color: '#666', fontSize: '14px' }}>
+                    顯示 {Math.min(startIndex + 1, totalResults)}-{Math.min(startIndex + limit, totalResults)} / 共 {totalResults} 筆
+                </span>
+            </div>
+
+            <EventsTable
+                events={pagedEvents}
+                onView={handleView}
+                onHomework={handleHomework}
+                viewButtonLabel="詳情/報名場次"
+            />
+            
+            <div style={LowerSelectContainerStyle}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label>
+                        頁數:&nbsp;
+                        <select 
+                            value={page} 
+                            onChange={(e) => setPage(Number(e.target.value))}
+                            style={commonSelectStyle}
+                        >
+                            {Array.from({ length: totalPages }, (_, i) => (
+                                <option key={i + 1} value={i + 1}>{i + 1}</option>
+                            ))}
+                        </select>
+                    </label>
+                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={!canPrev}>
+                        上一頁
+                    </button>
+                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={!canNext}>
                         下一頁
                     </button>
                 </div>

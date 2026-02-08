@@ -624,7 +624,7 @@ const EnrolledList = () => {
         </div>
         
         {isSessionMode && isAdmin && (
-          <div style={{ width: 320 }}>
+          <div style={{ width: 320, marginRight: '50px' }}>
             <Scanner
             sessionId={sessionId}
             sessionInfo={sessionInfo}
