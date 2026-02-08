@@ -61,7 +61,6 @@ const Header = () => {
     receipts: { path: '/receipts', label: '查看收據/證書' },
     requests: { path: '/requests/select', label: '覆課/補堂/請假申請' },
     myqrcode: { path: '/myqrcode', label: '我的資料' },
-    mycalendar: { path: '/mycalendar', label: '我的日曆' },
     myevents: { path: '/myevents', label: '我的活動' },
     feedback: { path: '/feedback', label: '意見回饋' }
   };
@@ -72,7 +71,7 @@ const Header = () => {
     admin: ['customers','events','payments','requests_admin','scan','waiting','reports','notifications','feedback'],
     sales: ['customers','events','payments','requests','sales_kpi','notifications','feedback'],
     leader: ['customers','events','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
-    member: ['mycalendar','myevents','events','payments','receipts','requests','notifications','myqrcode','feedback']
+    member: ['myevents','events','payments','receipts','requests','notifications','myqrcode','feedback']
   };
   
   const pages = rolePages[user.role?.toLowerCase()] || [];
