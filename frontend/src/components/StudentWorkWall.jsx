@@ -62,6 +62,14 @@ const StudentWorkWall = () => {
     const [works, setWorks] = useState([]);
     const [loading, setLoading] = useState(false);
     
+    // Responsive check
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []); 
+
     // Modal state for uploading
     const [showModal, setShowModal] = useState(false);
     const [uploadFile, setUploadFile] = useState(null);
@@ -152,8 +160,8 @@ const StudentWorkWall = () => {
         dots: true,
         infinite: false,
         speed: 500,
-        slidesToShow: 4,
-        slidesToScroll: 4,
+        slidesToShow: isMobile ? 1 : 4,
+        slidesToScroll: isMobile ? 1 : 4,
         nextArrow: <NextArrow />,
         prevArrow: <PrevArrow />,
         responsive: [
@@ -166,13 +174,6 @@ const StudentWorkWall = () => {
             },
             {
                 breakpoint: 768,
-                settings: {
-                    slidesToShow: 1,
-                    slidesToScroll: 1
-                }
-            },
-            {
-                breakpoint: 480,
                 settings: {
                     slidesToShow: 1,
                     slidesToScroll: 1
@@ -239,7 +240,7 @@ const StudentWorkWall = () => {
                     )}
                 </div>
 
-                <div style={{ padding: '0 40px', marginTop: 30 }}>
+                <div style={{ padding: isMobile ? '0 10px' : '0 40px', marginTop: 30 }}>
                     {loading ? <p>載入作品中...</p> : (
                         works.length > 0 ? (
                             <Slider {...settings}>

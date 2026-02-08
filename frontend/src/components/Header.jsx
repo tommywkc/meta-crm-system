@@ -38,6 +38,27 @@ const Header = () => {
 
   const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
   const [menuOpen, setMenuOpen] = React.useState(false);
+  
+  const menuRef = React.useRef(null);
+  const toggleRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        menuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        toggleRef.current &&
+        !toggleRef.current.contains(event.target)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -110,9 +131,10 @@ const Header = () => {
       <div style={{ display: 'flex', alignItems: 'center' }}>
         {isMobile && (
           <div 
+            ref={toggleRef}
             onClick={() => setMenuOpen(!menuOpen)}
             style={{ 
-              padding: '8px', 
+              padding: '8px',  
               marginRight: 4, 
               cursor: 'pointer',
               display: 'flex',
@@ -209,7 +231,7 @@ const Header = () => {
   </div>
   )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 16, borderLeft: '1px solid #eee', marginLeft: 'auto', height: '60%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 16, marginLeft: 'auto', height: '60%' }}>
         {pages.includes('feedback') && (
           <div 
             onClick={() => navigate('/feedback')}
@@ -323,7 +345,9 @@ const Header = () => {
 
     {/* Mobile Slide-down Menu */}
     {isMobile && menuOpen && (
-      <div style={{
+      <div 
+        ref={menuRef}
+        style={{
         position: 'absolute',
         top: '60px',
         left: 0,

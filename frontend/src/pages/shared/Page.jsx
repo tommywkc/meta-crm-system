@@ -178,7 +178,12 @@ const HomePage = () => {
 							{calendarLoading && <p>日曆載入中...</p>}
 						</div>
 						<div style={{ flex: 1, width: '100%' }}>
-							<h3>即將到來的5堂課</h3>
+							<div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+								<h3 style={{ margin: 0 }}>即將到來的5堂課</h3>
+								{!upcomingLoading && upcomingSessions.length > 0 && (
+									<button onClick={() => navigate('/sessions/enrolled')}>查看所有即將到來的場次</button>
+								)}
+							</div>
 							{upcomingLoading ? (
 								<p>載入中...</p>
 							) : (
@@ -207,9 +212,6 @@ const HomePage = () => {
 											</tr>
 										))}
 									</CommonTable>
-									{upcomingSessions.length > 0 && (
-										<button onClick={() => navigate('/sessions/enrolled')}>查看所有即將到來的場次</button>
-									)}
 								</>
 							)}
 						</div>
