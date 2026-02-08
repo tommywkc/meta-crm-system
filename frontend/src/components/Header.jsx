@@ -427,7 +427,7 @@ const Header = () => {
     )}
 
       {showBanner && (
-        <div style={{ background: '#fff' }}>
+        <div style={{ background: '#fff', lineHeight: 0, fontSize: 0 }}>
             <BannerSection />
         </div>
       )}
