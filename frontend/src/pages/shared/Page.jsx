@@ -168,8 +168,8 @@ const HomePage = () => {
 			{user?.role?.toLowerCase() === 'member' && (
 				<section style={{ marginTop: 30, marginBottom: 30, borderTop: '1px solid #e0e0e0', paddingTop: 0 }}>
 					<h2>我的課程日曆</h2>
-					<div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
-						<div style={{ flex: 1 }}>
+					<div className="calendar-dashboard-grid">
+						<div style={{ flex: 1, width: '100%' }}>
 							{calendarError && <p style={{ color: 'red' }}>{calendarError}</p>}
 							<Calendar
 								events={eventsByYear[calendarYear] || {}}
@@ -177,7 +177,7 @@ const HomePage = () => {
 							/>
 							{calendarLoading && <p>日曆載入中...</p>}
 						</div>
-						<div style={{ flex: 1 }}>
+						<div style={{ flex: 1, width: '100%' }}>
 							<h3>即將到來的5堂課</h3>
 							{upcomingLoading ? (
 								<p>載入中...</p>

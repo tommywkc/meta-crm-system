@@ -141,9 +141,9 @@ const CustomerView = () => {
         onBack={() => navigate('/customers')}
       />
       
-      <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
+      <div className="calendar-dashboard-grid" style={{ marginTop: 20 }}>
   {/* Left: customer information */}
-        <div style={{ flex: isMember ? 1 : 'none', maxWidth: isMember ? 'none' : '600px' }}>
+        <div style={{ flex: isMember ? 1 : 'none', maxWidth: isMember ? 'none' : '600px', width: '100%' }}>
           <h2>客戶資訊</h2>
           <div style={{ marginTop: 20 }}>
             <div><strong>用戶 ID:</strong> {customer.user_id}</div>
@@ -205,7 +205,7 @@ const CustomerView = () => {
 
   {/* Right: calendar (visible to MEMBER only) */}
         {isMember && (
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, width: '100%' }}>
             <h2>會員日曆</h2>
             {calendarError && <p style={{ color: 'red' }}>{calendarError}</p>}
             <Calendar events={eventsByYear[calendarYear] || {}} onYearChange={handleCalendarYearChange} />

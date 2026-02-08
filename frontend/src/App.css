@@ -246,3 +246,15 @@ button + button, .btn + .btn {
   text-align: right;
   word-break: break-word;
 }
+.calendar-dashboard-grid {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .calendar-dashboard-grid {
+    flex-direction: column;
+  }
+}
+
