@@ -69,6 +69,46 @@ const Header = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Handle swipe gestures for mobile menu
+  React.useEffect(() => {
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    const handleTouchStart = (e) => {
+      touchStartX = e.changedTouches[0].clientX;
+    };
+
+    const handleTouchMove = (e) => {
+      touchEndX = e.changedTouches[0].clientX;
+    };
+
+    const handleTouchEnd = () => {
+      if (!isMobile) return;
+      
+      const distance = touchEndX - touchStartX;
+      
+      // Swipe Right (Open Menu) - anywhere on screen
+      if (distance > 50 && !menuOpen) {
+        setMenuOpen(true);
+      }
+      
+      // Swipe Left (Close Menu)
+      if (distance < -50 && menuOpen) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('touchstart', handleTouchStart);
+    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile, menuOpen]);
+
   // Do not render header on login page
   if (location.pathname === '/login') return null;
 

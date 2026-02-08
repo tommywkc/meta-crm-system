@@ -3,6 +3,8 @@ body {
   font-family: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip; /* clip behaves like hidden but prevents breaking sticky positioning */
+  width: 100%;
 }
 
 code {
@@ -14,6 +16,7 @@ code {
 html {
   overflow-y: scroll; /* Allow vertical scrollbar to occupy space always (Desktop) */
   overscroll-behavior-y: none; /* Disables pull-to-refresh / rubber-banding on Mobile */
+  overscroll-behavior-x: none; /* Disables swipe-back/forward navigation gesture or bounce */
 }
 
 /* Ensure no gap around banner images */
