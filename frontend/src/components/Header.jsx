@@ -414,7 +414,10 @@ const Header = () => {
         <div
             onClick={async () => { await logout(); navigate('/login'); }}
             style={{
+              marginTop: 'auto',
+              marginBottom: '60px',
               padding: '16px 20px',
+              borderTop: '1px solid #d0d0d0',
               borderBottom: '1px solid #d0d0d0',
               color: '#d32f2f',
               fontSize: '16px'
