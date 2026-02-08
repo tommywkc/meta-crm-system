@@ -148,8 +148,6 @@ const Receipts = () => {
 	return (
 		<PageContainer>
 			<PageHeader title="收據與證書下載 (Member)" />
-			<p>你可以查看並下載自己已發放的收據與證書。</p>
-
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}
 
