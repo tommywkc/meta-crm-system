@@ -36,6 +36,18 @@ const Header = () => {
     }
   };
 
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      if (window.innerWidth > 768) setMenuOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Do not render header on login page
   if (location.pathname === '/login') return null;
 
@@ -96,6 +108,24 @@ const Header = () => {
         height: '60px'
       }}>
       <div style={{ display: 'flex', alignItems: 'center' }}>
+        {isMobile && (
+          <div 
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{ 
+              padding: '8px', 
+              marginRight: 4, 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </div>
+        )}
         <div
           style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
           onClick={() => {
@@ -123,6 +153,7 @@ const Header = () => {
       </div>
 
   {/* Navigation Wrapper with Arrows */}
+  {!isMobile && (
   <div className="header-nav-wrapper">
     <button className="nav-scroll-btn" onClick={() => scrollNav('left')}>
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -176,6 +207,7 @@ const Header = () => {
       </svg>
     </button>
   </div>
+  )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 16, borderLeft: '1px solid #eee', marginLeft: 'auto', height: '60%' }}>
         {pages.includes('feedback') && (
@@ -269,7 +301,8 @@ const Header = () => {
             </svg>
           </div>
         )}
-        <div style={{ fontSize: 16 }}>{user.name}</div>
+        {!isMobile && <div style={{ fontSize: 16 }}>{user.name}</div>}
+        {!isMobile && (
         <button 
           onClick={async () => { await logout(); navigate('/login'); }}
           style={{
@@ -284,8 +317,56 @@ const Header = () => {
         >
           登出
         </button>
+        )}
       </div>
     </header>
+
+    {/* Mobile Slide-down Menu */}
+    {isMobile && menuOpen && (
+      <div style={{
+        position: 'absolute',
+        top: '60px',
+        left: 0,
+        width: '100%',
+        backgroundColor: '#fff',
+        boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
+        zIndex: 999,
+        borderTop: '1px solid #eee'
+      }}>
+        {pages.filter(key => !['notifications', 'feedback', 'myqrcode'].includes(key)).map((key) => {
+            const p = pagesMap[key];
+            const isActive = location.pathname.startsWith(p.path) || (key === 'requests' && location.pathname.startsWith('/requests'));
+            return (
+              <div
+                key={key}
+                onClick={() => { setMenuOpen(false); go(key); }}
+                style={{
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #f5f5f5',
+                  color: isActive ? '#093e73' : '#444',
+                  fontWeight: isActive ? 'bold' : 'normal',
+                  backgroundColor: isActive ? '#f0f7ff' : '#fff',
+                  fontSize: '16px'
+                }}
+              >
+                {p.label}
+              </div>
+            );
+        })}
+        {/* Mobile Logout */}
+        <div
+            onClick={async () => { await logout(); navigate('/login'); }}
+            style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #f5f5f5',
+              color: '#d32f2f',
+              fontSize: '16px'
+            }}
+        >
+          登出
+        </div>
+      </div>
+    )}
 
       {showBanner && (
         <div style={{ background: '#fff' }}>

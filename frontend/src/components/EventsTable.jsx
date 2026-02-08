@@ -1,5 +1,6 @@
 import React from 'react';
 import CommonTable from './CommonTable';
+import { MobileCard, MobileCardRow } from './MobileCard';
 import { getStatusDisplay, getTypeDisplay, formatForDisplay } from '../utils/dateFormatter';
 
 const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit, onDelete, onEnroll, onHomework, viewButtonLabel = '詳情' }) => {
@@ -14,8 +15,53 @@ const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit,
     '操作'
   ].filter(Boolean);
 
+  const renderCard = (event, idx) => {
+    const isEnrolledForMember = isMember && enrolledEventIds.some((id) => String(id) === String(event.event_id));
+    const canShowEnrollButton = isMember || isSalesOrLeader;
+
+    return (
+      <MobileCard
+        key={`card-${event.id || idx}`}
+        actions={
+          <>
+            <button onClick={() => onView && onView(event.event_id)}>{viewButtonLabel}</button>
+            {onHomework && (
+              <button onClick={() => onHomework(event.event_id)}>功課</button>
+            )}
+            {isAdmin ? (
+              <>
+                <button onClick={() => onEdit && onEdit(event.event_id)}>編輯</button>
+                <button onClick={() => onDelete && onDelete(event.event_id)} className="btn-danger">刪除</button>
+              </>
+            ) : canShowEnrollButton ? (
+              <button
+                onClick={() => {
+                  if (!onEnroll) return;
+                  if (isMember && isEnrolledForMember) return;
+                  onEnroll(event.event_id);
+                }}
+                disabled={isEnrolledForMember}
+              >
+                {isEnrolledForMember ? '已報名' : '報名'}
+              </button>
+            ) : null}
+          </>
+        }
+      >
+        <MobileCardRow label="活動編號" value={event.event_id} />
+        <MobileCardRow label="活動名稱" value={event.event_name} />
+        <MobileCardRow label="類型" value={getTypeDisplay(event.type)} />
+        <MobileCardRow label="開始日期" value={event.datetime_start != null ? formatForDisplay(event.datetime_start) : '無'} />
+        <MobileCardRow label="結束日期" value={event.datetime_end != null ? formatForDisplay(event.datetime_end) : '無'} />
+        <MobileCardRow label="名額" value={event.capacity != null ? `剩餘 ${event.remaining_seats}/${event.capacity}` : '無限制'} />
+        <MobileCardRow label="價格" value={event.price == null || Number(event.price) === 0 ? '免費' : new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 }).format(Number(event.price))} />
+        {!isMember && <MobileCardRow label="狀態" value={getStatusDisplay(event.status)} />}
+      </MobileCard>
+    );
+  };
+
   return (
-    <CommonTable headers={headers} data={events} emptyMessage="暫無活動資料">
+    <CommonTable headers={headers} data={events} emptyMessage="暫無活動資料" renderCard={renderCard}>
       {events.map((event) => {
         const isEnrolledForMember = isMember && enrolledEventIds.some((id) => String(id) === String(event.event_id));
         const canShowEnrollButton = isMember || isSalesOrLeader;

@@ -1,5 +1,6 @@
 import React from 'react';
 import CommonTable from './CommonTable';
+import { MobileCard, MobileCardRow } from './MobileCard';
 
 const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, renderActions, showAdminActions = true, extraColumns = [] }) => {
   const headers = [
@@ -12,8 +13,48 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, render
     '操作'
   ];
 
+  const renderCard = (c, index) => (
+    <MobileCard
+      key={`card-${c.id || index}`}
+      actions={
+        <>
+            {onView && <button onClick={() => onView(c.user_id)}>詳情</button>}
+            {role === 'ADMIN' && showAdminActions && (
+              <>
+                {onEdit && (
+                  <button onClick={() => onEdit(c.user_id)}>
+                    編輯
+                  </button>
+                )}
+                {onDelete && (
+                  <button className="btn-danger" onClick={() => onDelete(c.user_id)}>
+                    刪除
+                  </button>
+                )}
+              </>
+            )}
+            {renderActions && renderActions(c)}
+        </>
+      }
+    >
+       <MobileCardRow label="用戶編號" value={c.user_id} />
+       <MobileCardRow label="姓名" value={c.name} />
+       <MobileCardRow label="角色" value={c.role} />
+       <MobileCardRow label="電話" value={c.mobile} />
+       <MobileCardRow label="電子郵件" valueStyle={{ wordBreak: 'break-all' }}>
+          {c.email || '無'}
+       </MobileCardRow>
+       
+       {extraColumns.map((col, idx) => (
+          <MobileCardRow key={`extra-card-${c.id || index}-${idx}`} label={col.header}>
+             {col.render ? col.render(c) : ''}
+          </MobileCardRow>
+       ))}
+    </MobileCard>
+  );
+
   return (
-    <CommonTable headers={headers} data={customers} emptyMessage="暫無客戶資料">
+    <CommonTable headers={headers} data={customers} emptyMessage="暫無客戶資料" renderCard={renderCard}>
       {customers.map((c) => (
         <tr key={c.id}>
           <td>{c.user_id}</td>

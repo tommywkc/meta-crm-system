@@ -1,5 +1,6 @@
 import React from 'react';
 import CommonTable from './CommonTable';
+import { MobileCard, MobileCardRow } from './MobileCard';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
 const currency = new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 });
@@ -40,8 +41,43 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) =
         '操作'
     ].filter(Boolean);
 
+	const renderCard = (p, idx) => {
+		const userDisplay = p.user_name
+			? `${p.user_name} (${p.user_id})`
+			: '(Delected User)';
+
+		return (
+			<MobileCard
+				key={`card-${p.payment_id || idx}`}
+				actions={
+					<>
+						<button onClick={() => onView(p)}>查看</button>
+						{showUserColumn && (p.status?.toUpperCase() == 'PENDING' || p.status?.toUpperCase() == 'OUTSTANDING') && (
+							<button onClick={() => onProcess(p)}>付款</button>
+						)}
+						{showUserColumn && p.status?.toUpperCase() == 'COMPLETED' && (
+							<button onClick={() => onProcess(p)} className="btn-danger">更改</button>
+						)}
+					</>
+				}
+			>
+				<MobileCardRow label="建立日期" value={formatDateTimeForDisplay(p.paid_time || p.create_time)} />
+				<MobileCardRow label="訂單編號" value={p.payment_id ?? '-'} valueStyle={{ wordBreak: 'break-all' }} />
+				{showUserColumn && (
+					<MobileCardRow label="用戶" value={userDisplay} />
+				)}
+				<MobileCardRow label="活動ID" value={p.event_id || '-'} />
+				<MobileCardRow label="金額" value={currency.format(Number(p.amount || 0))} />
+				<MobileCardRow label="已付金額" value={currency.format(Number((p.paid_amount ?? p.amount) || 0))} />
+				<MobileCardRow label="付款方式" value={methodLabel(p.method)} />
+				<MobileCardRow label="狀態" value={statusLabel(p.status)} />
+				<MobileCardRow label="付款期限" value={p.expire_time ? formatDateTimeForDisplay(p.expire_time) : '-'} />
+			</MobileCard>
+		);
+	};
+
 	return (
-		<CommonTable headers={headers} data={payments} emptyMessage="暫無付款紀錄">
+		<CommonTable headers={headers} data={payments} emptyMessage="暫無付款紀錄" renderCard={renderCard}>
 			{payments.map((p) => {
 				// Display user as "Name (ID)"; if no name but has ID, show "(Deleted User) (ID)"; if neither, show '-'
 				const userDisplay = p.user_name

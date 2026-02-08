@@ -10,6 +10,7 @@ import StudentWorkWall from '../../components/StudentWorkWall';
 import Calendar from '../../components/Calendar';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 import CommonTable from '../../components/CommonTable';
+import { MobileCard, MobileCardRow } from '../../components/MobileCard';
 
 const HomePage = () => {
 	const { user } = useAuth();
@@ -167,8 +168,8 @@ const HomePage = () => {
 			{user?.role?.toLowerCase() === 'member' && (
 				<section style={{ marginTop: 30, marginBottom: 30, borderTop: '1px solid #e0e0e0', paddingTop: 0 }}>
 					<h2>我的課程日曆</h2>
-					<div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
-						<div style={{ flex: 1 }}>
+					<div className="calendar-dashboard-grid">
+						<div style={{ flex: 1, width: '100%' }}>
 							{calendarError && <p style={{ color: 'red' }}>{calendarError}</p>}
 							<Calendar
 								events={eventsByYear[calendarYear] || {}}
@@ -176,7 +177,7 @@ const HomePage = () => {
 							/>
 							{calendarLoading && <p>日曆載入中...</p>}
 						</div>
-						<div style={{ flex: 1 }}>
+						<div style={{ flex: 1, width: '100%' }}>
 							<h3>即將到來的5堂課</h3>
 							{upcomingLoading ? (
 								<p>載入中...</p>
@@ -186,6 +187,15 @@ const HomePage = () => {
 										headers={['日期時間(日/月/年)', '課堂名稱', '場次']}
 										data={upcomingSessions}
 										emptyMessage="暫時沒有即將到來的課堂"
+                                        renderCard={(s) => (
+                                            <MobileCard key={s.registration_id}>
+                                                <MobileCardRow label="日期時間">
+                                                    {s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}
+                                                </MobileCardRow>
+                                                <MobileCardRow label="課堂名稱" value={s.event_name || '-'} />
+                                                <MobileCardRow label="場次" value={s.session_name || '-'} />
+                                            </MobileCard>
+                                        )}
 									>
 										{upcomingSessions.map((s) => (
 											<tr key={s.registration_id}>
