@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonTable from './CommonTable';
+import { MobileCard, MobileCardRow } from './MobileCard';
 
 const WaitingListTable = ({ data }) => {
 	const navigate = useNavigate();
@@ -22,8 +23,30 @@ const WaitingListTable = ({ data }) => {
 
     const headers = ['候補編號', '姓名', '連絡電話', '申請課堂', '申請日期', '課堂現在空位', '送出時間', '動作'];
 
+    const renderCard = (r, idx) => (
+       <MobileCard
+        key={`card-${r.id || idx}`}
+        actions={
+            <>
+                <button onClick={() => handleApprove(r)}>核准</button>
+                <button onClick={() => handleNotify(r)}>通知</button>
+                <button onClick={() => handleReject(r)}>拒絕</button>
+                <button onClick={() => handleViewCustomer(r)}>查看客戶</button>
+            </>
+        }
+       >
+         <MobileCardRow label="候補編號" value={r.id} />
+         <MobileCardRow label="姓名" value={r.customerName} />
+         <MobileCardRow label="連絡電話" value={r.contact} />
+         <MobileCardRow label="申請課堂" value={r.requestedClass} />
+         <MobileCardRow label="申請日期" value={r.requestedDate} />
+         <MobileCardRow label="課堂現在空位" value={r.currentSeats} />
+         <MobileCardRow label="送出時間" value={r.submittedAt} />
+       </MobileCard>
+    );
+
 	return (
-		<CommonTable headers={headers} data={data} emptyMessage="暫無候補資料">
+		<CommonTable headers={headers} data={data} emptyMessage="暫無候補資料" renderCard={renderCard}>
 			{data.map((r) => (
 				<tr key={r.id}>
 					<td>{r.id}</td>

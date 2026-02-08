@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import CommonTable from '../../components/CommonTable';
+import { MobileCard, MobileCardRow } from '../../components/MobileCard';
 
 const KPI = () => {
 	const { user } = useAuth();
@@ -37,6 +38,26 @@ const KPI = () => {
     const teamHeaders = ['銷售名稱', '成交率', '續報率', '實收金額', '未付款跟進量', '講座到課轉化'];
     const personalHeaders = ['指標', '實績', '目標', '狀態'];
 
+    const renderTeamCard = (row, idx) => (
+        <MobileCard key={`team-card-${row.id || idx}`}>
+            <MobileCardRow label="銷售名稱" value={row.name} />
+            <MobileCardRow label="成交率" value={row.conversionRate} />
+            <MobileCardRow label="續報率" value={row.renewalRate} />
+            <MobileCardRow label="實收金額" value={row.actualRevenue} />
+            <MobileCardRow label="未付款跟進量" value={row.followUp} />
+            <MobileCardRow label="講座到課轉化" value={row.seminarConversion} />
+        </MobileCard>
+    );
+
+    const renderPersonalCard = (metric, idx) => (
+        <MobileCard key={`personal-card-${idx}`}>
+            <MobileCardRow label="指標" value={metric.indicator} />
+            <MobileCardRow label="實績" value={metric.value} />
+            <MobileCardRow label="目標" value={metric.target} />
+            <MobileCardRow label="狀態" value={metric.status} />
+        </MobileCard>
+    );
+
 	return (
 		<div style={{ padding: 20 }}>
 			<h2>業務 KPI {isLeader ? '(Leader)' : '(Sales)'}</h2>
@@ -62,7 +83,7 @@ const KPI = () => {
 					{activeView === 'team' && (
 						<section>
 							<h2>團隊 KPI - {personalKpiData.month}</h2>
-							<CommonTable headers={teamHeaders}>
+							<CommonTable headers={teamHeaders} data={teamData} renderCard={renderTeamCard}>
 									{teamData.map((row) => (
 										<tr key={row.id}>
 											<td>{row.name}</td>
@@ -80,7 +101,7 @@ const KPI = () => {
 					{activeView === 'personal' && (
 						<section>
 							<h2>個人 KPI - {personalKpiData.month}</h2>
-							<CommonTable headers={personalHeaders}>
+							<CommonTable headers={personalHeaders} data={personalKpiData.metrics} renderCard={renderPersonalCard}>
 									{personalKpiData.metrics.map((metric, idx) => (
 										<tr key={idx}>
 											<td>{metric.indicator}</td>
@@ -98,7 +119,7 @@ const KPI = () => {
 					{/* Sales View: Personal Only */}
 					<section>
 						<h2>我的 KPI - {personalKpiData.month}</h2>
-						<CommonTable headers={personalHeaders}>
+						<CommonTable headers={personalHeaders} data={personalKpiData.metrics} renderCard={renderPersonalCard}>
 								{personalKpiData.metrics.map((metric, idx) => (
 									<tr key={idx}>
 										<td>{metric.indicator}</td>

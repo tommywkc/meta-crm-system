@@ -193,3 +193,56 @@ button + button, .btn + .btn {
   margin-left: 8px;
 }
 
+
+/* Common Table Responsive - Mobile Card View */
+.common-table-desktop {
+  width: 100%;
+  display: block;
+}
+
+.common-table-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .common-table-desktop {
+    display: none;
+  }
+  
+  .common-table-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+.mobile-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid #f0f0f0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.mobile-card-label {
+  color: #888;
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.mobile-card-value {
+  color: #333;
+  text-align: right;
+  word-break: break-word;
+}

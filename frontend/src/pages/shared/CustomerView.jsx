@@ -7,6 +7,7 @@ import { formatDateTimeForDisplay, formatDateKey } from '../../utils/dateFormatt
 import { handleListUserUpcomingSessions, handleListUserSessionsByYear } from '../../api/sessionAPI';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 import CommonTable from '../../components/CommonTable';
+import { MobileCard, MobileCardRow } from '../../components/MobileCard';
 
 const CustomerView = () => {
   const { id } = useParams();
@@ -239,6 +240,13 @@ const CustomerView = () => {
                   headers={['日期時間', '課堂名稱', '場次']}
                   data={upcomingSessions}
                   emptyMessage="暫時沒有即將到來的課堂"
+                  renderCard={(s, idx) => (
+                    <MobileCard key={`upcoming-${s.registration_id || idx}`}>
+                       <MobileCardRow label="日期時間" value={s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'} />
+                       <MobileCardRow label="課堂名稱" value={s.event_name || '-'} />
+                       <MobileCardRow label="場次" value={s.session_name || '-'} />
+                    </MobileCard>
+                  )}
                 >
                   {upcomingSessions.map((s) => (
                     <tr key={s.registration_id}>

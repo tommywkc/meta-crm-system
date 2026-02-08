@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { apiUrl } from '../../api/apiBase';
 import CommonTable from '../../components/CommonTable';
+import { MobileCard, MobileCardRow } from '../../components/MobileCard';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const mockHomework = [
@@ -35,12 +36,50 @@ const Homework = () => {
 
     const headers = ['課程', 'Assignment', '截止', '狀態', '上傳'];
 
+    const renderCard = (h, idx) => (
+       <MobileCard
+        key={`card-${h.id || idx}`}
+       >
+         <MobileCardRow label="課程" value={h.subject} />
+         <MobileCardRow label="Assignment" value={h.assignment} />
+         <MobileCardRow label="截止" value={h.due} />
+         <MobileCardRow label="狀態">
+             {h.status}
+             {h.file && (
+                 <div style={{ fontSize: '0.9em', color: '#666', marginTop: 4 }}>
+                     檔案: {h.file}
+                     {h.fileUrl && (
+                         <button 
+                             onClick={() => handleDownloadFile(h.fileUrl)}
+                             style={{ marginLeft: '8px', padding: '2px 6px', fontSize: '0.8em' }}
+                         >
+                             下載
+                         </button>
+                     )}
+                 </div>
+             )}
+         </MobileCardRow>
+         <MobileCardRow label="上傳">
+             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                <input 
+                    type="file" 
+                    onChange={(e) => handleFileChange(e, h)}
+                    disabled={!!uploading[h.id]}
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
+                    style={{ maxWidth: 200 }}
+                />
+                {uploading[h.id] && <span style={{ color: 'blue' }}>上傳中…</span>}
+             </div>
+         </MobileCardRow>
+       </MobileCard>
+    );
+
 	return (
 		<PageContainer>
             <PageHeader title="我的功課 (Member)" />
             {error && <div style={{ color: 'red', marginBottom: 10 }}>{error}</div>}
             
-			<CommonTable headers={headers} data={list} emptyMessage="暫無功課">
+			<CommonTable headers={headers} data={list} emptyMessage="暫無功課" renderCard={renderCard}>
 				{list.map((h) => (
 					<tr key={h.id}>
 						<td>{h.subject}</td>

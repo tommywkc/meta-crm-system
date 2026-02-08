@@ -10,6 +10,7 @@ import StudentWorkWall from '../../components/StudentWorkWall';
 import Calendar from '../../components/Calendar';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 import CommonTable from '../../components/CommonTable';
+import { MobileCard, MobileCardRow } from '../../components/MobileCard';
 
 const HomePage = () => {
 	const { user } = useAuth();
@@ -186,6 +187,15 @@ const HomePage = () => {
 										headers={['日期時間(日/月/年)', '課堂名稱', '場次']}
 										data={upcomingSessions}
 										emptyMessage="暫時沒有即將到來的課堂"
+                                        renderCard={(s) => (
+                                            <MobileCard key={s.registration_id}>
+                                                <MobileCardRow label="日期時間">
+                                                    {s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'}
+                                                </MobileCardRow>
+                                                <MobileCardRow label="課堂名稱" value={s.event_name || '-'} />
+                                                <MobileCardRow label="場次" value={s.session_name || '-'} />
+                                            </MobileCard>
+                                        )}
 									>
 										{upcomingSessions.map((s) => (
 											<tr key={s.registration_id}>

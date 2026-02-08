@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import CommonTable from '../../components/CommonTable';
+import { MobileCard, MobileCardRow } from '../../components/MobileCard';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
@@ -156,7 +157,86 @@ const EventHomework = () => {
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {!loading && !error && (
-      <CommonTable headers={headers} data={assignments} emptyMessage="暫無功課">
+      <CommonTable 
+        headers={headers} 
+        data={assignments} 
+        emptyMessage="暫無功課"
+        renderCard={(item, idx) => (
+             <MobileCard key={`hw-${item.assignment_id || idx}`}>
+                <MobileCardRow label="Assignment ID" value={item.assignment_id} />
+                <MobileCardRow label="Name" value={item.name} />
+                <MobileCardRow label="Description">
+                    <pre style={{ margin: 0, fontFamily: 'inherit', whiteSpace: 'pre-wrap', textAlign: 'right' }}>{item.description}</pre>
+                </MobileCardRow>
+                <MobileCardRow label="Deadline" value={item.deadline ? formatDateTimeForDisplay(item.deadline) : 'N/A'} />
+                
+                {isMember && (
+                    <>
+                        <MobileCardRow label="Submitted">
+                            {filesByAssignment[item.assignment_id]?.[0]?.submittedAt
+                            ? formatDateTimeForDisplay(filesByAssignment[item.assignment_id][0].submittedAt)
+                            : 'N/A'}
+                        </MobileCardRow>
+                        <MobileCardRow label="Graded">
+                             {filesByAssignment[item.assignment_id]?.[0]?.graded ? (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                                    <span>已批改</span>
+                                    <button
+                                    onClick={() => navigate(`/events/${eventId}/homework/${item.assignment_id}/result`)}
+                                    >
+                                    查看結果
+                                    </button>
+                                </div>
+                                ) : (
+                                '未批改'
+                                )}
+                        </MobileCardRow>
+                    </>
+                )}
+
+                <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                  {isAdmin ? (
+                    <>
+                      <button onClick={() => handleGoView(item.assignment_id)}>查看</button>
+                      <button onClick={() => handleGoEdit(item.assignment_id)}>編輯</button>
+                      <button onClick={() => handleDelete(item.assignment_id)} className="btn-danger">刪除</button>
+                    </>
+                  ) : isStaff ? (
+                    <button onClick={() => handleGoView(item.assignment_id)}>查看</button>
+                  ) : (
+                    <>
+                      <input
+                        type="file"
+                        ref={(el) => { uploadInputRefs.current[item.assignment_id] = el; }}
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleUploadFile(item.assignment_id, e.target.files?.[0])}
+                      />
+                      <button
+                        onClick={() => uploadInputRefs.current[item.assignment_id]?.click()}
+                        disabled={uploadingId === item.assignment_id || (filesByAssignment[item.assignment_id] || []).length > 0}
+                      >
+                        {uploadingId === item.assignment_id ? '上傳中...' : '上傳'}
+                      </button>
+                      {(filesByAssignment[item.assignment_id] || []).length > 0 && (
+                        <span style={{ color: '#666', fontSize: 13, alignSelf: 'center' }}>已提交（如需更改請先刪除）</span>
+                      )}
+                      {(filesByAssignment[item.assignment_id] || []).map((file) => (
+                        <div key={file.fileName} style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', justifyContent: 'flex-end', marginTop: 8 }}>
+                          <span style={{ fontSize: 13 }}>{file.originalName || file.fileName}</span>
+                          <button
+                            onClick={() => handleDeleteFile(file.fileName)}
+                            className="btn-danger"
+                          >
+                            刪除
+                          </button>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+             </MobileCard>
+        )}
+      >
             {assignments.map((item) => (
               <tr key={item.assignment_id}>
                 <td>{item.assignment_id}</td>
