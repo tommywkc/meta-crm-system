@@ -1,77 +1,51 @@
 # Copilot Instructions for meta-crm-system
 
-## Project Overview
-- **Monorepo** with two main apps:
-  - `backend/`: Node.js Express API server (default: http://localhost:4000)
-  - `frontend/`: React SPA (default: http://localhost:3000)
-- Backend connects to PostgreSQL and Azure Blob Storage.
-- Frontend communicates with backend via REST API endpoints under `/api/*`.
+## System Architecture & "Big Picture"
+- **Monorepo Structure**: Distinct `backend` (Node/Express) and `frontend` (React) projects.
+  - **Backend**: Listens on port `4000` (default). Manages DB, Azure Blob, and WhatsApp Webhooks.
+  - **Frontend**: Runs on port `3000` (default). Consumes backend APIs via `frontend/src/api/*`.
+- **Boundaries**:
+  - `backend/handleAPI/` routes handle HTTP logic => call `backend/dao/` for SQL => return JSON.
+  - `frontend/src/api/` wraps `fetch` calls => used by React components/pages.
 
-## Key Workflows
-- **Install dependencies:**
-  - `cd backend && npm install`
-  - `cd frontend && npm install`
-- **Start development servers:**
-  - Backend: `npm start` in `backend/`
-  - Frontend: `npm start` in `frontend/`
-- **Environment setup:**
-  - Copy `backend/simple.env` to `backend/.env` and fill in required values (see `README.md`).
-- **Database:**
-  - Uses PostgreSQL (default user/pass: `postgres`/`postgres`, db: `meta_academy_crm`).
-  - Schema in `backend/resources/schema.sql`.
-- **Azure Integration:**
-  - File uploads use Azure Blob Storage (see `AZURE_STORAGE_CONNECTION_STRING`).
-  - GitHub Actions deploy to Azure Web Apps (see `.github/workflows/`).
+## Critical Developer Workflows
+- **Setup & Run**:
+  - **Backend**: `cd backend && npm install && npm start`.
+  - **Frontend**: `cd frontend && npm install && npm start`.
+- **Configuration**:
+  - Backend requires `backend/.env` (derived from `simple.env`).
+  - Frontend uses `REACT_APP_API_BASE_URL` (defaults to `http://localhost:4000`).
+- **Scripts**:
+  - `npm run import:holidays` (in `backend/`): Run this periodically to update holiday data.
 
-## Backend Structure
-- **API routes:** `backend/handleAPI/`
-- **Data access:** `backend/dao/` (one DAO per entity, e.g., `usersDao.js`)
-- **DB pool:** `backend/db/pool.js`
-- **Middleware:** `backend/middleware/`
-- **Azure/file logic:** `backend/services/`
-- **Scripts:** `backend/scripts/` (e.g., import holidays)
+## Project-Specific patterns
+### Backend (Node.js/Express)
+- **Routing**: Routes are explicitly required and mounted in `server.js` (e.g., `app.use('/api', loginRouter)`).
+- **Authentication**:
+  - Uses **HTTP-only Cookies** for JWTs.
+  - CORS must be configured with `credentials: true` and specific origin (not `*`).
+- **Webhooks**:
+  - WhatsApp webhook is at `/webhook/whatsapp` (NOT `/api/...`).
+  - **Critical**: `verifier` middleware in `server.js` captures `req.rawBody` for `X-Hub-Signature-256` verification. **Do not remove `req.rawBody` logic.**
+- **Database**:
+  - Uses `pg` pool from `backend/db/pool.js`.
+  - Pattern: One DAO file per entity (e.g., `usersDao.js`) exporting async functions.
 
-## Frontend Structure
-- **API calls:** `frontend/src/api/`
-- **Components:** `frontend/src/components/`
-- **Pages:** `frontend/src/pages/` (by user role: `admin/`, `member/`, `sales/`)
-- **Context:** `frontend/src/contexts/`
-- **Styles:** `frontend/src/styles/`
-- **Utils:** `frontend/src/utils/`
+### Frontend (React)
+- **API Layer**:
+  - **Always** use helper functions in `frontend/src/api/`. Do not use `fetch` directly in components.
+  - Requests must include `credentials: 'include'` to send auth cookies (handled in `loginAPI.js` example).
+- **State Management**:
+  - `AuthContext.jsx` manages user session. Use `useAuth()` hook for access control.
+- **Navigation**:
+  - Role-based routing strategy in `App.js` (Admin/Sales/Member paths).
 
-## Conventions & Patterns
-- **Backend:**
-  - Each API route has a corresponding DAO for DB access.
-  - Use async/await for all DB and API logic.
-  - Environment variables are required for DB and Azure config.
-- **Frontend:**
-  - Use React Context for auth state (`AuthContext.jsx`).
-  - API base URL is set via `REACT_APP_API_BASE_URL`.
-  - Organize UI by user role in `pages/`.
-
-## Testing & Debugging
-- **Frontend:**
-  - Run `npm test` in `frontend/` (Jest, React Testing Library).
-- **Backend:**
-  - No formal test suite; test via API calls (e.g., Postman) or frontend.
+## External Integrations
+- **Azure Blob Storage**: Used for file uploads. See `backend/services/azureBlobService.js`.
+- **WhatsApp Cloud API**: 
+  - Complex logic resides in `backend/handleAPI/whatsapp/` (handler, sender, state, templates).
+  - Integration relies on `backend/handleAPI/whatsappWebhook.js`.
 
 ## Deployment
-- **CI/CD:**
-  - GitHub Actions auto-deploy on push to `main` (see `.github/workflows/`).
-  - Set required secrets/variables in GitHub repo settings (see `README.md`).
-
-## Examples
-- To add a new API:
-  1. Create a DAO in `backend/dao/`.
-  2. Add a handler in `backend/handleAPI/`.
-  3. Wire up the route in `backend/server.js`.
-  4. Add frontend API call in `frontend/src/api/` and UI in `components/` or `pages/`.
-
-- To add a new DB table:
-  1. Update `backend/resources/schema.sql`.
-  2. Create a new DAO.
-  3. Add API and UI as above.
-
----
-
-For more, see the root `README.md` and code comments in each directory.
+- **GitHub Actions**: Deploys to Azure Web Apps.
+- **Environment**: Production uses `process.env.PORT`. Frontend uses `normalizeBaseUrl` to handle protocol mismatches.
