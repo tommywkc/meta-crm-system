@@ -219,8 +219,8 @@ button + button, .btn + .btn {
 .mobile-card {
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  border: 1px solid #f0f0f0;
+  box-shadow: none;
+  border: 1px solid #ccc;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -235,14 +235,14 @@ button + button, .btn + .btn {
 }
 
 .mobile-card-label {
-  color: #888;
+  color: #444;
   font-weight: 500;
   flex-shrink: 0;
   margin-right: 12px;
 }
 
 .mobile-card-value {
-  color: #333;
+  color: #000;
   text-align: right;
   word-break: break-word;
 }
