@@ -343,20 +343,42 @@ const Header = () => {
       </div>
     </header>
 
-    {/* Mobile Slide-down Menu */}
-    {isMobile && menuOpen && (
-      <div 
-        ref={menuRef}
-        style={{
-        position: 'absolute',
-        top: '60px',
-        left: 0,
-        width: '100%',
-        backgroundColor: '#fff',
-        boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
-        zIndex: 999,
-        borderTop: '1px solid #eee'
-      }}>
+    {/* Mobile Slide-out Menu (Sidebar) */}
+    {isMobile && (
+      <>
+        {/* Simple backdrop overlay to dim content behind */}
+        <div 
+          style={{
+            position: 'fixed',
+            top: '60px',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 998,
+            transition: 'opacity 0.3s ease',
+            opacity: menuOpen ? 1 : 0,
+            pointerEvents: menuOpen ? 'auto' : 'none'
+          }}
+          onClick={() => setMenuOpen(false)}
+        />
+        <div 
+          ref={menuRef}
+          style={{
+            position: 'fixed',
+            top: '60px',
+            left: 0,
+            bottom: 0,
+            width: '260px',
+            backgroundColor: '#fff',
+            zIndex: 999,
+            borderTop: '1px solid #d0d0d0',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            transition: 'transform 0.3s ease',
+            transform: menuOpen ? 'translateX(0)' : 'translateX(-100%)'
+          }}>
         {pages.filter(key => !['notifications', 'feedback', 'myqrcode'].includes(key)).map((key) => {
             const p = pagesMap[key];
             const isActive = location.pathname.startsWith(p.path) || (key === 'requests' && location.pathname.startsWith('/requests'));
@@ -366,10 +388,10 @@ const Header = () => {
                 onClick={() => { setMenuOpen(false); go(key); }}
                 style={{
                   padding: '16px 20px',
-                  borderBottom: '1px solid #f5f5f5',
+                  borderBottom: isActive ? '3px solid #093e73' : '1px solid #d0d0d0',
                   color: isActive ? '#093e73' : '#444',
                   fontWeight: isActive ? 'bold' : 'normal',
-                  backgroundColor: isActive ? '#f0f7ff' : '#fff',
+                  backgroundColor: '#fff',
                   fontSize: '16px'
                 }}
               >
@@ -382,7 +404,7 @@ const Header = () => {
             onClick={async () => { await logout(); navigate('/login'); }}
             style={{
               padding: '16px 20px',
-              borderBottom: '1px solid #f5f5f5',
+              borderBottom: '1px solid #d0d0d0',
               color: '#d32f2f',
               fontSize: '16px'
             }}
@@ -390,6 +412,7 @@ const Header = () => {
           登出
         </div>
       </div>
+    </>
     )}
 
       {showBanner && (
