@@ -69,32 +69,112 @@ const Header = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Handle swipe gestures for mobile menu
+  // Handle swipe gestures with real-time tracking
   React.useEffect(() => {
+    if (!isMobile) return;
+
     let touchStartX = 0;
-    let touchEndX = 0;
+    let touchStartY = 0;
+    let currentX = 0;
+    let isDragging = false;
+    let isHorizontalSwipe = false; // Flag to confirm if it's a valid horizontal swipe
+    const MENU_WIDTH = 260; // Must match CSS width
 
     const handleTouchStart = (e) => {
-      touchStartX = e.changedTouches[0].clientX;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      isHorizontalSwipe = false; // Reset flag
+      
+      // Prevent sidebar swipe if user is interacting with a slider (Banner or StudentWork)
+      if (e.target.closest('.slick-slider')) {
+        return;
+      }
+      
+      isDragging = true;
+      // Note: We do NOT set visibility or transition here yet. 
+      // We wait for touchmove to confirm it's a horizontal swipe.
     };
 
     const handleTouchMove = (e) => {
-      touchEndX = e.changedTouches[0].clientX;
-    };
+      if (!isDragging || !menuRef.current) return;
+      currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      
+      const diffX = currentX - touchStartX;
+      const diffY = currentY - touchStartY;
 
-    const handleTouchEnd = () => {
-      if (!isMobile) return;
+      // Check if we have determined direction yet
+      if (!isHorizontalSwipe) {
+        // If moved less than 10px, treat as tap/noise, do nothing yet
+        if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) return;
+
+        // If vertical movement is dominant, it's a scroll. Cancel custom swipe.
+        if (Math.abs(diffY) > Math.abs(diffX)) {
+          isDragging = false;
+          return;
+        }
+
+        // Otherwise, it's a horizontal swipe. Start moving the menu.
+        isHorizontalSwipe = true;
+        menuRef.current.style.transition = 'none'; // Disable transition for 1:1 movement
+        if (!menuOpen) menuRef.current.style.visibility = 'visible';
+      }
+
+      // Prevent default scrolling only if we are horizontally swiping
+      // e.preventDefault(); // Optional: might block scrolling if not careful. 
+      // Usually better not to preventDefault on document level listeners unless passive: false is set.
+
+      let newTranslateX;
       
-      const distance = touchEndX - touchStartX;
-      
-      // Swipe Right (Open Menu) - anywhere on screen
-      if (distance > 50 && !menuOpen) {
-        setMenuOpen(true);
+      if (menuOpen) {
+        // Dragging to close (diffX should be negative)
+        newTranslateX = Math.min(0, Math.max(-MENU_WIDTH, diffX));
+      } else {
+        // Dragging to open (diffX should be positive)
+        newTranslateX = Math.min(0, Math.max(-MENU_WIDTH, -MENU_WIDTH + diffX));
       }
       
-      // Swipe Left (Close Menu)
-      if (distance < -50 && menuOpen) {
-        setMenuOpen(false);
+      menuRef.current.style.transform = `translateX(${newTranslateX}px)`;
+    };
+
+    const handleTouchEnd = (e) => {
+      if (!isDragging || !menuRef.current) return;
+      isDragging = false;
+      
+      // If we never confirmed it was a horizontal swipe (e.g. just a tap or vertical scroll), do nothing
+      if (!isHorizontalSwipe) return;
+
+      // Restore transition for snap animation
+      menuRef.current.style.transition = 'transform 0.3s ease, visibility 0s linear 0s';
+      
+      currentX = e.changedTouches[0].clientX;
+      const diff = currentX - touchStartX;
+      const threshold = MENU_WIDTH * 0.3; // 30% width threshold
+      // 僅當拉動超過 threshold 才開啟，否則一律收回
+      if (!menuOpen) {
+        if (diff > threshold) {
+          setMenuOpen(true);
+          setTimeout(() => {
+            const backdrop = document.querySelector('[style*="rgba(0,0,0,0.5)"]');
+            if (backdrop) {
+              backdrop.style.opacity = 1;
+              backdrop.style.pointerEvents = 'auto';
+            }
+          }, 0);
+        } else {
+          // 未超過閾值，確保 menu 關閉
+          setMenuOpen(false);
+          if (menuRef.current) {
+            menuRef.current.style.transform = 'translateX(-100%)';
+            menuRef.current.style.visibility = 'hidden';
+          }
+        }
+      } else {
+        if (diff < -threshold) {
+          setMenuOpen(false);
+        } else {
+          if (menuRef.current) menuRef.current.style.transform = '';
+        }
       }
     };
 
