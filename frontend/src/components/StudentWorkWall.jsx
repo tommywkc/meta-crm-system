@@ -246,34 +246,42 @@ const StudentWorkWall = () => {
                                 {works.map(work => (
                                     <div key={work.work_id} style={cardStyle}>
                                         <div style={{ margin: '0 10px' }}>
-                                            <a href={work.image_url} target="_blank" rel="noopener noreferrer">
-                                                <img src={work.image_url} alt={work.caption} style={imageStyle} />
-                                            </a>
+                                            <div style={{ position: 'relative' }}>
+                                                <a href={work.image_url} target="_blank" rel="noopener noreferrer">
+                                                    <img src={work.image_url} alt={work.caption} style={imageStyle} />
+                                                </a>
+                                                {isAdmin && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '10px',
+                                                        left: '10px',
+                                                        zIndex: 10,
+                                                        display: 'flex',
+                                                        gap: '10px'
+                                                    }}>
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                openEditModal(work);
+                                                            }}
+                                                        >
+                                                            編輯
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(work.work_id);
+                                                            }}
+                                                            className="btn-danger"
+                                                        >
+                                                            刪除
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                             <div style={captionStyle}>
                                                 {work.caption}
                                             </div>
-                                            {isAdmin && (
-                                                <div style={{ marginTop: 5 }}>
-                                                    <button 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            openEditModal(work);
-                                                        }}
-                                                        style={{ marginRight: 8 }}
-                                                    >
-                                                        編輯
-                                                    </button>
-                                                    <button 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDelete(work.work_id);
-                                                        }}
-                                                        className="btn-danger"
-                                                    >
-                                                        刪除
-                                                    </button>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
                                 ))}
