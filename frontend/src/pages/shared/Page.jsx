@@ -165,8 +165,8 @@ const HomePage = () => {
 			)}
 
 			{user?.role?.toLowerCase() === 'member' && (
-				<section style={{ marginTop: 30, marginBottom: 30 }}>
-					<h2>課程日曆</h2>
+				<section style={{ marginTop: 30, marginBottom: 30, borderTop: '1px solid #e0e0e0', paddingTop: 0 }}>
+					<h2>我的課程日曆</h2>
 					<div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
 						<div style={{ flex: 1 }}>
 							{calendarError && <p style={{ color: 'red' }}>{calendarError}</p>}
@@ -207,6 +207,7 @@ const HomePage = () => {
 				</section>
 			)}
 			
+			<div style={{ marginTop: 30, borderTop: '1px solid #e0e0e0', paddingTop: 0 }} />
 			<StudentWorkWall />
 		</PageContainer>
 	);
