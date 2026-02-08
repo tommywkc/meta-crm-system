@@ -24,6 +24,13 @@ const Scan = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchSessionTerm, setSearchSessionTerm] = useState('');
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     if (hasRestoredSelectionsRef.current) return;
     try {
@@ -286,8 +293,8 @@ const Scan = () => {
       <PageHeader title="QR Code Scanner" />
 
       {/* Event select bar with type-to-search */}
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ marginRight: 8 }}>
+      <div style={{ marginBottom: 12, display: isMobile ? 'flex' : 'block', flexDirection: isMobile ? 'column' : 'row' }}>
+        <label style={{ marginRight: 8, marginBottom: isMobile ? 4 : 0 }}>
           選擇簽到活動：
         </label>
         <input
@@ -326,7 +333,7 @@ const Scan = () => {
             setSearchSessionTerm('');
           }}
           placeholder="輸入或選擇活動..."
-          style={{ padding: '4px 12px', fontSize: '13px', border: '1px solid #ccc', borderRadius: '4px', minWidth: 400 }}
+          style={{ padding: '4px 12px', fontSize: '13px', border: '1px solid #ccc', borderRadius: '4px', minWidth: isMobile ? '100%' : 400, boxSizing: 'border-box' }}
         />
         <datalist id="events-list">
           {events.map((ev) => (
@@ -336,8 +343,8 @@ const Scan = () => {
       </div>
 
       {/* Session select bar (depends on selected event) */}
-      <div style={{ marginBottom: 12 }}>
-        <label style={{ marginRight: 8 }}>選擇簽到場次：</label>
+      <div style={{ marginBottom: 12, display: isMobile ? 'flex' : 'block', flexDirection: isMobile ? 'column' : 'row' }}>
+        <label style={{ marginRight: 8, marginBottom: isMobile ? 4 : 0 }}>選擇簽到場次：</label>
         <input
           list="sessions-list"
           value={searchSessionTerm}
@@ -367,7 +374,7 @@ const Scan = () => {
             setSelectedSessionId('');
           }}
           placeholder={selectedEventId ? '輸入或選擇場次...' : '請先選擇活動'}
-          style={{ padding: '4px 12px', fontSize: '13px', border: '1px solid #ccc', borderRadius: '4px', minWidth: 400 }}
+          style={{ padding: '4px 12px', fontSize: '13px', border: '1px solid #ccc', borderRadius: '4px', minWidth: isMobile ? '100%' : 400, boxSizing: 'border-box' }}
           disabled={!selectedEventId}
         />
         <datalist id="sessions-list">
