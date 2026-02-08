@@ -1,6 +1,7 @@
 import React from 'react';
 import CommonTable from './CommonTable';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
+import { useState, useMemo } from 'react';
 
 const currency = new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 });
 
@@ -27,22 +28,59 @@ const statusLabel = (s) => {
 };
 
 const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) => {
-    const headers = [
-        '建立日期',
-        '訂單編號',
-        showUserColumn ? '姓名 (用戶編號)' : null,
-        '活動ID',
-        '金額 (HKD)',
-        '已付金額 (HKD)',
-        '付款方式',
-        '狀態',
-        '付款期限',
-        '操作'
-    ].filter(Boolean);
+	const headers = [
+		'建立日期',
+		'訂單編號',
+		showUserColumn ? '姓名 (用戶編號)' : null,
+		'活動ID',
+		'金額 (HKD)',
+		'已付金額 (HKD)',
+		'付款方式',
+		'狀態',
+		'付款期限',
+		'操作'
+	].filter(Boolean);
+
+	const [sortConfig, setSortConfig] = useState(null);
+	const handleSort = (col) => setSortConfig((prev) => {
+		if (!prev || prev.columnIndex !== col) return { columnIndex: col, direction: 'asc' };
+		return { columnIndex: col, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+	});
+
+	const sorted = useMemo(() => {
+		if (!Array.isArray(payments)) return [];
+		if (!sortConfig) return payments;
+		const dir = sortConfig.direction === 'asc' ? 1 : -1;
+		const cmp = (a, b) => {
+			switch (sortConfig.columnIndex) {
+				case 0: {
+					const ta = a.paid_time || a.create_time ? new Date(a.paid_time || a.create_time).getTime() : 0;
+					const tb = b.paid_time || b.create_time ? new Date(b.paid_time || b.create_time).getTime() : 0;
+					return (ta - tb) * dir;
+				}
+				case 1: return String(a.payment_id ?? '').localeCompare(String(b.payment_id ?? '')) * dir;
+				case 2: return String(a.user_name ? `${a.user_name} (${a.user_id})` : '(Deleted User)').localeCompare(String(b.user_name ? `${b.user_name} (${b.user_id})` : '(Deleted User)')) * dir;
+				case 3: return String(a.event_id ?? '').localeCompare(String(b.event_id ?? '')) * dir;
+				case 4: return (Number(a.amount || 0) - Number(b.amount || 0)) * dir;
+				case 5: return (Number((a.paid_amount ?? a.amount) || 0) - Number((b.paid_amount ?? b.amount) || 0)) * dir;
+				case 6: return String(methodLabel(a.method)).localeCompare(String(methodLabel(b.method))) * dir;
+				case 7: return String(statusLabel(a.status)).localeCompare(String(statusLabel(b.status))) * dir;
+				case 8: {
+					const ta = a.expire_time ? new Date(a.expire_time).getTime() : 0;
+					const tb = b.expire_time ? new Date(b.expire_time).getTime() : 0;
+					return (ta - tb) * dir;
+				}
+				default: return 0;
+			}
+		};
+		const cp = [...payments];
+		cp.sort(cmp);
+		return cp;
+	}, [payments, sortConfig]);
 
 	return (
-		<CommonTable headers={headers} data={payments} emptyMessage="暫無付款紀錄">
-			{payments.map((p) => {
+		<CommonTable headers={headers} data={sorted} emptyMessage="暫無付款紀錄" onSort={handleSort} sortConfig={sortConfig}>
+			{sorted.map((p) => {
 				// Display user as "Name (ID)"; if no name but has ID, show "(Deleted User) (ID)"; if neither, show '-'
 				const userDisplay = p.user_name
 					? `${p.user_name} (${p.user_id})`
@@ -59,7 +97,7 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) =
 						<td>{statusLabel(p.status)}</td>
 						<td>{p.expire_time ? formatDateTimeForDisplay(p.expire_time) : '-'}</td>
 						<td>
-							
+                            
 							<button onClick={() => onView(p)} style={{ marginRight: 8 }}>查看</button>
 
 							{showUserColumn && (p.status?.toUpperCase() == 'PENDING' || p.status?.toUpperCase() == 'OUTSTANDING') && (
