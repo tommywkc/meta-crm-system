@@ -68,7 +68,7 @@ const Header = () => {
   // Which pages each role should see (order matters)
   const rolePages = {
     // new admin order requested by user
-    admin: ['customers','events','payments','requests_admin','scan','waiting','reports','notifications','feedback'],
+    admin: ['customers','events','payments','requests_admin','waiting','reports','scan','notifications','feedback'],
     sales: ['customers','events','payments','requests','sales_kpi','notifications','feedback'],
     leader: ['customers','events','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
     member: ['myevents','events','payments','receipts','requests','notifications','myqrcode','feedback']
@@ -111,7 +111,7 @@ const Header = () => {
             navigate(`/${r}`);
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', marginRight: 12, fontSize: '18px', color: '#333' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginRight: 12, fontSize: '18px', color: '#333' }}>
             <img
               src={process.env.PUBLIC_URL + '/logo.png'}
               alt="Meta CRM Logo"
@@ -269,7 +269,7 @@ const Header = () => {
             </svg>
           </div>
         )}
-        <div style={{ fontSize: 14 }}>Hi, {user.name}</div>
+        <div style={{ fontSize: 16 }}>{user.name}</div>
         <button 
           onClick={async () => { await logout(); navigate('/login'); }}
           style={{
