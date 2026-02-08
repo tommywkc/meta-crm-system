@@ -164,6 +164,7 @@ const StudentWorkWall = () => {
         speed: 500,
         slidesToShow: isMobile ? 1 : 4,
         slidesToScroll: isMobile ? 1 : 4,
+        arrows: !isMobile, // Explicitly hide on mobile based on state
         nextArrow: <NextArrow />,
         prevArrow: <PrevArrow />,
         responsive: [
@@ -179,7 +180,7 @@ const StudentWorkWall = () => {
                 settings: {
                     slidesToShow: 1,
                     slidesToScroll: 1,
-                    arrows: false // Disable arrows on mobile to prevent overlap/overflow
+                    arrows: false
                 }
             }
         ]

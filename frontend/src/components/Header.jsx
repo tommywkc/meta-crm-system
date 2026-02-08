@@ -376,9 +376,20 @@ const Header = () => {
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            transition: 'transform 0.3s ease',
-            transform: menuOpen ? 'translateX(0)' : 'translateX(-100%)'
-          }}>
+            transition: 'transform 0.3s ease, visibility 0s linear 0.3s',
+            transform: menuOpen ? 'translateX(0)' : 'translateX(-100%)',
+            visibility: menuOpen ? 'visible' : 'hidden'
+          }}
+          // Override transition when opening to make visibility immediate
+          ref={(node) => {
+            menuRef.current = node;
+            if (node && menuOpen) {
+              node.style.transition = 'transform 0.3s ease, visibility 0s linear 0s';
+            } else if (node) {
+              node.style.transition = 'transform 0.3s ease, visibility 0s linear 0.3s';
+            }
+          }}
+          >
         {pages.filter(key => !['notifications', 'feedback', 'myqrcode'].includes(key)).map((key) => {
             const p = pagesMap[key];
             const isActive = location.pathname.startsWith(p.path) || (key === 'requests' && location.pathname.startsWith('/requests'));
