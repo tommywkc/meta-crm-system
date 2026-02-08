@@ -5,6 +5,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const path = require('path');
 const { initDatabase } = require('./db/pool'); // Import database initialization
 const { authMiddleware, roleMiddleware } = require('./middleware/auth'); // Import auth middleware
 const { findByUserId } = require('./dao/usersDao');
@@ -43,6 +44,13 @@ app.use('/api', loginRouter); // Use the login router
 const whatsappWebhookRouter = require('./handleAPI/whatsappWebhook');
 console.log('WhatsApp webhook router loaded');
 app.use('/webhook', whatsappWebhookRouter);
+
+// Reports Router
+const reportsRouter = require('./handleAPI/reports');
+app.use('/api/reports', reportsRouter);
+
+// Serve uploaded receipts and files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // In-memory users for demo (plain text passwords for development only)
 // Passwords: member -> password, sales -> password, admin -> adminpass
