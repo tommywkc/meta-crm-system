@@ -11,6 +11,14 @@ const BannerSection = () => {
     const [banners, setBanners] = useState([]);
     const [loading, setLoading] = useState(false);
     
+    // Responsive check
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []); 
+
     // Modal state for uploading
     const [showModal, setShowModal] = useState(false);
     const [uploadFile, setUploadFile] = useState(null);
@@ -131,7 +139,7 @@ const BannerSection = () => {
                         <div key={banner.id || banner.blobName} style={{ outline: 'none' }}>
                             <div style={{ 
                                 width: '100%', 
-                                height: '130px', 
+                                height: isMobile ? '80px' : '130px', 
                                 overflow: 'hidden', 
                                 borderRadius: '0',
                                 display: 'flex',
