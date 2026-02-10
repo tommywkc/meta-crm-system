@@ -588,7 +588,21 @@ router.delete('/session-registrations/:id', authMiddleware, async (req, res) => 
       return res.status(400).json({ message: '無效的 registration_id' });
     }
 
+    const registration = await findByRegistrationId(registrationId);
+    if (!registration) {
+      return res.status(404).json({ message: '報名紀錄不存在' });
+    }
+
     await removeByRegistrationId(registrationId);
+
+    const sessionId = registration.session_id;
+    if (sessionId) {
+      const session = await findBySessionId(sessionId);
+      const remainingSeats = session && session.remaining_seats != null ? Number(session.remaining_seats) : null;
+      if (session && remainingSeats != null && !Number.isNaN(remainingSeats)) {
+        await updateSessionById(sessionId, { remaining_seats: remainingSeats + 1 });
+      }
+    }
     return res.status(200).json({ message: '場次報名已刪除' });
   } catch (error) {
     console.error('Delete session registration failed:', error);
