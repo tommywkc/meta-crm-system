@@ -6,6 +6,7 @@ const { listByUserIds } = require('../dao/usersDao');
 const { findBySessionId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
+const { findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
 
 const parseWaitlist = (raw) => {
   if (!raw) return [];
@@ -100,6 +101,17 @@ router.post('/waitlist/apply', authMiddleware, roleMiddleware(['admin', 'sales']
     const isEnrolled = await checkIsConfirmedEnrolled(userId, eventId);
     if (!isEnrolled) {
       return res.status(400).json({ message: '使用者尚未報名此場次所屬的活動，無法加入候補' });
+    }
+
+    const existingRegistration = await findBySessionAndUser(sessionId, userId);
+    if (existingRegistration) {
+      return res.status(400).json({ message: '使用者已報名此場次' });
+    }
+
+    const existingWaitlist = await waitlistDao.findBySessionId(sessionId);
+    const currentList = parseWaitlist(existingWaitlist?.waitlist);
+    if (currentList.map((v) => String(v)).includes(String(userId))) {
+      return res.status(400).json({ message: '使用者已在候補名單中' });
     }
 
     const remainingSeats = session.remaining_seats;
