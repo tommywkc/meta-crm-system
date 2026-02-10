@@ -106,6 +106,10 @@ const requestsRouter = require('./handleAPI/requests');
 console.log('Requests router loaded');
 app.use('/api', requestsRouter); // Use the requests router
 
+const waitlistRouter = require('./handleAPI/waitlist');
+console.log('Waitlist router loaded');
+app.use('/api', waitlistRouter);
+
 const studentWorksRouter = require('./handleAPI/studentWorks');
 console.log('Student Works router loaded');
 app.use('/api/student-works', authMiddleware, studentWorksRouter);

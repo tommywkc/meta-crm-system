@@ -139,15 +139,10 @@ CREATE TABLE IF NOT EXISTS SESSION_REGISTRATIONS (
 
 CREATE TABLE IF NOT EXISTS WAITLIST (
     wait_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
-    event_id BIGINT,
-    user_id BIGINT,
-    rank INT NOT NULL,
-    created_by_id BIGINT,
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    session_id BIGINT,
+    waitlist VARCHAR(10000) DEFAULT '[]',
     PRIMARY KEY (wait_id),
-    FOREIGN KEY (event_id) REFERENCES EVENTS(event_id) ON DELETE SET NULL,
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
-    FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
+    FOREIGN KEY (session_id) REFERENCES EVENT_SESSIONS(session_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS EVENT_ATTENDANCE (
@@ -376,7 +371,8 @@ INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datet
 (101, '實作演練', 'CRM 系統操作實作', 30, '2026-07-08 10:00:00', '2026-07-08 12:00:00', 50000, 30, 1),
 (101, '實作演練', 'CRM 系統操作實作', 30, '2026-08-08 10:00:00', '2026-08-08 12:00:00', 50000, 30, 2),
 (102, 'Test1', '高效銷售策略分享', 100, '2026-02-02 14:00:00', '2026-02-02 16:00:00', 50001, 100, 1),
-(102, '主題演講', '高效銷售策略分享', 100, '2026-07-05 14:00:00', '2026-07-05 16:00:00', 50001, 100, 1);
+(102, '主題演講', '高效銷售策略分享', 100, '2026-07-05 14:00:00', '2026-07-05 16:00:00', 50001, 100, 1),
+(101, 'Test3', 'CRM 基礎概念與重要性111', 1, '2026-02-11 10:00:00', '2026-02-11 12:00:00', 50000, 1, 2);
 
 
 
@@ -396,7 +392,8 @@ INSERT INTO EVENT_ENROLLMENTS (event_id, user_id, enroll_by_id, status, enroll_t
     (101, 50008, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
     (102, 50008, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
     (103, 50008, 50000, 'PENDING', '2025-11-25 16:45:00'),
-    (104, 50008, 50000, 'CANCELLED', '2025-11-28 11:00:00');
+    (104, 50008, 50000, 'CANCELLED', '2025-11-28 11:00:00'),
+    (101, 50010, 50000, 'CONFIRMED', '2025-11-30 14:00:00');
 
 
 INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id) VALUES

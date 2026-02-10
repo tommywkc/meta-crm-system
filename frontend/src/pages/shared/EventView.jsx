@@ -350,13 +350,7 @@ const EventView = () => {
         />
       </div>
 
-  {/* Waiting list table - Admin only */}
-      {isAdmin && (
-        <div style={{ marginTop: 40 }}>
-          <h2>等待清單</h2>
-          <WaitingListTable data={mockWaiting} />
-        </div>
-      )}
+  
     </PageContainer>
   );
 };

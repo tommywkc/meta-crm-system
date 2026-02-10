@@ -90,6 +90,12 @@ async function listByUsersId(limit = 100, offset = 0) {
   return res.rows;
 }
 
+async function listByUserIds(userIds = []) {
+  if (!Array.isArray(userIds) || userIds.length === 0) return [];
+  const res = await query('SELECT * FROM USERS WHERE user_id = ANY($1::bigint[])', [userIds]);
+  return res.rows || [];
+}
+
 async function searchUsers(limit = 100, offset = 0, q = '') {
   if (!q || !q.trim()) return listByUsersId(limit, offset);
   const pattern = `%${q}%`;
@@ -117,4 +123,4 @@ async function findLatestId() {
   }
 }
 
-module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId, findLatestId, findUserByQrToken, findUserByRole, searchUsers };
+module.exports = { createUser, findByUserId, findUserByEmail, findUserByMobile, updateByUserId, removeByUserId, listByUsersId, listByUserIds, findLatestId, findUserByQrToken, findUserByRole, searchUsers };

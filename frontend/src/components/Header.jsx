@@ -221,7 +221,7 @@ const Header = () => {
   // Which pages each role should see (order matters)
   const rolePages = {
     // new admin order requested by user
-    admin: ['customers','events','payments','requests_admin','waiting','reports','scan','notifications','feedback'],
+    admin: ['customers','events','payments','requests_admin','reports','scan','notifications','feedback'],
     sales: ['customers','events','payments','requests','sales_kpi','notifications','feedback'],
     leader: ['customers','events','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
     member: ['myevents','events','payments','receipts','requests','notifications','myqrcode','feedback']
