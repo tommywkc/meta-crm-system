@@ -46,6 +46,27 @@ export async function handleListRequests() {
     throw err;
   }
 }
+
+export async function handleGetRequestById(requestId) {
+  try {
+    const response = await fetch(apiUrl(`/api/requests/${requestId}`), {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?.message || '無法載入申請詳情';
+      throw new Error(message);
+    }
+
+    return payload;
+  } catch (err) {
+    console.error(`Get request detail error for ${requestId}:`, err);
+    throw err;
+  }
+}
 //TODO: Handle session changes
 export async function handleUpdateRequestById(request_id, data) {
   try {

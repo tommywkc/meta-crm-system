@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { handleListRequests, handleUpdateRequestById } from '../../api/requestsAPI';
+import { handleGetRequestById, handleUpdateRequestById } from '../../api/requestsAPI';
 import RequestViewTable from '../../components/RequestViewTable';
 import { commonSelectStyle } from '../../styles/SelectStyles';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
@@ -10,7 +10,7 @@ const RequestApprove = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [request, setRequest] = useState(location.state?.request || null);
-	const [loading, setLoading] = useState(!location.state?.request);
+	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
 	const [decision, setDecision] = useState('');
 	const [submitting, setSubmitting] = useState(false);
@@ -25,13 +25,16 @@ const RequestApprove = () => {
 		handleUpdateRequestById(request.request_id, { status: decision })
 			.then(async (res) => {
 				const updatedId = res?.request?.request_id || request.request_id;
-				const listRes = await handleListRequests();
-				const enriched = (listRes?.requests || []).find((item) => String(item.request_id) === String(updatedId));
-				if (enriched) {
-					setRequest(enriched);
+				let latest = null;
+				try {
+					const detailRes = await handleGetRequestById(updatedId);
+					latest = detailRes?.request || null;
+				} catch (_) {}
+				if (latest) {
+					setRequest(latest);
 				}
 				setSuccessMessage('申請已更新');
-				const nextRequest = enriched || res?.request || request;
+				const nextRequest = latest || res?.request || request;
 				if (nextRequest?.request_id) {
 					navigate(`/requests/${nextRequest.request_id}`, { state: { request: nextRequest } });
 				}
@@ -46,13 +49,12 @@ const RequestApprove = () => {
 
 	useEffect(() => {
 		const loadRequest = async () => {
-			if (request) return;
 			if (!requestId) return;
 			setLoading(true);
 			setError('');
 			try {
-				const res = await handleListRequests();
-				const found = (res?.requests || []).find((item) => String(item.request_id) === String(requestId));
+				const res = await handleGetRequestById(requestId);
+				const found = res?.request || null;
 				if (!found) {
 					setError('找不到申請資料');
 				}
@@ -65,7 +67,7 @@ const RequestApprove = () => {
 		};
 
 		loadRequest();
-	}, [request, requestId]);
+	}, [requestId]);
 
 	return (
 		<PageContainer>

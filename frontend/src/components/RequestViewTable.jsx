@@ -83,7 +83,7 @@ const RequestViewTable = ({ request }) => {
         value: targetSessionLabel,
       },
       ...(typeKey !== 'LEAVE'
-        ? [{ label: '目標場次名額', value: formatValue(request.new_session_remaining) }]
+        ? [{ label: '目標場次剩餘名額', value: formatValue(request.new_session_remaining) }]
         : []),
       {
         label: '衝突',

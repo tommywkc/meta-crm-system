@@ -7,6 +7,7 @@ const {
   listAllRequests,
   listRequestsByUser,
   findByRequestId,
+  findRequestDetailById,
   updateRequestById,
 } = require('../dao/requestsDao');
 const { findBySessionAndUser, listSessionsByUserWithTimes } = require('../dao/sessionRegistrationsDao');
@@ -270,6 +271,31 @@ router.get('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'leade
   } catch (error) {
     console.error('List requests failed:', error);
     return res.status(500).json({ message: '無法載入申請列表' });
+  }
+});
+
+router.get('/requests/:requestId', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
+  try {
+    const requestId = parseInt(req.params.requestId, 10);
+    if (Number.isNaN(requestId)) {
+      return res.status(400).json({ message: '申請編號有誤' });
+    }
+
+    const requesterRole = (req.user.role || '').toUpperCase();
+    const request = await findRequestDetailById(requestId);
+    if (!request) {
+      return res.status(404).json({ message: '找不到申請資料' });
+    }
+
+    if (requesterRole === 'MEMBER' && String(request.user_id) !== String(req.user.sub)) {
+      return res.status(403).json({ message: '沒有權限檢視此申請' });
+    }
+
+    const enriched = await attachConflictDetails([request]);
+    return res.json({ request: enriched[0] || request });
+  } catch (error) {
+    console.error('Get request detail failed:', error);
+    return res.status(500).json({ message: '無法載入申請詳情' });
   }
 });
 

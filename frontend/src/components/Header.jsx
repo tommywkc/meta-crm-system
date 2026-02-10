@@ -377,15 +377,6 @@ const Header = () => {
         {pages.includes('notifications') && (
           <div 
             onClick={() => navigate('/notifications')}
-            style={{ 
-              cursor: 'pointer', 
-              color: location.pathname.startsWith('/notifications') ? '#093e73' : '#666',
-              display: 'flex', 
-              alignItems: 'center',
-              padding: '8px',
-              borderRadius: '50%',
-              transition: 'background 0.2s'
-            }}
             onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             title="通知中心"
@@ -483,7 +474,6 @@ const Header = () => {
           onClick={() => setMenuOpen(false)}
         />
         <div 
-          ref={menuRef}
           style={{
             position: 'fixed',
             top: '60px',

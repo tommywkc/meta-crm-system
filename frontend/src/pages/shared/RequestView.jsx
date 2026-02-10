@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { handleListRequests } from '../../api/requestsAPI';
+import { handleGetRequestById } from '../../api/requestsAPI';
 import { useAuth } from '../../contexts/AuthContext';
 import RequestViewTable from '../../components/RequestViewTable';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
@@ -12,7 +12,7 @@ const RequestView = () => {
 	const { user } = useAuth();
 	const isAdmin = (user?.role || '').toLowerCase() === 'admin';
 	const [request, setRequest] = useState(location.state?.request || null);
-	const [loading, setLoading] = useState(!location.state?.request);
+	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
 	const isPending = (request?.status || '').toString().toUpperCase() === 'PENDING';
 
@@ -20,13 +20,12 @@ const RequestView = () => {
     
 	useEffect(() => {
 		const loadRequest = async () => {
-			if (request) return;
 			if (!requestId) return;
 			setLoading(true);
 			setError('');
 			try {
-				const res = await handleListRequests();
-				const found = (res?.requests || []).find((item) => String(item.request_id) === String(requestId));
+				const res = await handleGetRequestById(requestId);
+				const found = res?.request || null;
 				if (!found) {
 					setError('找不到申請資料');
 				}
@@ -39,7 +38,7 @@ const RequestView = () => {
 		};
 
 		loadRequest();
-	}, [request, requestId]);
+	}, [requestId]);
 
 	return (
 		<PageContainer>
