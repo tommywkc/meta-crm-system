@@ -7,6 +7,7 @@ const {
   createRegistration,
   findByRegistrationId,
   findBySessionAndUser,
+  listSessionsByUserWithTimes,
   listUpcomingSessionsByUser,
   listUpcomingSessionsAllUsers,
   searchUpcomingSessionsByUser,
@@ -207,6 +208,25 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
     const existing = await findBySessionAndUser(sessionId, userId);
     if (existing) {
       return res.status(400).json({ message: '已報名此場次' });
+    }
+
+    // Time conflict check (same rules as requests)
+    if (session.datetime_start) {
+      const targetStart = new Date(session.datetime_start);
+      const targetEnd = session.datetime_end ? new Date(session.datetime_end) : new Date(session.datetime_start);
+      const otherSessions = await listSessionsByUserWithTimes(userId);
+
+      for (const other of otherSessions) {
+        if (!other?.session_id || !other?.datetime_start) continue;
+        if (String(other.session_id) === String(sessionId)) continue;
+
+        const otherStart = new Date(other.datetime_start);
+        const otherEnd = other.datetime_end ? new Date(other.datetime_end) : new Date(other.datetime_start);
+
+        if (targetStart < otherEnd && targetEnd > otherStart) {
+          return res.status(400).json({ message: '此場次與會員已報名的場次時間衝突' });
+        }
+      }
     }
 
     const registrationById = registration_by_id || req.user.sub;
