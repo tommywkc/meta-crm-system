@@ -1,52 +1,59 @@
-// Waitlist DAO — helpers for managing session waitlists and ranks
+// Waitlist DAO — helpers for managing session waitlists stored as JSON list
 const { query } = require('../db/pool');
 
-async function createWaitlist({ event_id, user_id, rank, created_by_id, create_time = null }) {
-  const sql = `INSERT INTO WAITLIST (event_id, user_id, rank, created_by_id, create_time) VALUES ($1,$2,$3,$4,$5) RETURNING *`;
-  const vals = [event_id, user_id, rank, created_by_id, create_time];
+const parseWaitlist = (raw) => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+async function createWaitlist({ session_id, waitlist = '[]' }) {
+  const sql = `INSERT INTO WAITLIST (session_id, waitlist) VALUES ($1,$2) RETURNING *`;
+  const vals = [session_id, waitlist];
   const res = await query(sql, vals);
   return res.rows[0];
 }
 
-async function findByWaitlistId(id) {
-  const res = await query('SELECT * FROM WAITLIST WHERE wait_id = $1', [id]);
+async function updateBySessionId(session_id, waitlist = '[]') {
+  const sql = `UPDATE WAITLIST SET waitlist = $1 WHERE session_id = $2 RETURNING *`;
+  const vals = [waitlist, session_id];
+  const res = await query(sql, vals);
   return res.rows[0] || null;
 }
 
-async function findByUserId(user_id) {
-  const res = await query('SELECT * FROM WAITLIST WHERE user_id = $1 ORDER BY wait_id DESC', [user_id]);
-  return res.rows;
+async function findBySessionId(session_id) {
+  const res = await query('SELECT * FROM WAITLIST WHERE session_id = $1', [session_id]);
+  return res.rows[0] || null;
 }
 
-async function listBySessionId(session_id) {
-  const res = await query('SELECT * FROM WAITLIST WHERE session_id = $1 ORDER BY rank ASC', [session_id]);
-  return res.rows;
+async function appendUserToWaitlist(session_id, user_id) {
+  const existing = await findBySessionId(session_id);
+  const currentList = existing ? parseWaitlist(existing.waitlist) : [];
+  const normalized = currentList.map((v) => String(v));
+  const nextList = normalized.includes(String(user_id))
+    ? currentList
+    : [...currentList, user_id];
+
+  const nextRaw = JSON.stringify(nextList);
+  if (!existing) {
+    return createWaitlist({ session_id, waitlist: nextRaw });
+  }
+  return updateBySessionId(session_id, nextRaw);
 }
 
-// Update rank for a specific user
-async function updateRankByUserId(user_id, new_rank) {
-  const sql = `UPDATE WAITLIST SET rank = $1 WHERE user_id = $2 RETURNING *`;
-  const vals = [new_rank, user_id];
-  const res = await query(sql, vals);
-  return res.rows;
-}
-
-// Update rank for user behind a specific user
-async function updateRankBySessionIdAndRank(session_id, rank, new_rank) {
-  const sql = `UPDATE waitlist SET rank = $1 WHERE session_id = $2 AND rank = $3 RETURNING *`;
-  const vals = [new_rank, session_id, rank];
-  const res = await query(sql, vals);
-  return res.rows;
+async function listAll() {
+  const res = await query('SELECT * FROM WAITLIST ORDER BY wait_id DESC');
+  return res.rows || [];
 }
 
 async function removeByWaitlistId(id) {
-  await query('DELETE FROM waitlist WHERE wait_id = $1', [id]);
+  await query('DELETE FROM WAITLIST WHERE wait_id = $1', [id]);
   return true;
 }
 
-async function removeByUserId(user_id) {
-  await query('DELETE FROM waitlist WHERE user_id = $1', [user_id]);
-  return true;
-}
-
-module.exports = { createWaitlist, findByWaitlistId, findByUserId, listBySessionId, removeByWaitlistId, removeByUserId ,updateRankByUserId, updateRankBySessionIdAndRank };
+module.exports = { createWaitlist, updateBySessionId, findBySessionId, listAll, removeByWaitlistId, appendUserToWaitlist, parseWaitlist };

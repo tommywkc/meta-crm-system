@@ -146,6 +146,14 @@ const CustomerView = () => {
         <div style={{ flex: isMember ? 1 : 'none', maxWidth: isMember ? 'none' : '600px', width: '100%' }}>
           <h2>客戶資訊</h2>
           <div style={{ marginTop: 20 }}>
+            {isMember && customer.suspension && (
+              <div style={{ color: '#b91c1c' }}>
+                <strong>停權狀態:</strong> 停覆課
+                {customer.suspension_end_time
+                  ? `（至 ${formatDateTimeForDisplay(customer.suspension_end_time)}）`
+                  : ''}
+              </div>
+            )}
             <div><strong>用戶 ID:</strong> {customer.user_id}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <strong>密碼:</strong> 

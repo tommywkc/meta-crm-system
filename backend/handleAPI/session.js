@@ -7,6 +7,7 @@ const {
   createRegistration,
   findByRegistrationId,
   findBySessionAndUser,
+  listSessionsByUserWithTimes,
   listUpcomingSessionsByUser,
   listUpcomingSessionsAllUsers,
   searchUpcomingSessionsByUser,
@@ -17,6 +18,7 @@ const {
 } = require('../dao/sessionRegistrationsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 const eventAttendanceDao = require('../dao/eventAttendanceDao');
+const waitlistDao = require('../dao/waitlistDao');
 
 //handle get sessions by event_id
 router.get('/events/:event_id/sessions', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
@@ -206,6 +208,25 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
     const existing = await findBySessionAndUser(sessionId, userId);
     if (existing) {
       return res.status(400).json({ message: '已報名此場次' });
+    }
+
+    // Time conflict check (same rules as requests)
+    if (session.datetime_start) {
+      const targetStart = new Date(session.datetime_start);
+      const targetEnd = session.datetime_end ? new Date(session.datetime_end) : new Date(session.datetime_start);
+      const otherSessions = await listSessionsByUserWithTimes(userId);
+
+      for (const other of otherSessions) {
+        if (!other?.session_id || !other?.datetime_start) continue;
+        if (String(other.session_id) === String(sessionId)) continue;
+
+        const otherStart = new Date(other.datetime_start);
+        const otherEnd = other.datetime_end ? new Date(other.datetime_end) : new Date(other.datetime_start);
+
+        if (targetStart < otherEnd && targetEnd > otherStart) {
+          return res.status(400).json({ message: '此場次與會員已報名的場次時間衝突' });
+        }
+      }
     }
 
     const registrationById = registration_by_id || req.user.sub;
@@ -588,7 +609,35 @@ router.delete('/session-registrations/:id', authMiddleware, async (req, res) => 
       return res.status(400).json({ message: '無效的 registration_id' });
     }
 
+    const registration = await findByRegistrationId(registrationId);
+    if (!registration) {
+      return res.status(404).json({ message: '報名紀錄不存在' });
+    }
+
     await removeByRegistrationId(registrationId);
+
+    const sessionId = registration.session_id;
+    if (sessionId) {
+      const waitlistRow = await waitlistDao.findBySessionId(sessionId);
+      const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+
+      if (Array.isArray(list) && list.length > 0) {
+        const nextUserId = parseInt(list[0], 10);
+        if (!Number.isNaN(nextUserId)) {
+          const existing = await findBySessionAndUser(sessionId, nextUserId);
+          if (!existing) {
+            await createRegistration({
+              session_id: sessionId,
+              user_id: nextUserId,
+              channel: 'WEB',
+              registration_by_id: req.user?.sub || null,
+            });
+            const remainingList = list.slice(1);
+            await waitlistDao.updateBySessionId(sessionId, JSON.stringify(remainingList));
+          }
+        }
+      }
+    }
     return res.status(200).json({ message: '場次報名已刪除' });
   } catch (error) {
     console.error('Delete session registration failed:', error);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { handleListRequests, handleUpdateRequestById } from '../../api/requestsAPI';
+import { handleGetRequestById, handleUpdateRequestById } from '../../api/requestsAPI';
 import RequestViewTable from '../../components/RequestViewTable';
 import { commonSelectStyle } from '../../styles/SelectStyles';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
@@ -10,28 +10,43 @@ const RequestApprove = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [request, setRequest] = useState(location.state?.request || null);
-	const [loading, setLoading] = useState(!location.state?.request);
+	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
 	const [decision, setDecision] = useState('');
 	const [submitting, setSubmitting] = useState(false);
 	const [successMessage, setSuccessMessage] = useState('');
+	const [rejectReason, setRejectReason] = useState('');
+	const [customRejectReason, setCustomRejectReason] = useState('');
 	const isPending = (request?.status || '').toString().toUpperCase() === 'PENDING';
 
 	const handleConfirmDecision = () => {
 		if (!isPending || !decision || !request?.request_id || submitting) return;
+		if (decision === 'REJECTED') {
+			const finalReason = rejectReason === '其他自訂' ? customRejectReason.trim() : rejectReason;
+			if (!finalReason) {
+				setError('請選擇或輸入拒絕原因');
+				return;
+			}
+		}
 		setSubmitting(true);
 		setError('');
 		setSuccessMessage('');
-		handleUpdateRequestById(request.request_id, { status: decision })
+		const finalReason = decision === 'REJECTED'
+			? (rejectReason === '其他自訂' ? customRejectReason.trim() : rejectReason)
+			: null;
+		handleUpdateRequestById(request.request_id, { status: decision, reject_reason: finalReason })
 			.then(async (res) => {
 				const updatedId = res?.request?.request_id || request.request_id;
-				const listRes = await handleListRequests();
-				const enriched = (listRes?.requests || []).find((item) => String(item.request_id) === String(updatedId));
-				if (enriched) {
-					setRequest(enriched);
+				let latest = null;
+				try {
+					const detailRes = await handleGetRequestById(updatedId);
+					latest = detailRes?.request || null;
+				} catch (_) {}
+				if (latest) {
+					setRequest(latest);
 				}
 				setSuccessMessage('申請已更新');
-				const nextRequest = enriched || res?.request || request;
+				const nextRequest = latest || res?.request || request;
 				if (nextRequest?.request_id) {
 					navigate(`/requests/${nextRequest.request_id}`, { state: { request: nextRequest } });
 				}
@@ -46,13 +61,12 @@ const RequestApprove = () => {
 
 	useEffect(() => {
 		const loadRequest = async () => {
-			if (request) return;
 			if (!requestId) return;
 			setLoading(true);
 			setError('');
 			try {
-				const res = await handleListRequests();
-				const found = (res?.requests || []).find((item) => String(item.request_id) === String(requestId));
+				const res = await handleGetRequestById(requestId);
+				const found = res?.request || null;
 				if (!found) {
 					setError('找不到申請資料');
 				}
@@ -65,7 +79,7 @@ const RequestApprove = () => {
 		};
 
 		loadRequest();
-	}, [request, requestId]);
+	}, [requestId]);
 
 	return (
 		<PageContainer>
@@ -89,7 +103,7 @@ const RequestApprove = () => {
 				<div style={{ marginTop: 16, color: '#15803d' }}>{successMessage}</div>
 			)}
 
-			{!loading && !error && request && (
+			{!loading && request && (
 				<div style={{ marginTop: 16 }}>
 					<RequestViewTable request={request} />
 				</div>
@@ -111,6 +125,41 @@ const RequestApprove = () => {
 					<option value="REJECTED">駁回</option>
 				</select>
 			</div>
+
+			{isPending && decision === 'REJECTED' && (
+				<div style={{ marginTop: 12 }}>
+					<label htmlFor="request-reject-reason" style={{ display: 'block', marginBottom: 6 }}>
+						拒絕原因
+					</label>
+					<select
+						id="request-reject-reason"
+						value={rejectReason}
+						onChange={(event) => {
+							setRejectReason(event.target.value);
+							setCustomRejectReason('');
+						}}
+						style={{ ...commonSelectStyle, minWidth: 240 }}
+					>
+						<option value="">請選擇</option>
+						<option value="不足3工作天">不足3工作天</option>
+						<option value="已簽到不可改">已簽到不可改</option>
+						<option value="時間衝突">時間衝突</option>
+						<option value="剩餘名額0">剩餘名額0</option>
+						<option value="資料不完整">資料不完整</option>
+						<option value="規則不符">規則不符</option>
+						<option value="其他自訂">其他自訂</option>
+					</select>
+
+					{rejectReason === '其他自訂' && (
+						<input
+							style={{ ...commonSelectStyle, marginTop: 8, minWidth: 240 }}
+							placeholder="輸入自訂原因"
+							value={customRejectReason}
+							onChange={(event) => setCustomRejectReason(event.target.value)}
+						/>
+					)}
+				</div>
+			)}
 
 			<div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
 				<button type="button" onClick={handleConfirmDecision} disabled={!isPending || !decision || submitting}>

@@ -7,12 +7,17 @@ const {
   listAllRequests,
   listRequestsByUser,
   findByRequestId,
+  findRequestDetailById,
   updateRequestById,
 } = require('../dao/requestsDao');
-const { findBySessionAndUser, listSessionsByUserWithTimes } = require('../dao/sessionRegistrationsDao');
-const { findBySessionId } = require('../dao/eventSessionsDao');
+const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration } = require('../dao/sessionRegistrationsDao');
+const { findBySessionId, updateSessionById } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
+const { createSuspension } = require('../dao/suspensionDao');
+const { updateByUserId } = require('../dao/usersDao');
+const { buildHolidaySet, countBusinessDays } = require('../utils/businessDays');
+const waitlistDao = require('../dao/waitlistDao');
 
 const TYPE_MAP = {
   '請假申請': 'LEAVE',
@@ -30,46 +35,6 @@ const TYPE_RULES = {
   CANCEL: { requiresSession: true, requiresTarget: false, oldSessionFor: [] },
 };
 
-const toDateOnly = (value) => {
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-};
-
-const buildHolidaySet = (holidays = []) => {
-  const set = new Set();
-  holidays.forEach((holiday) => {
-    if (!holiday?.holiday_date) return;
-    const dateKey = new Date(holiday.holiday_date).toISOString().slice(0, 10);
-    set.add(dateKey);
-  });
-  return set;
-};
-
-const countBusinessDays = (startDate, endDate, holidaySet) => {
-  if (!startDate || !endDate) return 0;
-  if (endDate < startDate) return 0;
-  const start = toDateOnly(startDate);
-  const end = toDateOnly(endDate);
-  if (!start || !end) return 0;
-
-  let count = 0;
-  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-  cursor.setDate(cursor.getDate() + 1);
-
-  while (cursor <= end) {
-    const day = cursor.getDay();
-    const isWeekend = day === 0 || day === 6;
-    const dateKey = cursor.toISOString().slice(0, 10);
-    const isHoliday = holidaySet.has(dateKey);
-    if (!isWeekend && !isHoliday) {
-      count += 1;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return count;
-};
 
 const attachConflictDetails = async (requests = []) => {
   if (!Array.isArray(requests) || requests.length === 0) return requests;
@@ -273,6 +238,31 @@ router.get('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'leade
   }
 });
 
+router.get('/requests/:requestId', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
+  try {
+    const requestId = parseInt(req.params.requestId, 10);
+    if (Number.isNaN(requestId)) {
+      return res.status(400).json({ message: '申請編號有誤' });
+    }
+
+    const requesterRole = (req.user.role || '').toUpperCase();
+    const request = await findRequestDetailById(requestId);
+    if (!request) {
+      return res.status(404).json({ message: '找不到申請資料' });
+    }
+
+    if (requesterRole === 'MEMBER' && String(request.user_id) !== String(req.user.sub)) {
+      return res.status(403).json({ message: '沒有權限檢視此申請' });
+    }
+
+    const enriched = await attachConflictDetails([request]);
+    return res.json({ request: enriched[0] || request });
+  } catch (error) {
+    console.error('Get request detail failed:', error);
+    return res.status(500).json({ message: '無法載入申請詳情' });
+  }
+});
+
 router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
   try {
     const requestId = parseInt(req.params.requestId, 10);
@@ -290,6 +280,7 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
     }
 
     const incomingStatus = req.body?.status ? String(req.body.status).trim().toUpperCase() : '';
+    const rejectReason = req.body?.reject_reason ? String(req.body.reject_reason).trim() : '';
     if (!['APPROVED', 'REJECTED'].includes(incomingStatus)) {
       return res.status(400).json({ message: '狀態更新僅支援批准或駁回' });
     }
@@ -298,7 +289,141 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       status: incomingStatus,
       determine_by_id: req.user.sub,
       determine_time: new Date(),
+      reject_reason: incomingStatus === 'REJECTED' ? (rejectReason || null) : null,
     });
+
+    if (incomingStatus === 'APPROVED' && (existing.request_type || '').toUpperCase() === 'LEAVE') {
+      const leaveSessionId = existing.old_session_id;
+      const leaveUserId = existing.user_id;
+      let registrationId = existing.registration_id || null;
+
+      if (!registrationId && leaveSessionId && leaveUserId) {
+        const reg = await findBySessionAndUser(leaveSessionId, leaveUserId);
+        registrationId = reg?.registration_id || null;
+      }
+
+      if (registrationId) {
+        await removeByRegistrationId(registrationId);
+
+        if (leaveSessionId) {
+          const waitlistRow = await waitlistDao.findBySessionId(leaveSessionId);
+          const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+
+          if (Array.isArray(list) && list.length > 0) {
+            const nextUserId = parseInt(list[0], 10);
+            if (!Number.isNaN(nextUserId)) {
+              const existingRegistration = await findBySessionAndUser(leaveSessionId, nextUserId);
+              if (!existingRegistration) {
+                await createRegistration({
+                  session_id: leaveSessionId,
+                  user_id: nextUserId,
+                  channel: 'WEB',
+                  registration_by_id: req.user?.sub || null,
+                });
+              }
+            }
+
+            const remainingList = list.slice(1);
+            await waitlistDao.updateBySessionId(leaveSessionId, JSON.stringify(remainingList));
+          }
+        }
+      }
+
+      if (leaveSessionId) {
+        const leaveSession = await findBySessionId(leaveSessionId);
+        if (leaveSession?.event_id) {
+          const event = await findByEventId(leaveSession.event_id);
+          if (event?.type === 'CLASS' && leaveSession?.datetime_start) {
+            const holidays = await listHolidays(5000, 0);
+            const holidaySet = buildHolidaySet(holidays);
+            const businessDays = countBusinessDays(new Date(), new Date(leaveSession.datetime_start), holidaySet);
+
+            if (businessDays < 3) {
+              const startTime = existing.request_time ? new Date(existing.request_time) : new Date();
+              const endTime = new Date(startTime);
+              endTime.setMonth(endTime.getMonth() + 2);
+              const reason = `請假申請（低於 3 個工作天）: request_id ${existing.request_id}`;
+              await createSuspension({
+                user_id: leaveUserId,
+                reason,
+                start_time: startTime,
+                end_time: endTime,
+                created_by: req.user.sub,
+              });
+              await updateByUserId(leaveUserId, { suspension: true });
+            }
+          }
+        }
+      }
+    }
+
+    if (incomingStatus === 'APPROVED' && (existing.request_type || '').toUpperCase() === 'RESCHEDULE') {
+      const oldSessionId = existing.old_session_id;
+      const newSessionId = existing.new_session_id;
+      const userId = existing.user_id;
+      let registrationId = existing.registration_id || null;
+
+      if (!registrationId && oldSessionId && userId) {
+        const reg = await findBySessionAndUser(oldSessionId, userId);
+        registrationId = reg?.registration_id || null;
+      }
+
+      if (registrationId) {
+        await removeByRegistrationId(registrationId);
+
+        if (oldSessionId) {
+          const waitlistRow = await waitlistDao.findBySessionId(oldSessionId);
+          const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+
+          if (Array.isArray(list) && list.length > 0) {
+            const nextUserId = parseInt(list[0], 10);
+            if (!Number.isNaN(nextUserId)) {
+              const existingRegistration = await findBySessionAndUser(oldSessionId, nextUserId);
+              if (!existingRegistration) {
+                await createRegistration({
+                  session_id: oldSessionId,
+                  user_id: nextUserId,
+                  channel: 'WEB',
+                  registration_by_id: req.user?.sub || null,
+                });
+              }
+            }
+
+            const remainingList = list.slice(1);
+            await waitlistDao.updateBySessionId(oldSessionId, JSON.stringify(remainingList));
+          }
+        }
+      }
+
+      if (newSessionId && userId) {
+        const targetSession = await findBySessionId(newSessionId);
+        if (targetSession) {
+          const remainingSeats = targetSession.remaining_seats != null ? Number(targetSession.remaining_seats) : null;
+          if (remainingSeats != null && !Number.isNaN(remainingSeats)) {
+            if (remainingSeats <= 0) {
+              await waitlistDao.appendUserToWaitlist(newSessionId, userId);
+            } else {
+              await createRegistration({
+                session_id: newSessionId,
+                user_id: userId,
+                channel: 'WEB',
+                registration_by_id: req.user?.sub || null,
+              });
+              await updateSessionById(newSessionId, { remaining_seats: remainingSeats - 1 });
+            }
+          } else {
+            await createRegistration({
+              session_id: newSessionId,
+              user_id: userId,
+              channel: 'WEB',
+              registration_by_id: req.user?.sub || null,
+            });
+          }
+        }
+      }
+    }
+
+    
 
     if (updated?.conflict_id) {
       const conflictSession = await findBySessionId(updated.conflict_id);

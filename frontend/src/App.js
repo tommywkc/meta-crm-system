@@ -184,7 +184,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/waiting" element={
-            <ProtectedRoute allowedRole="admin">
+            <ProtectedRoute allowedRoles={["admin","sales","leader"]}>
               <Waiting />
             </ProtectedRoute>
           } />

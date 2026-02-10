@@ -4,7 +4,7 @@ import CommonTable from './CommonTable';
 import { MobileCard, MobileCardRow } from './MobileCard';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 
-const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDeleteSession, isEnrolled, registeredSessionIds = [] }) => {
+const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDeleteSession, isEnrolled, registeredSessionIds = [], allowAdminEnroll = true }) => {
   const navigate = useNavigate();
 
   const sortedSessions = [...(sessions || [])].sort((a, b) => {
@@ -48,6 +48,14 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
                 </button>
               ) : null}
 
+              {(isSalesOrLeader || isAdmin) ? (
+                <button
+                  onClick={() => navigate(`/waiting?session_id=${session.session_id}`)}
+                >
+                  查看候補
+                </button>
+              ) : null}
+
               {isAdmin ? (
                 <>
                   <button onClick={() => onEditSession(session.session_id)}>編輯</button>
@@ -55,7 +63,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
                 </>
               ) : null}
 
-              {(isSalesOrLeader || (isMemberRole && isEnrolled)) ? (
+              {(isSalesOrLeader || (allowAdminEnroll && isAdmin) || (isMemberRole && isEnrolled)) ? (
                 <button
                   onClick={() => {
                     if (!onEnrollSession) return;
@@ -75,7 +83,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
         <MobileCardRow label="場次名稱" value={session.session_name} />
         <MobileCardRow label="開始時間" value={formatDateTimeForDisplay(session.datetime_start) || 'N/A'} />
         <MobileCardRow label="結束時間" value={formatDateTimeForDisplay(session.datetime_end) || 'N/A'} />
-        <MobileCardRow label="剩餘座位數" value={session.remaining_seats || 'N/A'} />
+        <MobileCardRow label="剩餘座位數" value={session.remaining_seats ?? 'N/A'} />
         <MobileCardRow label="描述" value={session.description || '-'} valueStyle={{ wordBreak: 'break-word' }}/>
       </MobileCard>
     );
@@ -97,7 +105,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
             <td>{session.session_name}</td>
             <td>{formatDateTimeForDisplay(session.datetime_start) || 'N/A'}</td>
             <td>{formatDateTimeForDisplay(session.datetime_end) || 'N/A'}</td>
-            <td>{session.remaining_seats || 'N/A'}</td>
+            <td>{session.remaining_seats ?? 'N/A'}</td>
             <td>{session.description || '-'}</td>
             {showActionColumn && (
               <td>
@@ -107,6 +115,15 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
                     onClick={() => navigate(`/sessions/${session.session_id}/enrolled`)}
                   >
                     查看名單
+                  </button>
+                ) : null}
+
+                {(isSalesOrLeader || isAdmin) ? (
+                  <button
+                    onClick={() => navigate(`/waiting?session_id=${session.session_id}`)}
+                    style={{ marginLeft: 8 }}
+                  >
+                    查看候補
                   </button>
                 ) : null}
 

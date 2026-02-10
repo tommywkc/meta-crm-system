@@ -36,7 +36,7 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, render
             {renderActions && renderActions(c)}
         </>
       }
-    >
+     >
        <MobileCardRow label="用戶編號" value={c.user_id} />
        <MobileCardRow label="姓名" value={c.name} />
        <MobileCardRow label="角色" value={c.role} />

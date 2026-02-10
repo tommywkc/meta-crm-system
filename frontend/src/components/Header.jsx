@@ -221,7 +221,7 @@ const Header = () => {
   // Which pages each role should see (order matters)
   const rolePages = {
     // new admin order requested by user
-    admin: ['customers','events','payments','requests_admin','waiting','reports','scan','notifications','feedback'],
+    admin: ['customers','events','payments','requests_admin','reports','scan','notifications','feedback'],
     sales: ['customers','events','payments','requests','sales_kpi','notifications','feedback'],
     leader: ['customers','events','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
     member: ['myevents','events','payments','receipts','requests','notifications','myqrcode','feedback']
@@ -377,15 +377,6 @@ const Header = () => {
         {pages.includes('notifications') && (
           <div 
             onClick={() => navigate('/notifications')}
-            style={{ 
-              cursor: 'pointer', 
-              color: location.pathname.startsWith('/notifications') ? '#093e73' : '#666',
-              display: 'flex', 
-              alignItems: 'center',
-              padding: '8px',
-              borderRadius: '50%',
-              transition: 'background 0.2s'
-            }}
             onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             title="通知中心"
@@ -483,7 +474,6 @@ const Header = () => {
           onClick={() => setMenuOpen(false)}
         />
         <div 
-          ref={menuRef}
           style={{
             position: 'fixed',
             top: '60px',
