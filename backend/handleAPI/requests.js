@@ -11,7 +11,7 @@ const {
   updateRequestById,
 } = require('../dao/requestsDao');
 const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration } = require('../dao/sessionRegistrationsDao');
-const { findBySessionId } = require('../dao/eventSessionsDao');
+const { findBySessionId, updateSessionById } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
 const { createSuspension } = require('../dao/suspensionDao');
@@ -356,6 +356,74 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
         }
       }
     }
+
+    if (incomingStatus === 'APPROVED' && (existing.request_type || '').toUpperCase() === 'RESCHEDULE') {
+      const oldSessionId = existing.old_session_id;
+      const newSessionId = existing.new_session_id;
+      const userId = existing.user_id;
+      let registrationId = existing.registration_id || null;
+
+      if (!registrationId && oldSessionId && userId) {
+        const reg = await findBySessionAndUser(oldSessionId, userId);
+        registrationId = reg?.registration_id || null;
+      }
+
+      if (registrationId) {
+        await removeByRegistrationId(registrationId);
+
+        if (oldSessionId) {
+          const waitlistRow = await waitlistDao.findBySessionId(oldSessionId);
+          const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+
+          if (Array.isArray(list) && list.length > 0) {
+            const nextUserId = parseInt(list[0], 10);
+            if (!Number.isNaN(nextUserId)) {
+              const existingRegistration = await findBySessionAndUser(oldSessionId, nextUserId);
+              if (!existingRegistration) {
+                await createRegistration({
+                  session_id: oldSessionId,
+                  user_id: nextUserId,
+                  channel: 'WEB',
+                  registration_by_id: req.user?.sub || null,
+                });
+              }
+            }
+
+            const remainingList = list.slice(1);
+            await waitlistDao.updateBySessionId(oldSessionId, JSON.stringify(remainingList));
+          }
+        }
+      }
+
+      if (newSessionId && userId) {
+        const targetSession = await findBySessionId(newSessionId);
+        if (targetSession) {
+          const remainingSeats = targetSession.remaining_seats != null ? Number(targetSession.remaining_seats) : null;
+          if (remainingSeats != null && !Number.isNaN(remainingSeats)) {
+            if (remainingSeats <= 0) {
+              await waitlistDao.appendUserToWaitlist(newSessionId, userId);
+            } else {
+              await createRegistration({
+                session_id: newSessionId,
+                user_id: userId,
+                channel: 'WEB',
+                registration_by_id: req.user?.sub || null,
+              });
+              await updateSessionById(newSessionId, { remaining_seats: remainingSeats - 1 });
+            }
+          } else {
+            await createRegistration({
+              session_id: newSessionId,
+              user_id: userId,
+              channel: 'WEB',
+              registration_by_id: req.user?.sub || null,
+            });
+          }
+        }
+      }
+    }
+
+    
 
     if (updated?.conflict_id) {
       const conflictSession = await findBySessionId(updated.conflict_id);
