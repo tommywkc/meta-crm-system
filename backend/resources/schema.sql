@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS BANNERS;
 DROP TABLE IF EXISTS STUDENT_WORKS;
+DROP TABLE IF EXISTS SUSPENSION;
 DROP TABLE IF EXISTS SUBSCRIPTIONS;
 DROP TABLE IF EXISTS SERVICES;
 DROP TABLE IF EXISTS REQUESTS;
@@ -37,10 +38,23 @@ CREATE TABLE IF NOT EXISTS USERS (
     note_special VARCHAR(255),
     referrer BIGINT,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    suspension BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (user_id),
     FOREIGN KEY (owner_sales) REFERENCES USERS(user_id) ON DELETE SET NULL,
     FOREIGN KEY (referrer) REFERENCES USERS(user_id) ON DELETE SET NULL,
     CONSTRAINT CHKROLE CHECK (role IN ('ADMIN', 'SALES', 'LEADER', 'MEMBER', 'N/A'))
+);
+
+CREATE TABLE IF NOT EXISTS SUSPENSION (
+    suspension_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+    user_id BIGINT,
+    reason VARCHAR(255),
+    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP,
+    created_by BIGINT,
+    PRIMARY KEY (suspension_id),
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS STUDENT_WORKS (
@@ -229,6 +243,7 @@ CREATE TABLE IF NOT EXISTS REQUESTS (
     time_conflict BOOLEAN,
     conflict_id BIGINT,
     priority_tier INT,
+    reject_reason VARCHAR(255),
     PRIMARY KEY (request_id),
     FOREIGN KEY (registration_id) REFERENCES SESSION_REGISTRATIONS(registration_id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
@@ -355,7 +370,7 @@ INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_sta
 
 INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datetime_start, datetime_end, created_by_id, remaining_seats, round) VALUES
 (101, 'Test1', 'CRM 基礎概念與重要性111', 30, '2024-07-01 10:00:00', '2027-07-01 12:00:00', 50000, 30, 1),
-(101, 'Test2', 'CRM 基礎概念與重要性111', 30, '2026-02-02 10:00:00', '2026-02-02 12:00:00', 50000, 30, 2),
+(101, 'Test2', 'CRM 基礎概念與重要性111', 30, '2026-02-11 10:00:00', '2026-02-11 12:00:00', 50000, 30, 2),
 (101, '基礎理論', 'CRM 基礎概念與重要性', 30, '2026-07-01 10:00:00', '2026-07-01 12:00:00', 50000, 30, 1),
 (101, '基礎理論', 'CRM 基礎概念與重要性', 30, '2026-08-01 10:00:00', '2026-08-01 12:00:00', 50000, 30, 2),
 (101, '實作演練', 'CRM 系統操作實作', 30, '2026-07-08 10:00:00', '2026-07-08 12:00:00', 50000, 30, 1),
@@ -386,6 +401,7 @@ INSERT INTO EVENT_ENROLLMENTS (event_id, user_id, enroll_by_id, status, enroll_t
 
 INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id) VALUES
     (1, 50008, 50008),
+    (2, 50008, 50008),
     (3, 50008, 50008),
     (6, 50008, 50008),
     (7, 50008, 50008);

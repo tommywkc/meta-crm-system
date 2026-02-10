@@ -10,10 +10,13 @@ const {
   findRequestDetailById,
   updateRequestById,
 } = require('../dao/requestsDao');
-const { findBySessionAndUser, listSessionsByUserWithTimes } = require('../dao/sessionRegistrationsDao');
+const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId } = require('../dao/sessionRegistrationsDao');
 const { findBySessionId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
+const { createSuspension } = require('../dao/suspensionDao');
+const { updateByUserId } = require('../dao/usersDao');
+const { buildHolidaySet, countBusinessDays } = require('../utils/businessDays');
 
 const TYPE_MAP = {
   '請假申請': 'LEAVE',
@@ -31,46 +34,6 @@ const TYPE_RULES = {
   CANCEL: { requiresSession: true, requiresTarget: false, oldSessionFor: [] },
 };
 
-const toDateOnly = (value) => {
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-};
-
-const buildHolidaySet = (holidays = []) => {
-  const set = new Set();
-  holidays.forEach((holiday) => {
-    if (!holiday?.holiday_date) return;
-    const dateKey = new Date(holiday.holiday_date).toISOString().slice(0, 10);
-    set.add(dateKey);
-  });
-  return set;
-};
-
-const countBusinessDays = (startDate, endDate, holidaySet) => {
-  if (!startDate || !endDate) return 0;
-  if (endDate < startDate) return 0;
-  const start = toDateOnly(startDate);
-  const end = toDateOnly(endDate);
-  if (!start || !end) return 0;
-
-  let count = 0;
-  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-  cursor.setDate(cursor.getDate() + 1);
-
-  while (cursor <= end) {
-    const day = cursor.getDay();
-    const isWeekend = day === 0 || day === 6;
-    const dateKey = cursor.toISOString().slice(0, 10);
-    const isHoliday = holidaySet.has(dateKey);
-    if (!isWeekend && !isHoliday) {
-      count += 1;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return count;
-};
 
 const attachConflictDetails = async (requests = []) => {
   if (!Array.isArray(requests) || requests.length === 0) return requests;
@@ -316,6 +279,7 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
     }
 
     const incomingStatus = req.body?.status ? String(req.body.status).trim().toUpperCase() : '';
+    const rejectReason = req.body?.reject_reason ? String(req.body.reject_reason).trim() : '';
     if (!['APPROVED', 'REJECTED'].includes(incomingStatus)) {
       return res.status(400).json({ message: '狀態更新僅支援批准或駁回' });
     }
@@ -324,7 +288,50 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       status: incomingStatus,
       determine_by_id: req.user.sub,
       determine_time: new Date(),
+      reject_reason: incomingStatus === 'REJECTED' ? (rejectReason || null) : null,
     });
+
+    if (incomingStatus === 'APPROVED' && (existing.request_type || '').toUpperCase() === 'LEAVE') {
+      const leaveSessionId = existing.old_session_id;
+      const leaveUserId = existing.user_id;
+      let registrationId = existing.registration_id || null;
+
+      if (!registrationId && leaveSessionId && leaveUserId) {
+        const reg = await findBySessionAndUser(leaveSessionId, leaveUserId);
+        registrationId = reg?.registration_id || null;
+      }
+
+      if (registrationId) {
+        await removeByRegistrationId(registrationId);
+      }
+
+      if (leaveSessionId) {
+        const leaveSession = await findBySessionId(leaveSessionId);
+        if (leaveSession?.event_id) {
+          const event = await findByEventId(leaveSession.event_id);
+          if (event?.type === 'CLASS' && leaveSession?.datetime_start) {
+            const holidays = await listHolidays(5000, 0);
+            const holidaySet = buildHolidaySet(holidays);
+            const businessDays = countBusinessDays(new Date(), new Date(leaveSession.datetime_start), holidaySet);
+
+            if (businessDays < 3) {
+              const startTime = existing.request_time ? new Date(existing.request_time) : new Date();
+              const endTime = new Date(startTime);
+              endTime.setMonth(endTime.getMonth() + 2);
+              const reason = `請假申請（低於 3 個工作天）: request_id ${existing.request_id}`;
+              await createSuspension({
+                user_id: leaveUserId,
+                reason,
+                start_time: startTime,
+                end_time: endTime,
+                created_by: req.user.sub,
+              });
+              await updateByUserId(leaveUserId, { suspension: true });
+            }
+          }
+        }
+      }
+    }
 
     if (updated?.conflict_id) {
       const conflictSession = await findBySessionId(updated.conflict_id);

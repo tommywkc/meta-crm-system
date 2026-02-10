@@ -130,7 +130,12 @@ const RequestViewTable = ({ request }) => {
         ? [{ label: '優先級別', value: formatValue(request.priority_tier) }]
         : []),
       { label: '申請備註', value: formatValue(request.remarks) },
-      { label: '批核時間', value: request.determine_time ? formatDateTimeForDisplay(request.determine_time) : '-' },
+      ...(String(request.status || '').toUpperCase() === 'REJECTED'
+        ? [{ label: '拒絕原因', value: formatValue(request.reject_reason) }]
+        : []),
+      ...(String(request.status || '').toUpperCase() !== 'PENDING'
+        ? [{ label: '批核時間', value: request.determine_time ? formatDateTimeForDisplay(request.determine_time) : '-' }]
+        : []),
     ];
 
     if (typeKey === 'RESCHEDULE') {
@@ -147,6 +152,7 @@ const RequestViewTable = ({ request }) => {
       'request_time',
       'determine_time',
       'remarks',
+      'reject_reason',
       'user_id',
       'user_name',
       'user_mobile',

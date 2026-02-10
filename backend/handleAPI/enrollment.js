@@ -13,34 +13,9 @@ const {
 const { findByEventId, updateRemainingSeats } = require('../dao/eventsDao');
 const { createPayment } = require('../dao/paymentsDao');
 const { listHolidays } = require('../dao/holidaysDao');
+const { buildHolidaySet, addBusinessDays } = require('../utils/businessDays');
 const { findByUserId } = require('../dao/usersDao');
 const { sendEmail } = require('../services/emailService');
-
-const buildHolidaySet = (holidays = []) => {
-  const set = new Set();
-  for (const holiday of holidays) {
-    if (!holiday?.holiday_date) continue;
-    const dateKey = new Date(holiday.holiday_date).toISOString().slice(0, 10);
-    set.add(dateKey);
-  }
-  return set;
-};
-
-const addBusinessDays = (startDate, businessDays, holidaySet) => {
-  const date = new Date(startDate.getTime());
-  let added = 0;
-  while (added < businessDays) {
-    date.setDate(date.getDate() + 1);
-    const day = date.getDay();
-    const isWeekend = day === 0 || day === 6;
-    const dateKey = date.toISOString().slice(0, 10);
-    const isHoliday = holidaySet.has(dateKey);
-    if (!isWeekend && !isHoliday) {
-      added += 1;
-    }
-  }
-  return date;
-};
 
 // Handle create new enrollment
 router.post('/enrollments', authMiddleware, async (req, res) => {
