@@ -10,13 +10,14 @@ const {
   findRequestDetailById,
   updateRequestById,
 } = require('../dao/requestsDao');
-const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId } = require('../dao/sessionRegistrationsDao');
+const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration } = require('../dao/sessionRegistrationsDao');
 const { findBySessionId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
 const { createSuspension } = require('../dao/suspensionDao');
 const { updateByUserId } = require('../dao/usersDao');
 const { buildHolidaySet, countBusinessDays } = require('../utils/businessDays');
+const waitlistDao = require('../dao/waitlistDao');
 
 const TYPE_MAP = {
   '請假申請': 'LEAVE',
@@ -303,6 +304,29 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
 
       if (registrationId) {
         await removeByRegistrationId(registrationId);
+
+        if (leaveSessionId) {
+          const waitlistRow = await waitlistDao.findBySessionId(leaveSessionId);
+          const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+
+          if (Array.isArray(list) && list.length > 0) {
+            const nextUserId = parseInt(list[0], 10);
+            if (!Number.isNaN(nextUserId)) {
+              const existingRegistration = await findBySessionAndUser(leaveSessionId, nextUserId);
+              if (!existingRegistration) {
+                await createRegistration({
+                  session_id: leaveSessionId,
+                  user_id: nextUserId,
+                  channel: 'WEB',
+                  registration_by_id: req.user?.sub || null,
+                });
+              }
+            }
+
+            const remainingList = list.slice(1);
+            await waitlistDao.updateBySessionId(leaveSessionId, JSON.stringify(remainingList));
+          }
+        }
       }
 
       if (leaveSessionId) {

@@ -17,6 +17,7 @@ const {
 } = require('../dao/sessionRegistrationsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 const eventAttendanceDao = require('../dao/eventAttendanceDao');
+const waitlistDao = require('../dao/waitlistDao');
 
 //handle get sessions by event_id
 router.get('/events/:event_id/sessions', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
@@ -597,10 +598,24 @@ router.delete('/session-registrations/:id', authMiddleware, async (req, res) => 
 
     const sessionId = registration.session_id;
     if (sessionId) {
-      const session = await findBySessionId(sessionId);
-      const remainingSeats = session && session.remaining_seats != null ? Number(session.remaining_seats) : null;
-      if (session && remainingSeats != null && !Number.isNaN(remainingSeats)) {
-        await updateSessionById(sessionId, { remaining_seats: remainingSeats + 1 });
+      const waitlistRow = await waitlistDao.findBySessionId(sessionId);
+      const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+
+      if (Array.isArray(list) && list.length > 0) {
+        const nextUserId = parseInt(list[0], 10);
+        if (!Number.isNaN(nextUserId)) {
+          const existing = await findBySessionAndUser(sessionId, nextUserId);
+          if (!existing) {
+            await createRegistration({
+              session_id: sessionId,
+              user_id: nextUserId,
+              channel: 'WEB',
+              registration_by_id: req.user?.sub || null,
+            });
+            const remainingList = list.slice(1);
+            await waitlistDao.updateBySessionId(sessionId, JSON.stringify(remainingList));
+          }
+        }
       }
     }
     return res.status(200).json({ message: '場次報名已刪除' });
