@@ -127,4 +127,43 @@ router.post('/waitlist/apply', authMiddleware, roleMiddleware(['admin', 'sales']
   }
 });
 
+router.put('/waitlist/rank', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+  try {
+    const { session_id, user_id, new_rank } = req.body || {};
+    if (!session_id || !user_id || !new_rank) {
+      return res.status(400).json({ message: '缺少必要的參數（需要 session_id, user_id, new_rank）' });
+    }
+
+    const sessionId = parseInt(session_id, 10);
+    const userId = parseInt(user_id, 10);
+    const nextRank = parseInt(new_rank, 10);
+    if (Number.isNaN(sessionId) || Number.isNaN(userId) || Number.isNaN(nextRank) || nextRank <= 0) {
+      return res.status(400).json({ message: '無效的參數' });
+    }
+
+    const row = await waitlistDao.findBySessionId(sessionId);
+    if (!row) {
+      return res.status(404).json({ message: '候補名單不存在' });
+    }
+
+    const list = parseWaitlist(row.waitlist);
+    const strList = list.map((v) => String(v));
+    const idx = strList.indexOf(String(userId));
+    if (idx === -1) {
+      return res.status(404).json({ message: '使用者不在候補名單中' });
+    }
+
+    const listWithout = list.filter((_, i) => i !== idx);
+    const boundedRank = Math.min(Math.max(nextRank, 1), listWithout.length + 1);
+    const insertIndex = boundedRank - 1;
+    listWithout.splice(insertIndex, 0, list[idx]);
+
+    const updated = await waitlistDao.updateBySessionId(sessionId, JSON.stringify(listWithout));
+    return res.status(200).json({ message: '排名已更新', waitlist: updated });
+  } catch (error) {
+    console.error('Update waitlist rank failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
 module.exports = router;

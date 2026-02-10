@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import WaitingListTable from '../../components/WaitingListTable';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
-import { handleListWaitlist } from '../../api/waitlistAPI';
+import { handleListWaitlist, handleUpdateWaitlistRank } from '../../api/waitlistAPI';
 import { handleGetSessionById } from '../../api/sessionAPI';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
@@ -10,6 +11,8 @@ import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 const Waiting = () => {
 	const location = useLocation();
 	const navigate = useNavigate();
+	const { user } = useAuth();
+	const isAdmin = String(user?.role || '').toUpperCase() === 'ADMIN';
 	const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
 	const sessionId = searchParams.get('session_id');
 	const [data, setData] = useState([]);
@@ -80,7 +83,25 @@ const Waiting = () => {
 			)}
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}
-			{!loading && !error && <WaitingListTable data={data} />}
+			{!loading && !error && (
+				<WaitingListTable
+					data={data}
+					isAdmin={isAdmin}
+					onUpdateRank={async (row, nextRank) => {
+						try {
+							await handleUpdateWaitlistRank({
+								session_id: row.session_id || sessionId,
+								user_id: row.user_id,
+								new_rank: nextRank,
+							});
+							const payload = await handleListWaitlist(sessionId);
+							setData(Array.isArray(payload?.waitlist) ? payload.waitlist : []);
+						} catch (err) {
+							alert(err?.message || '更新排名失敗');
+						}
+					}}
+				/>
+			)}
 		</PageContainer>
 	);
 };
