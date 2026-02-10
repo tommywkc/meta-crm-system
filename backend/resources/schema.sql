@@ -393,8 +393,7 @@ INSERT INTO EVENT_ENROLLMENTS (event_id, user_id, enroll_by_id, status, enroll_t
     (102, 50008, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
     (103, 50008, 50000, 'PENDING', '2025-11-25 16:45:00'),
     (104, 50008, 50000, 'CANCELLED', '2025-11-28 11:00:00'),
-    (101, 50010, 50000, 'CONFIRMED', '2025-11-30 14:00:00'),
-    (101, 50011, 50000, 'CONFIRMED', '2025-11-30 14:00:00');
+
 
 
 INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id) VALUES
