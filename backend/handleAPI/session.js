@@ -12,6 +12,7 @@ const {
   searchUpcomingSessionsAllUsers,
   listSessionsByUserAndYear,
   listRegisteredSessionIdsByUserAndEvent,
+  listAttendeesBySessionId,
 } = require('../dao/sessionRegistrationsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 
@@ -359,6 +360,26 @@ router.get('/my-sessions/registered-by-event', authMiddleware, async (req, res) 
   } catch (error) {
     console.error('Get registered session IDs by event for current user failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// Get all attendees for a specific session
+router.get('/session-registrations/by-session', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
+  try {
+    const session_id = parseInt(req.query.session_id, 10);
+    console.log('Received get session attendees request for session:', session_id, 'from user:', req.user.sub);
+
+    if (isNaN(session_id)) {
+      return res.status(400).json({ message: '無效的場次 ID' });
+    }
+
+    const attendees = await listAttendeesBySessionId(session_id);
+    console.log(`Found ${attendees.length} attendees for session ${session_id}`);
+    
+    res.json({ users: attendees });
+  } catch (error) {
+    console.error('Get session attendees failed:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
   }
 });
 

@@ -208,7 +208,38 @@ async function updateRegistrationById(id, fields = {}) {
   return res.rows[0] || null;
 }
 
+async function listAttendeesBySessionId(session_id) {
+  const sql = `
+    SELECT
+      sr.registration_id,
+      sr.status,
+      u.user_id,
+      u.name,
+      u.role,
+      u.mobile,
+      u.email,
+      ea.status as attendance_status,
+      ea.attend_time,
+      MAX(p.payment_id) as payment_id,
+      BOOL_OR(p.issued_certificate) as issued_certificate,
+      BOOL_OR(p.issued_receipt) as issued_receipt,
+      MAX(ee.enrollment_id) as enrollment_id
+    FROM SESSION_REGISTRATIONS sr
+    JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
+    JOIN USERS u ON sr.user_id = u.user_id
+    LEFT JOIN EVENT_ATTENDANCE ea ON sr.registration_id = ea.registration_id
+    LEFT JOIN EVENT_ENROLLMENTS ee ON ee.event_id = s.event_id AND ee.user_id = sr.user_id
+    LEFT JOIN PAYMENTS p ON (p.enrollment_id = ee.enrollment_id OR (p.event_id = s.event_id AND p.user_id = sr.user_id))
+    WHERE sr.session_id = $1
+    GROUP BY sr.registration_id, u.user_id, ea.attendance_id
+    ORDER BY sr.registration_id DESC
+  `;
+  const res = await query(sql, [session_id]);
+  return res.rows;
+}
+
 module.exports = {
+  listAttendeesBySessionId,
   createRegistration,
   findByRegistrationId,
   listBySessionId,
