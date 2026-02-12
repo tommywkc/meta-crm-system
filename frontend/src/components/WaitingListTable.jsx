@@ -1,10 +1,21 @@
 import React from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonTable from './CommonTable';
 import { MobileCard, MobileCardRow } from './MobileCard';
 
 const WaitingListTable = ({ data = [], onApprove, onNotify, onReject, onUpdateRank, isAdmin = false }) => {
 	const navigate = useNavigate();
+
+	const normalized = useMemo(() => (data || []).map((r, idx) => ({
+		...r,
+		_rank: r.rank ?? r.order ?? (idx + 1),
+		user_id: r.user_id ?? r.customerId ?? r.id,
+		name: r.name ?? r.customerName ?? '-',
+		role: r.role ?? 'MEMBER',
+		mobile: r.mobile ?? r.contact ?? '',
+		email: r.email ?? '',
+	})), [data]);
 
 	const handleUpdateRank = (row) => {
 		const maxRank = normalized.length || 1;
@@ -28,17 +39,35 @@ const WaitingListTable = ({ data = [], onApprove, onNotify, onReject, onUpdateRa
 		alert(`排名已更新為第 ${nextRank} 位`);
 	};
 
-	const normalized = (data || []).map((r, idx) => ({
-		...r,
-		_rank: r.rank ?? r.order ?? (idx + 1),
-		user_id: r.user_id ?? r.customerId ?? r.id,
-		name: r.name ?? r.customerName ?? '-',
-		role: r.role ?? 'MEMBER',
-		mobile: r.mobile ?? r.contact ?? '',
-		email: r.email ?? '',
-	}));
-
 	const headers = ['排名', '用戶編號', '姓名', '角色', '電話', '電子郵件', '操作'];
+
+	const [sortConfig, setSortConfig] = useState(null);
+
+	const handleSort = (colIndex) => {
+		setSortConfig((prev) => {
+			if (!prev || prev.columnIndex !== colIndex) return { columnIndex: colIndex, direction: 'asc' };
+			return { columnIndex: colIndex, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+		});
+	};
+
+	const sorted = useMemo(() => {
+		if (!sortConfig) return normalized;
+		const dir = sortConfig.direction === 'asc' ? 1 : -1;
+		const cmp = (a, b) => {
+			switch (sortConfig.columnIndex) {
+				case 0: return (Number(a._rank ?? 0) - Number(b._rank ?? 0)) * dir;
+				case 1: return String(a.user_id ?? '').localeCompare(String(b.user_id ?? '')) * dir;
+				case 2: return String(a.name ?? '').localeCompare(String(b.name ?? '')) * dir;
+				case 3: return String(a.role ?? '').localeCompare(String(b.role ?? '')) * dir;
+				case 4: return String(a.mobile ?? '').localeCompare(String(b.mobile ?? '')) * dir;
+				case 5: return String(a.email ?? '').localeCompare(String(b.email ?? '')) * dir;
+				default: return 0;
+			}
+		};
+		const copy = [...normalized];
+		copy.sort(cmp);
+		return copy;
+	}, [normalized, sortConfig]);
 
 	const renderCard = (row, idx) => (
 		<MobileCard
@@ -80,8 +109,8 @@ const WaitingListTable = ({ data = [], onApprove, onNotify, onReject, onUpdateRa
 	);
 
 	return (
-		<CommonTable headers={headers} data={normalized} emptyMessage="暫無候補資料" renderCard={renderCard}>
-			{normalized.map((row, idx) => (
+		<CommonTable headers={headers} data={sorted} emptyMessage="暫無候補資料" onSort={handleSort} sortConfig={sortConfig} renderCard={renderCard}>
+			{sorted.map((row, idx) => (
 				<tr key={row.user_id || idx}>
 					<td>{row._rank || '-'}</td>
 					<td>{row.user_id}</td>

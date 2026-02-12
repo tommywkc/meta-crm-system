@@ -14,14 +14,33 @@ async function createEvent({
   location = null,
   status = 'SCHEDULED',
   room_cost = null,
+  promotion_cost = null,
+  misc_cost = null,
+  salary_cost = null,
+  freight_cost = null,
+  utilities_cost = null,
+  telecom_cost = null,
+  cog_cost = null,
   speaker_id = null
 }) {
   const sql = `
-    INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+    INSERT INTO EVENTS (
+      event_id, price, type, event_name, description, 
+      datetime_start, datetime_end, capacity, remaining_seats, 
+      location, status, room_cost, 
+      promotion_cost, misc_cost, salary_cost, freight_cost, utilities_cost, telecom_cost, cog_cost,
+      speaker_id
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
     RETURNING *;
   `;
-  const vals = [event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id];
+  const vals = [
+    event_id, price, type, event_name, description, 
+    datetime_start, datetime_end, capacity, remaining_seats, 
+    location, status, room_cost, 
+    promotion_cost, misc_cost, salary_cost, freight_cost, utilities_cost, telecom_cost, cog_cost,
+    speaker_id
+  ];
   try {
     const res = await query(sql, vals);
     return res.rows[0];

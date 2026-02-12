@@ -30,6 +30,13 @@ const EventForm = ({
   const [location, setLocation] = useState(initialData.location || '');
   const [description, setDescription] = useState(initialData.description || '');
   const [roomCost, setRoomCost] = useState(initialData.room_cost || '');
+  const [promotionCost, setPromotionCost] = useState(initialData.promotion_cost || '');
+  const [miscCost, setMiscCost] = useState(initialData.misc_cost || '');
+  const [salaryCost, setSalaryCost] = useState(initialData.salary_cost || '');
+  const [freightCost, setFreightCost] = useState(initialData.freight_cost || '');
+  const [utilitiesCost, setUtilitiesCost] = useState(initialData.utilities_cost || '');
+  const [telecomCost, setTelecomCost] = useState(initialData.telecom_cost || '');
+  const [cogCost, setCogCost] = useState(initialData.cog_cost || '');
   const [speakerId, setSpeakerId] = useState(initialData.speaker_id || '');
   const [speakerInput, setSpeakerInput] = useState('');
   const [speakerError, setSpeakerError] = useState(null);
@@ -51,6 +58,13 @@ const EventForm = ({
       setLocation(initialData.location || '');
       setDescription(initialData.description || '');
       setRoomCost(initialData.room_cost || '');
+      setPromotionCost(initialData.promotion_cost || '');
+      setMiscCost(initialData.misc_cost || '');
+      setSalaryCost(initialData.salary_cost || '');
+      setFreightCost(initialData.freight_cost || '');
+      setUtilitiesCost(initialData.utilities_cost || '');
+      setTelecomCost(initialData.telecom_cost || '');
+      setCogCost(initialData.cog_cost || '');
       setSpeakerId(initialData.speaker_id || '');
       setPrice(initialData.price || '');
       setSessions(backendSessionsToFormState(initialData.sessions));
@@ -122,6 +136,13 @@ const EventForm = ({
     location,
     description,
     room_cost: roomCost ? parseInt(roomCost, 10) : null,
+    promotion_cost: promotionCost ? parseInt(promotionCost, 10) : null,
+    misc_cost: miscCost ? parseInt(miscCost, 10) : null,
+    salary_cost: salaryCost ? parseInt(salaryCost, 10) : null,
+    freight_cost: freightCost ? parseInt(freightCost, 10) : null,
+    utilities_cost: utilitiesCost ? parseInt(utilitiesCost, 10) : null,
+    telecom_cost: telecomCost ? parseInt(telecomCost, 10) : null,
+    cog_cost: cogCost ? parseInt(cogCost, 10) : null,
     speaker_id: speakerId ? parseInt(speakerId, 10) : null,
     price: price ? parseInt(price, 10) : null,
     sessions: sessionsPayload
@@ -300,37 +321,73 @@ const EventForm = ({
         {/* 狀態與場地費 */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
           <div style={{ flex: 1, marginBottom: 8 }}>
-            <label>場地費用:</label><br/>
+            <label>場地 / 租金費用 (Rental):</label><br/>
             <div style={{ position: 'relative' }}>
-              <span
-                style={{
-                  position: 'absolute',
-                  left: 8,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#666'
-                }}
-              >
-                $
-              </span>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={roomCost ?? ''}
-                onChange={(e) => setRoomCost(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 8px 8px 20px',
-                  borderColor: !/^\d*$/.test(roomCost || '') ? 'red' : ''
-                }}placeholder="留空或輸入 ' 0 ' 表示免費"
-              />
+              <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#666' }}>$</span>
+              <input type="text" inputMode="numeric" value={roomCost ?? ''} onChange={(e) => setRoomCost(e.target.value)} style={{ width: '100%', padding: '8px 8px 8px 20px', borderColor: !/^\d*$/.test(roomCost || '') ? 'red' : '' }} placeholder="0" />
             </div>
-            {!/^\d*$/.test(roomCost || '') && (
-              <small style={{ color: 'red' }}>請輸入有效的金額（僅限數字）。</small>
-            )}
           </div>
-
           <div style={{ flex: 1, marginBottom: 8 }}>
+             <label>宣傳費 (Advertising):</label><br/>
+             <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#666' }}>$</span>
+              <input type="text" inputMode="numeric" value={promotionCost ?? ''} onChange={(e) => setPromotionCost(e.target.value)} style={{ width: '100%', padding: '8px 8px 8px 20px', borderColor: !/^\d*$/.test(promotionCost || '') ? 'red' : '' }} placeholder="0" />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+          <div style={{ flex: 1, marginBottom: 8 }}>
+            <label>雜費 (Misc):</label><br/>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#666' }}>$</span>
+              <input type="text" inputMode="numeric" value={miscCost ?? ''} onChange={(e) => setMiscCost(e.target.value)} style={{ width: '100%', padding: '8px 8px 8px 20px', borderColor: !/^\d*$/.test(miscCost || '') ? 'red' : '' }} placeholder="0" />
+            </div>
+          </div>
+          <div style={{ flex: 1, marginBottom: 8 }}>
+             <label>薪資支出 (Salary):</label><br/>
+             <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#666' }}>$</span>
+              <input type="text" inputMode="numeric" value={salaryCost ?? ''} onChange={(e) => setSalaryCost(e.target.value)} style={{ width: '100%', padding: '8px 8px 8px 20px', borderColor: !/^\d*$/.test(salaryCost || '') ? 'red' : '' }} placeholder="0" />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+          <div style={{ flex: 1, marginBottom: 8 }}>
+            <label>運費 (Freight):</label><br/>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#666' }}>$</span>
+              <input type="text" inputMode="numeric" value={freightCost ?? ''} onChange={(e) => setFreightCost(e.target.value)} style={{ width: '100%', padding: '8px 8px 8px 20px', borderColor: !/^\d*$/.test(freightCost || '') ? 'red' : '' }} placeholder="0" />
+            </div>
+          </div>
+          <div style={{ flex: 1, marginBottom: 8 }}>
+             <label>水電瓦斯費 (Utilities):</label><br/>
+             <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#666' }}>$</span>
+              <input type="text" inputMode="numeric" value={utilitiesCost ?? ''} onChange={(e) => setUtilitiesCost(e.target.value)} style={{ width: '100%', padding: '8px 8px 8px 20px', borderColor: !/^\d*$/.test(utilitiesCost || '') ? 'red' : '' }} placeholder="0" />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+          <div style={{ flex: 1, marginBottom: 8 }}>
+            <label>郵電費 (Telecom):</label><br/>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#666' }}>$</span>
+              <input type="text" inputMode="numeric" value={telecomCost ?? ''} onChange={(e) => setTelecomCost(e.target.value)} style={{ width: '100%', padding: '8px 8px 8px 20px', borderColor: !/^\d*$/.test(telecomCost || '') ? 'red' : '' }} placeholder="0" />
+            </div>
+          </div>
+          <div style={{ flex: 1, marginBottom: 8 }}>
+             <label>銷貨成本 (COG):</label><br/>
+             <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#666' }}>$</span>
+              <input type="text" inputMode="numeric" value={cogCost ?? ''} onChange={(e) => setCogCost(e.target.value)} style={{ width: '100%', padding: '8px 8px 8px 20px', borderColor: !/^\d*$/.test(cogCost || '') ? 'red' : '' }} placeholder="0" />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
             <label>狀態:</label><br />
             <select
               value={status}
@@ -341,8 +398,6 @@ const EventForm = ({
               <option value="CANCELLED">已取消</option>
               <option value="OPEN">開放中</option>
             </select>
-          </div>
-          
         </div>
         
         {showSessionForm && (

@@ -3,15 +3,43 @@ import { useNavigate } from 'react-router-dom';
 import CommonTable from './CommonTable';
 import { MobileCard, MobileCardRow } from './MobileCard';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
+import { useState, useMemo } from 'react';
 
 const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDeleteSession, isEnrolled, registeredSessionIds = [], allowAdminEnroll = true }) => {
   const navigate = useNavigate();
 
-  const sortedSessions = [...(sessions || [])].sort((a, b) => {
-    const dateA = new Date(a.datetime_start);
-    const dateB = new Date(b.datetime_start);
-    return dateA - dateB;
-  });
+  const [sortConfig, setSortConfig] = useState(null);
+  const handleSort = (colIndex) => {
+    setSortConfig((prev) => {
+      if (!prev || prev.columnIndex !== colIndex) return { columnIndex: colIndex, direction: 'asc' };
+      return { columnIndex: colIndex, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+    });
+  };
+
+  const sortedSessions = useMemo(() => {
+    const arr = [...(sessions || [])];
+    if (!sortConfig) return arr;
+    const dir = sortConfig.direction === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      switch (sortConfig.columnIndex) {
+        case 0: return String(a.session_name ?? '').localeCompare(String(b.session_name ?? '')) * dir;
+        case 1: {
+          const ta = a.datetime_start ? new Date(a.datetime_start).getTime() : 0;
+          const tb = b.datetime_start ? new Date(b.datetime_start).getTime() : 0;
+          return (ta - tb) * dir;
+        }
+        case 2: {
+          const ta = a.datetime_end ? new Date(a.datetime_end).getTime() : 0;
+          const tb = b.datetime_end ? new Date(b.datetime_end).getTime() : 0;
+          return (ta - tb) * dir;
+        }
+        case 3: return (Number(a.remaining_seats ?? 0) - Number(b.remaining_seats ?? 0)) * dir;
+        case 4: return String(a.description ?? '').localeCompare(String(b.description ?? '')) * dir;
+        default: return 0;
+      }
+    });
+    return arr;
+  }, [sessions, sortConfig]);
 
   const isMember = role?.toLowerCase() === 'member';
   const showActionColumn = !isMember || isEnrolled;
@@ -90,7 +118,7 @@ const SessionListTable = ({ sessions, role, onEditSession, onEnrollSession, onDe
   };
 
   return (
-    <CommonTable headers={headers} data={sortedSessions} emptyMessage="此活動暫無場次" renderCard={renderCard}>
+    <CommonTable headers={headers} data={sortedSessions} emptyMessage="此活動暫無場次" onSort={handleSort} sortConfig={sortConfig} renderCard={renderCard}>
       {sortedSessions.map((session) => {
         const lowerRole = role?.toLowerCase();
         const isMemberRole = lowerRole === 'member';

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonTable from './CommonTable';
 import { MobileCard, MobileCardRow } from './MobileCard';
@@ -107,6 +108,45 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
 
   const headers = ['申請編號', '申請人', '申請類型', '申請內容', '狀態', '申請時間', '條件衝突', '操作'];
 
+  const [sortConfig, setSortConfig] = useState(null);
+  const handleSort = (col) => setSortConfig((prev) => {
+    if (!prev || prev.columnIndex !== col) return { columnIndex: col, direction: 'asc' };
+    return { columnIndex: col, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+  });
+
+  const sortedRequests = useMemo(() => {
+    if (!Array.isArray(requests)) return [];
+    if (!sortConfig) return requests;
+    const dir = sortConfig.direction === 'asc' ? 1 : -1;
+    const cmp = (a, b) => {
+      switch (sortConfig.columnIndex) {
+        case 0: return (Number(a.request_id ?? 0) - Number(b.request_id ?? 0)) * dir;
+        case 1: return String(a.user_name || a.user_id || '').localeCompare(String(b.user_name || b.user_id || '')) * dir;
+        case 2: return String(a.request_type || '').localeCompare(String(b.request_type || '')) * dir;
+        case 3: {
+          const ea = a.new_event_name || a.old_event_name || '';
+          const eb = b.new_event_name || b.old_event_name || '';
+          return String(ea).localeCompare(String(eb)) * dir;
+        }
+        case 4: return String(a.status || '').localeCompare(String(b.status || '')) * dir;
+        case 5: {
+          const ta = a.request_time ? new Date(a.request_time).getTime() : 0;
+          const tb = b.request_time ? new Date(b.request_time).getTime() : 0;
+          return (ta - tb) * dir;
+        }
+        case 6: {
+          const ca = (a.under_3bday || a.time_conflict) ? 1 : 0;
+          const cb = (b.under_3bday || b.time_conflict) ? 1 : 0;
+          return (ca - cb) * dir;
+        }
+        default: return 0;
+      }
+    };
+    const cp = [...requests];
+    cp.sort(cmp);
+    return cp;
+  }, [requests, sortConfig]);
+
   const renderCard = (req, idx) => {
     const typeKey = (req.request_type || '').toString().toUpperCase();
     const typeLabel = TYPE_LABELS[typeKey] || req.request_type || '-';
@@ -165,13 +205,13 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
   };
 
   return (
-    <CommonTable headers={headers} data={loading ? null : requests} emptyMessage="暫無申請紀錄" renderCard={renderCard}>
+    <CommonTable headers={headers} data={loading ? null : sortedRequests} emptyMessage="暫無申請紀錄" onSort={handleSort} sortConfig={sortConfig} renderCard={renderCard}>
       {loading && (
         <tr>
           <td colSpan={8}>載入中…</td>
         </tr>
       )}
-      {!loading && requests.map((req) => {
+      {!loading && sortedRequests.map((req) => {
         const typeKey = (req.request_type || '').toString().toUpperCase();
         const typeLabel = TYPE_LABELS[typeKey] || req.request_type || '-';
         const requestTimeLabel = req.request_time ? formatDateTimeForDisplay(req.request_time) : '-';

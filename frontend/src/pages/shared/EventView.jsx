@@ -231,9 +231,14 @@ const EventView = () => {
     : `HK$ ${event.price}`}</div>
         {isAdmin && (
           <>
-      <div><strong>房間費用:</strong> {event.room_cost == null || Number(event.room_cost) === 0
-    ? 'N/A'
-    : `HK$ ${event.room_cost}`}</div>
+      <div><strong>房間費用 (Rental):</strong> {event.room_cost == null || Number(event.room_cost) === 0 ? 'N/A' : `HK$ ${event.room_cost}`}</div>
+      <div><strong>宣傳費 (Advertising):</strong> {event.promotion_cost == null || Number(event.promotion_cost) === 0 ? 'N/A' : `HK$ ${event.promotion_cost}`}</div>
+      <div><strong>雜費 (Misc):</strong> {event.misc_cost == null || Number(event.misc_cost) === 0 ? 'N/A' : `HK$ ${event.misc_cost}`}</div>
+      <div><strong>薪資支出 (Salary):</strong> {event.salary_cost == null || Number(event.salary_cost) === 0 ? 'N/A' : `HK$ ${event.salary_cost}`}</div>
+      <div><strong>運費 (Freight):</strong> {event.freight_cost == null || Number(event.freight_cost) === 0 ? 'N/A' : `HK$ ${event.freight_cost}`}</div>
+      <div><strong>水電瓦斯費 (Utilities):</strong> {event.utilities_cost == null || Number(event.utilities_cost) === 0 ? 'N/A' : `HK$ ${event.utilities_cost}`}</div>
+      <div><strong>郵電費 (Telecom):</strong> {event.telecom_cost == null || Number(event.telecom_cost) === 0 ? 'N/A' : `HK$ ${event.telecom_cost}`}</div>
+      <div><strong>銷貨成本 (COG):</strong> {event.cog_cost == null || Number(event.cog_cost) === 0 ? 'N/A' : `HK$ ${event.cog_cost}`}</div>
             <div><strong>建立時間:</strong> {formatDateTimeForDisplay(event.create_time)|| 'N/A'}</div>
           </>
         )}

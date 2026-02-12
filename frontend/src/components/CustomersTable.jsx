@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import CommonTable from './CommonTable';
 import { MobileCard, MobileCardRow } from './MobileCard';
 
@@ -12,6 +12,38 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, render
     ...extraColumns.map(col => col.header),
     '操作'
   ];
+
+  const [sortConfig, setSortConfig] = useState(null);
+  const handleSort = (col) => setSortConfig((prev) => {
+    if (!prev || prev.columnIndex !== col) return { columnIndex: col, direction: 'asc' };
+    return { columnIndex: col, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+  });
+
+  const sorted = useMemo(() => {
+    if (!Array.isArray(customers)) return [];
+    if (!sortConfig) return customers;
+    const dir = sortConfig.direction === 'asc' ? 1 : -1;
+    const cp = [...customers];
+    cp.sort((a, b) => {
+      switch (sortConfig.columnIndex) {
+        case 0: return (Number(a.user_id ?? 0) - Number(b.user_id ?? 0)) * dir;
+        case 1: return String(a.name ?? '').localeCompare(String(b.name ?? '')) * dir;
+        case 2: return String(a.role ?? '').localeCompare(String(b.role ?? '')) * dir;
+        case 3: return String(a.mobile ?? '').localeCompare(String(b.mobile ?? '')) * dir;
+        case 4: return String(a.email ?? '').localeCompare(String(b.email ?? '')) * dir;
+        default: {
+          // for extra columns, try to use provided render value text if available
+          const extraIndex = sortConfig.columnIndex - 5;
+          const col = extraColumns[extraIndex];
+          if (col && typeof col.sortValue === 'function') {
+            return String(col.sortValue(a) || '').localeCompare(String(col.sortValue(b) || '')) * dir;
+          }
+          return 0;
+        }
+      }
+    });
+    return cp;
+  }, [customers, sortConfig, extraColumns]);
 
   const renderCard = (c, index) => (
     <MobileCard
@@ -54,8 +86,15 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, render
   );
 
   return (
-    <CommonTable headers={headers} data={customers} emptyMessage="暫無客戶資料" renderCard={renderCard}>
-      {customers.map((c) => (
+    <CommonTable 
+      headers={headers} 
+      data={sorted} 
+      emptyMessage="暫無客戶資料" 
+      onSort={handleSort} 
+      sortConfig={sortConfig}
+      renderCard={renderCard}
+    >
+      {sorted.map((c) => (
         <tr key={c.id}>
           <td>{c.user_id}</td>
           <td>{c.name}</td>
@@ -90,5 +129,6 @@ const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, render
     </CommonTable>
   );
 };
+
 
 export default CustomersTable;
