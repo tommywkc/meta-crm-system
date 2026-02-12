@@ -5,6 +5,9 @@ const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId,
 const { findLatestSuspensionByUserId } = require('../dao/suspensionDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const crypto = require('crypto');
+const QRCode = require('qrcode');
+const { sendEmail } = require('../services/emailService');
+const { createNotification } = require('../dao/notificationsDao');
 
 
 
@@ -25,6 +28,32 @@ router.get('/customers/myqrcode', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Failed to retrieve customer data:', error);
     res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// Public QR Code image endpoint for emails and external display
+// NOTE: This does NOT require auth because qr_token is a non-guessable hash.
+router.get('/customers/qrcode/:qr_token.png', async (req, res) => {
+  try {
+    const qr_token = req.params.qr_token;
+    if (!qr_token) {
+      return res.status(400).send('Missing QR token');
+    }
+
+    // Ensure the token belongs to an existing user (avoid generating for arbitrary values)
+    const user = await findUserByQrToken(qr_token);
+    if (!user) {
+      return res.status(404).send('QR token not found');
+    }
+
+    const pngBuffer = await QRCode.toBuffer(qr_token, { margin: 1, width: 256 });
+    res.setHeader('Content-Type', 'image/png');
+    // Allow long-term caching since QR token is immutable for a user
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    return res.send(pngBuffer);
+  } catch (error) {
+    console.error('Failed to generate QR code PNG:', error);
+    return res.status(500).send('Failed to generate QR code');
   }
 });
 
@@ -194,6 +223,89 @@ router.post('/customers', authMiddleware, roleMiddleware('admin'), async (req, r
 
     const createdCustomer = await createUser(newCustomer);
     console.log('Successfully created customer:', createdCustomer.user_id);
+
+    // Try to send a welcome email with the student's QR code.
+    // Failure to send email should NOT affect account creation.
+    try {
+      const to = createdCustomer.email;
+      const qrToken = createdCustomer.qr_token;
+
+      if (!to) {
+        console.warn(`User ${createdCustomer.user_id} has no email configured, skip account created email`);
+      } else {
+        // Prepare optional inline QR code attachment for email clients
+        let attachments = undefined;
+        if (qrToken) {
+          try {
+            const pngBuffer = await QRCode.toBuffer(qrToken, { margin: 1, width: 256 });
+            const qrBase64 = pngBuffer.toString('base64');
+            attachments = [
+              {
+                content: qrBase64,
+                filename: 'qrcode.png',
+                type: 'image/png',
+                disposition: 'inline',
+                content_id: 'student-qr-code'
+              }
+            ];
+          } catch (qrError) {
+            console.error('Failed to generate QR code attachment for new account email:', qrError);
+          }
+        }
+
+        const subject = '帳戶建立成功通知';
+        const lines = [
+          `${createdCustomer.name || ''} 您好：`,
+          '',
+          '你的 Meta Academy 帳戶已成功建立。',
+          '',
+          `學員編號：${createdCustomer.user_id}`,
+          createdCustomer.mobile ? `登入手機：${createdCustomer.mobile}` : '',
+          '',
+          '以下為你的專屬 QR Code，可用於上課點名或現場掃描。',
+          '如在電郵中未能顯示圖片，可登入系統於「我的 QR Code」頁面查看。'
+        ].filter(Boolean);
+
+        const text = lines.join('\n');
+
+        let html = `
+          <p>${createdCustomer.name || ''} 您好：</p>
+          <p>你的 Meta Academy 帳戶已成功建立。</p>
+          <p>
+            學員編號：${createdCustomer.user_id}<br/>
+            ${createdCustomer.mobile ? `登入手機：${createdCustomer.mobile}<br/>` : ''}
+          </p>
+          <p>以下為你的專屬 QR Code，可用於上課點名或現場掃描：</p>
+        `;
+
+        if (attachments && attachments.length > 0) {
+          html += `<p><img src="cid:student-qr-code" alt="Student QR Code" /></p>`;
+        } else if (qrToken) {
+          html += `<p>（系統暫時未能產生 QR 圖片，你的 QR 標記為：${qrToken}）</p>`;
+        }
+
+        html += '<p>如在電郵中未能顯示圖片，可登入系統於「我的 QR Code」頁面查看。</p>';
+
+        await sendEmail({
+          to,
+          subject,
+          text,
+          html,
+          attachments
+        });
+
+        // Also create an in-app notification for the user
+        await createNotification({
+          user_id: createdCustomer.user_id,
+          description: text,
+          template: subject,
+          created_by_id: req.user.sub
+        });
+      }
+    } catch (notifyError) {
+      console.error('Failed to send new account email / notification:', notifyError);
+    }
+
     // Return the new customer id to frontend for redirecting to customer detail page
     res.status(201).json({
       message: '客戶新增成功',
