@@ -5,20 +5,15 @@ const { emptyToNull } = require('../function/dataSanitizer');
 const { createSession, listByEventId, findBySessionId, removeBySessionById, updateSessionById } = require('../dao/eventSessionsDao');
 const {
   createRegistration,
-  findByRegistrationId,
   findBySessionAndUser,
-  listSessionsByUserWithTimes,
   listUpcomingSessionsByUser,
   listUpcomingSessionsAllUsers,
   searchUpcomingSessionsByUser,
+  searchUpcomingSessionsAllUsers,
   listSessionsByUserAndYear,
   listRegisteredSessionIdsByUserAndEvent,
-  listRegistrationsWithUserBySessionId,
-  removeByRegistrationId,
 } = require('../dao/sessionRegistrationsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
-const eventAttendanceDao = require('../dao/eventAttendanceDao');
-const waitlistDao = require('../dao/waitlistDao');
 
 //handle get sessions by event_id
 router.get('/events/:event_id/sessions', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
@@ -74,13 +69,9 @@ router.post('/sessions', authMiddleware, roleMiddleware('admin'), async (req, re
     const datetime_start = startRaw;
     const datetime_end = endRaw;
 
-    const capacityValue = body.capacity != null
-      ? parseInt(body.capacity, 10)
-      : (body.session_capacity != null ? parseInt(body.session_capacity, 10) : null);
-
-    if (!Number.isNaN(capacityValue) && capacityValue != null) {
-      remaining_seats = capacityValue;
-    } else {
+    if (body.capacity != null && parseInt(body.capacity, 10)) {
+      remaining_seats = body.capacity;
+    }else{
       remaining_seats = null;
     }
 
@@ -91,7 +82,7 @@ router.post('/sessions', authMiddleware, roleMiddleware('admin'), async (req, re
       event_id: body.event_id,
       session_name: body.session_name,
       description: body.description || body.session_description || null,
-      capacity: capacityValue,
+      capacity: body.capacity != null ? body.capacity : (body.session_capacity != null ? parseInt(body.session_capacity, 10) : null),
       remaining_seats: remaining_seats,
       datetime_start,
       datetime_end,
@@ -210,25 +201,6 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: '已報名此場次' });
     }
 
-    // Time conflict check (same rules as requests)
-    if (session.datetime_start) {
-      const targetStart = new Date(session.datetime_start);
-      const targetEnd = session.datetime_end ? new Date(session.datetime_end) : new Date(session.datetime_start);
-      const otherSessions = await listSessionsByUserWithTimes(userId);
-
-      for (const other of otherSessions) {
-        if (!other?.session_id || !other?.datetime_start) continue;
-        if (String(other.session_id) === String(sessionId)) continue;
-
-        const otherStart = new Date(other.datetime_start);
-        const otherEnd = other.datetime_end ? new Date(other.datetime_end) : new Date(other.datetime_start);
-
-        if (targetStart < otherEnd && targetEnd > otherStart) {
-          return res.status(400).json({ message: '此場次與會員已報名的場次時間衝突' });
-        }
-      }
-    }
-
     const registrationById = registration_by_id || req.user.sub;
 
     // Normalize channel to values allowed by CHKCHANNEL_REG in DB (currently WHATSAPP, SALES, WEB)
@@ -309,9 +281,6 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
     const limit = parseInt(req.query.limit, 10) || 100;
     const offset = parseInt(req.query.offset, 10) || 0;
     const q = req.query.q || '';
-    const userIdParam = req.query.user_id ? String(req.query.user_id).trim() : '';
-    const eventIdParam = req.query.event_id;
-    const eventIdNum = eventIdParam ? parseInt(eventIdParam, 10) : null;
 
     if (!userId) {
       return res.status(401).json({ message: '未登入' });
@@ -326,18 +295,14 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
         sessions = await listUpcomingSessionsByUser(userId, limit, offset);
       }
     } else if (['ADMIN', 'SALES', 'LEADER'].includes(role)) {
-      if (userIdParam) {
-        sessions = await searchUpcomingSessionsByUser(userIdParam, limit, offset, q);
+      // 管理員 / 銷售 / 組長可看到全部人的尚未開始場次
+      if (q && q.trim()) {
+        sessions = await searchUpcomingSessionsAllUsers(limit, offset, q);
       } else {
         sessions = await listUpcomingSessionsAllUsers(limit, offset);
       }
     } else {
       return res.status(403).json({ message: '沒有權限查看場次報名列表' });
-    }
-
-    // Optional filter by event_id when provided
-    if (eventIdNum) {
-      sessions = sessions.filter((s) => Number(s.event_id) === eventIdNum);
     }
 
     return res.status(200).json({ sessions });
@@ -393,254 +358,6 @@ router.get('/my-sessions/registered-by-event', authMiddleware, async (req, res) 
     return res.status(200).json({ sessionIds });
   } catch (error) {
     console.error('Get registered session IDs by event for current user failed:', error);
-    return res.status(500).json({ message: '伺服器錯誤' });
-  }
-});
-
-// --- Admin/Staff: get upcoming sessions for a specific user (limit)
-router.get('/session-registrations/user/:user_id/upcoming', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
-  try {
-    const userIdParam = parseInt(req.params.user_id, 10);
-    if (Number.isNaN(userIdParam)) return res.status(400).json({ message: '無效的 user_id' });
-
-    // members can only fetch their own upcoming sessions
-    const role = (req.user.role || '').toUpperCase();
-    if (role === 'MEMBER' && Number(req.user.sub) !== Number(userIdParam)) {
-      return res.status(403).json({ message: '沒有權限' });
-    }
-
-    const limit = parseInt(req.query.limit, 10) || 5;
-    const sessions = await listUpcomingSessionsByUser(userIdParam, limit, 0);
-    return res.status(200).json({ sessions });
-  } catch (error) {
-    console.error('Get user upcoming sessions failed:', error);
-    return res.status(500).json({ message: '伺服器錯誤' });
-  }
-});
-
-// --- Admin/Staff: get sessions for a specific user by year
-router.get('/session-registrations/user/:user_id/sessions-by-year', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
-  try {
-    const userIdParam = parseInt(req.params.user_id, 10);
-    if (Number.isNaN(userIdParam)) return res.status(400).json({ message: '無效的 user_id' });
-
-    const role = (req.user.role || '').toUpperCase();
-    if (role === 'MEMBER' && Number(req.user.sub) !== Number(userIdParam)) {
-      return res.status(403).json({ message: '沒有權限' });
-    }
-
-    const year = parseInt(req.query.year, 10) || (new Date()).getFullYear();
-    const sessions = await listSessionsByUserAndYear(userIdParam, year);
-    return res.status(200).json({ sessions });
-  } catch (error) {
-    console.error('Get user sessions by year failed:', error);
-    return res.status(500).json({ message: '伺服器錯誤' });
-  }
-});
-
-// helper: compute status for a given time (same rules as attendance handler)
-function computeAttendanceStatusForTime(session, timeIso) {
-  const time = timeIso ? new Date(timeIso) : new Date();
-  const sessionStart = session?.datetime_start ? new Date(session.datetime_start) : null;
-  const sessionEnd = session?.datetime_end ? new Date(session.datetime_end) : sessionStart;
-
-  if (!sessionStart || Number.isNaN(sessionStart.getTime()) || Number.isNaN(time.getTime())) {
-    return 'R';
-  }
-
-  const windowStart = new Date(sessionStart.getTime() - 60 * 60 * 1000); // -60 mins
-  const effectiveEnd = sessionEnd && !Number.isNaN(sessionEnd.getTime()) ? sessionEnd : sessionStart;
-  const windowEnd = new Date(effectiveEnd.getTime() + 30 * 60 * 1000); // +30 mins
-  return time >= windowStart && time <= windowEnd ? 'G' : 'R';
-}
-
-// Manual check-in: POST /api/session-registrations/:id/checkin
-router.post('/session-registrations/:id/checkin', authMiddleware, async (req, res) => {
-  try {
-    const registrationId = parseInt(req.params.id, 10);
-    if (Number.isNaN(registrationId)) {
-      return res.status(400).json({ message: '無效的 registration_id' });
-    }
-
-    const registration = await findByRegistrationId(registrationId);
-    if (!registration) {
-      return res.status(404).json({ message: '報名紀錄不存在' });
-    }
-
-    // determine if caller explicitly requested manual check-in (use session time)
-    const manualFlag = (req.body && req.body.manual === true) || (req.query && String(req.query.manual) === 'true');
-    let sessionTime = null;
-    let computedStatus = null;
-    if (manualFlag && registration && registration.session_id) {
-      const session = await findBySessionId(registration.session_id);
-      sessionTime = session?.datetime_start || null;
-      computedStatus = computeAttendanceStatusForTime(session, sessionTime);
-    }
-
-    // Check for latest existing attendance record (any status)
-    const latestAtt = await eventAttendanceDao.findLatestByRegistrationId(registrationId);
-
-    if (latestAtt) {
-      // If manual attempt: do NOT downgrade an existing successful G/Y record — return attemptStatus instead
-      const currentStatus = String(latestAtt.status || '').toUpperCase();
-      if (manualFlag) {
-        if (currentStatus === 'G' || currentStatus === 'Y') {
-          // compute attempt status for the manual attempt but keep existing record unchanged
-          const attemptStatus = computedStatus || 'R';
-          const msg = attemptStatus === 'G'
-            ? `此用戶已成功簽到過（狀態 ${currentStatus}）`
-            : `此用戶之前已簽到（狀態 ${currentStatus}），但目前簽到時間已超出範圍（目前狀態 ${attemptStatus}）`;
-          return res.status(409).json({ message: msg, attemptStatus, attendance: latestAtt, session: { session_id: registration.session_id } });
-        }
-
-        // Otherwise update the latest non-success record with computedStatus and sessionTime
-        const updated = await eventAttendanceDao.updateStatusAndAttendTime(latestAtt.attendance_id, computedStatus || latestAtt.status, sessionTime);
-        if (computedStatus && computedStatus !== 'G') {
-          return res.status(422).json({ message: '目前不在簽到時間範圍，無法完成簽到', attendance: updated, attemptStatus: computedStatus });
-        }
-        return res.status(200).json({ message: '已簽到', attendance: updated });
-      }
-
-      // Non-manual behavior: if latest is G/Y treat as already signed; otherwise touch timestamp to latest
-      if (currentStatus === 'G' || currentStatus === 'Y') {
-        const updated = await eventAttendanceDao.updateStatusAndTouchTime(latestAtt.attendance_id, latestAtt.status);
-        return res.status(200).json({ message: '已簽到', attendance: updated });
-      }
-      // if latest exists but not G/Y, we'll create a new attendance (non-manual)
-    }
-
-    // Otherwise create a new attendance record; for manualFlag use computedStatus, otherwise default to 'G'
-    const statusToWrite = manualFlag ? (computedStatus || 'R') : 'G';
-    const newAtt = await eventAttendanceDao.createAttendance({ registration_id: registrationId, status: statusToWrite, attend_time: sessionTime });
-
-    if (manualFlag && computedStatus && computedStatus !== 'G') {
-      return res.status(422).json({ message: '目前不在簽到時間範圍，無法完成簽到', attendance: newAtt, attemptStatus: computedStatus });
-    }
-
-    return res.status(statusToWrite === 'G' ? 201 : 202).json({ message: '簽到成功', attendance: newAtt });
-  } catch (error) {
-    console.error('Manual check-in failed:', error);
-    return res.status(500).json({ message: '伺服器錯誤' });
-  }
-});
-
-// Cancel check-in: DELETE /api/session-registrations/:id/checkin
-router.delete('/session-registrations/:id/checkin', authMiddleware, async (req, res) => {
-  try {
-    const registrationId = parseInt(req.params.id, 10);
-    if (Number.isNaN(registrationId)) {
-      return res.status(400).json({ message: '無效的 registration_id' });
-    }
-
-    const registration = await findByRegistrationId(registrationId);
-    if (!registration) {
-      return res.status(404).json({ message: '報名紀錄不存在' });
-    }
-
-    // Remove all attendance records for this registration
-    const latest = await eventAttendanceDao.findLatestByRegistrationId(registrationId);
-    if (!latest) {
-      return res.status(404).json({ message: '未有出席紀錄' });
-    }
-
-    await eventAttendanceDao.removeByRegistrationId(registrationId);
-    return res.status(200).json({ message: '已取消簽到' });
-  } catch (error) {
-    console.error('Cancel check-in failed:', error);
-    return res.status(500).json({ message: '伺服器錯誤' });
-  }
-});
-
-// Get latest attendance for a registration: GET /api/session-registrations/:id/attendance
-router.get('/session-registrations/:id/attendance', authMiddleware, async (req, res) => {
-  try {
-    const registrationId = parseInt(req.params.id, 10);
-    if (Number.isNaN(registrationId)) return res.status(400).json({ message: '無效的 registration_id' });
-    const att = await eventAttendanceDao.findLatestByRegistrationId(registrationId);
-    if (!att) return res.status(404).json({ message: '未有出席紀錄' });
-    return res.status(200).json({ attendance: att });
-  } catch (error) {
-    console.error('Get registration attendance failed:', error);
-    return res.status(500).json({ message: '伺服器錯誤' });
-  }
-});
-
-// List all attendees (users) for a specific session
-router.get('/session-registrations/by-session', authMiddleware, async (req, res) => {
-  try {
-    const { session_id } = req.query;
-
-    if (!session_id) {
-      return res.status(400).json({ message: '缺少場次 ID（session_id）' });
-    }
-
-    const sessionIdNum = parseInt(session_id, 10);
-    if (Number.isNaN(sessionIdNum)) {
-      return res.status(400).json({ message: '無效的場次 ID' });
-    }
-
-    const rows = await listRegistrationsWithUserBySessionId(sessionIdNum);
-    const users = rows.map((r) => ({
-      registration_id: r.registration_id,
-      user_id: r.user_id,
-      name: r.name,
-      role: r.role,
-      mobile: r.mobile,
-      email: r.email,
-      channel: r.channel,
-      status: r.status,
-      registration_time: r.registration_time,
-      attendance_status: r.attendance_status,
-      attendance_time: r.attendance_time || r.attend_time || null,
-    }));
-
-    return res.status(200).json({ users });
-  } catch (error) {
-    console.error('List session attendees by session failed:', error);
-    return res.status(500).json({ message: '伺服器錯誤' });
-  }
-});
-
-// Delete a session registration by registration_id
-router.delete('/session-registrations/:id', authMiddleware, async (req, res) => {
-  try {
-    const registrationId = parseInt(req.params.id, 10);
-    if (Number.isNaN(registrationId)) {
-      return res.status(400).json({ message: '無效的 registration_id' });
-    }
-
-    const registration = await findByRegistrationId(registrationId);
-    if (!registration) {
-      return res.status(404).json({ message: '報名紀錄不存在' });
-    }
-
-    await removeByRegistrationId(registrationId);
-
-    const sessionId = registration.session_id;
-    if (sessionId) {
-      const waitlistRow = await waitlistDao.findBySessionId(sessionId);
-      const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
-
-      if (Array.isArray(list) && list.length > 0) {
-        const nextUserId = parseInt(list[0], 10);
-        if (!Number.isNaN(nextUserId)) {
-          const existing = await findBySessionAndUser(sessionId, nextUserId);
-          if (!existing) {
-            await createRegistration({
-              session_id: sessionId,
-              user_id: nextUserId,
-              channel: 'WEB',
-              registration_by_id: req.user?.sub || null,
-            });
-            const remainingList = list.slice(1);
-            await waitlistDao.updateBySessionId(sessionId, JSON.stringify(remainingList));
-          }
-        }
-      }
-    }
-    return res.status(200).json({ message: '場次報名已刪除' });
-  } catch (error) {
-    console.error('Delete session registration failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
   }
 });

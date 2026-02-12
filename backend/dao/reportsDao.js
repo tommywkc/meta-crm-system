@@ -193,11 +193,13 @@ async function getUnpaidCustomers({ courseCategory, attended }) {
   if (attendedCheck) {
     const sql = `
       SELECT
+        ev.event_name,
+        COALESCE(ev.category, ev.type) as category,
         u.user_id,
         u.name,
         u.mobile,
         u.email,
-        array_agg(DISTINCT att.attend_time::date ORDER BY att.attend_time) AS attend_dates
+        array_agg(DISTINCT to_char(att.attend_time, 'YYYY-MM-DD') ORDER BY to_char(att.attend_time, 'YYYY-MM-DD')) AS attend_dates
       FROM EVENT_ENROLLMENTS en
       JOIN USERS u ON u.user_id = en.user_id
       LEFT JOIN EVENTS ev ON ev.event_id = en.event_id
@@ -209,15 +211,18 @@ async function getUnpaidCustomers({ courseCategory, attended }) {
       )
         ${courseClause}
         AND att.attendance_id IS NOT NULL
-      GROUP BY u.user_id, u.name, u.mobile, u.email
-      ORDER BY MIN(att.attend_time) DESC NULLS LAST;
+        AND att.status IN ('G', 'Y')
+      GROUP BY ev.event_id, ev.event_name, ev.category, ev.type, u.user_id, u.name, u.mobile, u.email
+      ORDER BY category, ev.event_name, u.name;
     `;
     const { rows } = await query(sql, params);
     return rows;
   }
 
   const sql = `
-    SELECT DISTINCT
+    SELECT
+      ev.event_name,
+      COALESCE(ev.category, ev.type) as category,
       u.user_id,
       u.name,
       u.mobile,
@@ -233,25 +238,18 @@ async function getUnpaidCustomers({ courseCategory, attended }) {
         SELECT 1
         FROM EVENT_SESSIONS es
         JOIN SESSION_REGISTRATIONS sr ON sr.session_id = es.session_id AND sr.user_id = en.user_id
-        JOIN EVENT_ATTENDANCE att ON att.registration_id = sr.registration_id
+        JOIN EVENT_ATTENDANCE att ON att.registration_id = sr.registration_id 
         WHERE es.event_id = en.event_id
+        AND att.status IN ('G', 'Y')
       )
-    ORDER BY u.name;
+    GROUP BY ev.event_id, ev.event_name, ev.category, ev.type, u.user_id, u.name, u.mobile, u.email
+    ORDER BY category, ev.event_name, u.name;
   `;
   const { rows } = await query(sql, params);
   return rows;
 }
 
 async function getFinancialData({ courseCategory, year, month }) {
-  await ensureEventsCategoryColumn();
-  const params = [parseInt(year, 10), parseInt(month, 10)];
-  let courseClause = '';
-  if (courseCategory) {
-    params.push(`%${courseCategory}%`);
-    courseClause = ` AND COALESCE(ev.category, ev.type) ILIKE $${params.length}`;
-  }
-
-    // Headcount & Total Sales
     // Logic: Settlement Month = Month of First Attendance.
     // Fallback 1: Payment Deadline (expire_time) - useful for retroactive data entry where admin sets a past deadline.
     // Fallback 2: Payment Date (paid_time).
@@ -303,6 +301,43 @@ async function getFinancialData({ courseCategory, year, month }) {
   costRes.rows.forEach((c) => {
     costs[c.category] = Number(c.total || 0);
   });
+
+  // Also aggregate costs from EVENTS table
+  const eventCostParams = [parseInt(year, 10), parseInt(month, 10)];
+  let eventCostClause = '';
+  if (courseCategory) {
+     eventCostParams.push(`%${courseCategory}%`);
+     eventCostClause = ` AND COALESCE(category, type) ILIKE $${eventCostParams.length}`;
+  }
+
+  const eventCostSql = `
+    SELECT 
+      COALESCE(SUM(room_cost), 0) as rental_total,
+      COALESCE(SUM(promotion_cost), 0) as promotion_total,
+      COALESCE(SUM(misc_cost), 0) as misc_total,
+      COALESCE(SUM(salary_cost), 0) as salary_total,
+      COALESCE(SUM(freight_cost), 0) as freight_total,
+      COALESCE(SUM(utilities_cost), 0) as utilities_total,
+      COALESCE(SUM(telecom_cost), 0) as telecom_total,
+      COALESCE(SUM(cog_cost), 0) as cog_total
+    FROM EVENTS
+    WHERE EXTRACT(YEAR FROM datetime_start) = $1
+      AND EXTRACT(MONTH FROM datetime_start) = $2
+      ${eventCostClause}
+  `;
+  
+  const eventCostRes = await query(eventCostSql, eventCostParams);
+  if (eventCostRes.rows.length > 0) {
+      const r = eventCostRes.rows[0];
+      costs['RENTAL'] = (costs['RENTAL'] || 0) + Number(r.rental_total || 0);
+      costs['PROMOTION'] = (costs['PROMOTION'] || 0) + Number(r.promotion_total || 0);
+      costs['MISC'] = (costs['MISC'] || 0) + Number(r.misc_total || 0);
+      costs['SALARY'] = (costs['SALARY'] || 0) + Number(r.salary_total || 0);
+      costs['FREIGHT'] = (costs['FREIGHT'] || 0) + Number(r.freight_total || 0);
+      costs['UTILITIES'] = (costs['UTILITIES'] || 0) + Number(r.utilities_total || 0);
+      costs['TELECOM'] = (costs['TELECOM'] || 0) + Number(r.telecom_total || 0);
+      costs['COG'] = (costs['COG'] || 0) + Number(r.cog_total || 0);
+  }
 
   return {
     headcount,

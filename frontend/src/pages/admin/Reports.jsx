@@ -40,7 +40,7 @@ const Reports = () => {
 	const [costFilters, setCostFilters] = useState({ courseCategory: '', year: '', month: '' });
 	const [costs, setCosts] = useState([]);
 	const [costSummary, setCostSummary] = useState(null);
-	const [newCost, setNewCost] = useState({ category: 'PROMOTION', course_category: '', year: '', month: '', amount: '', description: '', receipt: null });
+	const [newCost, setNewCost] = useState({ category: 'RENTAL', course_category: '', event_id: '', year: '', month: '', amount: '', description: '', receipt: null });
 
 	const [courseCategory, setCourseCategory] = useState('');
 	const [courseCustomers, setCourseCustomers] = useState([]);
@@ -125,6 +125,7 @@ const Reports = () => {
 			const payload = {
 				category: newCost.category,
 				course_category: newCost.course_category,
+				event_id: newCost.event_id || null,
 				year: newCost.year,
 				month: newCost.month,
 				amount: newCost.amount,
@@ -249,7 +250,7 @@ const Reports = () => {
 
 			{/* ② 課程分組 */}
 			<section>
-				<h2>② 課程分組 / 宣傳費 / 課程客戶名單</h2>
+				<h2>② 課程分組 / 費用管理 / 課程客戶名單</h2>
 				<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
 					<label>課程分類:</label>
 					<select style={commonSelectStyle} value={courseCategory} onChange={(e) => setCourseCategory(e.target.value)}>
@@ -295,7 +296,7 @@ const Reports = () => {
 					</tbody>
 				</table>
 
-				<h3>宣傳費</h3>
+				<h3>費用列表</h3>
 				<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
 					<label>年份</label><input style={{ width: 90 }} value={costFilters.year} onChange={(e) => setCostFilters({ ...costFilters, year: e.target.value })} placeholder="2026" />
 					<label>月份</label><input style={{ width: 60 }} value={costFilters.month} onChange={(e) => setCostFilters({ ...costFilters, month: e.target.value })} placeholder="1-12" />
@@ -335,7 +336,6 @@ const Reports = () => {
 				<div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
 					<strong>新增費用</strong>
 					<select value={newCost.category} onChange={(e) => setNewCost({ ...newCost, category: e.target.value })}>
-						<option value="PROMOTION">PROMOTION 宣傳費</option>
 						<option value="RENTAL">RENTAL 租場費</option>
 						<option value="DIRECT">DIRECT 直接支出</option>
 						<option value="MISC">MISC 雜費</option>
@@ -343,7 +343,30 @@ const Reports = () => {
 						<option value="COMMISSION">COMMISSION 佣金</option>
 						<option value="REFERRAL">REFERRAL 介紹費</option>
 					</select>
-					<input placeholder="課程分類" value={newCost.course_category} onChange={(e) => setNewCost({ ...newCost, course_category: e.target.value })} />
+					<select
+						style={{ ...commonSelectStyle, maxWidth: 300 }}
+						value={newCost.event_id || ''}
+						onChange={(e) => {
+							const eid = e.target.value;
+							const evt = events.find(ev => String(ev.event_id) === String(eid));
+							if (evt) {
+								setNewCost({
+									...newCost,
+									event_id: eid,
+									course_category: evt.category || evt.type || '',
+								});
+							} else {
+								setNewCost({ ...newCost, event_id: '', course_category: '' });
+							}
+						}}
+					>
+						<option value="">-- 選擇關聯講座/活動 --</option>
+						{events.map((ev) => (
+							<option key={ev.event_id} value={ev.event_id}>
+								{ev.event_name} ({ev.datetime_start ? new Date(ev.datetime_start).toLocaleDateString() : 'N/A'})
+							</option>
+						))}
+					</select>
 					<input placeholder="年份" style={{ width: 80 }} value={newCost.year} onChange={(e) => setNewCost({ ...newCost, year: e.target.value })} />
 					<input placeholder="月份" style={{ width: 60 }} value={newCost.month} onChange={(e) => setNewCost({ ...newCost, month: e.target.value })} />
 					<input placeholder="金額" style={{ width: 80 }} value={newCost.amount} onChange={(e) => setNewCost({ ...newCost, amount: e.target.value })} />
@@ -394,20 +417,33 @@ const Reports = () => {
 
 				<h3>出席過講座名單</h3>
 				<table style={tableStyle}>
-					<thead><tr><th style={thTdStyle}>姓名</th><th style={thTdStyle}>電話</th><th style={thTdStyle}>Email</th><th style={thTdStyle}>出席日期清單</th></tr></thead>
+					<thead><tr><th style={thTdStyle}>分類</th><th style={thTdStyle}>課程</th><th style={thTdStyle}>姓名</th><th style={thTdStyle}>電話</th><th style={thTdStyle}>Email</th><th style={thTdStyle}>出席日期清單</th></tr></thead>
 					<tbody>
 						{unpaidAttended.length ? unpaidAttended.map((u, idx) => (
-							<tr key={idx}><td style={thTdStyle}>{u.name}</td><td style={thTdStyle}>{u.mobile}</td><td style={thTdStyle}>{u.email}</td><td style={thTdStyle}>{(u.attend_dates || []).map((d) => new Date(d).toLocaleDateString()).join('、')}</td></tr>
+							<tr key={idx}>
+								<td style={thTdStyle}>{u.category}</td>
+								<td style={thTdStyle}>{u.event_name}</td>
+								<td style={thTdStyle}>{u.name}</td>
+								<td style={thTdStyle}>{u.mobile}</td>
+								<td style={thTdStyle}>{u.email}</td>
+								<td style={thTdStyle}>{(u.attend_dates || []).map((d) => new Date(d).toLocaleDateString()).join('、')}</td>
+							</tr>
 						)) : renderEmpty()}
 					</tbody>
 				</table>
 
 				<h3>未出席講座名單</h3>
 				<table style={tableStyle}>
-					<thead><tr><th style={thTdStyle}>姓名</th><th style={thTdStyle}>電話</th><th style={thTdStyle}>Email</th></tr></thead>
+					<thead><tr><th style={thTdStyle}>分類</th><th style={thTdStyle}>課程</th><th style={thTdStyle}>姓名</th><th style={thTdStyle}>電話</th><th style={thTdStyle}>Email</th></tr></thead>
 					<tbody>
 						{unpaidNotAttended.length ? unpaidNotAttended.map((u, idx) => (
-							<tr key={idx}><td style={thTdStyle}>{u.name}</td><td style={thTdStyle}>{u.mobile}</td><td style={thTdStyle}>{u.email}</td></tr>
+							<tr key={idx}>
+								<td style={thTdStyle}>{u.category}</td>
+								<td style={thTdStyle}>{u.event_name}</td>
+								<td style={thTdStyle}>{u.name}</td>
+								<td style={thTdStyle}>{u.mobile}</td>
+								<td style={thTdStyle}>{u.email}</td>
+							</tr>
 						)) : renderEmpty()}
 					</tbody>
 				</table>
@@ -431,37 +467,90 @@ const Reports = () => {
 					const { headcount, totalSales, paymentFees, costs } = financialData;
 					const expenses = {
 						referral: costs?.['REFERRAL'] || 0,
-						promotion: costs?.['PROMOTION'] || 0,
 						rental: costs?.['RENTAL'] || 0,
 						commission: costs?.['COMMISSION'] || 0,
 						calendar: costs?.['CALENDAR'] || 0,
 						misc: costs?.['MISC'] || 0,
 						direct: costs?.['DIRECT'] || 0,
+						promotion: costs?.['PROMOTION'] || 0,
+						salary: costs?.['SALARY'] || 0,
+						freight: costs?.['FREIGHT'] || 0,
+						utilities: costs?.['UTILITIES'] || 0,
+						telecom: costs?.['TELECOM'] || 0,
+						cog: costs?.['COG'] || 0,
 					};
-					const netReceived = (totalSales || 0) - (paymentFees || 0);
-					const totalExpenses = Object.values(expenses).reduce((a, b) => a + b, 0);
-					const gp = netReceived - totalExpenses;
-					const gpPercent = totalSales ? ((gp / totalSales) * 100).toFixed(1) + '%' : '0%';
+
+					// --- Income Statement Logic ---
+					const operatingRevenue = totalSales || 0;
+					const operatingCosts = expenses.cog || 0;
+					const grossProfit = operatingRevenue - operatingCosts;
+
+					const operatingExpensesList = [
+						{ name: '薪資支出 (Salary)', value: expenses.salary },
+						{ name: '租金支出 (Rental)', value: expenses.rental },
+						{ name: '運費 (Freight)', value: expenses.freight },
+						{ name: '郵電費 (Telecom)', value: expenses.telecom },
+						{ name: '廣告費 (Promotion)', value: expenses.promotion },
+						{ name: '水電瓦斯費 (Utilities)', value: expenses.utilities },
+						{ name: '介紹費 (Referral)', value: expenses.referral },
+						{ name: '銷售佣金 (Commission)', value: expenses.commission },
+						{ name: '日曆成本 (Calendar)', value: expenses.calendar },
+						{ name: '雜費 (Misc)', value: expenses.misc },
+						{ name: '直接支出 (Direct)', value: expenses.direct },
+					];
+					const totalOperatingExpenses = operatingExpensesList.reduce((acc, curr) => acc + curr.value, 0);
+
+					const operatingIncome = grossProfit - totalOperatingExpenses;
+					const nonOperatingExpenses = paymentFees || 0; // Treated as expense
+					const netIncome = operatingIncome - nonOperatingExpenses;
+
+					const renderRow = (label, value, isBold = false, indent = 0, isNegative = false) => {
+						const displayValue = isNegative 
+							? `(${Math.abs(value).toLocaleString()})` 
+							: value.toLocaleString();
+						const percentage = operatingRevenue > 0 
+							? ((value / operatingRevenue) * 100).toFixed(2) + '%' 
+							: '-';
+						return (
+							<tr key={label} style={{ fontWeight: isBold ? 'bold' : 'normal', backgroundColor: isBold ? '#f9f9f9' : 'transparent' }}>
+								<td style={{ ...thTdStyle, paddingLeft: 8 + indent * 20 }}>{label}</td>
+								<td style={{ ...thTdStyle, textAlign: 'right' }}>HK$ {displayValue}</td>
+								<td style={{ ...thTdStyle, textAlign: 'right' }}>{percentage}</td>
+							</tr>
+						);
+					};
 
 					return (
 						<table style={tableStyle}>
-							<thead><tr><th style={thTdStyle}>指標</th><th style={thTdStyle}>數值</th></tr></thead>
+							<thead><tr><th style={thTdStyle}>項目</th><th style={thTdStyle}>金額</th><th style={{...thTdStyle, textAlign: 'right'}}>百分比%</th></tr></thead>
 							<tbody>
-								<tr><td style={thTdStyle}>當月收生 (人數)</td><td style={thTdStyle}>{headcount}</td></tr>
-								<tr><td style={thTdStyle}>銷售總額（按找數月）</td><td style={thTdStyle}>HK${totalSales}</td></tr>
-								<tr><td style={thTdStyle}>支付手續費 (估算 3%)</td><td style={thTdStyle}>HK${paymentFees}</td></tr>
-								<tr><td style={thTdStyle}>當月實收 (Net Received)</td><td style={thTdStyle}>HK${netReceived}</td></tr>
-								<tr><td style={thTdStyle} colSpan={2} style={{background: '#f0f0f0'}}><strong>支出</strong></td></tr>
-								<tr><td style={thTdStyle}>介紹費 (Referral)</td><td style={thTdStyle}>HK${expenses.referral}</td></tr>
-								<tr><td style={thTdStyle}>宣傳費 (Promotion)</td><td style={thTdStyle}>HK${expenses.promotion}</td></tr>
-								<tr><td style={thTdStyle}>租場費 (Rental)</td><td style={thTdStyle}>HK${expenses.rental}</td></tr>
-								<tr><td style={thTdStyle}>銷售佣金分成 (Commission)</td><td style={thTdStyle}>HK${expenses.commission}</td></tr>
-								<tr><td style={thTdStyle}>日曆成本 (Calendar)</td><td style={thTdStyle}>HK${expenses.calendar}</td></tr>
-								<tr><td style={thTdStyle}>雜費 (Misc)</td><td style={thTdStyle}>HK${expenses.misc}</td></tr>
-								<tr><td style={thTdStyle}>直接支出 (Direct)</td><td style={thTdStyle}>HK${expenses.direct}</td></tr>
-								<tr><td style={thTdStyle} colSpan={2} style={{background: '#f0f0f0'}}><strong>獲利</strong></td></tr>
-								<tr><td style={thTdStyle}>GP (Gross Profit)</td><td style={thTdStyle} style={{ color: gp >= 0 ? 'green' : 'red' }}>HK${gp}</td></tr>
-								<tr><td style={thTdStyle}>GP%</td><td style={thTdStyle}>{gpPercent}</td></tr>
+								{/* 營業收入 */}
+								{renderRow('營業收入', operatingRevenue, true)}
+								{renderRow('營業收入合計', operatingRevenue, true, 2)}
+
+								{/* 營業成本 */}
+								{renderRow('營業成本', operatingCosts, true)}
+								{renderRow('銷貨成本', expenses.cog, false, 1)}
+								{renderRow('營業成本合計', operatingCosts, true, 2)}
+
+								{/* 營業毛利 */}
+								{renderRow('營業毛利', grossProfit, true)}
+
+								{/* 營業費用 */}
+								{renderRow('營業費用', totalOperatingExpenses, true)}
+								{operatingExpensesList.map(item => renderRow(item.name, item.value, false, 1))}
+								{renderRow('營業費用合計', totalOperatingExpenses, true, 2)}
+
+								{/* 營業淨利 */}
+								{renderRow('營業淨利', operatingIncome, true)}
+
+								{/* 營業外 */}
+								{renderRow('營業外收益及費損', -nonOperatingExpenses, true)}
+								{renderRow('手續費 (Fees)', -nonOperatingExpenses, false, 1)}
+								{renderRow('營業外收益及費損合計', -nonOperatingExpenses, true, 2)}
+								
+								{/* 本期淨利 */}
+								{renderRow('本期淨利', netIncome, true)}
 							</tbody>
 						</table>
 					);

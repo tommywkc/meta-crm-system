@@ -25,55 +25,9 @@ async function listBySessionId(session_id) {
   return res.rows;
 }
 
-async function listRegistrationsWithUserBySessionId(session_id) {
-  const sql = `
-    SELECT
-      sr.registration_id,
-      sr.session_id,
-      sr.user_id,
-      sr.channel,
-      sr.status,
-      sr.registration_time,
-      ea.status AS attendance_status,
-      ea.attend_time AS attendance_time,
-      u.name,
-      u.role,
-      u.mobile,
-      u.email
-    FROM SESSION_REGISTRATIONS sr
-    JOIN USERS u ON sr.user_id = u.user_id
-    LEFT JOIN EVENT_ATTENDANCE ea ON ea.registration_id = sr.registration_id
-      AND ea.attendance_id = (
-        SELECT attendance_id
-        FROM EVENT_ATTENDANCE
-        WHERE registration_id = sr.registration_id
-        ORDER BY attend_time DESC
-        LIMIT 1
-      )
-    WHERE sr.session_id = $1
-    ORDER BY sr.registration_id DESC
-  `;
-  const res = await query(sql, [session_id]);
-  return res.rows || [];
-}
-
 async function listByUserId(user_id) {
   const res = await query('SELECT * FROM SESSION_REGISTRATIONS WHERE user_id = $1 ORDER BY registration_id DESC', [user_id]);
   return res.rows;
-}
-
-async function listSessionsByUserWithTimes(user_id) {
-  const sql = `
-    SELECT
-      sr.session_id,
-      s.datetime_start,
-      s.datetime_end
-    FROM SESSION_REGISTRATIONS sr
-    JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
-    WHERE sr.user_id = $1
-  `;
-  const res = await query(sql, [user_id]);
-  return res.rows || [];
 }
 
 // List session_ids that the user has registered for a specific event
@@ -94,8 +48,6 @@ async function listUpcomingSessionsByUser(user_id, limit = 5, offset = 0) {
     SELECT
       sr.registration_id,
       sr.session_id,
-      sr.user_id,
-      u.name AS user_name,
       sr.status AS registration_status,
       s.event_id,
       s.session_name,
@@ -106,7 +58,6 @@ async function listUpcomingSessionsByUser(user_id, limit = 5, offset = 0) {
     FROM SESSION_REGISTRATIONS sr
     JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
     LEFT JOIN EVENTS e ON s.event_id = e.event_id
-    LEFT JOIN USERS u ON sr.user_id = u.user_id
     WHERE sr.user_id = $1
       AND s.datetime_end > NOW() - INTERVAL '30 minutes'
     ORDER BY s.datetime_start ASC
@@ -151,8 +102,6 @@ async function searchUpcomingSessionsByUser(user_id, limit = 100, offset = 0, q 
     SELECT
       sr.registration_id,
       sr.session_id,
-      sr.user_id,
-      u.name AS user_name,
       sr.status AS registration_status,
       s.event_id,
       s.session_name,
@@ -163,7 +112,6 @@ async function searchUpcomingSessionsByUser(user_id, limit = 100, offset = 0, q 
     FROM SESSION_REGISTRATIONS sr
     JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
     LEFT JOIN EVENTS e ON s.event_id = e.event_id
-    LEFT JOIN USERS u ON sr.user_id = u.user_id
     WHERE sr.user_id = $1
       AND s.datetime_end > NOW() - INTERVAL '30 minutes'
       AND (
@@ -171,13 +119,48 @@ async function searchUpcomingSessionsByUser(user_id, limit = 100, offset = 0, q 
         OR e.event_name ILIKE $4
         OR s.session_name ILIKE $4
         OR e.location ILIKE $4
-        OR u.name ILIKE $4
-        OR CAST(u.user_id AS TEXT) ILIKE $4
       )
     ORDER BY s.datetime_start ASC
     LIMIT $2 OFFSET $3
   `;
   const res = await query(sql, [user_id, limit, offset, pattern]);
+  return res.rows || [];
+}
+
+// Search upcoming sessions for all users with query
+async function searchUpcomingSessionsAllUsers(limit = 100, offset = 0, q = '') {
+  const pattern = q && q.trim() ? `%${q}%` : null;
+  if (!pattern) return listUpcomingSessionsAllUsers(limit, offset);
+  
+  const sql = `
+    SELECT
+      sr.registration_id,
+      sr.session_id,
+      sr.user_id,
+      u.name AS user_name,
+      s.event_id,
+      s.session_name,
+      s.datetime_start,
+      s.datetime_end,
+      e.event_name,
+      e.location
+    FROM SESSION_REGISTRATIONS sr
+    JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
+    LEFT JOIN EVENTS e ON s.event_id = e.event_id
+    LEFT JOIN USERS u ON sr.user_id = u.user_id
+    WHERE s.datetime_end > NOW() - INTERVAL '30 minutes'
+      AND (
+        CAST(e.event_id AS TEXT) ILIKE $3
+        OR e.event_name ILIKE $3
+        OR s.session_name ILIKE $3
+        OR e.location ILIKE $3
+        OR u.name ILIKE $3
+        OR CAST(u.user_id AS TEXT) ILIKE $3
+      )
+    ORDER BY s.datetime_start ASC
+    LIMIT $1 OFFSET $2
+  `;
+  const res = await query(sql, [limit, offset, pattern]);
   return res.rows || [];
 }
 
@@ -225,25 +208,18 @@ async function updateRegistrationById(id, fields = {}) {
   return res.rows[0] || null;
 }
 
-async function countRegistrationsBySessionId(session_id) {
-  const res = await query('SELECT COUNT(*)::int AS count FROM SESSION_REGISTRATIONS WHERE session_id = $1', [session_id]);
-  return res.rows[0]?.count ?? 0;
-}
-
 module.exports = {
   createRegistration,
   findByRegistrationId,
   listBySessionId,
   listByUserId,
-  listSessionsByUserWithTimes,
   listUpcomingSessionsByUser,
   listUpcomingSessionsAllUsers,
   searchUpcomingSessionsByUser,
+  searchUpcomingSessionsAllUsers,
   listSessionsByUserAndYear,
   removeByRegistrationId,
   findBySessionAndUser,
   listRegisteredSessionIdsByUserAndEvent,
   updateRegistrationById,
-  listRegistrationsWithUserBySessionId,
-  countRegistrationsBySessionId,
 };
