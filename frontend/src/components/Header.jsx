@@ -23,8 +23,8 @@ const Header = () => {
   React.useEffect(() => {
     fetchUnreadCount(); // Initial fetch
     
-    // Poll every 10 seconds for real-time updates
-    const intervalId = setInterval(fetchUnreadCount, 10000);
+    // Poll every 60 seconds for real-time updates
+    const intervalId = setInterval(fetchUnreadCount, 60000);
 
     return () => clearInterval(intervalId);
   }, [fetchUnreadCount, location.pathname]); // Re-fetch when changing pages or user changes

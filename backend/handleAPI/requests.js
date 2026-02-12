@@ -6,6 +6,7 @@ const {
   findPendingByUserAndSession,
   listAllRequests,
   listRequestsByUser,
+  listByUserId,
   findByRequestId,
   findRequestDetailById,
   updateRequestById,
@@ -18,6 +19,58 @@ const { createSuspension } = require('../dao/suspensionDao');
 const { updateByUserId } = require('../dao/usersDao');
 const { buildHolidaySet, countBusinessDays } = require('../utils/businessDays');
 const waitlistDao = require('../dao/waitlistDao');
+
+const recalcPendingRequestConflicts = async (userId, excludeRequestId = null) => {
+  if (!userId) return;
+  const requests = await listByUserId(userId);
+  const pending = (requests || []).filter((req) => {
+    const isPending = (req?.status || '').toUpperCase() === 'PENDING';
+    const isExcluded = excludeRequestId != null && String(req.request_id) === String(excludeRequestId);
+    return isPending && !isExcluded;
+  });
+
+  if (pending.length === 0) return;
+
+  const sessions = await listSessionsByUserWithTimes(userId);
+
+  for (const req of pending) {
+    if (!req?.new_session_id) {
+      await updateRequestById(req.request_id, { time_conflict: null, conflict_id: null });
+      continue;
+    }
+
+    const targetSession = await findBySessionId(req.new_session_id);
+    if (!targetSession?.datetime_start) {
+      await updateRequestById(req.request_id, { time_conflict: null, conflict_id: null });
+      continue;
+    }
+
+    const targetStart = new Date(targetSession.datetime_start);
+    const targetEnd = targetSession.datetime_end
+      ? new Date(targetSession.datetime_end)
+      : new Date(targetSession.datetime_start);
+
+    let time_conflict = false;
+    let conflict_id = null;
+
+    for (const other of sessions) {
+      if (!other?.session_id || !other?.datetime_start) continue;
+      if (String(other.session_id) === String(req.new_session_id)) continue;
+      if (req.old_session_id && String(other.session_id) === String(req.old_session_id)) continue;
+
+      const otherStart = new Date(other.datetime_start);
+      const otherEnd = other.datetime_end ? new Date(other.datetime_end) : new Date(other.datetime_start);
+
+      if (targetStart < otherEnd && targetEnd > otherStart) {
+        time_conflict = true;
+        conflict_id = other.session_id;
+        break;
+      }
+    }
+
+    await updateRequestById(req.request_id, { time_conflict, conflict_id });
+  }
+};
 
 const TYPE_MAP = {
   '請假申請': 'LEAVE',
@@ -424,6 +477,10 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
     }
 
     
+
+    if (incomingStatus === 'APPROVED') {
+      await recalcPendingRequestConflicts(existing.user_id, requestId);
+    }
 
     if (updated?.conflict_id) {
       const conflictSession = await findBySessionId(updated.conflict_id);

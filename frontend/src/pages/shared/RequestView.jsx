@@ -45,7 +45,7 @@ const RequestView = () => {
 			<PageHeader 
 				title="申請詳情" 
 				showBack={true} 
-				onBack={() => navigate(-1)} 
+				onBack={() => navigate(isAdmin ? '/admin/requests' : '/requests/history')} 
 			/>
 			<p style={{ marginBottom: 20, color: '#6b7280' }}>檢視申請的所有欄位資訊。</p>
 			{/* Original Title Block Removed */}
