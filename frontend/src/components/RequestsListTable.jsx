@@ -79,10 +79,12 @@ const renderRequestContent = (typeKey, oldSession, newSession) => {
     );
   }
 
+  const targetSession = typeKey === 'LEAVE' ? oldSession : newSession;
+
   return (
     <div>
       <div>{eventName}</div>
-      <div style={{ marginTop: 4 }}>{renderSessionInfo(newSession)}</div>
+      <div style={{ marginTop: 4 }}>{renderSessionInfo(targetSession)}</div>
     </div>
   );
 };
