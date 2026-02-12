@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { handleListConfirmedUsersByEvent } from '../../api/enrollmentAPI';
 import { handleGetById } from '../../api/eventListAPI';
 import { handleGetSessionById, handleCreateSessionRegistration } from '../../api/sessionAPI';
+import { handleApplyWaitlist } from '../../api/waitlistAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 
@@ -15,7 +16,10 @@ const EnrollSession = () => {
 
   const userRole = user?.role?.toLowerCase();
   const isMember = userRole === 'member';
-  const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
+  const isSales = userRole === 'sales';
+  const isLeader = userRole === 'leader';
+  const isAdmin = userRole === 'admin';
+  const isStaff = isAdmin || isSales || isLeader;
 
   const searchParams = new URLSearchParams(location.search);
   const sessionId = searchParams.get('session_id');
@@ -72,9 +76,9 @@ const EnrollSession = () => {
     }
   }, [isMember, user]);
 
-  // Load member list when role is Sales or Leader - only members who already confirmed enrollment for this event
+  // Load member list when role is Staff - only members who already confirmed enrollment for this event
   useEffect(() => {
-    if (isSalesOrLeader && id) {
+    if (isStaff && id) {
       const fetchMembers = async () => {
         try {
           const response = await handleListConfirmedUsersByEvent(id);
@@ -85,7 +89,7 @@ const EnrollSession = () => {
       };
       fetchMembers();
     }
-  }, [isSalesOrLeader]);
+  }, [isStaff, id]);
 
   // Sync selected member display
   useEffect(() => {
@@ -146,7 +150,19 @@ const EnrollSession = () => {
         return;
       }
 
-      const result = await handleCreateSessionRegistration(registrationData);
+      const remainingSeats = session && session.remaining_seats != null ? Number(session.remaining_seats) : null;
+      const isFull = remainingSeats != null && !Number.isNaN(remainingSeats) && remainingSeats <= 0;
+      const canWaitlist = isAdmin || isSales;
+
+      if (isFull && !canWaitlist) {
+        alert('此場次已滿，無法報名');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const result = isFull && canWaitlist
+        ? await handleApplyWaitlist({ session_id: registrationData.session_id, user_id: registrationData.user_id })
+        : await handleCreateSessionRegistration(registrationData);
 
       let message = result?.message || '場次報名成功！';
       alert(message);
@@ -189,6 +205,12 @@ const EnrollSession = () => {
             style={{ width: '20%' }}
           />
         </div>
+
+        {session && session.remaining_seats != null && Number(session.remaining_seats) <= 0 ? (
+          <div style={{ color: '#b71c1c', marginTop: 8 }}>
+            此場次已滿，僅可加入候補（限管理員/業務）
+          </div>
+        ) : null}
 
         {/* 價格不在場次報名頁面顯示 */}
 
@@ -268,8 +290,20 @@ const EnrollSession = () => {
         {/* 支付方式不在場次報名頁面顯示 */}
 
         <div style={{ marginTop: 20 }}>
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? '提交中...' : '確認報名'}
+          <button
+            type="submit"
+            disabled={
+              isSubmitting ||
+              (session && session.remaining_seats != null && Number(session.remaining_seats) <= 0 && !(isAdmin || isSales))
+            }
+          >
+            {isSubmitting
+              ? '提交中...'
+              : (session && session.remaining_seats != null && Number(session.remaining_seats) <= 0 && (isAdmin || isSales))
+                ? '加入候補'
+                : (session && session.remaining_seats != null && Number(session.remaining_seats) <= 0)
+                  ? '已滿'
+                  : '確認報名'}
           </button>
           <button
             type="button"

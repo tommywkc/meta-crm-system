@@ -28,7 +28,6 @@ import PaymentView from './pages/shared/PaymentView';
 import Receipts from './pages/member/Receipts';
 import RequestSelection from './pages/shared/RequestSelection';
 import MyQRcode from './pages/member/MyQRcode';
-import MemberCalendarPage from './pages/member/Calendar';
 import Apply from './pages/shared/Apply';
 import MyEventList from './pages/member/MyEventList';
 import EnrollSession from './pages/shared/EnrollSession';
@@ -185,7 +184,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/waiting" element={
-            <ProtectedRoute allowedRole="admin">
+            <ProtectedRoute allowedRoles={["admin","sales","leader"]}>
               <Waiting />
             </ProtectedRoute>
           } />
@@ -261,11 +260,6 @@ function App() {
           <Route path="/myqrcode" element={
             <ProtectedRoute allowedRole="member">
               <MyQRcode />
-            </ProtectedRoute>
-          } />
-          <Route path="/mycalendar" element={
-            <ProtectedRoute allowedRole="member">
-              <MemberCalendarPage />
             </ProtectedRoute>
           } />
           <Route path="/myevents" element={

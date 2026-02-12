@@ -6,6 +6,7 @@ import { handleListPaymentByUserId } from '../../api/paymentAPI';
 import { handleGetById as handleGetEventById } from '../../api/eventListAPI';
 import { useAuth } from '../../contexts/AuthContext';
 import CommonTable from '../../components/CommonTable';
+import { MobileCard, MobileCardRow } from '../../components/MobileCard';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const Receipts = () => {
@@ -123,10 +124,32 @@ const Receipts = () => {
 
 	const renderSection = (title, items) => {
 		const headers = ['活動名稱', '類型', '檔案名稱', '上傳時間', '操作'];
+
+		const renderCard = (item, idx) => (
+			<MobileCard
+				key={`${title}-card-${idx}`}
+				actions={
+					<button onClick={() => handleDownload(item.type, item.fileName)}>
+						下載
+					</button>
+				}
+			>
+				<MobileCardRow label="活動名稱" value={formatEventName(item.eventId)} />
+				<MobileCardRow label="類型" value={item.type} />
+				<MobileCardRow label="檔案名稱" value={item.originalName || item.fileName} />
+				<MobileCardRow label="上傳時間" value={formatUploadTime(item.uploadDate)} />
+			</MobileCard>
+		);
+
 		return (
 			<div style={{ marginBottom: 24 }}>
 				<h2 style={{ marginBottom: 8 }}>{title}</h2>
-				<CommonTable headers={headers} data={items} emptyMessage="暫時未有可下載檔案">
+				<CommonTable 
+					headers={headers} 
+					data={items} 
+					emptyMessage="暫時未有可下載檔案"
+					renderCard={renderCard}
+				>
 					{items.map((item, idx) => (
 						<tr key={`${title}-${idx}`}>
 							<td>{formatEventName(item.eventId)}</td>
@@ -148,8 +171,6 @@ const Receipts = () => {
 	return (
 		<PageContainer>
 			<PageHeader title="收據與證書下載 (Member)" />
-			<p>你可以查看並下載自己已發放的收據與證書。</p>
-
 			{loading && <p>載入中...</p>}
 			{error && <p style={{ color: 'red' }}>{error}</p>}
 

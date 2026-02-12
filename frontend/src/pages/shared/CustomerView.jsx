@@ -7,6 +7,7 @@ import { formatDateTimeForDisplay, formatDateKey } from '../../utils/dateFormatt
 import { handleListUserUpcomingSessions, handleListUserSessionsByYear } from '../../api/sessionAPI';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 import CommonTable from '../../components/CommonTable';
+import { MobileCard, MobileCardRow } from '../../components/MobileCard';
 
 const CustomerView = () => {
   const { id } = useParams();
@@ -140,11 +141,19 @@ const CustomerView = () => {
         onBack={() => navigate('/customers')}
       />
       
-      <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
+      <div className="calendar-dashboard-grid" style={{ marginTop: 20 }}>
   {/* Left: customer information */}
-        <div style={{ flex: isMember ? 1 : 'none', maxWidth: isMember ? 'none' : '600px' }}>
+        <div style={{ flex: isMember ? 1 : 'none', maxWidth: isMember ? 'none' : '600px', width: '100%' }}>
           <h2>客戶資訊</h2>
           <div style={{ marginTop: 20 }}>
+            {isMember && customer.suspension && (
+              <div style={{ color: '#b91c1c' }}>
+                <strong>停權狀態:</strong> 停覆課
+                {customer.suspension_end_time
+                  ? `（至 ${formatDateTimeForDisplay(customer.suspension_end_time)}）`
+                  : ''}
+              </div>
+            )}
             <div><strong>用戶 ID:</strong> {customer.user_id}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <strong>密碼:</strong> 
@@ -204,7 +213,7 @@ const CustomerView = () => {
 
   {/* Right: calendar (visible to MEMBER only) */}
         {isMember && (
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, width: '100%' }}>
             <h2>會員日曆</h2>
             {calendarError && <p style={{ color: 'red' }}>{calendarError}</p>}
             <Calendar events={eventsByYear[calendarYear] || {}} onYearChange={handleCalendarYearChange} />
@@ -239,6 +248,13 @@ const CustomerView = () => {
                   headers={['日期時間', '課堂名稱', '場次']}
                   data={upcomingSessions}
                   emptyMessage="暫時沒有即將到來的課堂"
+                  renderCard={(s, idx) => (
+                    <MobileCard key={`upcoming-${s.registration_id || idx}`}>
+                       <MobileCardRow label="日期時間" value={s.datetime_start ? formatDateTimeForDisplay(s.datetime_start) : 'N/A'} />
+                       <MobileCardRow label="課堂名稱" value={s.event_name || '-'} />
+                       <MobileCardRow label="場次" value={s.session_name || '-'} />
+                    </MobileCard>
+                  )}
                 >
                   {upcomingSessions.map((s) => (
                     <tr key={s.registration_id}>

@@ -9,7 +9,7 @@ import '../App.css';
  * - children: The <tbody> content (rows)
  * - className: Optional extra classes
  */
-const CommonTable = ({ headers = [], children, className = '', data, emptyMessage = '暫無資料', onSort, sortConfig }) => {
+const CommonTable = ({ headers = [], children, className = '', data, emptyMessage = '暫無資料', onSort, sortConfig, renderCard }) => {
   const showEmpty = Array.isArray(data) && data.length === 0;
 
   const handleHeaderClick = (index) => {
@@ -33,7 +33,7 @@ const CommonTable = ({ headers = [], children, className = '', data, emptyMessag
     );
   };
 
-  return (
+  const TableContent = (
     <table className={`common-table ${className}`}>
       <thead>
         <tr>
@@ -53,6 +53,29 @@ const CommonTable = ({ headers = [], children, className = '', data, emptyMessag
       </tbody>
     </table>
   );
+
+  if (renderCard) {
+    return (
+      <>
+        <div className="common-table-desktop">
+          {TableContent}
+        </div>
+        <div className="common-table-mobile">
+          {showEmpty ? (
+             <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>{emptyMessage}</div>
+          ) : (
+             data && data.map((item, index) => (
+               <React.Fragment key={index}>
+                 {renderCard(item, index)}
+               </React.Fragment>
+             ))
+          )}
+        </div>
+      </>
+    );
+  }
+
+  return <div style={{ overflowX: 'auto' }}>{TableContent}</div>;
 };
 
 export default CommonTable;

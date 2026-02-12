@@ -36,6 +36,159 @@ const Header = () => {
     }
   };
 
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  
+  const menuRef = React.useRef(null);
+  const toggleRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        menuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        toggleRef.current &&
+        !toggleRef.current.contains(event.target)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      if (window.innerWidth > 768) setMenuOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Handle swipe gestures with real-time tracking
+  React.useEffect(() => {
+    if (!isMobile) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let currentX = 0;
+    let isDragging = false;
+    let isHorizontalSwipe = false; // Flag to confirm if it's a valid horizontal swipe
+    const MENU_WIDTH = 260; // Must match CSS width
+
+    const handleTouchStart = (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      isHorizontalSwipe = false; // Reset flag
+      
+      // Prevent sidebar swipe if user is interacting with a slider (Banner or StudentWork)
+      if (e.target.closest('.slick-slider')) {
+        return;
+      }
+      
+      isDragging = true;
+      // Note: We do NOT set visibility or transition here yet. 
+      // We wait for touchmove to confirm it's a horizontal swipe.
+    };
+
+    const handleTouchMove = (e) => {
+      if (!isDragging || !menuRef.current) return;
+      currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      
+      const diffX = currentX - touchStartX;
+      const diffY = currentY - touchStartY;
+
+      // Check if we have determined direction yet
+      if (!isHorizontalSwipe) {
+        // If moved less than 10px, treat as tap/noise, do nothing yet
+        if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) return;
+
+        // If vertical movement is dominant, it's a scroll. Cancel custom swipe.
+        if (Math.abs(diffY) > Math.abs(diffX)) {
+          isDragging = false;
+          return;
+        }
+
+        // Otherwise, it's a horizontal swipe. Start moving the menu.
+        isHorizontalSwipe = true;
+        menuRef.current.style.transition = 'none'; // Disable transition for 1:1 movement
+        if (!menuOpen) menuRef.current.style.visibility = 'visible';
+      }
+
+      // Prevent default scrolling only if we are horizontally swiping
+      // e.preventDefault(); // Optional: might block scrolling if not careful. 
+      // Usually better not to preventDefault on document level listeners unless passive: false is set.
+
+      let newTranslateX;
+      
+      if (menuOpen) {
+        // Dragging to close (diffX should be negative)
+        newTranslateX = Math.min(0, Math.max(-MENU_WIDTH, diffX));
+      } else {
+        // Dragging to open (diffX should be positive)
+        newTranslateX = Math.min(0, Math.max(-MENU_WIDTH, -MENU_WIDTH + diffX));
+      }
+      
+      menuRef.current.style.transform = `translateX(${newTranslateX}px)`;
+    };
+
+    const handleTouchEnd = (e) => {
+      if (!isDragging || !menuRef.current) return;
+      isDragging = false;
+      
+      // If we never confirmed it was a horizontal swipe (e.g. just a tap or vertical scroll), do nothing
+      if (!isHorizontalSwipe) return;
+
+      // Restore transition for snap animation
+      menuRef.current.style.transition = 'transform 0.3s ease, visibility 0s linear 0s';
+      
+      currentX = e.changedTouches[0].clientX;
+      const diff = currentX - touchStartX;
+      const threshold = MENU_WIDTH * 0.3; // 30% width threshold
+      // 僅當拉動超過 threshold 才開啟，否則一律收回
+      if (!menuOpen) {
+        if (diff > threshold) {
+          setMenuOpen(true);
+          setTimeout(() => {
+            const backdrop = document.querySelector('[style*="rgba(0,0,0,0.5)"]');
+            if (backdrop) {
+              backdrop.style.opacity = 1;
+              backdrop.style.pointerEvents = 'auto';
+            }
+          }, 0);
+        } else {
+          // 未超過閾值，確保 menu 關閉
+          setMenuOpen(false);
+          if (menuRef.current) {
+            menuRef.current.style.transform = 'translateX(-100%)';
+            menuRef.current.style.visibility = 'hidden';
+          }
+        }
+      } else {
+        if (diff < -threshold) {
+          setMenuOpen(false);
+        } else {
+          if (menuRef.current) menuRef.current.style.transform = '';
+        }
+      }
+    };
+
+    document.addEventListener('touchstart', handleTouchStart);
+    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile, menuOpen]);
+
   // Do not render header on login page
   if (location.pathname === '/login') return null;
 
@@ -61,7 +214,6 @@ const Header = () => {
     receipts: { path: '/receipts', label: '查看收據/證書' },
     requests: { path: '/requests/select', label: '覆課/補堂/請假申請' },
     myqrcode: { path: '/myqrcode', label: '我的資料' },
-    mycalendar: { path: '/mycalendar', label: '我的日曆' },
     myevents: { path: '/myevents', label: '我的活動' },
     feedback: { path: '/feedback', label: '意見回饋' }
   };
@@ -69,10 +221,10 @@ const Header = () => {
   // Which pages each role should see (order matters)
   const rolePages = {
     // new admin order requested by user
-    admin: ['customers','events','payments','requests_admin','scan','waiting','reports','notifications','feedback'],
+    admin: ['customers','events','payments','requests_admin','reports','scan','notifications','feedback'],
     sales: ['customers','events','payments','requests','sales_kpi','notifications','feedback'],
     leader: ['customers','events','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
-    member: ['mycalendar','myevents','events','payments','receipts','requests','notifications','myqrcode','feedback']
+    member: ['myevents','events','payments','receipts','requests','notifications','myqrcode','feedback']
   };
   
   const pages = rolePages[user.role?.toLowerCase()] || [];
@@ -97,6 +249,25 @@ const Header = () => {
         height: '60px'
       }}>
       <div style={{ display: 'flex', alignItems: 'center' }}>
+        {isMobile && (
+          <div 
+            ref={toggleRef}
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{ 
+              padding: '8px',  
+              marginRight: 4, 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </div>
+        )}
         <div
           style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
           onClick={() => {
@@ -112,7 +283,7 @@ const Header = () => {
             navigate(`/${r}`);
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', marginRight: 12, fontSize: '18px', color: '#333' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginRight: 12, fontSize: '18px', color: '#333' }}>
             <img
               src={process.env.PUBLIC_URL + '/logo.png'}
               alt="Meta CRM Logo"
@@ -124,6 +295,7 @@ const Header = () => {
       </div>
 
   {/* Navigation Wrapper with Arrows */}
+  {!isMobile && (
   <div className="header-nav-wrapper">
     <button className="nav-scroll-btn" onClick={() => scrollNav('left')}>
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -177,8 +349,9 @@ const Header = () => {
       </svg>
     </button>
   </div>
+  )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 16, borderLeft: '1px solid #eee', marginLeft: 'auto', height: '60%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 16, marginLeft: 'auto', height: '60%' }}>
         {pages.includes('feedback') && (
           <div 
             onClick={() => navigate('/feedback')}
@@ -204,15 +377,6 @@ const Header = () => {
         {pages.includes('notifications') && (
           <div 
             onClick={() => navigate('/notifications')}
-            style={{ 
-              cursor: 'pointer', 
-              color: location.pathname.startsWith('/notifications') ? '#093e73' : '#666',
-              display: 'flex', 
-              alignItems: 'center',
-              padding: '8px',
-              borderRadius: '50%',
-              transition: 'background 0.2s'
-            }}
             onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             title="通知中心"
@@ -270,7 +434,8 @@ const Header = () => {
             </svg>
           </div>
         )}
-        <div style={{ fontSize: 14 }}>Hi, {user.name}</div>
+        {!isMobile && <div style={{ fontSize: 16 }}>{user.name}</div>}
+        {!isMobile && (
         <button 
           onClick={async () => { await logout(); navigate('/login'); }}
           style={{
@@ -285,11 +450,97 @@ const Header = () => {
         >
           登出
         </button>
+        )}
       </div>
     </header>
 
+    {/* Mobile Slide-out Menu (Sidebar) */}
+    {isMobile && (
+      <>
+        {/* Simple backdrop overlay to dim content behind */}
+        <div 
+          style={{
+            position: 'fixed',
+            top: '60px',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 998,
+            transition: 'opacity 0.3s ease',
+            opacity: menuOpen ? 1 : 0,
+            pointerEvents: menuOpen ? 'auto' : 'none'
+          }}
+          onClick={() => setMenuOpen(false)}
+        />
+        <div 
+          style={{
+            position: 'fixed',
+            top: '60px',
+            left: 0,
+            bottom: 0,
+            width: '260px',
+            backgroundColor: '#fff',
+            zIndex: 999,
+            borderTop: '1px solid #d0d0d0',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            transition: 'transform 0.3s ease, visibility 0s linear 0.3s',
+            transform: menuOpen ? 'translateX(0)' : 'translateX(-100%)',
+            visibility: menuOpen ? 'visible' : 'hidden'
+          }}
+          // Override transition when opening to make visibility immediate
+          ref={(node) => {
+            menuRef.current = node;
+            if (node && menuOpen) {
+              node.style.transition = 'transform 0.3s ease, visibility 0s linear 0s';
+            } else if (node) {
+              node.style.transition = 'transform 0.3s ease, visibility 0s linear 0.3s';
+            }
+          }}
+          >
+        {pages.filter(key => !['notifications', 'feedback', 'myqrcode'].includes(key)).map((key) => {
+            const p = pagesMap[key];
+            const isActive = location.pathname.startsWith(p.path) || (key === 'requests' && location.pathname.startsWith('/requests'));
+            return (
+              <div
+                key={key}
+                onClick={() => { setMenuOpen(false); go(key); }}
+                style={{
+                  padding: '16px 20px',
+                  borderBottom: isActive ? '3px solid #093e73' : '1px solid #d0d0d0',
+                  color: isActive ? '#093e73' : '#444',
+                  fontWeight: isActive ? 'bold' : 'normal',
+                  backgroundColor: '#fff',
+                  fontSize: '16px'
+                }}
+              >
+                {p.label}
+              </div>
+            );
+        })}
+        {/* Mobile Logout */}
+        <div
+            onClick={async () => { await logout(); navigate('/login'); }}
+            style={{
+              marginTop: 'auto',
+              marginBottom: '60px',
+              padding: '16px 20px',
+              borderTop: '1px solid #d0d0d0',
+              borderBottom: '1px solid #d0d0d0',
+              color: '#d32f2f',
+              fontSize: '16px'
+            }}
+        >
+          登出
+        </div>
+      </div>
+    </>
+    )}
+
       {showBanner && (
-        <div style={{ background: '#fff' }}>
+        <div style={{ background: '#fff', lineHeight: 0, fontSize: 0 }}>
             <BannerSection />
         </div>
       )}

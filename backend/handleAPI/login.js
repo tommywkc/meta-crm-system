@@ -5,7 +5,7 @@ const { findByUserId } = require('../dao/usersDao');
 
 // JWT configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-local';
-const ACCESS_EXPIRES = '30m';
+const ACCESS_EXPIRES = '2h';
 
 function getAuthCookieOptions() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -18,7 +18,7 @@ function getAuthCookieOptions() {
     secure: cookieSecure,
     sameSite: cookieSameSite,
     path: '/',
-    maxAge: 30 * 60 * 1000,
+    maxAge: 2 * 60 * 60 * 1000,
   };
 }
 

@@ -32,6 +32,13 @@ const EnrolledList = () => {
   const authRole = (user && user.role) ? user.role.toUpperCase() : 'MEMBER';
   const isAdmin = authRole === 'ADMIN';
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // 支援從路由參數或 query string 取得 event_id / session_id
   const searchParams = new URLSearchParams(location.search);
   const eventIdFromQuery = searchParams.get('event_id');
@@ -602,7 +609,7 @@ const EnrolledList = () => {
     <PageContainer>
       <style>{`#reader-enrolled video, #reader-enrolled canvas { width: 100% !important; height: 100% !important; object-fit: cover; }`}</style>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-start', gap: '16px', marginBottom: '16px' }}>
         <div style={{ flex: 1 }}>
           <PageHeader 
             title={isSessionMode ? '場次已報名會員清單' : '活動已報名會員清單'} 
@@ -624,7 +631,7 @@ const EnrolledList = () => {
         </div>
         
         {isSessionMode && isAdmin && (
-          <div style={{ width: 320 }}>
+          <div style={{ width: isMobile ? '100%' : 320, marginRight: isMobile ? 0 : '50px' }}>
             <Scanner
             sessionId={sessionId}
             sessionInfo={sessionInfo}

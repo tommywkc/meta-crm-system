@@ -2,6 +2,7 @@ import React from 'react';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonTable from './CommonTable';
+import { MobileCard, MobileCardRow } from './MobileCard';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -146,8 +147,65 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
     return cp;
   }, [requests, sortConfig]);
 
+  const renderCard = (req, idx) => {
+    const typeKey = (req.request_type || '').toString().toUpperCase();
+    const typeLabel = TYPE_LABELS[typeKey] || req.request_type || '-';
+    const requestTimeLabel = req.request_time ? formatDateTimeForDisplay(req.request_time) : '-';
+    const applicant = req.user_name ? `${req.user_name} (${req.user_id})` : req.user_id || '-';
+    const isPending = (req.status || '').toString().toUpperCase() === 'PENDING';
+    const oldSession = {
+      session_id: req.old_session_id,
+      session_name: req.old_session_name,
+      event_name: req.old_event_name,
+      datetime_start: req.old_session_start,
+    };
+    const newSession = {
+      session_id: req.new_session_id,
+      session_name: req.new_session_name,
+      event_name: req.new_event_name,
+      datetime_start: req.new_session_start,
+    };
+
+    return (
+      <MobileCard
+        key={`card-${req.request_id || idx}`}
+        actions={
+          <>
+            <button
+                type="button"
+                onClick={() => handleViewDetail(req)}
+            >
+                詳情
+            </button>
+            {isAdmin && (
+                <button
+                type="button"
+                onClick={() => handleApprove(req)}
+                disabled={!isPending}
+                >
+                {isPending ? '批核' : '已批核'}
+                </button>
+            )}
+          </>
+        }
+      >
+        <MobileCardRow label="申請編號" value={req.request_id} />
+        <MobileCardRow label="申請人" value={applicant} />
+        <MobileCardRow label="申請類型" value={typeLabel || '-'} />
+        <MobileCardRow label="申請內容">
+            {renderRequestContent(typeKey, oldSession, newSession)}
+        </MobileCardRow>
+        <MobileCardRow label="狀態">
+            {renderStatus(req.status)}
+        </MobileCardRow>
+        <MobileCardRow label="申請時間" value={requestTimeLabel} />
+        <MobileCardRow label="條件衝突" value={(req.under_3bday || req.time_conflict) ? '有衝突' : '無衝突'} />
+      </MobileCard>
+    );
+  };
+
   return (
-    <CommonTable headers={headers} data={loading ? null : sortedRequests} emptyMessage="暫無申請紀錄" onSort={handleSort} sortConfig={sortConfig}>
+    <CommonTable headers={headers} data={loading ? null : sortedRequests} emptyMessage="暫無申請紀錄" onSort={handleSort} sortConfig={sortConfig} renderCard={renderCard}>
       {loading && (
         <tr>
           <td colSpan={8}>載入中…</td>

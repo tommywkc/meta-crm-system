@@ -97,6 +97,7 @@ async function listAllRequests() {
       r.request_time,
       r.determine_time,
       r.remarks,
+      r.reject_reason,
       r.under_3bday,
       r.time_conflict,
       r.conflict_id,
@@ -128,6 +129,48 @@ async function listAllRequests() {
   return res.rows || [];
 }
 
+async function findRequestDetailById(requestId) {
+  const sql = `
+    SELECT
+      r.request_id,
+      r.request_type,
+      r.status,
+      r.request_time,
+      r.determine_time,
+      r.remarks,
+      r.reject_reason,
+      r.under_3bday,
+      r.time_conflict,
+      r.conflict_id,
+      r.user_id,
+      u.name AS user_name,
+      u.mobile AS user_mobile,
+      u.email AS user_email,
+      r.request_by_id,
+      req_by.name AS request_by_name,
+      r.old_session_id,
+      old_s.session_name AS old_session_name,
+      old_s.datetime_start AS old_session_start,
+      old_evt.event_name AS old_event_name,
+      r.new_session_id,
+      new_s.session_name AS new_session_name,
+      new_s.datetime_start AS new_session_start,
+      new_s.remaining_seats AS new_session_remaining,
+      new_evt.event_name AS new_event_name
+    FROM REQUESTS r
+    LEFT JOIN USERS u ON r.user_id = u.user_id
+    LEFT JOIN USERS req_by ON r.request_by_id = req_by.user_id
+    LEFT JOIN EVENT_SESSIONS old_s ON r.old_session_id = old_s.session_id
+    LEFT JOIN EVENTS old_evt ON old_s.event_id = old_evt.event_id
+    LEFT JOIN EVENT_SESSIONS new_s ON r.new_session_id = new_s.session_id
+    LEFT JOIN EVENTS new_evt ON new_s.event_id = new_evt.event_id
+    WHERE r.request_id = $1
+    LIMIT 1
+  `;
+  const res = await query(sql, [requestId]);
+  return res.rows[0] || null;
+}
+
 async function listRequestsByUser(userId) {
   const sql = `
     SELECT
@@ -137,6 +180,7 @@ async function listRequestsByUser(userId) {
       r.request_time,
       r.determine_time,
       r.remarks,
+      r.reject_reason,
       r.under_3bday,
       r.time_conflict,
       r.conflict_id,
@@ -179,4 +223,5 @@ module.exports = {
   updateRequestById,
   listAllRequests,
   listRequestsByUser,
+  findRequestDetailById,
 };

@@ -5,6 +5,14 @@ import { handleListHolidays } from '../api/holidaysAPI';
 const Weekdays = ['日','一','二','三','四','五','六'];
 
 const Calendar = ({ events = {}, onYearChange }) => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const [viewDate, setViewDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -111,15 +119,20 @@ const Calendar = ({ events = {}, onYearChange }) => {
                     onClick={() => setSelected(key)}
                     style={{
                       verticalAlign: 'top',
-                      padding: 6,
+                      padding: isMobile ? 4 : 6,
                       border: '1px solid #eee',
                       color: cellColor,
                       cursor: 'pointer',
-                      minWidth: 80
+                      minWidth: isMobile ? 'auto' : 80,
+                      height: isMobile ? 45 : 'auto',
+                      textAlign: isMobile ? 'center' : 'left',
+                      position: 'relative'
                     }}
                   >
-                    <div>{date.getDate()}</div>
-                    {dayEvents && (
+                    <div style={{ fontSize: isMobile ? 14 : 'inherit' }}>{date.getDate()}</div>
+                    
+                    {/* Desktop: Show Event Text */}
+                    {!isMobile && dayEvents && (
                       Array.isArray(dayEvents) ? (
                         <ul style={{ margin: '6px 0 0 14px', padding: 0 }}>
                           {dayEvents.map((e, i) => {
@@ -134,6 +147,18 @@ const Calendar = ({ events = {}, onYearChange }) => {
                           {typeof dayEvents === 'string' ? dayEvents : (dayEvents && dayEvents.label) || ''}
                         </div>
                       )
+                    )}
+
+                    {/* Mobile: Show Dots */}
+                    {isMobile && (
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginTop: 4 }}>
+                        {isHoliday && (
+                           <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#dc2626' }} />
+                        )}
+                        {dayEvents && (
+                           <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#093e73' }} />
+                        )}
+                      </div>
                     )}
                   </td>
                 );

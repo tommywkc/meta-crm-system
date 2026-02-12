@@ -1,5 +1,6 @@
 import React from 'react';
 import CommonTable from './CommonTable';
+import { MobileCard, MobileCardRow } from './MobileCard';
 import { formatDateTimeForDisplay } from '../utils/dateFormatter';
 import { useState, useMemo } from 'react';
 
@@ -48,8 +49,19 @@ const FeedbackTable = ({ feedbacks = [] }) => {
     return cp;
   }, [feedbacks, sortConfig]);
 
+  const renderCard = (fb, idx) => (
+    <MobileCard key={`card-${fb.feedback_id || idx}`}>
+      <MobileCardRow label="ID" value={fb.feedback_id} />
+      <MobileCardRow label="測試角色" value={fb.testing_role || 'N/A'} />
+      <MobileCardRow label="評分" value={renderRating(fb.rating)} valueStyle={{ wordBreak: 'break-word' }}/>
+      <MobileCardRow label="文字意見" value={fb.text || ''} valueStyle={{ wordBreak: 'break-word' }}/>
+      <MobileCardRow label="提交者 ID" value={fb.submitted_by_id} />
+      <MobileCardRow label="提交時間" value={fb.submit_time ? formatDateTimeForDisplay(fb.submit_time) : ''} />
+    </MobileCard>
+  );
+
   return (
-    <CommonTable headers={headers} data={sorted} emptyMessage="暫時沒有任何意見回饋" onSort={handleSort} sortConfig={sortConfig}>
+    <CommonTable headers={headers} data={sorted} emptyMessage="暫時沒有任何意見回饋" onSort={handleSort} sortConfig={sortConfig} renderCard={renderCard}>
       {sorted.map((fb) => (
         <tr key={fb.feedback_id}>
           <td>{fb.feedback_id}</td>

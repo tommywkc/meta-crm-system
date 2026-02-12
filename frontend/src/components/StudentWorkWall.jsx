@@ -7,6 +7,7 @@ import { handleListStudentWorks, handleCreateStudentWork, handleDeleteStudentWor
 
 // Custom Arrow Components with simple dark grey chevrons
 const NextArrow = ({ onClick }) => {
+  const isMobile = window.innerWidth <= 768; // simple check
   return (
     <div
       onClick={onClick}
@@ -15,7 +16,7 @@ const NextArrow = ({ onClick }) => {
         alignItems: "center",
         justifyContent: "center",
         position: "absolute",
-        right: "-45px",
+        right: isMobile ? "-10px" : "-45px",
         top: "50%",
         transform: "translateY(-50%)",
         zIndex: 1,
@@ -32,6 +33,7 @@ const NextArrow = ({ onClick }) => {
 };
 
 const PrevArrow = ({ onClick }) => {
+  const isMobile = window.innerWidth <= 768;
   return (
     <div
       onClick={onClick}
@@ -40,7 +42,7 @@ const PrevArrow = ({ onClick }) => {
         alignItems: "center",
         justifyContent: "center",
         position: "absolute",
-        left: "-45px",
+        left: isMobile ? "-10px" : "-45px",
         top: "50%",
         transform: "translateY(-50%)",
         zIndex: 1,
@@ -62,6 +64,14 @@ const StudentWorkWall = () => {
     const [works, setWorks] = useState([]);
     const [loading, setLoading] = useState(false);
     
+    // Responsive check
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []); 
+
     // Modal state for uploading
     const [showModal, setShowModal] = useState(false);
     const [uploadFile, setUploadFile] = useState(null);
@@ -152,8 +162,9 @@ const StudentWorkWall = () => {
         dots: true,
         infinite: false,
         speed: 500,
-        slidesToShow: 4,
-        slidesToScroll: 4,
+        slidesToShow: isMobile ? 1 : 4,
+        slidesToScroll: isMobile ? 1 : 4,
+        arrows: !isMobile, // Explicitly hide on mobile based on state
         nextArrow: <NextArrow />,
         prevArrow: <PrevArrow />,
         responsive: [
@@ -167,15 +178,9 @@ const StudentWorkWall = () => {
             {
                 breakpoint: 768,
                 settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 2
-                }
-            },
-            {
-                breakpoint: 480,
-                settings: {
                     slidesToShow: 1,
-                    slidesToScroll: 1
+                    slidesToScroll: 1,
+                    arrows: false
                 }
             }
         ]
@@ -184,7 +189,7 @@ const StudentWorkWall = () => {
     const wallStyle = {
         textAlign: 'left', 
         padding: '20px 0', 
-        margin: '20px 0'
+        margin: '0 0 20px 0'
     };
 
     const cardStyle = {
@@ -198,12 +203,12 @@ const StudentWorkWall = () => {
         // height: '200px',
         aspectRatio: '16/9', // 16:9 ratio (1920x1080)
         objectFit: 'cover',
-        borderRadius: '4px',
+        borderRadius: '8px 8px 0 0',
         display: 'block'
     };
 
     const captionStyle = {
-        marginTop: '10px',
+        padding: '10px',
         fontSize: '14px',
         color: '#333',
         textAlign: 'left',
@@ -239,41 +244,55 @@ const StudentWorkWall = () => {
                     )}
                 </div>
 
-                <div style={{ padding: '0 40px', marginTop: 30 }}>
+                <div style={{ padding: isMobile ? '0 10px' : '0 40px', marginTop: 30 }}>
                     {loading ? <p>載入作品中...</p> : (
                         works.length > 0 ? (
                             <Slider {...settings}>
                                 {works.map(work => (
                                     <div key={work.work_id} style={cardStyle}>
-                                        <div style={{ margin: '0 10px' }}>
-                                            <a href={work.image_url} target="_blank" rel="noopener noreferrer">
-                                                <img src={work.image_url} alt={work.caption} style={imageStyle} />
-                                            </a>
+                                        <div style={{ 
+                                            margin: '0 10px',
+                                            border: '1px solid #e0e0e0',
+                                            borderRadius: '8px',
+                                            padding: '0',
+                                            backgroundColor: '#fff'
+                                        }}>
+                                            <div style={{ position: 'relative' }}>
+                                                <a href={work.image_url} target="_blank" rel="noopener noreferrer">
+                                                    <img src={work.image_url} alt={work.caption} style={imageStyle} />
+                                                </a>
+                                                {isAdmin && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '10px',
+                                                        left: '10px',
+                                                        zIndex: 10,
+                                                        display: 'flex',
+                                                        gap: '10px'
+                                                    }}>
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                openEditModal(work);
+                                                            }}
+                                                        >
+                                                            編輯
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(work.work_id);
+                                                            }}
+                                                            className="btn-danger"
+                                                        >
+                                                            刪除
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                             <div style={captionStyle}>
                                                 {work.caption}
                                             </div>
-                                            {isAdmin && (
-                                                <div style={{ marginTop: 5 }}>
-                                                    <button 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            openEditModal(work);
-                                                        }}
-                                                        style={{ marginRight: 8 }}
-                                                    >
-                                                        編輯
-                                                    </button>
-                                                    <button 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDelete(work.work_id);
-                                                        }}
-                                                        className="btn-danger"
-                                                    >
-                                                        刪除
-                                                    </button>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
                                 ))}

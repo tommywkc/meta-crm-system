@@ -24,6 +24,13 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
   const [scanDetail, setScanDetail] = useState(null);
   const [scanWarning, setScanWarning] = useState(null);
   const [scanStatus, setScanStatus] = useState(null);
+  
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const ensureGlobalRegistry = () => {
     if (!window.__html5qrcode_instances) window.__html5qrcode_instances = {};
@@ -233,20 +240,20 @@ const Scanner = ({ sessionId, sessionInfo, eventInfo, onMarkLocalSignIn, onQuick
   }, []);
 
   return (
-    <div style={{ width: scannerWidth, border: '1px solid #eee', padding: 12, borderRadius: 4, background: '#fafafa' }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+    <div style={{ width: isMobile ? '100%' : scannerWidth, boxSizing: 'border-box', border: '1px solid #eee', padding: 12, borderRadius: 4, background: '#fafafa' }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', justifyContent: 'flex-start' }}>
         <button type="button" onClick={startQrScanning} disabled={scanning || !sessionId}>{scanning ? 'Scanning...' : 'Start Scanner'}</button>
         <button type="button" onClick={stopQrScanning} disabled={!scanning}>Stop Scanner</button>
         {eventInfo?.type === 'SEMINAR' && onQuickRegister && (
           <button type="button" onClick={onQuickRegister} style={{ marginLeft: 8 }}>現場快速登記</button>
         )}
-        <div style={{ color: '#555', marginLeft: 'auto' }}>{qrErrorMsg && <span style={{ color: 'red' }}>{qrErrorMsg}</span>}</div>
+        <div style={{ color: '#555', marginLeft: 'auto', textAlign: 'right' }}>{qrErrorMsg && <span style={{ color: 'red' }}>{qrErrorMsg}</span>}</div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        <div id="reader-enrolled" style={{ width: readerSize, height: readerSize, minHeight: readerSize, background: 'transparent', border: '1px solid #ccc', overflow: 'hidden', borderRadius: 4 }} />
-        <div style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ marginBottom: 6 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, alignItems: 'flex-start' }}>
+        <div id="reader-enrolled" style={{ width: isMobile ? '100%' : readerSize, maxWidth: isMobile ? '300px' : 'none', height: isMobile ? '300px' : readerSize, minHeight: isMobile ? '250px' : readerSize, background: '#000', border: '1px solid #ccc', overflow: 'hidden', borderRadius: 4, alignSelf: isMobile ? 'center' : 'auto' }} />
+        <div style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column', width: isMobile ? '100%' : 'auto', alignItems: 'flex-start', textAlign: 'left' }}>
+          <div style={{ marginBottom: 6, width: '100%' }}>
             <div style={{ marginBottom: 4 }}>
               <strong>狀態：</strong> <span style={{ color: scanStatus === 'success' ? 'green' : scanStatus === 'fail' ? 'red' : 'inherit' }}>{lastScanResult || ''}</span>
             </div>

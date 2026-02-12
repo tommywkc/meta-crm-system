@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId, findUserByMobile, findUserByEmail, findLatestId, findUserByQrToken, findUserByRole, searchUsers } = require('../dao/usersDao');
+const { findLatestSuspensionByUserId } = require('../dao/suspensionDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const crypto = require('crypto');
 
@@ -65,9 +66,11 @@ router.get('/customers/:id', authMiddleware, async (req, res) => {
       console.log('Customer not found:', user_id);
       return res.status(404).json({ message: '客戶不存在' });
     }
+    const suspension = await findLatestSuspensionByUserId(user_id).catch(() => null);
+    const suspension_end_time = suspension?.end_time || null;
     // Return ISO format, frontend will format for display
     console.log('Successfully retrieved customer data:', user_id);
-    res.json({ customer });
+    res.json({ customer: { ...customer, suspension_end_time } });
   } catch (error) {
     console.error('Failed to retrieve customer data:', error);
     res.status(500).json({ message: '伺服器錯誤' });
@@ -85,9 +88,11 @@ router.get('/customers/:id/edit', authMiddleware, roleMiddleware('admin'), async
       console.log('Customer not found:', user_id);
       return res.status(404).json({ message: '客戶不存在' });
     }
+    const suspension = await findLatestSuspensionByUserId(user_id).catch(() => null);
+    const suspension_end_time = suspension?.end_time || null;
     // Return ISO format, frontend will format for display
     console.log('Successfully retrieved customer data for edit:', user_id);
-    res.json({ customer });
+    res.json({ customer: { ...customer, suspension_end_time } });
   } catch (error) {
     console.error('Failed to retrieve customer data:', error);
     res.status(500).json({ message: '伺服器錯誤' });
