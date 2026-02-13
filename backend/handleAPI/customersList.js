@@ -5,8 +5,9 @@ const { listByUsersId, findByUserId, updateByUserId, createUser, removeByUserId,
 const { findLatestSuspensionByUserId } = require('../dao/suspensionDao');
 const { emptyToNull } = require('../function/dataSanitizer');
 const crypto = require('crypto');
-
-
+const { sendEmail } = require('../services/emailService');
+const { createNotification } = require('../dao/notificationsDao');
+const QRCode = require('qrcode');
 
 router.get('/customers/myqrcode', authMiddleware, async (req, res) => {
   try {
@@ -194,6 +195,52 @@ router.post('/customers', authMiddleware, roleMiddleware('admin'), async (req, r
 
     const createdCustomer = await createUser(newCustomer);
     console.log('Successfully created customer:', createdCustomer.user_id);
+
+    // --- Begin: Send account creation email with QR code ---
+    if (createdCustomer.email) {
+      try {
+        const qrCodeDataUrl = await QRCode.toDataURL(qr_token);
+        const qrCodeBase64 = qrCodeDataUrl.split(',')[1];
+
+        const subject = '帳戶建立成功通知';
+        const text = `您的帳戶已成功建立。\n\n您的專屬QR Code已附加在郵件中，可用於簽到等操作。\n\n感謝您的加入！`;
+        const html = `
+          <p>您的帳戶已成功建立。</p>
+          <p>您的專屬QR Code如下，可用於簽到等操作。</p>
+          <img src="cid:student-qr-code" alt="Student QR Code" />
+          <p>感謝您的加入！</p>
+        `;
+
+        await sendEmail({
+          to: createdCustomer.email,
+          subject,
+          text,
+          html,
+          attachments: [
+            {
+              content: qrCodeBase64,
+              filename: 'qrcode.png',
+              type: 'image/png',
+              disposition: 'inline',
+              content_id: 'student-qr-code',
+            },
+          ],
+        });
+
+        // Also create an in-app notification
+        await createNotification({
+          user_id: createdCustomer.user_id,
+          template: subject,
+          description: '帳戶建立成功！歡迎使用您的專屬QR Code進行簽到。',
+        });
+
+      } catch (notificationError) {
+        console.error('Failed to send account creation notification/email:', notificationError);
+        // Do not block the main response if notification fails
+      }
+    }
+    // --- End: Send account creation email with QR code ---
+
     // Return the new customer id to frontend for redirecting to customer detail page
     res.status(201).json({
       message: '客戶新增成功',
