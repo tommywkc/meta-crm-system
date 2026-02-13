@@ -304,6 +304,7 @@ export async function handleListSessionAttendees(session_id) {
       credentials: 'include',
     });
 
+    
     if (!response.ok) {
       throw new Error(`Failed to fetch attendees for session ${session_id}`);
     }
