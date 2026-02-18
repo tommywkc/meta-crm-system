@@ -30,6 +30,7 @@ const EventForm = ({
   const [location, setLocation] = useState(initialData.location || '');
   const [description, setDescription] = useState(initialData.description || '');
   const [roomCost, setRoomCost] = useState(initialData.room_cost || '');
+  const [promotionCost, setPromotionCost] = useState(initialData.promotion_cost || '');
   const [speakerId, setSpeakerId] = useState(initialData.speaker_id || '');
   const [speakerInput, setSpeakerInput] = useState('');
   const [speakerError, setSpeakerError] = useState(null);
@@ -51,6 +52,7 @@ const EventForm = ({
       setLocation(initialData.location || '');
       setDescription(initialData.description || '');
       setRoomCost(initialData.room_cost || '');
+      setPromotionCost(initialData.promotion_cost || '');
       setSpeakerId(initialData.speaker_id || '');
       setPrice(initialData.price || '');
       setSessions(backendSessionsToFormState(initialData.sessions));
@@ -121,6 +123,7 @@ const EventForm = ({
     status,
     location,
     description,
+    promotion_cost: promotionCost ? parseFloat(promotionCost) : null,
     room_cost: roomCost ? parseInt(roomCost, 10) : null,
     speaker_id: speakerId ? parseInt(speakerId, 10) : null,
     price: price ? parseInt(price, 10) : null,
@@ -328,6 +331,34 @@ const EventForm = ({
             {!/^\d*$/.test(roomCost || '') && (
               <small style={{ color: 'red' }}>請輸入有效的金額（僅限數字）。</small>
             )}
+          </div>
+
+          <div style={{ flex: 1, marginBottom: 8 }}>
+            <label>宣傳費:</label><br/>
+            <div style={{ position: 'relative' }}>
+              <span
+                style={{
+                  position: 'absolute',
+                  left: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#666'
+                }}
+              >
+                $
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                value={promotionCost ?? ''}
+                onChange={(e) => setPromotionCost(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 8px 8px 20px',
+                }}
+                placeholder="0.00"
+              />
+            </div>
           </div>
 
           <div style={{ flex: 1, marginBottom: 8 }}>

@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS EVENT_FINANCIALS CASCADE;
 DROP TABLE IF EXISTS BANNERS;
 DROP TABLE IF EXISTS STUDENT_WORKS;
 DROP TABLE IF EXISTS SUSPENSION;
@@ -11,9 +12,10 @@ DROP TABLE IF EXISTS PAYMENTS;
 DROP TABLE IF EXISTS EVENT_ATTENDANCE;
 DROP TABLE IF EXISTS WAITLIST;
 DROP TABLE IF EXISTS SESSION_REGISTRATIONS;
-DROP TABLE IF EXISTS EVENT_SESSIONS;
-DROP TABLE IF EXISTS EVENT_ENROLLMENTS;
-DROP TABLE IF EXISTS EVENTS;
+DROP TABLE IF EXISTS EVENT_SESSIONS CASCADE;
+DROP TABLE IF EXISTS EVENT_FINANCIALS CASCADE;
+DROP TABLE IF EXISTS EVENT_ENROLLMENTS CASCADE;
+DROP TABLE IF EXISTS EVENTS CASCADE;
 DROP TABLE IF EXISTS NOTIFICATIONS;
 DROP TABLE IF EXISTS NOTICES;
 DROP TABLE IF EXISTS HOLIDAYS;
@@ -81,6 +83,13 @@ CREATE TABLE IF NOT EXISTS EVENTS (
     location VARCHAR(100),
     status VARCHAR(50) DEFAULT 'SCHEDULED',
     room_cost INT,
+    promotion_cost DECIMAL(12,2) DEFAULT 0,
+    misc_cost DECIMAL(12,2) DEFAULT 0,
+    salary_cost DECIMAL(12,2) DEFAULT 0,
+    freight_cost DECIMAL(12,2) DEFAULT 0,
+    utilities_cost DECIMAL(12,2) DEFAULT 0,
+    telecom_cost DECIMAL(12,2) DEFAULT 0,
+    cog_cost DECIMAL(12,2) DEFAULT 0,
     speaker_id BIGINT,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (event_id),
@@ -88,6 +97,21 @@ CREATE TABLE IF NOT EXISTS EVENTS (
     CONSTRAINT CHKTYPE CHECK (type IN ('CLASS', 'SEMINAR')),
     CONSTRAINT CHKSTATUS_EVENTS CHECK (status IN ('SCHEDULED', 'CANCELLED', 'OPEN'))
 );
+
+CREATE TABLE IF NOT EXISTS EVENT_FINANCIALS (
+    event_id BIGINT PRIMARY KEY,
+    room_cost DECIMAL(12,2) DEFAULT 0,
+    promotion_cost DECIMAL(12,2) DEFAULT 0,
+    misc_cost DECIMAL(12,2) DEFAULT 0,
+    salary_cost DECIMAL(12,2) DEFAULT 0,
+    freight_cost DECIMAL(12,2) DEFAULT 0,
+    telecom_cost DECIMAL(12,2) DEFAULT 0,
+    cog_cost DECIMAL(12,2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_event_financial_event FOREIGN KEY (event_id) REFERENCES EVENTS(event_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_event_financials_updated_at ON EVENT_FINANCIALS(updated_at);
 
 CREATE TABLE IF NOT EXISTS EVENT_ENROLLMENTS (
     enrollment_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
@@ -355,12 +379,38 @@ INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, sourc
 ('50032', 'password', 'MEMBER', '曾志強', '79999999', 'zeng.zhiqiang@email.com', 'qr_zeng_zhiqiang', '網頁', 50020, 'Sales D', 'active'),
 ('50033', 'password', 'MEMBER', '彭雅雯', '80000000', 'peng.yawen@email.com', 'qr_peng_yawen', 'Facebook', 50009, 'Sales B', 'new,trial');
 
-INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
-('101', 10000, 'CLASS', '客戶關係管理入門', '客戶關係管理系統的基礎介紹課程', '2024-07-01 10:00:00', '2026-07-01 12:00:00', 60, 20, 'Room 101', 'OPEN', 200, 50009),
-('102', NULL, 'SEMINAR', '進階銷售技巧講座', '深入探討高效銷售策略的講座', '2026-07-05 14:00:00', '2026-07-05 16:00:00', 100, 100, 'Zoom', 'OPEN', 500, 50009),
-('103', 8000, 'CLASS', 'Python 基礎課程', '從零開始學習 Python 程式設計', '2026-08-10 09:00:00', '2026-08-10 17:00:00', 30, 15, 'Room 201', 'SCHEDULED', 300, 50009),
-('104', NULL, 'SEMINAR', '數位行銷趨勢分享會2024', '最新數位行銷趨勢與案例分享', '2024-08-20 14:00:00', '2024-08-20 17:00:00', 100, 50, 'Main Hall', 'CANCELLED', 500, 50009),
-('105', NULL, 'SEMINAR', '數位行銷趨勢分享會2026', '最新數位行銷趨勢與案例分享', '2026-08-20 14:00:00', '2026-08-20 17:00:00', 100, 50, 'Main Hall', 'OPEN', 500, 50009);
+INSERT INTO EVENTS (
+    event_id, price, type, event_name, description, 
+    datetime_start, datetime_end, capacity, remaining_seats, 
+    location, status, room_cost, 
+    promotion_cost, misc_cost, salary_cost, freight_cost, utilities_cost, telecom_cost, cog_cost,
+    speaker_id
+) VALUES
+('101', 10000, 'CLASS', '客戶關係管理入門', '客戶關係管理系統的基礎介紹課程', 
+ '2024-07-01 10:00:00', '2026-07-01 12:00:00', 60, 20, 
+ 'Room 101', 'OPEN', 200, 
+ 1500, 500, 8000, 200, 300, 150, 4000,
+ 50009),
+('102', NULL, 'SEMINAR', '進階銷售技巧講座', '深入探討高效銷售策略的講座', 
+ '2026-07-05 14:00:00', '2026-07-05 16:00:00', 100, 100, 
+ 'Zoom', 'OPEN', 500, 
+ 1000, 200, 5000, 0, 100, 50, 1000,
+ 50009),
+('103', 8000, 'CLASS', 'Python 基礎課程', '從零開始學習 Python 程式設計', 
+ '2026-08-10 09:00:00', '2026-08-10 17:00:00', 30, 15, 
+ 'Room 201', 'SCHEDULED', 300, 
+ 500, 100, 3000, 0, 150, 80, 2000,
+ 50009),
+('104', NULL, 'SEMINAR', '數位行銷趨勢分享會2024', '最新數位行銷趨勢與案例分享', 
+ '2024-08-20 14:00:00', '2024-08-20 17:00:00', 100, 50, 
+ 'Main Hall', 'CANCELLED', 500, 
+ 0, 0, 0, 0, 0, 0, 0,
+ 50009),
+('105', NULL, 'SEMINAR', '數位行銷趨勢分享會2026', '最新數位行銷趨勢與案例分享', 
+ '2026-08-20 14:00:00', '2026-08-20 17:00:00', 100, 50, 
+ 'Main Hall', 'OPEN', 500, 
+ 800, 150, 4000, 50, 120, 60, 1500,
+ 50009);
 
 
 INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datetime_start, datetime_end, created_by_id, remaining_seats, round) VALUES

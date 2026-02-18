@@ -1,376 +1,114 @@
 import React, { useState } from 'react';
-import { tableStyle, thTdStyle } from '../../styles/TableStyles';
-import { commonSelectStyle } from '../../styles/SelectStyles';
+import AllCustomerReport from '../../components/report/AllCustomerReport';
+import CourseInfoSummary from '../../components/report/CourseInfoSummary';
+import MonthlyPromotionReport from '../../components/report/MonthlyPromotionReport';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 
 const Reports = () => {
-	const [activeTab, setActiveTab] = useState(1);
-	const [expandedGroup, setExpandedGroup] = useState(null);
-	const [selectedCourse, setSelectedCourse] = useState(null);
-	const [selectedMonth, setSelectedMonth] = useState(null);
+    // view state: 'menu' | 'allCustomers' | 'courseGroupMenu' | 'courseInfoSummary' | 'monthlyPromotionReport'
+    const [view, setView] = useState('menu');
 
-	// Mock data for section ①
-	const allCustomersData = [
-		{ id: 1, name: 'XXXX', phone: 'XXXX', email: 'XXXX', course: 'XXXX', source: 'XXXX', joinDate: 'XXXX', sales: 'XXXX' },
-		{ id: 2, name: 'XXXX', phone: 'XXXX', email: 'XXXX', course: 'XXXX', source: 'XXXX', joinDate: 'XXXX', sales: 'XXXX' }
-	];
+    const cardStyle = {
+        padding: '40px',
+        background: '#ffffff',
+        borderRadius: '12px',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        cursor: 'pointer',
+        textAlign: 'center',
+        fontSize: '1.4rem',
+        fontWeight: '600',
+        color: '#333',
+        border: '1px solid #e0e0e0',
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '200px'
+    };
 
-	// Mock data for section ②
-	const courseGroups = ['XXXX', 'XXXX', 'XXXX', 'XXXX', 'XXXX'];
-	
-	const sessionInfoData = [
-		{ id: 1, date: 'XXXX', time: 'XXXX', location: 'XXXX', rentalCost: 'XXXX', type: 'XXXX' },
-		{ id: 2, date: 'XXXX', time: 'XXXX', location: 'XXXX', rentalCost: 'XXXX', type: 'XXXX' }
-	];
+    const hoverHandlers = {
+        onMouseEnter: (e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 8px 15px rgba(0,0,0,0.15)';
+        },
+        onMouseLeave: (e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+        }
+    };
 
-	const promotionExpenseData = [
-		{ month: 'XXXX', amount: 'XXXX', receipt: 'XXXX' },
-		{ month: 'XXXX', amount: 'XXXX', receipt: 'XXXX' }
-	];
+    return (
+        <PageContainer>
+            <PageHeader title="報表中心 (Report Center)" />
+            
+            {view === 'menu' && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '30px', padding: '30px' }}>
+                    
+                    {/* All Customer Data List Button */}
+                    <div 
+                        onClick={() => setView('allCustomers')}
+                        style={cardStyle}
+                        {...hoverHandlers}
+                    >
+                        <span style={{ fontSize: '3rem', marginBottom: '15px' }}>👥</span>
+                        全客戶資料名單
+                    </div>
 
-	const courseCustomersData = [
-		{ paymentDate: 'XXXX', finalDate: 'XXXX', name: 'XXXX', amount: 'XXXX', method: 'XXXX', phone: 'XXXX', findMonth: 'XXXX', referrer: 'XXXX', sales: 'XXXX', receiptIssued: 'XXXX', certificateIssued: 'XXXX' },
-		{ paymentDate: 'XXXX', finalDate: 'XXXX', name: 'XXXX', amount: 'XXXX', method: 'XXXX', phone: 'XXXX', findMonth: 'XXXX', referrer: 'XXXX', sales: 'XXXX', receiptIssued: 'XXXX', certificateIssued: 'XXXX' }
-	];
+                    <div
+                        onClick={() => setView('courseGroupMenu')}
+                        style={cardStyle}
+                        {...hoverHandlers}
+                    >
+                        <span style={{ fontSize: '3rem', marginBottom: '15px' }}>📚</span>
+                        課程分組
+                    </div>
 
-	// Mock data for section ③
-	const attendedSeminarData = [
-		{ name: 'XXXX', phone: 'XXXX', email: 'XXXX', attendDates: 'XXXX' },
-		{ name: 'XXXX', phone: 'XXXX', email: 'XXXX', attendDates: 'XXXX' }
-	];
+                    {/* Placeholder for future specific data buttons linked via event_id */}
+                    {/* 
+                    <div style={{...placeholderStyle}}>
+                        其他報表...
+                    </div> 
+                    */}
+                </div>
+            )}
 
-	const notAttendedData = [
-		{ name: 'XXXX', phone: 'XXXX', email: 'XXXX' },
-		{ name: 'XXXX', phone: 'XXXX', email: 'XXXX' }
-	];
+            {view === 'allCustomers' && (
+                <AllCustomerReport onBack={() => setView('menu')} />
+            )}
 
-	// Mock data for section ④
-	const financialReportData = [
-		{ indicator: '當月收生', value: 'XXXX' },
-		{ indicator: '銷售總額（按找數月）', value: 'XXXX' },
-		{ indicator: '支付手續費', value: 'XXXX' },
-		{ indicator: '當月實收', value: 'XXXX' },
-		{ indicator: '介紹費', value: 'XXXX' },
-		{ indicator: '宣傳費', value: 'XXXX' },
-		{ indicator: '租場費', value: 'XXXX' },
-		{ indicator: '銷售佣金分成', value: 'XXXX' },
-		{ indicator: '日曆成本', value: 'XXXX' },
-		{ indicator: '雜費', value: 'XXXX' },
-		{ indicator: '直接支出', value: 'XXXX' },
-		{ indicator: 'GP（毛利潤）', value: 'XXXX' },
-		{ indicator: 'GP%', value: 'XXXX' }
-	];
+            {view === 'courseGroupMenu' && (
+                <div style={{ padding: '20px' }}>
+                    <button onClick={() => setView('menu')} style={{ marginBottom: '16px' }}>返回報表中心</button>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+                        <div style={cardStyle} {...hoverHandlers} onClick={() => setView('courseInfoSummary')}>
+                            <span style={{ fontSize: '2.6rem', marginBottom: '12px' }}>🗂️</span>
+                            1. 講座及課堂資訊總表
+                            <span style={{ marginTop: '8px', fontSize: '0.95rem', color: '#666' }}>日期 / 時間 / 地點 / 租場費用</span>
+                        </div>
+                        <div style={{ ...cardStyle }} {...hoverHandlers} onClick={() => setView('monthlyPromotionReport')}>
+                            <span style={{ fontSize: '2.6rem', marginBottom: '12px' }}>🧾</span>
+                            2. 宣傳費 (Monthly Promotion)
+                            <span style={{ marginTop: '8px', fontSize: '0.95rem', color: '#666' }}>按月輸入金額並上載單據，列表＋彙總</span>
+                        </div>
+                        <div style={{ ...cardStyle, cursor: 'not-allowed', opacity: 0.6 }}>
+                            <span style={{ fontSize: '2.6rem', marginBottom: '12px' }}>📊</span>
+                            3. (開發中)
+                            <span style={{ marginTop: '8px', fontSize: '0.95rem', color: '#666' }}>敬請期待</span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-	const downloadCSV = (data, filename) => {
-		const csv = [Object.keys(data[0]).join(','), ...data.map(row => Object.values(row).join(','))].join('\n');
-		const blob = new Blob([csv], { type: 'text/csv' });
-		const url = window.URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = filename;
-		a.click();
-	};
+            {view === 'courseInfoSummary' && (
+                <CourseInfoSummary onBack={() => setView('courseGroupMenu')} />
+            )}
 
-	return (
-		<PageContainer>
-			<PageHeader title="報表中心 (Admin)" />
-
-			{/* Section ① */}
-			<section>
-				<h2>全客戶資料名單</h2>
-				<div>
-					<label>課程篩選: </label>
-					<select style={commonSelectStyle}>
-						<option>全部</option>
-						<option>AI 課</option>
-						<option>AI Agent 課</option>
-					</select>
-					<label>來源: </label>
-					<select style={commonSelectStyle}>
-						<option>全部</option>
-						<option>介紹</option>
-						<option>廣告</option>
-					</select>
-					<label>期間: </label>
-					<input type="date" />
-					到
-					<input type="date" />
-					<label>銷售: </label>
-					<select style={commonSelectStyle}>
-						<option>全部</option>
-						<option>銷售林</option>
-						<option>經理張</option>
-					</select>
-					<button onClick={() => downloadCSV(allCustomersData, '全客戶資料.csv')}>CSV</button>
-					<button onClick={() => downloadCSV(allCustomersData, '全客戶資料.xlsx')}>XLSX</button>
-				</div>
-				<table style={tableStyle}>
-					<thead>
-						<tr>
-							<th style={thTdStyle}>姓名</th>
-							<th style={thTdStyle}>電話</th>
-							<th style={thTdStyle}>Email</th>
-							<th style={thTdStyle}>課程</th>
-							<th style={thTdStyle}>來源</th>
-							<th style={thTdStyle}>加入日期</th>
-							<th style={thTdStyle}>負責銷售</th>
-						</tr>
-					</thead>
-					<tbody>
-						{allCustomersData.map((row) => (
-							<tr key={row.id}>
-								<td style={thTdStyle}>{row.name}</td>
-								<td style={thTdStyle}>{row.phone}</td>
-								<td style={thTdStyle}>{row.email}</td>
-								<td style={thTdStyle}>{row.course}</td>
-								<td style={thTdStyle}>{row.source}</td>
-								<td style={thTdStyle}>{row.joinDate}</td>
-								<td style={thTdStyle}>{row.sales}</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</section>
-
-			{/* Section ② */}
-			<section>
-				<h2>課程分組</h2>
-				<div>
-					{courseGroups.map((group) => (
-						<div key={group}>
-							<button onClick={() => setExpandedGroup(expandedGroup === group ? null : group)}>
-								{group} {expandedGroup === group ? '▼' : '▶'}
-							</button>
-						</div>
-					))}
-				</div>
-
-				{expandedGroup && (
-					<div>
-						<h3>{expandedGroup}</h3>
-						<div>
-							<button onClick={() => setActiveTab(201)}>講座及課堂資訊總表</button>
-							<button onClick={() => setActiveTab(202)}>宣傳費</button>
-							<button onClick={() => setActiveTab(203)}>課程的客戶資料名單</button>
-						</div>
-
-						{activeTab === 201 && (
-							<table style={tableStyle}>
-								<thead>
-									<tr>
-										<th style={thTdStyle}>日期</th>
-										<th style={thTdStyle}>時間</th>
-										<th style={thTdStyle}>地點</th>
-										<th style={thTdStyle}>租場費用</th>
-										<th style={thTdStyle}>費用類型</th>
-									</tr>
-								</thead>
-								<tbody>
-									{sessionInfoData.map((row) => (
-										<tr key={row.id}>
-											<td style={thTdStyle}>{row.date}</td>
-											<td style={thTdStyle}>{row.time}</td>
-											<td style={thTdStyle}>{row.location}</td>
-											<td style={thTdStyle}>${row.rentalCost}</td>
-											<td style={thTdStyle}>{row.type}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						)}
-
-						{activeTab === 202 && (
-							<table style={tableStyle}>
-								<thead>
-									<tr>
-										<th style={thTdStyle}>月份</th>
-										<th style={thTdStyle}>金額</th>
-										<th style={thTdStyle}>單據</th>
-									</tr>
-								</thead>
-								<tbody>
-									{promotionExpenseData.map((row, idx) => (
-										<tr key={idx}>
-											<td style={thTdStyle}>{row.month}</td>
-											<td style={thTdStyle}>¥{row.amount}</td>
-											<td style={thTdStyle}><a href="#">{row.receipt}</a></td>
-										</tr>
-									))}
-								</tbody>
-								<tfoot>
-									<tr>
-										<td style={thTdStyle}>合計</td>
-										<td style={thTdStyle}>${promotionExpenseData.reduce((sum, r) => sum + r.amount, 0)}</td>
-										<td style={thTdStyle}></td>
-									</tr>
-								</tfoot>
-							</table>
-						)}
-
-						{activeTab === 203 && (
-							<table style={tableStyle}>
-								<thead>
-									<tr>
-										<th style={thTdStyle}>付款日</th>
-										<th style={thTdStyle}>尾款日</th>
-										<th style={thTdStyle}>姓名</th>
-										<th style={thTdStyle}>付款金額</th>
-										<th style={thTdStyle}>付款手段</th>
-										<th style={thTdStyle}>電話</th>
-										<th style={thTdStyle}>找數月</th>
-										<th style={thTdStyle}>介紹人</th>
-										<th style={thTdStyle}>負責銷售</th>
-										<th style={thTdStyle}>收據是否已出</th>
-										<th style={thTdStyle}>證書是否已出</th>
-									</tr>
-								</thead>
-								<tbody>
-									{courseCustomersData.map((row, idx) => (
-										<tr key={idx}>
-											<td style={thTdStyle}>{row.paymentDate}</td>
-											<td style={thTdStyle}>{row.finalDate}</td>
-											<td style={thTdStyle}>{row.name}</td>
-											<td style={thTdStyle}>${row.amount}</td>
-											<td style={thTdStyle}>{row.method}</td>
-											<td style={thTdStyle}>{row.phone}</td>
-											<td style={thTdStyle}>{row.findMonth}</td>
-											<td style={thTdStyle}>{row.referrer}</td>
-											<td style={thTdStyle}>{row.sales}</td>
-											<td style={thTdStyle}>{row.receiptIssued}</td>
-											<td style={thTdStyle}>{row.certificateIssued}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						)}
-					</div>
-				)}
-			</section>
-
-			{/* Section ③ */}
-			<section>
-				<h2>未付款客人名單</h2>
-				<div>
-					<button onClick={() => setActiveTab(301)}>出席過講座名單</button>
-					<button onClick={() => setActiveTab(302)}>未出席講座名單</button>
-				</div>
-
-				{activeTab === 301 && (
-					<div>
-						<h3>出席過講座名單</h3>
-						<p>課程篩選: 
-							<select style={commonSelectStyle}>
-								<option>全部</option>
-								<option>AI 課</option>
-								<option>AI Agent 課</option>
-							</select>
-						</p>
-						<table style={tableStyle}>
-							<thead>
-								<tr>
-									<th style={thTdStyle}>姓名</th>
-									<th style={thTdStyle}>電話</th>
-									<th style={thTdStyle}>Email</th>
-									<th style={thTdStyle}>出席日期清單</th>
-								</tr>
-							</thead>
-							<tbody>
-								{attendedSeminarData.map((row, idx) => (
-									<tr key={idx}>
-										<td style={thTdStyle}>{row.name}</td>
-										<td style={thTdStyle}>{row.phone}</td>
-										<td style={thTdStyle}>{row.email}</td>
-										<td style={thTdStyle}>{row.attendDates}</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				)}
-
-				{activeTab === 302 && (
-					<div>
-						<h3>未出席講座名單</h3>
-						<p>課程篩選: 
-							<select style={commonSelectStyle}>
-								<option>全部</option>
-								<option>AI 課</option>
-								<option>AI Agent 課</option>
-							</select>
-						</p>
-						<table style={tableStyle}>
-							<thead>
-								<tr>
-									<th style={thTdStyle}>姓名</th>
-									<th style={thTdStyle}>電話</th>
-									<th style={thTdStyle}>Email</th>
-								</tr>
-							</thead>
-							<tbody>
-								{notAttendedData.map((row, idx) => (
-									<tr key={idx}>
-										<td style={thTdStyle}>{row.name}</td>
-										<td style={thTdStyle}>{row.phone}</td>
-										<td style={thTdStyle}>{row.email}</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				)}
-			</section>
-
-			{/* Section ④ */}
-			<section>
-				<h2>財務報表</h2>
-				<div>
-					<label>選擇課程: </label>
-					<select 
-						onChange={(e) => setSelectedCourse(e.target.value)}
-						style={commonSelectStyle}
-					>
-						<option>請選擇</option>
-						<option>AI 課</option>
-						<option>AI Agent 課</option>
-						<option>小紅書</option>
-						<option>創業</option>
-						<option>AI 動畫</option>
-					</select>
-					<label>選擇月份: </label>
-					<input 
-						type="month" 
-						onChange={(e) => setSelectedMonth(e.target.value)}
-					/>
-				</div>
-
-				{selectedCourse && selectedMonth && (
-					<div>
-						<p>找數月口徑：以實際上課月份為準；學生至少出席一堂，該月即為其找數月。</p>
-						<table style={tableStyle}>
-							<thead>
-								<tr>
-									<th style={thTdStyle}>指標</th>
-									<th style={thTdStyle}>數值</th>
-								</tr>
-							</thead>
-							<tbody>
-								{financialReportData.map((row, idx) => (
-									<tr key={idx}>
-										<td style={thTdStyle}>{row.indicator}</td>
-										<td style={thTdStyle}>{row.value}</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				)}
-
-				{(!selectedCourse || !selectedMonth) && (
-					<p>請選擇課程和月份以查看財務報表</p>
-				)}
-			</section>
-		</PageContainer>
-	);
+            {view === 'monthlyPromotionReport' && (
+                <MonthlyPromotionReport onBack={() => setView('courseGroupMenu')} />
+            )}
+        </PageContainer>
+    );
 };
 
 export default Reports;

@@ -67,6 +67,10 @@ const eventSessionsRouter = require('./handleAPI/session');
 console.log('Event sessions router loaded');
 app.use('/api', eventSessionsRouter); // Use the event sessions router
 
+const reportsRouter = require('./handleAPI/reports');
+console.log('Reports router loaded');
+app.use('/api', reportsRouter); // Use the reports router
+
 const holidaysRouter = require('./handleAPI/holidays');
 console.log('Holidays router loaded');
 app.use('/api', holidaysRouter); // Use the holidays router
@@ -74,6 +78,10 @@ app.use('/api', holidaysRouter); // Use the holidays router
 const enrollmentRouter = require('./handleAPI/enrollment');
 console.log('Enrollment router loaded');
 app.use('/api', enrollmentRouter); // Use the enrollment router
+
+app.use('/uploads', express.static('uploads'));
+console.log('Uploads served');
+
 
 const paymentsRouter = require('./handleAPI/payments');
 console.log('Payments router loaded');

@@ -233,8 +233,9 @@ const EventView = () => {
           <>
       <div><strong>房間費用:</strong> {event.room_cost == null || Number(event.room_cost) === 0
     ? 'N/A'
-    : `HK$ ${event.room_cost}`}</div>
-            <div><strong>建立時間:</strong> {formatDateTimeForDisplay(event.create_time)|| 'N/A'}</div>
+    : `HK$ ${event.room_cost}`}</div>      <div><strong>宣传费:</strong> {event.promotion_cost == null || Number(event.promotion_cost) === 0
+    ? 'N/A'
+    : `HK$ ${event.promotion_cost}`}</div>            <div><strong>建立時間:</strong> {formatDateTimeForDisplay(event.create_time)|| 'N/A'}</div>
           </>
         )}
       </div>
