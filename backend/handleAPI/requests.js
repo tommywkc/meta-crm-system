@@ -518,7 +518,7 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       }
     }
 
-    if (incomingStatus === 'APPROVED' && (existing.request_type || '').toUpperCase() === 'MAKEUP') {
+    if (incomingStatus === 'APPROVED' && (((existing.request_type || '').toUpperCase() === 'MAKEUP') || (existing.request_type || '').toUpperCase() === 'RETAKE')) {
       const newSessionId = existing.new_session_id;
       const userId = existing.user_id;
 
