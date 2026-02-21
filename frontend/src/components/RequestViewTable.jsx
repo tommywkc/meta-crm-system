@@ -54,6 +54,7 @@ const formatValue = (value) => {
   return JSON.stringify(value);
 };
 
+
 const RequestViewTable = ({ request }) => {
   const fieldRows = useMemo(() => {
     if (!request) return [];

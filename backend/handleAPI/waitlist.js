@@ -8,16 +8,7 @@ const { findByEventId } = require('../dao/eventsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 const { findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
 
-const parseWaitlist = (raw) => {
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw;
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    return [];
-  }
-};
+const parseWaitlist = (raw) => waitlistDao.parseWaitlist(raw);
 
 router.get('/waitlist', authMiddleware, roleMiddleware(['admin', 'sales', 'leader']), async (req, res) => {
   try {
@@ -40,14 +31,17 @@ router.get('/waitlist', authMiddleware, roleMiddleware(['admin', 'sales', 'leade
 
     for (const row of rows) {
       const list = parseWaitlist(row.waitlist);
-      const userIds = list.map((v) => parseInt(v, 10)).filter((v) => !Number.isNaN(v));
+      const userIds = list
+        .map((v) => parseInt(v?.user_id, 10))
+        .filter((v) => !Number.isNaN(v));
       const users = await listByUserIds(userIds);
       const userMap = new Map((users || []).map((u) => [String(u.user_id), u]));
 
       const session = await findBySessionId(row.session_id);
       const event = session?.event_id ? await findByEventId(session.event_id) : null;
 
-      list.forEach((userId, idx) => {
+      list.forEach((entry, idx) => {
+        const userId = entry?.user_id;
         const user = userMap.get(String(userId)) || null;
         results.push({
           wait_id: row.wait_id,
@@ -63,6 +57,7 @@ router.get('/waitlist', authMiddleware, roleMiddleware(['admin', 'sales', 'leade
           role: user?.role || null,
           mobile: user?.mobile || null,
           email: user?.email || null,
+          priority: entry?.priority ?? null,
           status: 'WAITLIST',
         });
       });
@@ -122,7 +117,7 @@ router.post('/waitlist/apply', authMiddleware, roleMiddleware(['admin', 'sales']
 
     const existingWaitlist = await waitlistDao.findBySessionId(sessionId);
     const currentList = parseWaitlist(existingWaitlist?.waitlist);
-    if (currentList.map((v) => String(v)).includes(String(userId))) {
+    if (currentList.map((v) => String(v?.user_id)).includes(String(userId))) {
       return res.status(400).json({ message: '使用者已在候補名單中' });
     }
 
@@ -131,7 +126,7 @@ router.post('/waitlist/apply', authMiddleware, roleMiddleware(['admin', 'sales']
       return res.status(400).json({ message: '此場次仍有名額，請直接報名' });
     }
 
-    const updated = await waitlistDao.appendUserToWaitlist(sessionId, userId);
+    const updated = await waitlistDao.appendUserToWaitlist(sessionId, userId, 1);
     return res.status(201).json({ message: '已加入候補名單', waitlist: updated });
   } catch (error) {
     console.error('Apply waitlist failed:', error);
@@ -159,7 +154,7 @@ router.put('/waitlist/rank', authMiddleware, roleMiddleware(['admin']), async (r
     }
 
     const list = parseWaitlist(row.waitlist);
-    const strList = list.map((v) => String(v));
+    const strList = list.map((v) => String(v?.user_id));
     const idx = strList.indexOf(String(userId));
     if (idx === -1) {
       return res.status(404).json({ message: '使用者不在候補名單中' });

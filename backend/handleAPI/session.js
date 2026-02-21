@@ -634,7 +634,7 @@ router.delete('/session-registrations/:id', authMiddleware, async (req, res) => 
       const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
 
       if (Array.isArray(list) && list.length > 0) {
-        const nextUserId = parseInt(list[0], 10);
+        const nextUserId = parseInt(list[0]?.user_id ?? list[0], 10);
         if (!Number.isNaN(nextUserId)) {
           const existing = await findBySessionAndUser(sessionId, nextUserId);
           if (!existing) {
