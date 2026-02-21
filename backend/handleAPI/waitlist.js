@@ -3,7 +3,7 @@ const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const waitlistDao = require('../dao/waitlistDao');
 const { listByUserIds } = require('../dao/usersDao');
-const { findBySessionId } = require('../dao/eventSessionsDao');
+const { findBySessionId, listByEventId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 const { findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
@@ -106,6 +106,18 @@ router.post('/waitlist/apply', authMiddleware, roleMiddleware(['admin', 'sales']
     const existingRegistration = await findBySessionAndUser(sessionId, userId);
     if (existingRegistration) {
       return res.status(400).json({ message: '使用者已報名此場次' });
+    }
+
+    // 若同一活動、同一堂別已報名其他輪次，請改走補堂/覆課流程
+    const sameEventSessions = await listByEventId(eventId);
+    const sameNameSessions = (sameEventSessions || []).filter(
+      (s) => s?.session_name === session.session_name && String(s.session_id) !== String(sessionId)
+    );
+    for (const s of sameNameSessions) {
+      const existingSameName = await findBySessionAndUser(s.session_id, userId);
+      if (existingSameName) {
+        return res.status(400).json({ message: '使用者已報名同活動其他輪次，請改用補堂或覆課申請' });
+      }
     }
 
     const existingWaitlist = await waitlistDao.findBySessionId(sessionId);

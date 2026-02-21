@@ -204,6 +204,18 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: '使用者尚未報名此場次所屬的活動，無法進行場次報名' });
     }
 
+    // 若同一活動、同一堂別已報名其他輪次，請改走補堂/覆課流程
+    const sameEventSessions = await listByEventId(eventId);
+    const sameNameSessions = (sameEventSessions || []).filter(
+      (s) => s?.session_name === session.session_name && String(s.session_id) !== String(sessionId)
+    );
+    for (const s of sameNameSessions) {
+      const existingSameName = await findBySessionAndUser(s.session_id, userId);
+      if (existingSameName) {
+        return res.status(400).json({ message: '此會員已報名同活動其他輪次，請改用補堂或覆課申請' });
+      }
+    }
+
     // Prevent duplicate registrations for the same session and user
     const existing = await findBySessionAndUser(sessionId, userId);
     if (existing) {
