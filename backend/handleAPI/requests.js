@@ -12,7 +12,7 @@ const {
   updateRequestById,
 } = require('../dao/requestsDao');
 const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration } = require('../dao/sessionRegistrationsDao');
-const { findBySessionId, updateSessionById } = require('../dao/eventSessionsDao');
+const { findBySessionId, updateSessionById, listByEventId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
 const { createSuspension } = require('../dao/suspensionDao');
@@ -169,6 +169,48 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       const existingTarget = await findBySessionAndUser(targetSessionIdNum, memberIdNum);
       if (existingTarget) {
         return res.status(400).json({ message: '此會員已報名目標場次，無法提交補堂／覆課申請' });
+      }
+    }
+
+    if (normalizedType === 'MAKEUP' && targetSessionIdNum) {
+      const targetSession = await findBySessionId(targetSessionIdNum);
+      if (targetSession?.event_id && targetSession?.session_name) {
+        const sameEventSessions = await listByEventId(targetSession.event_id);
+        let existingSameName = null;
+        for (const session of sameEventSessions || []) {
+          if (!session?.session_id) continue;
+          if (String(session.session_id) === String(targetSessionIdNum)) continue;
+          if (session.session_name !== targetSession.session_name) continue;
+          const reg = await findBySessionAndUser(session.session_id, memberIdNum);
+          if (reg) {
+            existingSameName = session.session_id;
+            break;
+          }
+        }
+
+        if (existingSameName) {
+          return res.status(400).json({ message: '此會員已報名目標活動其他場次，無法提交補堂申請，請選擇覆課申請' });
+        }
+
+        const userRequests = await listByUserId(memberIdNum);
+        const hasPendingMakeup = (userRequests || []).some((req) => {
+          if ((req?.status || '').toUpperCase() !== 'PENDING') return false;
+          if ((req?.request_type || '').toUpperCase() !== 'MAKEUP') return false;
+          if (!req?.new_session_id) return false;
+          return String(req.new_session_id) !== String(targetSessionIdNum);
+        });
+
+        if (hasPendingMakeup) {
+          for (const req of userRequests || []) {
+            if ((req?.status || '').toUpperCase() !== 'PENDING') continue;
+            if ((req?.request_type || '').toUpperCase() !== 'MAKEUP') continue;
+            if (!req?.new_session_id || String(req.new_session_id) === String(targetSessionIdNum)) continue;
+            const session = await findBySessionId(req.new_session_id);
+            if (session?.event_id === targetSession.event_id && session?.session_name === targetSession.session_name) {
+              return res.status(400).json({ message: '此會員已有目標活動其他場次的補堂申請，無法再提交其他場次' });
+            }
+          }
+        }
       }
     }
 
