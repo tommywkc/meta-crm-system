@@ -518,6 +518,41 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       }
     }
 
+    if (incomingStatus === 'APPROVED' && (existing.request_type || '').toUpperCase() === 'MAKEUP') {
+      const newSessionId = existing.new_session_id;
+      const userId = existing.user_id;
+
+      if (newSessionId && userId) {
+        const alreadyRegistered = await findBySessionAndUser(newSessionId, userId);
+        if (!alreadyRegistered) {
+          const targetSession = await findBySessionId(newSessionId);
+          if (targetSession) {
+            const remainingSeats = targetSession.remaining_seats != null ? Number(targetSession.remaining_seats) : null;
+            if (remainingSeats != null && !Number.isNaN(remainingSeats)) {
+              if (remainingSeats <= 0) {
+                await waitlistDao.appendUserToWaitlist(newSessionId, userId);
+              } else {
+                await createRegistration({
+                  session_id: newSessionId,
+                  user_id: userId,
+                  channel: 'WEB',
+                  registration_by_id: req.user?.sub || null,
+                });
+                await updateSessionById(newSessionId, { remaining_seats: remainingSeats - 1 });
+              }
+            } else {
+              await createRegistration({
+                session_id: newSessionId,
+                user_id: userId,
+                channel: 'WEB',
+                registration_by_id: req.user?.sub || null,
+              });
+            }
+          }
+        }
+      }
+    }
+
     
 
     if (incomingStatus === 'APPROVED') {
