@@ -48,9 +48,35 @@ async function appendUserToWaitlist(session_id, user_id, priority = null) {
   const existing = await findBySessionId(session_id);
   const currentList = existing ? parseWaitlist(existing.waitlist) : [];
   const normalized = currentList.map((v) => String(v?.user_id));
-  const nextList = normalized.includes(String(user_id))
-    ? currentList
-    : [...currentList, { user_id, priority }];
+  if (normalized.includes(String(user_id))) {
+    const nextRaw = JSON.stringify(currentList);
+    if (!existing) {
+      return createWaitlist({ session_id, waitlist: nextRaw });
+    }
+    return updateBySessionId(session_id, nextRaw);
+  }
+
+  const nextEntry = { user_id, priority };
+  const normalizedPriority = (value) => {
+    if (value === 1 || value === 2 || value === 3) return value;
+    return 3;
+  };
+
+  const targetPriority = normalizedPriority(priority);
+  let insertIndex = currentList.length;
+
+  if (targetPriority === 1) {
+    insertIndex = currentList.findIndex((entry) => normalizedPriority(entry?.priority) >= 2);
+  } else if (targetPriority === 2) {
+    insertIndex = currentList.findIndex((entry) => normalizedPriority(entry?.priority) >= 3);
+  }
+
+  if (insertIndex === -1) {
+    insertIndex = currentList.length;
+  }
+
+  const nextList = [...currentList];
+  nextList.splice(insertIndex, 0, nextEntry);
 
   const nextRaw = JSON.stringify(nextList);
   if (!existing) {

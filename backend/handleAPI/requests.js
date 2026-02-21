@@ -248,6 +248,28 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       }
     }
 
+    const requiresPriorSameName = (normalizedType === 'MAKEUP' || normalizedType === 'RETAKE') && targetSessionIdNum;
+    if (requiresPriorSameName) {
+      const targetSession = await findBySessionId(targetSessionIdNum);
+      if (targetSession?.event_id && targetSession?.session_name) {
+        const sameEventSessions = await listByEventId(targetSession.event_id);
+        let hasSameNameRegistration = false;
+        for (const session of sameEventSessions || []) {
+          if (!session?.session_id) continue;
+          if (session.session_name !== targetSession.session_name) continue;
+          const existingReg = await findBySessionAndUser(session.session_id, memberIdNum);
+          if (existingReg) {
+            hasSameNameRegistration = true;
+            break;
+          }
+        }
+
+        if (!hasSameNameRegistration) {
+          return res.status(400).json({ message: '此會員尚未報名同活動其他場次，可以直接在活動頁報名' });
+        }
+      }
+    }
+
     if (normalizedType === 'MAKEUP' && targetSessionIdNum) {
       const targetSession = await findBySessionId(targetSessionIdNum);
       if (targetSession?.event_id && targetSession?.session_name) {
