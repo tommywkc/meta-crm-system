@@ -12,13 +12,87 @@ const {
   updateRequestById,
 } = require('../dao/requestsDao');
 const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration } = require('../dao/sessionRegistrationsDao');
-const { findBySessionId, updateSessionById } = require('../dao/eventSessionsDao');
+const { findBySessionId, updateSessionById, listByEventId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
 const { createSuspension } = require('../dao/suspensionDao');
 const { updateByUserId } = require('../dao/usersDao');
 const { buildHolidaySet, countBusinessDays } = require('../utils/businessDays');
 const waitlistDao = require('../dao/waitlistDao');
+
+const getWaitlistPriority = (requestType, priorityTier = null) => {
+  const type = (requestType || '').toUpperCase();
+  if (type === 'MAKEUP') return 1;
+  if (type === 'RETAKE') {
+    if (priorityTier === 3) return 3;
+    return 2;
+  }
+  return null;
+};
+
+const computeRetakePriorityTier = async (userId, targetSessionId, excludeRequestId = null) => {
+  if (!userId || !targetSessionId) return null;
+  const targetSession = await findBySessionId(targetSessionId);
+  if (!targetSession?.event_id || !targetSession?.session_name) return null;
+
+  const userRequests = await listByUserId(userId);
+  let retakeCount = 0;
+
+  for (const req of userRequests || []) {
+    if ((req?.request_type || '').toUpperCase() !== 'RETAKE') continue;
+    const status = (req?.status || '').toUpperCase();
+    if (status !== 'APPROVED') continue;
+    if (excludeRequestId != null && String(req.request_id) === String(excludeRequestId)) continue;
+    if (!req?.new_session_id) continue;
+
+    const session = await findBySessionId(req.new_session_id);
+    if (session?.event_id === targetSession.event_id && session?.session_name === targetSession.session_name) {
+      retakeCount += 1;
+    }
+  }
+
+  if (retakeCount <= 0) return 2;
+  return 3;
+};
+
+const ensurePriorityTier = async (req) => {
+  if (!req) return req;
+  const typeKey = (req.request_type || '').toUpperCase();
+  if (typeKey !== 'MAKEUP' && typeKey !== 'RETAKE') return req;
+  if (req.priority_tier != null) return req;
+
+  let priority_tier = null;
+  if (typeKey === 'MAKEUP') {
+    priority_tier = 1;
+  } else if (typeKey === 'RETAKE' && req.new_session_id) {
+    priority_tier = await computeRetakePriorityTier(req.user_id, req.new_session_id, req.request_id);
+  }
+
+  if (priority_tier == null) return req;
+
+  const updated = await updateRequestById(req.request_id, { priority_tier });
+  return updated ? { ...req, priority_tier: updated.priority_tier } : { ...req, priority_tier };
+};
+
+const updatePendingRetakePriorities = async (userId, targetSessionId, excludeRequestId = null) => {
+  if (!userId || !targetSessionId) return;
+  const targetSession = await findBySessionId(targetSessionId);
+  if (!targetSession?.event_id || !targetSession?.session_name) return;
+
+  const userRequests = await listByUserId(userId);
+  for (const req of userRequests || []) {
+    if ((req?.request_type || '').toUpperCase() !== 'RETAKE') continue;
+    const status = (req?.status || '').toUpperCase();
+    if (status !== 'PENDING') continue;
+    if (excludeRequestId != null && String(req.request_id) === String(excludeRequestId)) continue;
+    if (!req?.new_session_id) continue;
+
+    const session = await findBySessionId(req.new_session_id);
+    if (session?.event_id === targetSession.event_id && session?.session_name === targetSession.session_name) {
+      await updateRequestById(req.request_id, { priority_tier: 3 });
+    }
+  }
+};
 
 const recalcPendingRequestConflicts = async (userId, excludeRequestId = null) => {
   if (!userId) return;
@@ -93,14 +167,16 @@ const attachConflictDetails = async (requests = []) => {
   if (!Array.isArray(requests) || requests.length === 0) return requests;
 
   const enriched = await Promise.all(requests.map(async (req) => {
-    if (!req?.conflict_id) return req;
-    const conflictSession = await findBySessionId(req.conflict_id);
-    if (!conflictSession) return req;
+    const withPriority = await ensurePriorityTier(req);
+    const sourceReq = withPriority || req;
+    if (!sourceReq?.conflict_id) return sourceReq;
+    const conflictSession = await findBySessionId(sourceReq.conflict_id);
+    if (!conflictSession) return sourceReq;
     const conflictEvent = conflictSession.event_id
       ? await findByEventId(conflictSession.event_id)
       : null;
     return {
-      ...req,
+      ...sourceReq,
       conflict_session_name: conflictSession.session_name || null,
       conflict_session_start: conflictSession.datetime_start || null,
       conflict_session_end: conflictSession.datetime_end || null,
@@ -172,8 +248,79 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       }
     }
 
+    const requiresPriorSameName = (normalizedType === 'MAKEUP' || normalizedType === 'RETAKE') && targetSessionIdNum;
+    if (requiresPriorSameName) {
+      const targetSession = await findBySessionId(targetSessionIdNum);
+      if (targetSession?.event_id && targetSession?.session_name) {
+        const sameEventSessions = await listByEventId(targetSession.event_id);
+        let hasSameNameRegistration = false;
+        for (const session of sameEventSessions || []) {
+          if (!session?.session_id) continue;
+          if (session.session_name !== targetSession.session_name) continue;
+          const existingReg = await findBySessionAndUser(session.session_id, memberIdNum);
+          if (existingReg) {
+            hasSameNameRegistration = true;
+            break;
+          }
+        }
+
+        if (!hasSameNameRegistration) {
+          return res.status(400).json({ message: '此會員尚未報名同活動其他場次，可以直接在活動頁報名' });
+        }
+      }
+    }
+
+    if (normalizedType === 'MAKEUP' && targetSessionIdNum) {
+      const targetSession = await findBySessionId(targetSessionIdNum);
+      if (targetSession?.event_id && targetSession?.session_name) {
+        const sameEventSessions = await listByEventId(targetSession.event_id);
+        let existingSameName = null;
+        for (const session of sameEventSessions || []) {
+          if (!session?.session_id) continue;
+          if (String(session.session_id) === String(targetSessionIdNum)) continue;
+          if (session.session_name !== targetSession.session_name) continue;
+          const reg = await findBySessionAndUser(session.session_id, memberIdNum);
+          if (reg) {
+            existingSameName = session.session_id;
+            break;
+          }
+        }
+
+        if (existingSameName) {
+          return res.status(400).json({ message: '此會員已報名目標活動其他場次，無法提交補堂申請，請選擇覆課申請' });
+        }
+
+        const userRequests = await listByUserId(memberIdNum);
+        const hasPendingMakeup = (userRequests || []).some((req) => {
+          if ((req?.status || '').toUpperCase() !== 'PENDING') return false;
+          if ((req?.request_type || '').toUpperCase() !== 'MAKEUP') return false;
+          if (!req?.new_session_id) return false;
+          return String(req.new_session_id) !== String(targetSessionIdNum);
+        });
+
+        if (hasPendingMakeup) {
+          for (const req of userRequests || []) {
+            if ((req?.status || '').toUpperCase() !== 'PENDING') continue;
+            if ((req?.request_type || '').toUpperCase() !== 'MAKEUP') continue;
+            if (!req?.new_session_id || String(req.new_session_id) === String(targetSessionIdNum)) continue;
+            const session = await findBySessionId(req.new_session_id);
+            if (session?.event_id === targetSession.event_id && session?.session_name === targetSession.session_name) {
+              return res.status(400).json({ message: '此會員已有目標活動其他場次的補堂申請，無法再提交其他場次' });
+            }
+          }
+        }
+      }
+    }
+
     const remarksInput = typeof reason === 'string' ? reason.trim() : '';
     const remarks = remarksInput ? remarksInput.slice(0, 255) : null;
+
+    let priority_tier = null;
+    if (normalizedType === 'MAKEUP') {
+      priority_tier = 1;
+    } else if (normalizedType === 'RETAKE' && targetSessionIdNum) {
+      priority_tier = await computeRetakePriorityTier(memberIdNum, targetSessionIdNum);
+    }
 
     const duplicateOldSessionId = ['RESCHEDULE', 'LEAVE'].includes(normalizedType) ? sessionIdNum : null;
     const duplicateNewSessionId = ['RESCHEDULE', 'MAKEUP', 'RETAKE'].includes(normalizedType) ? targetSessionIdNum : null;
@@ -243,6 +390,7 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       under_3bday,
       time_conflict,
       conflict_id,
+      priority_tier,
     });
 
     if (request?.conflict_id) {
@@ -363,7 +511,7 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
           const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
 
           if (Array.isArray(list) && list.length > 0) {
-            const nextUserId = parseInt(list[0], 10);
+            const nextUserId = parseInt(list[0]?.user_id ?? list[0], 10);
             if (!Number.isNaN(nextUserId)) {
               const existingRegistration = await findBySessionAndUser(leaveSessionId, nextUserId);
               if (!existingRegistration) {
@@ -429,7 +577,7 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
           const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
 
           if (Array.isArray(list) && list.length > 0) {
-            const nextUserId = parseInt(list[0], 10);
+            const nextUserId = parseInt(list[0]?.user_id ?? list[0], 10);
             if (!Number.isNaN(nextUserId)) {
               const existingRegistration = await findBySessionAndUser(oldSessionId, nextUserId);
               if (!existingRegistration) {
@@ -454,7 +602,7 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
           const remainingSeats = targetSession.remaining_seats != null ? Number(targetSession.remaining_seats) : null;
           if (remainingSeats != null && !Number.isNaN(remainingSeats)) {
             if (remainingSeats <= 0) {
-              await waitlistDao.appendUserToWaitlist(newSessionId, userId);
+              await waitlistDao.appendUserToWaitlist(newSessionId, userId, null);
             } else {
               await createRegistration({
                 session_id: newSessionId,
@@ -474,6 +622,49 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
           }
         }
       }
+    }
+
+    if (incomingStatus === 'APPROVED' && (((existing.request_type || '').toUpperCase() === 'MAKEUP') || (existing.request_type || '').toUpperCase() === 'RETAKE')) {
+      const newSessionId = existing.new_session_id;
+      const userId = existing.user_id;
+
+      if (newSessionId && userId) {
+        const alreadyRegistered = await findBySessionAndUser(newSessionId, userId);
+        if (!alreadyRegistered) {
+          const targetSession = await findBySessionId(newSessionId);
+          if (targetSession) {
+            const remainingSeats = targetSession.remaining_seats != null ? Number(targetSession.remaining_seats) : null;
+            if (remainingSeats != null && !Number.isNaN(remainingSeats)) {
+              if (remainingSeats <= 0) {
+                await waitlistDao.appendUserToWaitlist(
+                  newSessionId,
+                  userId,
+                  getWaitlistPriority(existing.request_type, existing.priority_tier)
+                );
+              } else {
+                await createRegistration({
+                  session_id: newSessionId,
+                  user_id: userId,
+                  channel: 'WEB',
+                  registration_by_id: req.user?.sub || null,
+                });
+                await updateSessionById(newSessionId, { remaining_seats: remainingSeats - 1 });
+              }
+            } else {
+              await createRegistration({
+                session_id: newSessionId,
+                user_id: userId,
+                channel: 'WEB',
+                registration_by_id: req.user?.sub || null,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (incomingStatus === 'APPROVED' && (existing.request_type || '').toUpperCase() === 'RETAKE') {
+      await updatePendingRetakePriorities(existing.user_id, existing.new_session_id, requestId);
     }
 
     
