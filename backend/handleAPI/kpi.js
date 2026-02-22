@@ -61,13 +61,17 @@ function buildCompare(actualMetrics = {}, target = {}) {
     const actual = actualMetrics && Object.prototype.hasOwnProperty.call(actualMetrics, key) ? actualMetrics[key] : null;
     const tgt = target && Object.prototype.hasOwnProperty.call(target, key) ? target[key] : null;
 
-    // status = 達成率 (actual / target) * 100%, can be > 100%
+    // status:
+    // - For unpaidFollowupCount: 達成/未達成 (lower is better)
+    // - For other metrics: 達成率 (actual / target) * 100%, can be > 100%
     let status = 'N/A';
     const actualNum = actual === null || actual === undefined ? null : Number(actual);
     const tgtNum = tgt === null || tgt === undefined ? null : Number(tgt);
 
     if (actualNum !== null && tgtNum !== null && !Number.isNaN(actualNum) && !Number.isNaN(tgtNum)) {
-      if (tgtNum === 0) {
+      if (key === 'unpaidFollowupCount') {
+        status = actualNum <= tgtNum ? '達成' : '未達成';
+      } else if (tgtNum === 0) {
         status = actualNum === 0 ? '100.0%' : 'N/A';
       } else {
         const pct = (actualNum / tgtNum) * 100;

@@ -34,6 +34,22 @@ const formatValue = (value, type) => {
   return String(value);
 };
 
+const toPercentDisplay = (storedDecimal) => {
+  if (storedDecimal === null || storedDecimal === undefined) return '';
+  const num = Number(storedDecimal);
+  if (Number.isNaN(num)) return '';
+  // stored as 0.9, display as 90
+  return num * 100;
+};
+
+const toPercentStoredDecimal = (displayPercent) => {
+  if (displayPercent === '' || displayPercent === null || displayPercent === undefined) return '';
+  const num = Number(displayPercent);
+  if (Number.isNaN(num)) return '';
+  // display as 90, store as 0.9
+  return num / 100;
+};
+
 const normalizeInputNumber = (value) => {
   if (value === '' || value === null || value === undefined) return '';
   const num = Number(value);
@@ -68,9 +84,12 @@ const KPIAdmin = () => {
       const personalTarget = data?.personal?.target || {};
       const nextGroup = {};
       const nextPersonal = {};
-      METRICS.forEach(({ key }) => {
-        nextGroup[key] = groupTarget[key] ?? '';
-        nextPersonal[key] = personalTarget[key] ?? '';
+      METRICS.forEach(({ key, type }) => {
+        const groupVal = groupTarget[key];
+        const personalVal = personalTarget[key];
+
+        nextGroup[key] = type === 'percent' ? toPercentDisplay(groupVal) : (groupVal ?? '');
+        nextPersonal[key] = type === 'percent' ? toPercentDisplay(personalVal) : (personalVal ?? '');
       });
       setGroupForm(nextGroup);
       setPersonalForm(nextPersonal);
@@ -117,11 +136,17 @@ const KPIAdmin = () => {
   const saveGroupTarget = async () => {
     try {
       setSavingScope('GROUP');
+      const payloadTargets = {};
+      METRICS.forEach(({ key, type }) => {
+        payloadTargets[key] = type === 'percent'
+          ? toPercentStoredDecimal(groupForm[key])
+          : (groupForm[key] ?? '');
+      });
       await saveAdminKpiTarget({
         year: date.year,
         month: date.month,
         scope: 'GROUP',
-        targets: groupForm,
+        targets: payloadTargets,
       });
       await loadData({ keepUser: true });
     } catch (err) {
@@ -139,12 +164,18 @@ const KPIAdmin = () => {
     }
     try {
       setSavingScope('PERSONAL');
+      const payloadTargets = {};
+      METRICS.forEach(({ key, type }) => {
+        payloadTargets[key] = type === 'percent'
+          ? toPercentStoredDecimal(personalForm[key])
+          : (personalForm[key] ?? '');
+      });
       await saveAdminKpiTarget({
         year: date.year,
         month: date.month,
         scope: 'PERSONAL',
         userId: Number(selectedUserId),
-        targets: personalForm,
+        targets: payloadTargets,
       });
       await loadData({ keepUser: true });
     } catch (err) {
