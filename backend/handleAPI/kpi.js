@@ -3,10 +3,90 @@ const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { query } = require('../db/pool');
 const { findUserByRole } = require('../dao/usersDao');
+const { getKpiTarget, upsertKpiTarget } = require('../dao/kpiTargetsDao');
+
+const METRIC_KEYS = [
+  'conversionRate',
+  'renewalRate',
+  'actualReceiveAmount',
+  'actualReceiveRate',
+  'unpaidFollowupCount',
+  'seminarConversion'
+];
+
+function toNumberOrNull(value) {
+  if (value === null || value === undefined) return null;
+  const num = Number(value);
+  return Number.isNaN(num) ? null : num;
+}
+
+function normalizeYearMonth({ year, month }) {
+  const now = new Date();
+  const y = year ? parseInt(year, 10) : now.getFullYear();
+  const m = month ? parseInt(month, 10) : (now.getMonth() + 1);
+  if (!Number.isInteger(y) || y < 2000 || y > 3000) {
+    return { ok: false, message: '年份不正確' };
+  }
+  if (!Number.isInteger(m) || m < 1 || m > 12) {
+    return { ok: false, message: '月份不正確' };
+  }
+  return { ok: true, year: y, month: m };
+}
+
+function dbRowToTarget(row) {
+  if (!row) {
+    return {
+      conversionRate: null,
+      renewalRate: null,
+      actualReceiveAmount: null,
+      actualReceiveRate: null,
+      unpaidFollowupCount: null,
+      seminarConversion: null,
+    };
+  }
+
+  return {
+    conversionRate: toNumberOrNull(row.conversion_rate),
+    renewalRate: toNumberOrNull(row.renewal_rate),
+    actualReceiveAmount: toNumberOrNull(row.actual_receive_amount),
+    actualReceiveRate: toNumberOrNull(row.actual_receive_rate),
+    unpaidFollowupCount: toNumberOrNull(row.unpaid_followup_count),
+    seminarConversion: toNumberOrNull(row.seminar_conversion),
+  };
+}
+
+function buildCompare(actualMetrics = {}, target = {}) {
+  const compare = {};
+  METRIC_KEYS.forEach((key) => {
+    const actual = actualMetrics && Object.prototype.hasOwnProperty.call(actualMetrics, key) ? actualMetrics[key] : null;
+    const tgt = target && Object.prototype.hasOwnProperty.call(target, key) ? target[key] : null;
+
+    let status = 'N/A';
+    if (tgt !== null && tgt !== undefined && actual !== null && actual !== undefined) {
+      status = Number(actual) >= Number(tgt) ? '達標' : '未達標';
+    }
+
+    compare[key] = {
+      actual: actual === undefined ? null : actual,
+      target: tgt === undefined ? null : tgt,
+      status,
+    };
+  });
+  return compare;
+}
 
 // Helper to compute KPI for a given set of staff IDs
 async function computeKpiForStaffSet(staffIds, year, month) {
-  if (!staffIds || staffIds.length === 0) {
+  const normalizedStaffIds = Array.isArray(staffIds)
+    ? staffIds
+        .map((id) => {
+          const n = Number(id);
+          return Number.isFinite(n) ? n : null;
+        })
+        .filter((id) => id !== null)
+    : [];
+
+  if (normalizedStaffIds.length === 0) {
     return {
       total_signed: 0,
       total_deals: 0,
@@ -60,7 +140,8 @@ async function computeKpiForStaffSet(staffIds, year, month) {
     LEFT JOIN payments_agg p ON r.enrollment_id = p.enrollment_id;
   `;
 
-  const { rows } = await query(kpiQuery, [staffIds, startDate, endDate]);
+  const kpiQueryBigint = kpiQuery.replace('$1::int[]', '$1::bigint[]');
+  const { rows } = await query(kpiQueryBigint, [normalizedStaffIds, startDate, endDate]);
   const stats = rows[0];
 
   const totalSigned = Number(stats.total_signed) || 0;
@@ -136,6 +217,99 @@ router.get('/kpi/sales', authMiddleware, roleMiddleware(['sales', 'leader']), as
 
   } catch (error) {
     console.error('Failed to compute sales KPI:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+
+// Admin KPI: view team KPI + per-staff KPI, with editable targets.
+router.get('/kpi/admin', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const normalized = normalizeYearMonth({ year: req.query.year, month: req.query.month });
+    if (!normalized.ok) return res.status(400).json({ message: normalized.message });
+    const { year: targetYear, month: targetMonth } = normalized;
+
+    const staff = await findUserByRole(['SALES', 'LEADER']);
+    const staffOptions = (staff || []).map((u) => ({
+      user_id: u.user_id,
+      name: u.name,
+      role: u.role,
+    }));
+
+    const staffIds = staffOptions.map((u) => u.user_id).filter(Boolean);
+
+    const requestedUserIdRaw = req.query.userId;
+    const requestedUserId = requestedUserIdRaw ? parseInt(requestedUserIdRaw, 10) : null;
+    const selectedUserId = requestedUserId || (staffIds[0] || null);
+
+    const groupActual = await computeKpiForStaffSet(staffIds, targetYear, targetMonth);
+    const personalActual = selectedUserId
+      ? await computeKpiForStaffSet([selectedUserId], targetYear, targetMonth)
+      : await computeKpiForStaffSet([], targetYear, targetMonth);
+
+    const groupTargetRow = await getKpiTarget({ year: targetYear, month: targetMonth, scope: 'GROUP' });
+    const personalTargetRow = selectedUserId
+      ? await getKpiTarget({ year: targetYear, month: targetMonth, scope: 'PERSONAL', userId: selectedUserId })
+      : null;
+
+    const groupTarget = dbRowToTarget(groupTargetRow);
+    const personalTarget = dbRowToTarget(personalTargetRow);
+
+    res.json({
+      year: targetYear,
+      month: targetMonth,
+      staffOptions,
+      group: {
+        actual: groupActual,
+        target: groupTarget,
+        compare: buildCompare(groupActual.metrics, groupTarget),
+      },
+      personal: {
+        userId: selectedUserId,
+        actual: personalActual,
+        target: personalTarget,
+        compare: buildCompare(personalActual.metrics, personalTarget),
+      },
+    });
+  } catch (error) {
+    console.error('Failed to compute admin KPI:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+router.post('/kpi/admin/targets', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const { year, month, scope, userId, targets } = req.body || {};
+    const normalized = normalizeYearMonth({ year, month });
+    if (!normalized.ok) return res.status(400).json({ message: normalized.message });
+    const { year: targetYear, month: targetMonth } = normalized;
+
+    const normalizedScope = String(scope || '').trim().toUpperCase();
+    if (!['GROUP', 'PERSONAL'].includes(normalizedScope)) {
+      return res.status(400).json({ message: 'scope 必須為 GROUP 或 PERSONAL' });
+    }
+
+    const parsedUserId = userId !== undefined && userId !== null ? parseInt(userId, 10) : null;
+    if (normalizedScope === 'PERSONAL' && !parsedUserId) {
+      return res.status(400).json({ message: 'PERSONAL scope 需要 userId' });
+    }
+
+    const actorId = req.user && req.user.sub ? req.user.sub : null;
+    const saved = await upsertKpiTarget({
+      year: targetYear,
+      month: targetMonth,
+      scope: normalizedScope,
+      userId: normalizedScope === 'PERSONAL' ? parsedUserId : null,
+      targets: targets || {},
+      actorId,
+    });
+
+    res.json({
+      ok: true,
+      target: dbRowToTarget(saved),
+    });
+  } catch (error) {
+    console.error('Failed to save KPI target:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
