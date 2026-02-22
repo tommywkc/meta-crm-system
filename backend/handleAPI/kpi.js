@@ -61,9 +61,18 @@ function buildCompare(actualMetrics = {}, target = {}) {
     const actual = actualMetrics && Object.prototype.hasOwnProperty.call(actualMetrics, key) ? actualMetrics[key] : null;
     const tgt = target && Object.prototype.hasOwnProperty.call(target, key) ? target[key] : null;
 
+    // status = 達成率 (actual / target) * 100%, can be > 100%
     let status = 'N/A';
-    if (tgt !== null && tgt !== undefined && actual !== null && actual !== undefined) {
-      status = Number(actual) >= Number(tgt) ? '達標' : '未達標';
+    const actualNum = actual === null || actual === undefined ? null : Number(actual);
+    const tgtNum = tgt === null || tgt === undefined ? null : Number(tgt);
+
+    if (actualNum !== null && tgtNum !== null && !Number.isNaN(actualNum) && !Number.isNaN(tgtNum)) {
+      if (tgtNum === 0) {
+        status = actualNum === 0 ? '100.0%' : 'N/A';
+      } else {
+        const pct = (actualNum / tgtNum) * 100;
+        status = `${pct.toFixed(1)}%`;
+      }
     }
 
     compare[key] = {
@@ -191,7 +200,17 @@ router.get('/kpi/sales', authMiddleware, roleMiddleware(['sales', 'leader']), as
     // 1. Compute Personal KPI
     const personalKpi = await computeKpiForStaffSet([currentUserId], targetYear, targetMonth);
 
+    // Load personal target (set by admin)
+    const personalTargetRow = await getKpiTarget({
+      year: targetYear,
+      month: targetMonth,
+      scope: 'PERSONAL',
+      userId: currentUserId
+    });
+    const personalTarget = dbRowToTarget(personalTargetRow);
+
     let teamKpi = null;
+    let teamTarget = null;
     if (role === 'leader') {
       // 2. For leaders, compute Team KPI
       // This assumes a 'team' or 'owner_sales' structure in the USERS table.
@@ -205,14 +224,28 @@ router.get('/kpi/sales', authMiddleware, roleMiddleware(['sales', 'leader']), as
       }
 
       teamKpi = await computeKpiForStaffSet(teamIds, targetYear, targetMonth);
+
+      // Load group target (set by admin)
+      const groupTargetRow = await getKpiTarget({ year: targetYear, month: targetMonth, scope: 'GROUP' });
+      teamTarget = dbRowToTarget(groupTargetRow);
     }
 
     res.json({
       role,
       year: targetYear,
       month: targetMonth,
-      personal: personalKpi,
-      team: teamKpi,
+      personal: {
+        ...personalKpi,
+        target: personalTarget,
+        compare: buildCompare(personalKpi.metrics, personalTarget)
+      },
+      team: teamKpi
+        ? {
+            ...teamKpi,
+            target: teamTarget,
+            compare: buildCompare(teamKpi.metrics, teamTarget)
+          }
+        : null,
     });
 
   } catch (error) {

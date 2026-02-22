@@ -160,7 +160,7 @@ const KPIAdmin = () => {
       <MobileCardRow label="指標" value={row.indicator} />
       <MobileCardRow label="實績" value={row.actual} />
       <MobileCardRow label="目標" value={row.target} />
-      <MobileCardRow label="狀態" value={row.status} />
+      <MobileCardRow label="達成率" value={row.status} />
     </MobileCard>
   );
 
@@ -227,7 +227,7 @@ const KPIAdmin = () => {
       {activeView === 'group' && (
         <section style={{ marginBottom: 24, background: '#fff', padding: 12, borderRadius: 8, border: '1px solid #eee' }}>
           <h2>團隊 KPI - {date.year}年{date.month}月</h2>
-          <CommonTable headers={['指標', '實績', '目標', '狀態']} data={groupRows} renderCard={renderCard}>
+          <CommonTable headers={['指標', '實績', '目標', '達成率']} data={groupRows} renderCard={renderCard}>
             {groupRows.map((row, idx) => (
               <tr key={`group-row-${idx}`}>
                 <td>{row.indicator}</td>
@@ -259,7 +259,7 @@ const KPIAdmin = () => {
             </select>
           </div>
 
-          <CommonTable headers={['指標', '實績', '目標', '狀態']} data={personalRows} renderCard={renderCard}>
+          <CommonTable headers={['指標', '實績', '目標', '達成率']} data={personalRows} renderCard={renderCard}>
             {personalRows.map((row, idx) => (
               <tr key={`personal-row-${idx}`}>
                 <td>{row.indicator}</td>

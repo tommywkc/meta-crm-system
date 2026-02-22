@@ -16,6 +16,22 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 }).format(value);
 };
 
+const METRICS = [
+	{ key: 'conversionRate', label: '成交率', type: 'percent' },
+	{ key: 'renewalRate', label: '續報率', type: 'percent' },
+	{ key: 'actualReceiveAmount', label: '實收金額', type: 'currency' },
+	{ key: 'actualReceiveRate', label: '實收率', type: 'percent' },
+	{ key: 'unpaidFollowupCount', label: '未付款跟進量', type: 'number' },
+	{ key: 'seminarConversion', label: '講座到課轉化', type: 'percent' },
+];
+
+const formatValue = (value, type) => {
+	if (value === null || value === undefined) return 'N/A';
+	if (type === 'percent') return formatPercent(value);
+	if (type === 'currency') return formatCurrency(value);
+	return String(value);
+};
+
 const KPI = () => {
 	const { user } = useAuth();
 	const [activeView, setActiveView] = useState('personal');
@@ -50,34 +66,44 @@ const KPI = () => {
         }
     }, [user, date, isLeader, isSales]);
 
-	// Transform personal KPI data for display
-	const personalMetrics = kpiData?.personal?.metrics ? [
-		{ indicator: '成交率', value: formatPercent(kpiData.personal.metrics.conversionRate), target: 'N/A', status: 'N/A' },
-		{ indicator: '續報率', value: kpiData.personal.metrics.renewalRate === null ? 'N/A' : formatPercent(kpiData.personal.metrics.renewalRate), target: 'N/A', status: 'N/A' },
-		{ indicator: '實收金額', value: formatCurrency(kpiData.personal.metrics.actualReceiveAmount), target: 'N/A', status: 'N/A' },
-        { indicator: '實收率', value: formatPercent(kpiData.personal.metrics.actualReceiveRate), target: 'N/A', status: 'N/A' },
-		{ indicator: '未付款跟進量', value: kpiData.personal.metrics.unpaidFollowupCount, target: 'N/A', status: 'N/A' },
-		{ indicator: '講座到課轉化', value: kpiData.personal.metrics.seminarConversion === null ? 'N/A' : formatPercent(kpiData.personal.metrics.seminarConversion), target: 'N/A', status: 'N/A' }
-	] : [];
+	// Transform personal KPI data for display (includes admin-set targets when available)
+	const personalCompare = kpiData?.personal?.compare || null;
+	const personalMetrics = kpiData?.personal ? METRICS.map((m) => {
+		const c = personalCompare ? personalCompare[m.key] : null;
+		// Fallback to original metrics if compare isn't provided
+		const fallbackActual = kpiData?.personal?.metrics ? kpiData.personal.metrics[m.key] : null;
+		const actual = c ? c.actual : fallbackActual;
+		return {
+			indicator: m.label,
+			value: formatValue(actual, m.type),
+			target: formatValue(c ? c.target : null, m.type),
+			status: (c && c.status) ? c.status : 'N/A'
+		};
+	}) : [];
 
-	// For now, team data is just the aggregated metrics.
-    // We can expand this to show per-person data if the API provides it.
-	const teamMetrics = kpiData?.team?.metrics ? [
-        { indicator: '總簽單數', value: kpiData.team.total_signed },
-        { indicator: '總成交數', value: kpiData.team.total_deals },
-		{ indicator: '團隊成交率', value: formatPercent(kpiData.team.metrics.conversionRate) },
-		{ indicator: '團隊總實收', value: formatCurrency(kpiData.team.metrics.actualReceiveAmount) },
-        { indicator: '團隊實收率', value: formatPercent(kpiData.team.metrics.actualReceiveRate) },
-		{ indicator: '團隊未付款跟進量', value: kpiData.team.metrics.unpaidFollowupCount },
-	] : [];
+	// Transform team KPI data for display (includes admin-set targets when available)
+	const teamCompare = kpiData?.team?.compare || null;
+	const teamMetrics = kpiData?.team ? METRICS.map((m) => {
+		const c = teamCompare ? teamCompare[m.key] : null;
+		const fallbackActual = kpiData?.team?.metrics ? kpiData.team.metrics[m.key] : null;
+		const actual = c ? c.actual : fallbackActual;
+		return {
+			indicator: m.label,
+			value: formatValue(actual, m.type),
+			target: formatValue(c ? c.target : null, m.type),
+			status: (c && c.status) ? c.status : 'N/A'
+		};
+	}) : [];
 
-    const teamHeaders = ['指標', '數值'];
-    const personalHeaders = ['指標', '實績', '目標', '狀態'];
+    const teamHeaders = ['指標', '實績', '目標', '達成率'];
+    const personalHeaders = ['指標', '實績', '目標', '達成率'];
 
     const renderTeamCard = (metric, idx) => (
         <MobileCard key={`team-card-${idx}`}>
             <MobileCardRow label="指標" value={metric.indicator} />
-            <MobileCardRow label="數值" value={metric.value} />
+            <MobileCardRow label="實績" value={metric.value} />
+            <MobileCardRow label="目標" value={metric.target} />
+			<MobileCardRow label="達成率" value={metric.status} />
         </MobileCard>
     );
 
@@ -86,7 +112,7 @@ const KPI = () => {
             <MobileCardRow label="指標" value={metric.indicator} />
             <MobileCardRow label="實績" value={metric.value} />
             <MobileCardRow label="目標" value={metric.target} />
-            <MobileCardRow label="狀態" value={metric.status} />
+			<MobileCardRow label="達成率" value={metric.status} />
         </MobileCard>
     );
 
@@ -139,6 +165,8 @@ const KPI = () => {
 										<tr key={idx}>
 											<td>{row.indicator}</td>
 											<td>{row.value}</td>
+											<td>{row.target}</td>
+											<td>{row.status}</td>
 										</tr>
 									))}
 							</CommonTable>
