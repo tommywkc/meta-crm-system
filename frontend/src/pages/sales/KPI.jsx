@@ -158,18 +158,22 @@ const KPI = () => {
 					</div>
 
 					{activeView === 'team' && (
-						<section>
+						<section style={{ marginBottom: 24, background: '#fff', padding: 12, borderRadius: 8, border: '1px solid #eee' }}>
 							<h2>團隊 KPI - {date.year}年{date.month}月</h2>
-							<CommonTable headers={teamHeaders} data={teamMetrics} renderCard={renderTeamCard}>
-									{teamMetrics.map((row, idx) => (
-										<tr key={idx}>
-											<td>{row.indicator}</td>
-											<td>{row.value}</td>
-											<td>{row.target}</td>
-											<td>{row.status}</td>
-										</tr>
-									))}
-							</CommonTable>
+							{kpiData?.team ? (
+								<CommonTable headers={teamHeaders} data={teamMetrics} renderCard={renderTeamCard}>
+										{teamMetrics.map((row, idx) => (
+											<tr key={idx}>
+												<td>{row.indicator}</td>
+												<td>{row.value}</td>
+												<td>{row.target}</td>
+												<td>{row.status}</td>
+											</tr>
+										))}
+								</CommonTable>
+							) : (
+								<p style={{ color: '#666' }}>暫時沒有團隊 KPI 資料（請確認以 Leader 身份登入）。</p>
+							)}
 						</section>
 					)}
 

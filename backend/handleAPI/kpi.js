@@ -196,6 +196,7 @@ router.get('/kpi/sales', authMiddleware, roleMiddleware(['sales', 'leader']), as
     const targetMonth = month ? parseInt(month) : currentMonth;
 
     const { sub: currentUserId, role } = req.user;
+    const roleKey = String(role || '').toLowerCase();
 
     // 1. Compute Personal KPI
     const personalKpi = await computeKpiForStaffSet([currentUserId], targetYear, targetMonth);
@@ -211,7 +212,7 @@ router.get('/kpi/sales', authMiddleware, roleMiddleware(['sales', 'leader']), as
 
     let teamKpi = null;
     let teamTarget = null;
-    if (role === 'leader') {
+    if (roleKey === 'leader') {
       // 2. For leaders, compute Team KPI
       // This assumes a 'team' or 'owner_sales' structure in the USERS table.
       // We will fetch all users who are 'sales' or 'leader' as a simplification.
@@ -231,7 +232,7 @@ router.get('/kpi/sales', authMiddleware, roleMiddleware(['sales', 'leader']), as
     }
 
     res.json({
-      role,
+      role: roleKey,
       year: targetYear,
       month: targetMonth,
       personal: {
