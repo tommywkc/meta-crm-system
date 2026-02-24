@@ -249,6 +249,8 @@ const RequestForm = ({ onSubmitted, requestType }) => {
       setMemberError(null);
       setEventInput('');
       setEventError(null);
+      setCancelInput('');
+      setCancelError(null);
       setForm((f) => ({ ...f, courseId: '', courseName: '' }));
       setSessionInput('');
       setSessionError(null);
@@ -261,6 +263,8 @@ const RequestForm = ({ onSubmitted, requestType }) => {
       setMemberError(null);
       setEventInput('');
       setEventError(null);
+      setCancelInput('');
+      setCancelError(null);
       setSessionInput('');
       setSessionError(null);
       setForm((f) => ({ ...f, session: '' }));
@@ -274,6 +278,8 @@ const RequestForm = ({ onSubmitted, requestType }) => {
         setMemberError(null);
         setEventInput('');
         setEventError(null);
+        setCancelInput('');
+        setCancelError(null);
         setForm((f) => ({ ...f, courseId: '', courseName: '' }));
         setSessionInput('');
         setSessionError(null);
@@ -285,6 +291,8 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     } else {
       setForm((f) => ({ ...f, memberId: '', memberName: '', courseId: '', courseName: '', session: '' }));
       setMemberError('請輸入會員 ID（數字），或從清單選擇');
+      setCancelInput('');
+      setCancelError(null);
     }
   };
 
@@ -530,6 +538,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     resetRescheduleSelection({ clearOptions: true });
     setCancelInput('');
     setCancelError(null);
+    setCancelOptions([]);
   };
 
   return (
@@ -553,14 +562,18 @@ const RequestForm = ({ onSubmitted, requestType }) => {
               value={memberInput}
               onFocus={() => {
                 setMemberInput('');
-                setForm((f) => ({ ...f, memberId: '', memberName: '' }));
+                setForm((f) => ({ ...f, memberId: '', memberName: '', cancelRequestId: '' }));
                 setMemberError(null);
+                setCancelInput('');
+                setCancelError(null);
                 resetRescheduleSelection({ clearOptions: true });
               }}
               onClick={() => {
                 setMemberInput('');
-                setForm((f) => ({ ...f, memberId: '', memberName: '' }));
+                setForm((f) => ({ ...f, memberId: '', memberName: '', cancelRequestId: '' }));
                 setMemberError(null);
+                setCancelInput('');
+                setCancelError(null);
                 resetRescheduleSelection({ clearOptions: true });
               }}
               onChange={(e) => handleMemberInput(e.target.value)}
@@ -614,7 +627,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
 
       {isCancel && (
         <div style={{ marginBottom: 10 }}>
-          <label>選擇欲取消的申請</label>
+          <label>選擇取消的申請</label>
           <br />
           <input
             list="cancel-request-list"
@@ -630,8 +643,8 @@ const RequestForm = ({ onSubmitted, requestType }) => {
             ))}
           </datalist>
           {cancelError && <div style={{ color: 'red', marginTop: 4 }}>{cancelError}</div>}
-          {!cancelError && cancelOptions.length === 0 && (
-            <div style={{ color: '#6b7280', marginTop: 4 }}>目前沒有可取消的申請。</div>
+          {!cancelError && form.memberId && cancelOptions.length === 0 && (
+            <div style={{ color: 'red', marginTop: 4 }}>此會員沒有可取消的申請。</div>
           )}
         </div>
       )}
@@ -714,9 +727,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
           {!rescheduleSessionError && form.courseId && rescheduleSessions.length === 0 && (
             <div style={{ color: 'red', marginTop: 4 }}>此活動目前沒有可供選擇的場次。</div>
           )}
-          {!rescheduleSessionError && !form.courseId && (
-            <div style={{ color: '#6b7280', marginTop: 4 }}>請先於上方選擇活動以載入場次。</div>
-          )}
+
         </div>
       )}
 

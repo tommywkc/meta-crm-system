@@ -114,7 +114,9 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
     const typeLabel = TYPE_LABELS[typeKey] || req.request_type || '-';
     const requestTimeLabel = req.request_time ? formatDateTimeForDisplay(req.request_time) : '-';
     const applicant = req.user_name ? `${req.user_name} (${req.user_id})` : req.user_id || '-';
-    const isPending = (req.status || '').toString().toUpperCase() === 'PENDING';
+    const statusKey = (req.status || '').toString().toUpperCase();
+    const isPending = statusKey === 'PENDING';
+    const isCancelled = statusKey === 'CANCELLED';
     const oldSession = {
       session_id: req.old_session_id,
       session_name: req.old_session_name,
@@ -140,13 +142,13 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
                 詳情
             </button>
             {isAdmin && (
-                <button
-                type="button"
-                onClick={() => handleApprove(req)}
-                disabled={!isPending}
-                >
-                {isPending ? '批核' : '已批核'}
-                </button>
+              <button
+              type="button"
+              onClick={() => handleApprove(req)}
+              disabled={!isPending}
+              >
+              {isPending ? '批核' : isCancelled ? '已取消' : '已批核'}
+              </button>
             )}
           </>
         }
@@ -178,7 +180,9 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
         const typeLabel = TYPE_LABELS[typeKey] || req.request_type || '-';
         const requestTimeLabel = req.request_time ? formatDateTimeForDisplay(req.request_time) : '-';
         const applicant = req.user_name ? `${req.user_name} (${req.user_id})` : req.user_id || '-';
-        const isPending = (req.status || '').toString().toUpperCase() === 'PENDING';
+        const statusKey = (req.status || '').toString().toUpperCase();
+        const isPending = statusKey === 'PENDING';
+        const isCancelled = statusKey === 'CANCELLED';
         const oldSession = {
           session_id: req.old_session_id,
           session_name: req.old_session_name,
@@ -214,7 +218,7 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
                     onClick={() => handleApprove(req)}
                     disabled={!isPending}
                   >
-                    {isPending ? '批核' : '已批核'}
+                    {isPending ? '批核' : isCancelled ? '已取消' : '已批核'}
                   </button>
                 )}
               </div>
