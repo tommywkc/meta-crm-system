@@ -93,6 +93,9 @@ const RequestViewTable = ({ request }) => {
           if (request.under_3bday === true) {
             messages.push('申請低於三個工作天');
           }
+          if (request.user_suspension === true) {
+            messages.push(<span key="suspension" style={{ color: 'red' }}>會員目前停權</span>);
+          }
           if (request.time_conflict === true) {
             const conflictId = formatValue(request.conflict_id);
             const conflictEventName = formatValue(request.conflict_event_name);
@@ -160,6 +163,7 @@ const RequestViewTable = ({ request }) => {
       'user_email',
       'request_by_id',
       'request_by_name',
+      'user_suspension',
       'old_session_id',
       'old_session_name',
       'old_session_start',

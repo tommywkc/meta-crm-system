@@ -163,7 +163,7 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
             {renderStatus(req.status)}
         </MobileCardRow>
         <MobileCardRow label="申請時間" value={requestTimeLabel} />
-        <MobileCardRow label="條件衝突" value={(req.under_3bday || req.time_conflict) ? '有衝突' : '無衝突'} />
+        <MobileCardRow label="條件衝突" value={(req.under_3bday || req.time_conflict || req.user_suspension) ? '有衝突' : '無衝突'} />
       </MobileCard>
     );
   };
@@ -203,7 +203,7 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
             <td>{renderRequestContent(typeKey, oldSession, newSession)}</td>
             <td>{renderStatus(req.status)}</td>
             <td>{requestTimeLabel}</td>
-            <td>{(req.under_3bday || req.time_conflict) ? '有衝突' : '無衝突'}</td>
+            <td>{(req.under_3bday || req.time_conflict || req.user_suspension) ? '有衝突' : '無衝突'}</td>
             <td style={{ minWidth: 160 }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
