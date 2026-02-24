@@ -199,7 +199,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/requests/history" element={
-            <ProtectedRoute allowedRoles={["member","sales","leader"]}>
+            <ProtectedRoute allowedRoles={["admin","member","sales","leader"]}>
               <RequestList />
             </ProtectedRoute>
           } />
