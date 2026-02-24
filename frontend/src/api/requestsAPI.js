@@ -96,3 +96,24 @@ export async function handleUpdateRequestById(request_id, data) {
     throw err;
   }
 }
+
+export async function handleCancelRequestById(request_id) {
+  try {
+    const response = await fetch(apiUrl(`/api/requests/${request_id}/cancel`), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?.message || `無法取消申請 ${request_id}`;
+      throw new Error(message);
+    }
+
+    return payload;
+  } catch (err) {
+    console.error(`Cancel request error for ${request_id}:`, err);
+    throw err;
+  }
+}

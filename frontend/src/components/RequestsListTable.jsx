@@ -114,7 +114,9 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
     const typeLabel = TYPE_LABELS[typeKey] || req.request_type || '-';
     const requestTimeLabel = req.request_time ? formatDateTimeForDisplay(req.request_time) : '-';
     const applicant = req.user_name ? `${req.user_name} (${req.user_id})` : req.user_id || '-';
-    const isPending = (req.status || '').toString().toUpperCase() === 'PENDING';
+    const statusKey = (req.status || '').toString().toUpperCase();
+    const isPending = statusKey === 'PENDING';
+    const isCancelled = statusKey === 'CANCELLED';
     const oldSession = {
       session_id: req.old_session_id,
       session_name: req.old_session_name,
@@ -140,13 +142,13 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
                 詳情
             </button>
             {isAdmin && (
-                <button
-                type="button"
-                onClick={() => handleApprove(req)}
-                disabled={!isPending}
-                >
-                {isPending ? '批核' : '已批核'}
-                </button>
+              <button
+              type="button"
+              onClick={() => handleApprove(req)}
+              disabled={!isPending}
+              >
+              {isPending ? '批核' : isCancelled ? '已取消' : '已批核'}
+              </button>
             )}
           </>
         }
@@ -161,7 +163,7 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
             {renderStatus(req.status)}
         </MobileCardRow>
         <MobileCardRow label="申請時間" value={requestTimeLabel} />
-        <MobileCardRow label="條件衝突" value={(req.under_3bday || req.time_conflict) ? '有衝突' : '無衝突'} />
+        <MobileCardRow label="條件衝突" value={(req.under_3bday || req.time_conflict || req.user_suspension) ? '有衝突' : '無衝突'} />
       </MobileCard>
     );
   };
@@ -178,7 +180,9 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
         const typeLabel = TYPE_LABELS[typeKey] || req.request_type || '-';
         const requestTimeLabel = req.request_time ? formatDateTimeForDisplay(req.request_time) : '-';
         const applicant = req.user_name ? `${req.user_name} (${req.user_id})` : req.user_id || '-';
-        const isPending = (req.status || '').toString().toUpperCase() === 'PENDING';
+        const statusKey = (req.status || '').toString().toUpperCase();
+        const isPending = statusKey === 'PENDING';
+        const isCancelled = statusKey === 'CANCELLED';
         const oldSession = {
           session_id: req.old_session_id,
           session_name: req.old_session_name,
@@ -199,7 +203,7 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
             <td>{renderRequestContent(typeKey, oldSession, newSession)}</td>
             <td>{renderStatus(req.status)}</td>
             <td>{requestTimeLabel}</td>
-            <td>{(req.under_3bday || req.time_conflict) ? '有衝突' : '無衝突'}</td>
+            <td>{(req.under_3bday || req.time_conflict || req.user_suspension) ? '有衝突' : '無衝突'}</td>
             <td style={{ minWidth: 160 }}>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
@@ -214,7 +218,7 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
                     onClick={() => handleApprove(req)}
                     disabled={!isPending}
                   >
-                    {isPending ? '批核' : '已批核'}
+                    {isPending ? '批核' : isCancelled ? '已取消' : '已批核'}
                   </button>
                 )}
               </div>
