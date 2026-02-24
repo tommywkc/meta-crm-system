@@ -543,6 +543,7 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
               const startTime = existing.request_time ? new Date(existing.request_time) : new Date();
               const endTime = new Date(startTime);
               endTime.setMonth(endTime.getMonth() + 2);
+              endTime.setHours(23, 59, 0, 0);
               const reason = `請假申請（低於 3 個工作天）: request_id ${existing.request_id}`;
               await createSuspension({
                 user_id: leaveUserId,
