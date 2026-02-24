@@ -30,6 +30,12 @@ const RequestSelection = () => {
 		setSelected(type);
 	};
 
+	const handleSubmitted = (request) => {
+		if (request?.request_id) {
+			navigate(`/requests/${request.request_id}`, { state: { request } });
+		}
+	};
+
 	useEffect(() => {
 		if (selected && !availableOptions.includes(selected)) {
 			setSelected('');
@@ -68,7 +74,7 @@ const RequestSelection = () => {
 			</div>
 
 			{selected && (
-				<RequestForm key={selected} requestType={selected} />
+				<RequestForm key={selected} requestType={selected} onSubmitted={handleSubmitted} />
 			)}
 		</PageContainer>
 	);
