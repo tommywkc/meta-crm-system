@@ -15,7 +15,7 @@ const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationI
 const { findBySessionId, updateSessionById, listByEventId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
-const { createSuspension } = require('../dao/suspensionDao');
+const { createSuspension, findLatestSuspensionByUserId, updateSuspensionById } = require('../dao/suspensionDao');
 const { updateByUserId } = require('../dao/usersDao');
 const { buildHolidaySet, countBusinessDays } = require('../utils/businessDays');
 const waitlistDao = require('../dao/waitlistDao');
@@ -543,14 +543,26 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
               const startTime = existing.request_time ? new Date(existing.request_time) : new Date();
               const endTime = new Date(startTime);
               endTime.setMonth(endTime.getMonth() + 2);
+              endTime.setHours(23, 59, 0, 0);
               const reason = `請假申請（低於 3 個工作天）: request_id ${existing.request_id}`;
-              await createSuspension({
-                user_id: leaveUserId,
-                reason,
-                start_time: startTime,
-                end_time: endTime,
-                created_by: req.user.sub,
-              });
+              const latest = await findLatestSuspensionByUserId(leaveUserId);
+              const now = new Date();
+              if (latest && (!latest.end_time || new Date(latest.end_time) >= now)) {
+                const latestEnd = latest.end_time ? new Date(latest.end_time) : null;
+                const nextEnd = latestEnd && latestEnd > endTime ? latestEnd : endTime;
+                await updateSuspensionById(latest.suspension_id, {
+                  end_time: nextEnd,
+                  reason,
+                });
+              } else {
+                await createSuspension({
+                  user_id: leaveUserId,
+                  reason,
+                  start_time: startTime,
+                  end_time: endTime,
+                  created_by: req.user.sub,
+                });
+              }
               await updateByUserId(leaveUserId, { suspension: true });
             }
           }
