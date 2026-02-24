@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { handleFindUserByRole } from '../api/customersListAPI';
 import { handleConfirmEnrollmentByUser } from '../api/enrollmentAPI';
 import { handleListEnrolledUpcomingSessions, handleListSessionsByEventId } from '../api/sessionAPI';
-import { handleSubmitRequest } from '../api/requestsAPI';
+import { handleSubmitRequest, handleListRequests, handleCancelRequestById } from '../api/requestsAPI';
 
 const baseForm = {
   type: '取消申請',
@@ -35,7 +35,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
   const [rescheduleSessions, setRescheduleSessions] = useState([]);
   const [rescheduleSessionInput, setRescheduleSessionInput] = useState('');
   const [rescheduleSessionError, setRescheduleSessionError] = useState(null);
-  const [cancelOptions] = useState([]);
+  const [cancelOptions, setCancelOptions] = useState([]);
   const [cancelInput, setCancelInput] = useState('');
   const [cancelError, setCancelError] = useState(null);
   const { user } = useAuth();
@@ -118,6 +118,12 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     loadEvents();
   }, [form.memberId]);
 
+  const isCancel = form.type === '取消申請';
+  const isLeave = form.type === '請假申請';
+  const isReschedule = form.type === '改期申請';
+  const isMakeup = form.type === '補堂申請';
+  const isRetake = form.type === '覆課申請';
+
   // fetch enrolled upcoming sessions (filtered by member and selected event) for certain request types
   useEffect(() => {
     const loadSessions = async () => {
@@ -160,13 +166,44 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     };
     loadSessions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.memberId, form.courseId, form.type, isMemberUser]);
+  }, [form.memberId, form.courseId, form.type, isMemberUser, isCancel, isLeave, isReschedule]);
 
-  const isCancel = form.type === '取消申請';
-  const isLeave = form.type === '請假申請';
-  const isReschedule = form.type === '改期申請';
-  const isMakeup = form.type === '補堂申請';
-  const isRetake = form.type === '覆課申請';
+  useEffect(() => {
+    const loadCancelableRequests = async () => {
+      if (!isCancel) {
+        setCancelOptions([]);
+        return;
+      }
+      if (!form.memberId) {
+        setCancelOptions([]);
+        return;
+      }
+      try {
+        const res = await handleListRequests();
+        const list = res?.requests || [];
+        const filtered = list.filter((req) => {
+          const isPending = (req?.status || '').toString().toUpperCase() === 'PENDING';
+          const sameUser = String(req?.user_id) === String(form.memberId);
+          return isPending && sameUser;
+        });
+        const options = filtered.map((req) => {
+          const typeLabel = req.request_type || '-';
+          const sessionName = req.new_session_name || req.old_session_name || '-';
+          const eventName = req.new_event_name || req.old_event_name || '-';
+          return {
+            id: req.request_id,
+            label: `#${req.request_id} ${typeLabel} - ${eventName} / ${sessionName}`.trim(),
+          };
+        });
+        setCancelOptions(options);
+      } catch (err) {
+        console.error('Failed to load cancelable requests', err);
+        setCancelOptions([]);
+      }
+    };
+
+    loadCancelableRequests();
+  }, [form.memberId, isCancel]);
 
 
   const handleChange = (key, value) => setForm((f) => ({ ...f, [key]: value }));
@@ -330,6 +367,12 @@ const RequestForm = ({ onSubmitted, requestType }) => {
 
   const handleCancelRequestInput = (val) => {
     setCancelInput(val);
+    const match = cancelOptions.find((opt) => opt.label === val);
+    if (match) {
+      setForm((f) => ({ ...f, cancelRequestId: String(match.id) }));
+      setCancelError(null);
+      return;
+    }
     setForm((f) => ({ ...f, cancelRequestId: val?.trim() || '' }));
     setCancelError(null);
   };
@@ -395,7 +438,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
         return;
       }
     }
-    if (!form.courseId) {
+    if (!isCancel && !form.courseId) {
       alert('請選擇會員已確認的活動');
       return;
     }
@@ -404,6 +447,19 @@ const RequestForm = ({ onSubmitted, requestType }) => {
       if (!eventExists) {
         setEventError('請從清單內選擇活動');
         alert('請從清單內選擇活動');
+        return;
+      }
+    }
+    if (isCancel) {
+      if (!form.cancelRequestId) {
+        setCancelError('請選擇要取消的申請');
+        alert('請選擇要取消的申請');
+        return;
+      }
+      const exists = cancelOptions.some((opt) => String(opt.id) === String(form.cancelRequestId));
+      if (!exists) {
+        setCancelError('請從清單內選擇申請');
+        alert('請從清單內選擇申請');
         return;
       }
     }
@@ -434,6 +490,13 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     }
     setSaving(true);
     try {
+      if (isCancel) {
+        const res = await handleCancelRequestById(form.cancelRequestId);
+        alert(res?.message || '申請已取消');
+        if (onSubmitted) onSubmitted(res.request || form);
+        handleClear();
+        return;
+      }
       const payload = {
         requestType: form.type,
         memberId: form.memberId,
@@ -557,7 +620,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
             list="cancel-request-list"
             value={cancelInput}
             onChange={(e) => handleCancelRequestInput(e.target.value)}
-            placeholder="尚無可取消的申請（示範）"
+            placeholder="選擇可取消的申請"
             style={{ width: '40%', padding: 8, borderColor: cancelError ? 'red' : '#e5e7eb' }}
             disabled={cancelOptions.length === 0}
           />
@@ -568,7 +631,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
           </datalist>
           {cancelError && <div style={{ color: 'red', marginTop: 4 }}>{cancelError}</div>}
           {!cancelError && cancelOptions.length === 0 && (
-            <div style={{ color: '#6b7280', marginTop: 4 }}>尚未載入可取消的申請，稍後將提供。</div>
+            <div style={{ color: '#6b7280', marginTop: 4 }}>目前沒有可取消的申請。</div>
           )}
         </div>
       )}

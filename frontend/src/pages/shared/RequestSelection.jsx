@@ -20,7 +20,7 @@ const RequestSelection = () => {
 	const canViewRequests = ['member', 'sales', 'leader'].includes(normalizedRole);
 	const availableOptions = useMemo(() => {
 		if (isMember) {
-			return requestOptions.filter((opt) => opt !== '改期申請' && opt !== '取消申請');
+			return requestOptions.filter((opt) => opt !== '改期申請');
 		}
 		return requestOptions;
 	}, [isMember]);

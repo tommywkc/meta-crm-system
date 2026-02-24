@@ -696,4 +696,54 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
   }
 });
 
+router.put('/requests/:requestId/cancel', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
+  try {
+    const requestId = parseInt(req.params.requestId, 10);
+    if (Number.isNaN(requestId)) {
+      return res.status(400).json({ message: '申請編號有誤' });
+    }
+
+    const existing = await findByRequestId(requestId);
+    if (!existing) {
+      return res.status(404).json({ message: '找不到申請資料' });
+    }
+
+    const requesterRole = (req.user.role || '').toUpperCase();
+    if (requesterRole === 'MEMBER' && String(existing.user_id) !== String(req.user.sub)) {
+      return res.status(403).json({ message: '沒有權限取消此申請' });
+    }
+
+    if ((existing.status || '').toUpperCase() !== 'PENDING') {
+      return res.status(409).json({ message: '僅可取消待審核申請' });
+    }
+
+    let updated = await updateRequestById(requestId, {
+      status: 'CANCELLED',
+      determine_by_id: req.user.sub,
+      determine_time: new Date(),
+    });
+
+    if (updated?.conflict_id) {
+      const conflictSession = await findBySessionId(updated.conflict_id);
+      if (conflictSession) {
+        const conflictEvent = conflictSession.event_id
+          ? await findByEventId(conflictSession.event_id)
+          : null;
+        updated = {
+          ...updated,
+          conflict_session_name: conflictSession.session_name || null,
+          conflict_session_start: conflictSession.datetime_start || null,
+          conflict_session_end: conflictSession.datetime_end || null,
+          conflict_event_name: conflictEvent?.event_name || null,
+        };
+      }
+    }
+
+    return res.json({ message: '申請已取消', request: updated });
+  } catch (error) {
+    console.error('Cancel request failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤，請稍後再試' });
+  }
+});
+
 module.exports = router;
