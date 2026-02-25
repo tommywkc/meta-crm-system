@@ -334,14 +334,15 @@ const RequestForm = ({ onSubmitted, requestType }) => {
 
   const formatSessionLabel = (session) => {
     const name = session.title || session.name || session.session_name || '';
+    const sessionId = session.session_id || session.id || '';
     const start = session.datetime_start || session.start_time || session.startTime;
     if (!start) {
-      return name.trim();
+      return `${sessionId ? `#${sessionId} ` : ''}${name}`.trim();
     }
     const dt = new Date(start);
     const datePart = `${dt.getFullYear()}/${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}`;
     const timePart = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
-    return `${name} (${datePart} ${timePart})`.trim();
+    return `${sessionId ? `${sessionId} - ` : ''}${name} (${datePart} ${timePart})`.trim();
   };
 
   const handleSessionInput = (val) => {

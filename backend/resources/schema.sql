@@ -411,6 +411,13 @@ INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id) VALU
     (7, 50008, 50008);
 
 
+
+INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags, suspension) VALUES
+    ('50034', 'password', 'MEMBER', 'Test Suspension', '10101010', '10101.yawen@email.com', 'banned', 'Facebook', 50009, 'Sales B', 'new,trial', true);
+
+INSERT INTO SUSPENSION (user_id, reason, start_time, end_time, created_by) VALUES
+    (50034, '違反規定', '2025-12-01 00:00:00', '2025-12-31 23:59:59', 50000);
+
 CREATE TABLE IF NOT EXISTS BANNERS (
     banner_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
     image_url TEXT NOT NULL,
