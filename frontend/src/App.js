@@ -18,6 +18,7 @@ import EventView from './pages/shared/EventView';
 import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
 import Waiting from './pages/admin/Waiting';
+import KPIAdmin from './pages/admin/KPIAdmin';
 
 // SalesCustomers removed in favor of shared CustomersList
 import KPI from './pages/sales/KPI';
@@ -212,6 +213,11 @@ function App() {
           <Route path="/sales-kpi" element={
             <ProtectedRoute allowedRoles={["sales","leader"]}>
               <KPI />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin-kpi" element={
+            <ProtectedRoute allowedRole="admin">
+              <KPIAdmin />
             </ProtectedRoute>
           } />
           <Route path="/sales-customers" element={
