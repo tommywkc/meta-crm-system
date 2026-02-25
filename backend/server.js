@@ -170,6 +170,12 @@ async function startServer() {
     } catch (e) {
       console.error('Failed to start Holidays Scheduler:', e);
     }
+    try {
+      const { startExpirySchedules } = require('./services/expiryScheduler');
+      startExpirySchedules();
+    } catch (e) {
+      console.error('Failed to start Expiry Scheduler:', e);
+    }
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
     });

@@ -20,7 +20,7 @@ const RequestSelection = () => {
 	const canViewRequests = ['member', 'sales', 'leader'].includes(normalizedRole);
 	const availableOptions = useMemo(() => {
 		if (isMember) {
-			return requestOptions.filter((opt) => opt !== '改期申請' && opt !== '取消申請');
+			return requestOptions.filter((opt) => opt !== '改期申請');
 		}
 		return requestOptions;
 	}, [isMember]);
@@ -28,6 +28,12 @@ const RequestSelection = () => {
 
 	const handleSelect = (type) => {
 		setSelected(type);
+	};
+
+	const handleSubmitted = (request) => {
+		if (request?.request_id) {
+			navigate(`/requests/${request.request_id}`, { state: { request } });
+		}
 	};
 
 	useEffect(() => {
@@ -68,7 +74,7 @@ const RequestSelection = () => {
 			</div>
 
 			{selected && (
-				<RequestForm key={selected} requestType={selected} />
+				<RequestForm key={selected} requestType={selected} onSubmitted={handleSubmitted} />
 			)}
 		</PageContainer>
 	);
