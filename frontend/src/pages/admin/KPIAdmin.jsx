@@ -4,13 +4,22 @@ import { MobileCard, MobileCardRow } from '../../components/MobileCard';
 import { fetchAdminKpi, saveAdminKpiTarget } from '../../api/kpiAPI';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
 
-const METRICS = [
+const GROUP_METRICS = [
   { key: 'conversionRate', label: '成交率', type: 'percent' },
   { key: 'renewalRate', label: '續報率', type: 'percent' },
   { key: 'actualReceiveAmount', label: '實收金額', type: 'currency' },
   { key: 'actualReceiveRate', label: '實收率', type: 'percent' },
   { key: 'unpaidFollowupCount', label: '未付款跟進量', type: 'number' },
   { key: 'seminarConversion', label: '講座到課轉化', type: 'percent' },
+];
+
+const PERSONAL_METRICS = [
+  { key: 'conversionRate', label: '成交率', type: 'percent' },
+  { key: 'renewalRate', label: '續報率', type: 'number' },
+  { key: 'actualReceiveAmount', label: '實收金額', type: 'currency' },
+  { key: 'actualReceiveRate', label: '實收率', type: 'percent' },
+  { key: 'unpaidFollowupCount', label: '未付款跟進量', type: 'number' },
+  { key: 'seminarConversion', label: '講座到課轉化', type: 'number' },
 ];
 
 const formatPercent = (value) => {
@@ -84,11 +93,12 @@ const KPIAdmin = () => {
       const personalTarget = data?.personal?.target || {};
       const nextGroup = {};
       const nextPersonal = {};
-      METRICS.forEach(({ key, type }) => {
+      GROUP_METRICS.forEach(({ key, type }) => {
         const groupVal = groupTarget[key];
-        const personalVal = personalTarget[key];
-
         nextGroup[key] = type === 'percent' ? toPercentDisplay(groupVal) : (groupVal ?? '');
+      });
+      PERSONAL_METRICS.forEach(({ key, type }) => {
+        const personalVal = personalTarget[key];
         nextPersonal[key] = type === 'percent' ? toPercentDisplay(personalVal) : (personalVal ?? '');
       });
       setGroupForm(nextGroup);
@@ -115,7 +125,7 @@ const KPIAdmin = () => {
 
   const groupRows = useMemo(() => {
     const compare = kpiData?.group?.compare || {};
-    return METRICS.map(({ key, label, type }) => ({
+    return GROUP_METRICS.map(({ key, label, type }) => ({
       indicator: label,
       actual: formatValue(compare[key]?.actual, type),
       target: formatValue(compare[key]?.target, type),
@@ -125,7 +135,7 @@ const KPIAdmin = () => {
 
   const personalRows = useMemo(() => {
     const compare = kpiData?.personal?.compare || {};
-    return METRICS.map(({ key, label, type }) => ({
+    return PERSONAL_METRICS.map(({ key, label, type }) => ({
       indicator: label,
       actual: formatValue(compare[key]?.actual, type),
       target: formatValue(compare[key]?.target, type),
@@ -137,7 +147,7 @@ const KPIAdmin = () => {
     try {
       setSavingScope('GROUP');
       const payloadTargets = {};
-      METRICS.forEach(({ key, type }) => {
+      GROUP_METRICS.forEach(({ key, type }) => {
         payloadTargets[key] = type === 'percent'
           ? toPercentStoredDecimal(groupForm[key])
           : (groupForm[key] ?? '');
@@ -165,7 +175,7 @@ const KPIAdmin = () => {
     try {
       setSavingScope('PERSONAL');
       const payloadTargets = {};
-      METRICS.forEach(({ key, type }) => {
+      PERSONAL_METRICS.forEach(({ key, type }) => {
         payloadTargets[key] = type === 'percent'
           ? toPercentStoredDecimal(personalForm[key])
           : (personalForm[key] ?? '');
@@ -203,9 +213,9 @@ const KPIAdmin = () => {
     return <div style={{ padding: 20 }}><h2>KPI 管理</h2><p style={{ color: 'red' }}>{error}</p></div>;
   }
 
-  const renderTargetEditor = (scope, formState, onChange, onSave, isSaving) => (
+  const renderTargetEditor = (scope, metricDefs, formState, onChange, onSave, isSaving) => (
     <div style={{ marginTop: 12 }}>
-      {METRICS.map((metric) => (
+      {metricDefs.map((metric) => (
         <div key={`${scope}-input-${metric.key}`} style={{ marginBottom: 8 }}>
           <label style={{ display: 'inline-block', minWidth: 140 }}>{metric.label}</label>
           <input
@@ -270,6 +280,7 @@ const KPIAdmin = () => {
           </CommonTable>
           {renderTargetEditor(
             'group',
+            GROUP_METRICS,
             groupForm,
             setGroupForm,
             saveGroupTarget,
@@ -303,6 +314,7 @@ const KPIAdmin = () => {
 
           {renderTargetEditor(
             'personal',
+            PERSONAL_METRICS,
             personalForm,
             setPersonalForm,
             savePersonalTarget,

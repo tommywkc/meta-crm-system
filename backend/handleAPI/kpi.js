@@ -89,7 +89,10 @@ function buildCompare(actualMetrics = {}, target = {}) {
 }
 
 // Helper to compute KPI for a given set of staff IDs
-async function computeKpiForStaffSet(staffIds, year, month) {
+// seminarConversionMode:
+// - 'rate': group/team KPI (percentage) = (unique free-seminar attendees in month who reached 30% paid for a paid class in month) / (unique free-seminar attendees in month)
+// - 'count': personal KPI (number) = unique students converted by this staff set in month (first month reaching 30% paid), where student attended a free seminar before that first-threshold paid_time
+async function computeKpiForStaffSet(staffIds, year, month, { seminarConversionMode = 'rate' } = {}) {
   const normalizedStaffIds = Array.isArray(staffIds)
     ? staffIds
         .map((id) => {
@@ -121,11 +124,95 @@ async function computeKpiForStaffSet(staffIds, year, month) {
         e.user_id,
         e.enroll_by_id,
         u.name AS user_name,
-        e.enroll_time
+        e.enroll_time,
+        ev.type AS event_type,
+        ev.price AS event_price
       FROM EVENT_ENROLLMENTS e
+      LEFT JOIN EVENTS ev ON e.event_id = ev.event_id
       JOIN USERS u ON e.user_id = u.user_id
       WHERE e.enroll_by_id = ANY($1::int[])
         AND e.enroll_time >= $2 AND e.enroll_time <= $3
+    ),
+    staff_paid_class_enrollments AS (
+      -- Paid classes (課堂) assigned by this staff set (no enroll_time filter)
+      SELECT
+        e.enrollment_id,
+        e.event_id,
+        e.user_id,
+        e.enroll_by_id,
+        COALESCE(ev.price, 0) AS class_price,
+        e.enrollment_id::text AS pay_key,
+        (e.event_id::text || ':' || e.user_id::text) AS alt_pay_key
+      FROM EVENT_ENROLLMENTS e
+      JOIN EVENTS ev ON e.event_id = ev.event_id
+      WHERE e.enroll_by_id = ANY($1::int[])
+        AND ev.type = 'CLASS'
+        AND COALESCE(ev.price, 0) > 0
+    ),
+    paid_class_payment_progress AS (
+      -- Cumulative paid per paid-class enrollment (or fallback event+user key)
+      SELECT
+        COALESCE(p.enrollment_id::text, (p.event_id::text || ':' || p.user_id::text)) AS pay_key,
+        p.payment_id,
+        p.event_id,
+        p.user_id,
+        p.paid_time,
+        COALESCE(p.paid_amount, 0) AS paid_amount,
+        COALESCE(ev.price, 0) AS class_price,
+        SUM(COALESCE(p.paid_amount, 0)) OVER (
+          PARTITION BY COALESCE(p.enrollment_id::text, (p.event_id::text || ':' || p.user_id::text))
+          ORDER BY p.paid_time, p.payment_id
+          ROWS UNBOUNDED PRECEDING
+        ) AS cumulative_paid
+      FROM PAYMENTS p
+      JOIN EVENTS ev ON p.event_id = ev.event_id
+      WHERE p.paid_time IS NOT NULL
+        AND p.status IN ('COMPLETED', 'OUTSTANDING')
+        AND COALESCE(p.paid_amount, 0) > 0
+        AND ev.type = 'CLASS'
+        AND COALESCE(ev.price, 0) > 0
+    ),
+    paid_class_first_threshold AS (
+      -- Earliest paid_time where cumulative paid reaches >= 30% of class price
+      SELECT
+        pay_key,
+        user_id,
+        MIN(paid_time) AS first_threshold_paid_time
+      FROM paid_class_payment_progress
+      WHERE cumulative_paid >= (class_price * 0.3)
+      GROUP BY pay_key, user_id
+    ),
+    payments_progress AS (
+      -- Build per-enrollment (or fallback event+user) cumulative paid amounts over time.
+      SELECT
+        COALESCE(p.enrollment_id::text, (p.event_id::text || ':' || p.user_id::text)) AS pay_key,
+        p.payment_id,
+        p.event_id,
+        p.user_id,
+        p.paid_time,
+        COALESCE(p.paid_amount, 0) AS paid_amount,
+        SUM(COALESCE(p.paid_amount, 0)) OVER (
+          PARTITION BY COALESCE(p.enrollment_id::text, (p.event_id::text || ':' || p.user_id::text))
+          ORDER BY p.paid_time, p.payment_id
+          ROWS UNBOUNDED PRECEDING
+        ) AS cumulative_paid
+      FROM PAYMENTS p
+      WHERE p.paid_time IS NOT NULL
+        AND p.status IN ('COMPLETED', 'OUTSTANDING')
+        AND COALESCE(p.paid_amount, 0) > 0
+    ),
+    first_threshold_payment AS (
+      -- Earliest time a student reaches >= 30% of the class price for an assigned paid class.
+      SELECT
+        sce.enrollment_id,
+        sce.user_id,
+        MIN(pp.paid_time) AS first_threshold_paid_time
+      FROM staff_paid_class_enrollments sce
+      JOIN payments_progress pp
+        ON pp.pay_key = sce.pay_key
+        OR pp.pay_key = sce.alt_pay_key
+      WHERE pp.cumulative_paid >= (sce.class_price * 0.3)
+      GROUP BY sce.enrollment_id, sce.user_id
     ),
     payments_agg AS (
       SELECT
@@ -148,7 +235,109 @@ async function computeKpiForStaffSet(staffIds, year, month) {
       -- Sum of all money actually received
       COALESCE(SUM(p.total_paid), 0) AS total_paid,
       -- Count of enrollments that have pending payments
-      COUNT(DISTINCT CASE WHEN p.total_paid < p.total_amount THEN r.enrollment_id END) AS unpaid_followup
+      COUNT(DISTINCT CASE WHEN p.total_paid < p.total_amount THEN r.enrollment_id END) AS unpaid_followup,
+
+      -- Group/team denominator: unique students who attended a free seminar in this month
+      (
+        SELECT COUNT(DISTINCT sr.user_id)
+        FROM EVENT_ATTENDANCE a
+        JOIN SESSION_REGISTRATIONS sr ON a.registration_id = sr.registration_id
+        JOIN EVENT_SESSIONS ses ON sr.session_id = ses.session_id
+        JOIN EVENTS sem ON ses.event_id = sem.event_id
+        WHERE sem.type = 'SEMINAR'
+          AND (sem.price IS NULL OR sem.price = 0)
+          AND a.status IN ('G', 'Y')
+          AND a.attend_time >= $2 AND a.attend_time <= $3
+      ) AS group_free_seminar_attendees,
+
+      -- Group/team numerator: among those attendees, unique students who paid for a paid class in this month (paid_time in month)
+      (
+        SELECT COUNT(DISTINCT sr.user_id)
+        FROM EVENT_ATTENDANCE a
+        JOIN SESSION_REGISTRATIONS sr ON a.registration_id = sr.registration_id
+        JOIN EVENT_SESSIONS ses ON sr.session_id = ses.session_id
+        JOIN EVENTS sem ON ses.event_id = sem.event_id
+        WHERE sem.type = 'SEMINAR'
+          AND (sem.price IS NULL OR sem.price = 0)
+          AND a.status IN ('G', 'Y')
+          AND a.attend_time >= $2 AND a.attend_time <= $3
+          AND EXISTS (
+            SELECT 1
+            FROM staff_paid_class_enrollments sce
+            JOIN first_threshold_payment ftp
+              ON ftp.enrollment_id = sce.enrollment_id
+              AND ftp.user_id = sce.user_id
+            WHERE sce.user_id = sr.user_id
+              AND ftp.first_threshold_paid_time >= $2 AND ftp.first_threshold_paid_time <= $3
+              AND a.attend_time <= ftp.first_threshold_paid_time
+          )
+      ) AS group_seminar_attendee_to_paid_students,
+
+      -- Personal KPI: unique converted students handled by this staff set (paid_time in month)
+      (
+        SELECT COUNT(DISTINCT sce.user_id)
+        FROM staff_paid_class_enrollments sce
+        JOIN first_threshold_payment ftp
+          ON ftp.enrollment_id = sce.enrollment_id
+          AND ftp.user_id = sce.user_id
+        WHERE ftp.first_threshold_paid_time >= $2 AND ftp.first_threshold_paid_time <= $3
+          AND EXISTS (
+            SELECT 1
+            FROM EVENT_ATTENDANCE a2
+            JOIN SESSION_REGISTRATIONS sr2 ON a2.registration_id = sr2.registration_id
+            JOIN EVENT_SESSIONS ses2 ON sr2.session_id = ses2.session_id
+            JOIN EVENTS sem2 ON ses2.event_id = sem2.event_id
+            WHERE sr2.user_id = sce.user_id
+              AND sem2.type = 'SEMINAR'
+              AND (sem2.price IS NULL OR sem2.price = 0)
+              AND a2.status IN ('G', 'Y')
+              AND a2.attend_time <= ftp.first_threshold_paid_time
+          )
+      ) AS personal_seminar_to_paid_students
+
+      -- Group/team denominator for renewal: all unique paid students in this month (first month reaching 30% paid)
+      (
+        SELECT COUNT(DISTINCT t.user_id)
+        FROM paid_class_first_threshold t
+        WHERE t.first_threshold_paid_time >= $2 AND t.first_threshold_paid_time <= $3
+      ) AS group_paid_students_in_month,
+
+      -- Group/team renewal numerator: unique students whose new paid lesson (reaching 30%) is handled by this staff set in month,
+      -- and the student had a previous paid lesson reaching 30% at or before that time.
+      (
+        SELECT COUNT(DISTINCT sce.user_id)
+        FROM staff_paid_class_enrollments sce
+        JOIN first_threshold_payment ftp
+          ON ftp.enrollment_id = sce.enrollment_id
+          AND ftp.user_id = sce.user_id
+        WHERE ftp.first_threshold_paid_time >= $2 AND ftp.first_threshold_paid_time <= $3
+          AND EXISTS (
+            SELECT 1
+            FROM paid_class_first_threshold prev
+            WHERE prev.user_id = sce.user_id
+              AND prev.pay_key <> sce.pay_key
+              AND prev.pay_key <> sce.alt_pay_key
+              AND prev.first_threshold_paid_time <= ftp.first_threshold_paid_time
+          )
+      ) AS group_renewal_students,
+
+      -- Personal renewal KPI: count unique renewed students credited to this staff set in month
+      (
+        SELECT COUNT(DISTINCT sce.user_id)
+        FROM staff_paid_class_enrollments sce
+        JOIN first_threshold_payment ftp
+          ON ftp.enrollment_id = sce.enrollment_id
+          AND ftp.user_id = sce.user_id
+        WHERE ftp.first_threshold_paid_time >= $2 AND ftp.first_threshold_paid_time <= $3
+          AND EXISTS (
+            SELECT 1
+            FROM paid_class_first_threshold prev
+            WHERE prev.user_id = sce.user_id
+              AND prev.pay_key <> sce.pay_key
+              AND prev.pay_key <> sce.alt_pay_key
+              AND prev.first_threshold_paid_time <= ftp.first_threshold_paid_time
+          )
+      ) AS personal_renewal_students
     FROM relevant_enrollments r
     LEFT JOIN payments_agg p ON r.enrollment_id = p.enrollment_id;
   `;
@@ -162,15 +351,24 @@ async function computeKpiForStaffSet(staffIds, year, month) {
   const totalAmount = Number(stats.total_amount) || 0;
   const totalPaid = Number(stats.total_paid) || 0;
   const unpaidFollowup = Number(stats.unpaid_followup) || 0;
+  const groupFreeSeminarAttendees = Number(stats.group_free_seminar_attendees) || 0;
+  const groupSeminarAttendeeToPaidStudents = Number(stats.group_seminar_attendee_to_paid_students) || 0;
+  const personalSeminarToPaidStudents = Number(stats.personal_seminar_to_paid_students) || 0;
+  const groupPaidStudentsInMonth = Number(stats.group_paid_students_in_month) || 0;
+  const groupRenewalStudents = Number(stats.group_renewal_students) || 0;
+  const personalRenewalStudents = Number(stats.personal_renewal_students) || 0;
 
   // Calculate derived metrics
   const conversionRate = totalSigned > 0 ? (totalDeals / totalSigned) : 0;
   const actualReceiveAmount = totalPaid;
   const actualReceiveRate = totalAmount > 0 ? (totalPaid / totalAmount) : 0;
   const unpaidFollowupCount = unpaidFollowup;
-  // Placeholders for future metrics
-  const renewalRate = null; // Logic to be defined
-  const seminarConversion = null; // Logic to be defined
+  const renewalRate = seminarConversionMode === 'count'
+    ? personalRenewalStudents
+    : (groupPaidStudentsInMonth > 0 ? (groupRenewalStudents / groupPaidStudentsInMonth) : 0);
+  const seminarConversion = seminarConversionMode === 'count'
+    ? personalSeminarToPaidStudents
+    : (groupFreeSeminarAttendees > 0 ? (groupSeminarAttendeeToPaidStudents / groupFreeSeminarAttendees) : 0);
 
   return {
     total_signed: totalSigned,
@@ -203,7 +401,7 @@ router.get('/kpi/sales', authMiddleware, roleMiddleware(['sales', 'leader']), as
     const roleKey = String(role || '').toLowerCase();
 
     // 1. Compute Personal KPI
-    const personalKpi = await computeKpiForStaffSet([currentUserId], targetYear, targetMonth);
+    const personalKpi = await computeKpiForStaffSet([currentUserId], targetYear, targetMonth, { seminarConversionMode: 'count' });
 
     // Load personal target (set by admin)
     const personalTargetRow = await getKpiTarget({
@@ -228,7 +426,7 @@ router.get('/kpi/sales', authMiddleware, roleMiddleware(['sales', 'leader']), as
           teamIds.push(currentUserId);
       }
 
-      teamKpi = await computeKpiForStaffSet(teamIds, targetYear, targetMonth);
+      teamKpi = await computeKpiForStaffSet(teamIds, targetYear, targetMonth, { seminarConversionMode: 'rate' });
 
       // Load group target (set by admin)
       const groupTargetRow = await getKpiTarget({ year: targetYear, month: targetMonth, scope: 'GROUP' });
@@ -280,9 +478,9 @@ router.get('/kpi/admin', authMiddleware, roleMiddleware('admin'), async (req, re
     const requestedUserId = requestedUserIdRaw ? parseInt(requestedUserIdRaw, 10) : null;
     const selectedUserId = requestedUserId || (staffIds[0] || null);
 
-    const groupActual = await computeKpiForStaffSet(staffIds, targetYear, targetMonth);
+    const groupActual = await computeKpiForStaffSet(staffIds, targetYear, targetMonth, { seminarConversionMode: 'rate' });
     const personalActual = selectedUserId
-      ? await computeKpiForStaffSet([selectedUserId], targetYear, targetMonth)
+      ? await computeKpiForStaffSet([selectedUserId], targetYear, targetMonth, { seminarConversionMode: 'count' })
       : await computeKpiForStaffSet([], targetYear, targetMonth);
 
     const groupTargetRow = await getKpiTarget({ year: targetYear, month: targetMonth, scope: 'GROUP' });

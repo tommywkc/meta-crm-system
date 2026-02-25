@@ -16,13 +16,22 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('zh-HK', { style: 'currency', currency: 'HKD', minimumFractionDigits: 0 }).format(value);
 };
 
-const METRICS = [
+const TEAM_METRICS = [
 	{ key: 'conversionRate', label: '成交率', type: 'percent' },
 	{ key: 'renewalRate', label: '續報率', type: 'percent' },
 	{ key: 'actualReceiveAmount', label: '實收金額', type: 'currency' },
 	{ key: 'actualReceiveRate', label: '實收率', type: 'percent' },
 	{ key: 'unpaidFollowupCount', label: '未付款跟進量', type: 'number' },
 	{ key: 'seminarConversion', label: '講座到課轉化', type: 'percent' },
+];
+
+const PERSONAL_METRICS = [
+	{ key: 'conversionRate', label: '成交率', type: 'percent' },
+	{ key: 'renewalRate', label: '續報率', type: 'number' },
+	{ key: 'actualReceiveAmount', label: '實收金額', type: 'currency' },
+	{ key: 'actualReceiveRate', label: '實收率', type: 'percent' },
+	{ key: 'unpaidFollowupCount', label: '未付款跟進量', type: 'number' },
+	{ key: 'seminarConversion', label: '講座到課轉化', type: 'number' },
 ];
 
 const formatValue = (value, type) => {
@@ -68,7 +77,7 @@ const KPI = () => {
 
 	// Transform personal KPI data for display (includes admin-set targets when available)
 	const personalCompare = kpiData?.personal?.compare || null;
-	const personalMetrics = kpiData?.personal ? METRICS.map((m) => {
+	const personalMetrics = kpiData?.personal ? PERSONAL_METRICS.map((m) => {
 		const c = personalCompare ? personalCompare[m.key] : null;
 		// Fallback to original metrics if compare isn't provided
 		const fallbackActual = kpiData?.personal?.metrics ? kpiData.personal.metrics[m.key] : null;
@@ -83,7 +92,7 @@ const KPI = () => {
 
 	// Transform team KPI data for display (includes admin-set targets when available)
 	const teamCompare = kpiData?.team?.compare || null;
-	const teamMetrics = kpiData?.team ? METRICS.map((m) => {
+	const teamMetrics = kpiData?.team ? TEAM_METRICS.map((m) => {
 		const c = teamCompare ? teamCompare[m.key] : null;
 		const fallbackActual = kpiData?.team?.metrics ? kpiData.team.metrics[m.key] : null;
 		const actual = c ? c.actual : fallbackActual;
