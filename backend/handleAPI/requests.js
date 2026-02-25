@@ -15,13 +15,8 @@ const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationI
 const { findBySessionId, updateSessionById, listByEventId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
-<<<<<<< HEAD
-const { createSuspension } = require('../dao/suspensionDao');
-const { updateByUserId, findByUserId, findUserByRole } = require('../dao/usersDao');
-=======
 const { createSuspension, findLatestSuspensionByUserId, updateSuspensionById } = require('../dao/suspensionDao');
-const { updateByUserId } = require('../dao/usersDao');
->>>>>>> origin/main
+const { updateByUserId, findByUserId, findUserByRole } = require('../dao/usersDao');
 const { buildHolidaySet, countBusinessDays } = require('../utils/businessDays');
 const waitlistDao = require('../dao/waitlistDao');
 const { createNotification } = require('../dao/notificationsDao');
