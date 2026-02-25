@@ -130,7 +130,7 @@ async function computeKpiForStaffSet(staffIds, year, month, { seminarConversionM
       FROM EVENT_ENROLLMENTS e
       LEFT JOIN EVENTS ev ON e.event_id = ev.event_id
       JOIN USERS u ON e.user_id = u.user_id
-      WHERE e.enroll_by_id = ANY($1::int[])
+      WHERE e.enroll_by_id = ANY($1::bigint[])
         AND e.enroll_time >= $2 AND e.enroll_time <= $3
     ),
     staff_paid_class_enrollments AS (
@@ -145,7 +145,7 @@ async function computeKpiForStaffSet(staffIds, year, month, { seminarConversionM
         (e.event_id::text || ':' || e.user_id::text) AS alt_pay_key
       FROM EVENT_ENROLLMENTS e
       JOIN EVENTS ev ON e.event_id = ev.event_id
-      WHERE e.enroll_by_id = ANY($1::int[])
+      WHERE e.enroll_by_id = ANY($1::bigint[])
         AND ev.type = 'CLASS'
         AND COALESCE(ev.price, 0) > 0
     ),
@@ -293,7 +293,7 @@ async function computeKpiForStaffSet(staffIds, year, month, { seminarConversionM
               AND a2.status IN ('G', 'Y')
               AND a2.attend_time <= ftp.first_threshold_paid_time
           )
-      ) AS personal_seminar_to_paid_students
+      ) AS personal_seminar_to_paid_students,
 
       -- Group/team denominator for renewal: all unique paid students in this month (first month reaching 30% paid)
       (
@@ -342,8 +342,7 @@ async function computeKpiForStaffSet(staffIds, year, month, { seminarConversionM
     LEFT JOIN payments_agg p ON r.enrollment_id = p.enrollment_id;
   `;
 
-  const kpiQueryBigint = kpiQuery.replace('$1::int[]', '$1::bigint[]');
-  const { rows } = await query(kpiQueryBigint, [normalizedStaffIds, startDate, endDate]);
+  const { rows } = await query(kpiQuery, [normalizedStaffIds, startDate, endDate]);
   const stats = rows[0];
 
   const totalSigned = Number(stats.total_signed) || 0;
