@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS SESSION_REGISTRATIONS (
     FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     FOREIGN KEY (registration_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     CONSTRAINT CHKCHANNEL_REG CHECK (channel IN ('WHATSAPP', 'LEADER', 'SALES', 'WEB')),
-    CONSTRAINT CHKSTATUS_REG CHECK (status IN ('REGISTERED', 'WAITLIST', 'SPECIAL', 'CANCELLED', 'CHANGED'))
+    CONSTRAINT CHKSTATUS_REG CHECK (status IN ('REGISTERED', 'CANCELLED'))
 );
 
 CREATE TABLE IF NOT EXISTS WAITLIST (
@@ -403,13 +403,11 @@ INSERT INTO EVENT_ENROLLMENTS (event_id, user_id, enroll_by_id, status, enroll_t
 
 
 
-INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id) VALUES
-    (1, 50008, 50008),
-    (2, 50008, 50008),
-    (3, 50008, 50008),
-    (6, 50008, 50008),
-    (7, 50008, 50008);
-
+INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id, status) VALUES
+    (1, 50008, 50008, 'REGISTERED'),
+    (2, 50008, 50008, 'REGISTERED'),
+    (6, 50008, 50008, 'REGISTERED'),
+    (7, 50008, 50008, 'REGISTERED');
 
 
 INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags, suspension) VALUES
@@ -427,3 +425,6 @@ CREATE TABLE IF NOT EXISTS BANNERS (
     PRIMARY KEY (banner_id),
     FOREIGN KEY (created_by) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
+
+INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id, status) VALUES
+    (3, 50008, 50008, 'CANCELLED');

@@ -151,8 +151,8 @@ const RequestForm = ({ onSubmitted, requestType }) => {
       }
       try {
         setSessionsLoading(true);
-        const queryValue = isMemberUser ? '' : String(form.memberId);
-        const res = await handleListEnrolledUpcomingSessions(200, 0, queryValue, form.courseId);
+        const userIdParam = isMemberUser ? '' : String(form.memberId || '');
+        const res = await handleListEnrolledUpcomingSessions(200, 0, '', form.courseId, userIdParam);
         const list = res?.sessions || res?.data || res?.items || [];
         setSessions(list);
         setSessionError(null);
