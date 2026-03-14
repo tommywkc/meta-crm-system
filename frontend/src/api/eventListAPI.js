@@ -132,3 +132,25 @@ export async function handleDeleteById(event_id) {
     throw err;
   }
 }
+
+export async function handleImportStudentsExcel(file) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(apiUrl('/api/events/import-students'), {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    const payload = await res.json();
+    if (!res.ok) {
+      throw new Error(payload?.message || '匯入失敗');
+    }
+    return payload;
+  } catch (err) {
+    console.error('Import students excel error:', err);
+    throw err;
+  }
+}

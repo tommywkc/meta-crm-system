@@ -79,9 +79,6 @@ const CustomersList = () => {
           <button onClick={() => navigate('/customers/create')}>
             新增客戶
           </button>
-          <button onClick={() => alert('匯入功能開發中')}>
-            匯入客戶Excel
-          </button>
         </div>
       )}
 
