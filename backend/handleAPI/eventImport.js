@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { createEvent, findLatestEventId } = require('../dao/eventsDao');
-const { createSessionWithRound } = require('../dao/eventSessionsDao');
+const { createEvent, findLatestEventId, updateByEventId } = require('../dao/eventsDao');
+const { createSessionWithRound, updateSessionById } = require('../dao/eventSessionsDao');
 const { createUser, findUserByMobile, findUserByEmail, findLatestId } = require('../dao/usersDao');
 const { createEnrollment, findIfExist, updateStatusByEnrollmentId } = require('../dao/eventEnrollmentsDao');
+const { createRegistration, findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
+const { createAttendance, findLatestByRegistrationId } = require('../dao/eventAttendanceDao');
+const { createPayment } = require('../dao/paymentsDao');
 const multer = require('multer');
 const xlsx = require('xlsx');
 const path = require('path');
@@ -49,8 +52,8 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
       status: 'SCHEDULED',
       description: 'Imported from Excel',
       price: Number.isFinite(parsedPrice) ? parsedPrice : null,
-      capacity: null,
-      remaining_seats: null,
+      capacity: 60,
+      remaining_seats: 60,
     };
     const createdEvent = await createEvent(newEvent);
     const columnSets = [
@@ -87,6 +90,28 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
           if (year < 100) year += 2000;
           return new Date(year, parseInt(m1[2], 10) - 1, parseInt(m1[1], 10));
         }
+      }
+      return null;
+    };
+
+    const parsePaymentTime = (val) => {
+      if (!val) return null;
+      if (val instanceof Date && !Number.isNaN(val.getTime())) return val;
+      if (typeof val === 'number') {
+        const parsed = xlsx.SSF.parse_date_code(val);
+        if (!parsed?.y) return null;
+        return new Date(
+          parsed.y,
+          (parsed.m || 1) - 1,
+          parsed.d || 1,
+          parsed.H || 0,
+          parsed.M || 0,
+          parsed.S || 0
+        );
+      }
+      if (typeof val === 'string') {
+        const d = new Date(val.trim());
+        if (!Number.isNaN(d.getTime())) return d;
       }
       return null;
     };
@@ -144,7 +169,46 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
       return `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}:00`;
     };
 
+    const hasAppliedAndAttendedFlag = (val) => {
+      if (val === 1) return true;
+      if (typeof val === 'string') {
+        const normalized = val.trim();
+        return normalized === '1' || normalized === '1.0';
+      }
+      return false;
+    };
+
+    const isNotNullCell = (val) => {
+      if (val == null) return false;
+      if (typeof val === 'string') return val.trim() !== '';
+      return true;
+    };
+
+    const toNumberOrNull = (val) => {
+      if (val == null) return null;
+      if (typeof val === 'number') return Number.isFinite(val) ? val : null;
+      if (typeof val === 'string') {
+        const raw = val.trim();
+        if (!raw) return null;
+        const n = Number(raw.replace(/,/g, ''));
+        return Number.isFinite(n) ? n : null;
+      }
+      return null;
+    };
+
+    const normalizePaymentMethod = (val) => {
+      if (!isNotNullCell(val)) return null;
+      const raw = String(val).trim();
+      const normalized = raw.toUpperCase().replace(/\s+/g, '');
+      if (normalized === 'CREDITCARD' || normalized === '信用卡') return 'CREDITCARD';
+      if (normalized === 'FPS') return 'FPS';
+      if (normalized === 'PAYME') return 'PAYME';
+      if (normalized === 'CASH' || normalized === '現金') return 'CASH';
+      return null;
+    };
+
     const sessionsCreated = [];
+    const sessionByColumn = {};
     for (const set of columnSets) {
       for (let i = 0; i < set.cols.length; i += 1) {
         const col = set.cols[i];
@@ -154,8 +218,9 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
         if (!date) continue;
 
         const start = new Date(date);
-        start.setHours(9, 0, 0, 0);
-        const end = new Date(start.getTime() + 30 * 60 * 1000);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(date);
+        end.setHours(23, 59, 0, 0);
 
         const labNumber = i + 1;
         const session = await createSessionWithRound({
@@ -170,6 +235,7 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
           created_by_id: req.user?.sub || null,
         });
         sessionsCreated.push(session);
+        sessionByColumn[col] = session;
       }
     }
 
@@ -180,8 +246,13 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
       createdUsers: 0,
       existingUsers: 0,
       createdEnrollments: 0,
+      createdRegistrations: 0,
+      createdAttendances: 0,
+      createdPayments: 0,
       skippedRows: [],
     };
+
+    const sessionRegistrationUsers = {}; // { [sessionId]: Set<user_id> }
 
     for (let i = 0; i < rows.length; i += 1) {
       const row = rows[i] || {};
@@ -218,6 +289,7 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
       }
 
       const exists = await findIfExist(user.user_id, createdEvent.event_id);
+      let enrollmentId = exists?.enrollment_id || null;
       if (!exists) {
         const enrollment = await createEnrollment({
           event_id: createdEvent.event_id,
@@ -225,9 +297,102 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
           enroll_by_id: req.user.sub,
         });
         await updateStatusByEnrollmentId(enrollment.enrollment_id, 'CONFIRMED');
+        enrollmentId = enrollment.enrollment_id;
         summary.createdEnrollments += 1;
       }
+
+      // 建立 payment（依 Excel: D=amount, E=paid_amount, F=method, H=status, I=issued_receipt, W=issued_certificate）
+      const amountCell = getCell('D', i + 1);
+      const paidAmountCell = getCell('E', i + 1);
+      const methodCell = getCell('F', i + 1);
+      const statusCell = getCell('G', i + 1);
+      const issuedReceiptCell = getCell('I', i + 1);
+      const issuedCertificateCell = getCell('W', i + 1);
+      const paidTimeCell = getCell('A', i + 1);
+
+      const amount = toNumberOrNull(amountCell?.v ?? amountCell?.w ?? null);
+      const paid_amount = toNumberOrNull(paidAmountCell?.v ?? paidAmountCell?.w ?? null);
+      const method = normalizePaymentMethod(methodCell?.v ?? methodCell?.w ?? null);
+      const paid_time = parsePaymentTime(paidTimeCell?.v ?? paidTimeCell?.w ?? null);
+      const statusRaw = statusCell?.v ?? statusCell?.w ?? null;
+      const statusText = String(statusRaw ?? '').trim().toUpperCase().replace(/\s+/g, '');
+      const status = (isNotNullCell(statusRaw) && statusText !== 'HK$0' && statusText !== 'HKD0' && statusText !== '0')
+        ? 'OUTSTANDING'
+        : 'COMPLETED';
+      const issued_receipt = isNotNullCell(issuedReceiptCell?.v ?? issuedReceiptCell?.w ?? null);
+      const issued_certificate = isNotNullCell(issuedCertificateCell?.v ?? issuedCertificateCell?.w ?? null);
+
+      if (amount != null || paid_amount != null || method != null || issued_receipt || issued_certificate) {
+        await createPayment({
+          event_id: createdEvent.event_id,
+          user_id: user.user_id,
+          enrollment_id: enrollmentId,
+          amount,
+          paid_amount,
+          method,
+          paid_time,
+          status,
+          issued_receipt,
+          issued_certificate,
+        });
+        summary.createdPayments += 1;
+      }
+
+      // X-AM 欄位值為 1：代表已報名且已出席，建立 registration + attendance
+      for (const set of columnSets) {
+        for (const col of set.cols) {
+          const session = sessionByColumn[col];
+          if (!session?.session_id) continue;
+
+          const flagCell = getCell(col, i + 1); // 第1列是header，資料從第2列開始
+          const flagVal = flagCell?.v ?? flagCell?.w ?? null;
+          if (!hasAppliedAndAttendedFlag(flagVal)) continue;
+
+          let registration = await findBySessionAndUser(session.session_id, user.user_id);
+          if (!registration) {
+            registration = await createRegistration({
+              session_id: session.session_id,
+              user_id: user.user_id,
+              channel: 'WEB',
+              registration_by_id: req.user?.sub || null,
+              registration_time: session.datetime_start || null,
+              status: 'REGISTERED',
+            });
+            summary.createdRegistrations += 1;
+          }
+
+          if (!sessionRegistrationUsers[session.session_id]) {
+            sessionRegistrationUsers[session.session_id] = new Set();
+          }
+          sessionRegistrationUsers[session.session_id].add(String(user.user_id));
+
+          const latestAttendance = await findLatestByRegistrationId(registration.registration_id);
+          if (!latestAttendance) {
+            await createAttendance({
+              registration_id: registration.registration_id,
+              attend_time: session.datetime_start || null,
+              status: 'G',
+              remarks: 'Imported from Excel (flag=1)',
+            });
+            summary.createdAttendances += 1;
+          }
+        }
+      }
     }
+
+    // 根據匯入後的人數更新活動與場次的 remaining_seats
+    const eventCapacity = Number(createdEvent.capacity) || 60;
+    const eventRemainingSeats = Math.max(0, eventCapacity - summary.createdEnrollments);
+    await updateByEventId(createdEvent.event_id, { remaining_seats: eventRemainingSeats });
+
+    for (const session of sessionsCreated) {
+      const sessionCapacity = Number(session.capacity) || 60;
+      const registeredCount = sessionRegistrationUsers[session.session_id]?.size || 0;
+      const sessionRemainingSeats = Math.max(0, sessionCapacity - registeredCount);
+      await updateSessionById(session.session_id, { remaining_seats: sessionRemainingSeats });
+    }
+
+    summary.eventRemainingSeats = eventRemainingSeats;
 
     return res.status(201).json({
       message: '匯入完成',

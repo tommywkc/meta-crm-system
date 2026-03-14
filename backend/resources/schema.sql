@@ -323,11 +323,11 @@ CREATE TABLE IF NOT EXISTS FEEDBACKS (
 );
 
 INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags) VALUES
-('50000', 'password', 'ADMIN', 'Admin User', '12345678', 'test@gmail.com', 'hewr2ur2kb2kf3f3', 'WhatsApp', NULL, 'Management', 'admin,super'),
+('50000', 'password', 'ADMIN', 'Admin User', '1', 'test@gmail.com', 'hewr2ur2kb2kf3f3', 'WhatsApp', NULL, 'Management', 'admin,super'),
 ('10000', 'password', 'ADMIN', 'System', '0', '', 'System', '', NULL, '', 'System'),
-('50001', 'password', 'SALES', 'Sales User', '23456789', 'test2@gmail.com', 'djqw3ji32nl23', 'WhatsApp', NULL, 'Sales A', 'sales,active'),
-('50002', 'password', 'LEADER', 'Leader User', '34567890', 'test3@gmail.com', '3h2oj2fekjbwfbjk ew', 'WhatsApp', NULL, 'Sales A', 'leader'),
-('50003', 'password', 'MEMBER', 'Member User', '45678901', 'test4@gmail.com', 'ehoi2dho3fnoen', 'WhatsApp', 50001, 'Sales A', 'member'),
+('50001', 'password', 'SALES', 'Sales User', '3', 'test2@gmail.com', 'djqw3ji32nl23', 'WhatsApp', NULL, 'Sales A', 'sales,active'),
+('50002', 'password', 'LEADER', 'Leader User', '2', 'test3@gmail.com', '3h2oj2fekjbwfbjk ew', 'WhatsApp', NULL, 'Sales A', 'leader'),
+('50003', 'password', 'MEMBER', 'Member User', '4', 'test4@gmail.com', 'ehoi2dho3fnoen', 'WhatsApp', 50001, 'Sales A', 'member'),
 ('50004', 'password', 'MEMBER', '陳大明', '51111111', 'chen.daming@email.com', 'qr_chen_daming', '網頁', 50001, 'Sales A', 'vip,active'),
 ('50005', 'password', 'MEMBER', '李小華', '52222222', 'li.xiaohua@email.com', 'qr_li_xiaohua', 'Facebook', 50001, 'Sales A', 'new'),
 ('50006', 'password', 'MEMBER', '王美玲', '53333333', 'wang.meiling@email.com', 'qr_wang_meiling', 'Instagram', 50001, 'Sales A', 'active'),
@@ -338,26 +338,8 @@ INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, sourc
 ('50011', 'password', 'MEMBER', '周雅婷', '58888888', 'zhou.yating@email.com', 'qr_zhou_yating', 'WhatsApp', 50009, 'Sales B', 'active'),
 ('50012', 'password', 'MEMBER', '吳文傑', '59999999', 'wu.wenjie@email.com', 'qr_wu_wenjie', '網頁', 50009, 'Sales C', 'member'),
 ('50013', 'password', 'MEMBER', '鄭佩君', '60000000', 'zheng.peijun@email.com', 'qr_zheng_peijun', 'Facebook', 50009, 'Sales C', 'vip'),
-('50014', 'password', 'LEADER', '何主管', '61111111', 'he.leader@email.com', 'qr_he_leader', 'WhatsApp', NULL, 'Sales C', 'leader,senior'),
-('50015', 'password', 'MEMBER', '蔡明宏', '62222222', 'cai.minghong@email.com', 'qr_cai_minghong', 'Instagram', 50014, 'Sales C', 'active'),
-('50016', 'password', 'MEMBER', '許家豪', '63333333', 'xu.jiahao@email.com', 'qr_xu_jiahao', 'WhatsApp', 50014, 'Sales C', 'new'),
-('50017', 'password', 'MEMBER', '楊麗華', '64444444', 'yang.lihua@email.com', 'qr_yang_lihua', '網頁', 50014, 'Sales A', 'premium,active'),
-('50018', 'password', 'MEMBER', '馬志明', '65555555', 'ma.zhiming@email.com', 'qr_ma_zhiming', 'Google廣告', 50001, 'Sales A', 'member'),
-('50019', 'password', 'MEMBER', '趙小玉', '66666666', 'zhao.xiaoyu@email.com', 'qr_zhao_xiaoyu', 'Facebook', 50001, 'Sales A', 'vip,premium'),
-('50020', 'password', 'SALES', '孫經理', '67777777', 'sun.manager@email.com', 'qr_sun_manager', 'WhatsApp', NULL, 'Sales D', 'sales,senior'),
-('50021', 'password', 'MEMBER', '高偉強', '68888888', 'gao.weiqiang@email.com', 'qr_gao_weiqiang', 'WhatsApp', 50020, 'Sales D', 'active'),
-('50022', 'password', 'MEMBER', '胡秀英', '69999999', 'hu.xiuying@email.com', 'qr_hu_xiuying', 'Instagram', 50020, 'Sales D', 'new,trial'),
-('50023', 'password', 'MEMBER', '梁思琪', '70000000', 'liang.siqi@email.com', 'qr_liang_siqi', '網頁', 50020, 'Sales D', 'premium'),
-('50024', 'password', 'MEMBER', '羅志豪', '71111111', 'luo.zhihao@email.com', 'qr_luo_zhihao', 'Facebook', 50020, 'Sales D', 'member'),
-('50025', 'password', 'MEMBER', '鍾雅文', '72222222', 'zhong.yawen@email.com', 'qr_zhong_yawen', 'Google廣告', 50009, 'Sales B', 'active'),
-('50026', 'password', 'MEMBER', '宋建華', '73333333', 'song.jianhua@email.com', 'qr_song_jianhua', 'WhatsApp', 50009, 'Sales B', 'vip'),
-('50027', 'password', 'MEMBER', '唐美玲', '74444444', 'tang.meiling@email.com', 'qr_tang_meiling', '網頁', 50001, 'Sales A', 'new'),
-('50028', 'password', 'MEMBER', '韓志偉', '75555555', 'han.zhiwei@email.com', 'qr_han_zhiwei', 'Instagram', 50001, 'Sales A', 'active,premium'),
-('50029', 'password', 'MEMBER', '馮淑芬', '76666666', 'feng.shufen@email.com', 'qr_feng_shufen', 'Facebook', 50014, 'Sales C', 'member'),
-('50030', 'password', 'MEMBER', '葉文俊', '77777777', 'ye.wenjun@email.com', 'qr_ye_wenjun', 'Google廣告', 50014, 'Sales C', 'vip,active'),
-('50031', 'password', 'MEMBER', '蕭淑慧', '78888888', 'xiao.shuhui@email.com', 'qr_xiao_shuhui', 'WhatsApp', 50020, 'Sales D', 'premium'),
-('50032', 'password', 'MEMBER', '曾志強', '79999999', 'zeng.zhiqiang@email.com', 'qr_zeng_zhiqiang', '網頁', 50020, 'Sales D', 'active'),
-('50033', 'password', 'MEMBER', '彭雅雯', '80000000', 'peng.yawen@email.com', 'qr_peng_yawen', 'Facebook', 50009, 'Sales B', 'new,trial');
+('50014', 'password', 'LEADER', '何主管', '61111111', 'he.leader@email.com', 'qr_he_leader', 'WhatsApp', NULL, 'Sales C', 'leader,senior');
+
 
 INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
 ('101', 10000, 'CLASS', '客戶關係管理入門', '客戶關係管理系統的基礎介紹課程', '2024-07-01 10:00:00', '2026-07-01 12:00:00', 60, 20, 'Room 101', 'OPEN', 200, 50009),
