@@ -236,6 +236,7 @@ CREATE TABLE IF NOT EXISTS REQUESTS (
     remarks VARCHAR(255),
     under_3bday BOOLEAN,
     time_conflict BOOLEAN,
+    attendance_conflict BOOLEAN,
     conflict_id BIGINT,
     priority_tier INT,
     reject_reason VARCHAR(255),

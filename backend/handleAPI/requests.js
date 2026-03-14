@@ -16,6 +16,7 @@ const { findBySessionId, updateSessionById, listByEventId } = require('../dao/ev
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
 const { createSuspension, findLatestSuspensionByUserId, updateSuspensionById } = require('../dao/suspensionDao');
+const eventAttendanceDao = require('../dao/eventAttendanceDao');
 const { updateByUserId } = require('../dao/usersDao');
 const { buildHolidaySet, countBusinessDays } = require('../utils/businessDays');
 const waitlistDao = require('../dao/waitlistDao');
@@ -373,7 +374,12 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
     }
 
     let time_conflict = null;
+    let attendance_conflict = null;
     let conflict_id = null;
+    if ((normalizedType === 'LEAVE' || normalizedType === 'RESCHEDULE') && registrationId) {
+      const latestAttendance = await eventAttendanceDao.findLatestByRegistrationId(registrationId);
+      attendance_conflict = Boolean(latestAttendance);
+    }
     if (targetSessionIdNum) {
       const targetSession = await findBySessionId(targetSessionIdNum);
       if (targetSession?.datetime_start) {
@@ -413,6 +419,7 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       remarks,
       under_3bday,
       time_conflict,
+      attendance_conflict,
       conflict_id,
       priority_tier,
     });

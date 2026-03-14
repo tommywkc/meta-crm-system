@@ -117,6 +117,9 @@ const RequestViewTable = ({ request }) => {
               messages.push(`與場次 ${conflictId} 時間衝突`);
             }
           }
+          if (request.attendance_conflict === true) {
+            messages.push('此場次已有出席紀錄');
+          }
           if (messages.length === 0) {
             return '無衝突';
           }
@@ -182,6 +185,7 @@ const RequestViewTable = ({ request }) => {
       'conflict_session_end',
       'priority_tier',
       'time_conflict',
+      'attendance_conflict',
     ]);
 
     const extraRows = Object.entries(request)
