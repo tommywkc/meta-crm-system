@@ -13,6 +13,7 @@ async function findBySubscriptionId(id) {
   return res.rows[0] || null;
 }
 
+
 async function listByUser(user_id) {
   const res = await query('SELECT * FROM SUBSCRIPTIONS WHERE user_id = $1 ORDER BY subscription_id DESC', [user_id]);
   return res.rows;

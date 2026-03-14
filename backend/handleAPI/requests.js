@@ -408,7 +408,7 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       }
     }
 
-    let request = await createRequest({
+    const payload = {
       request_type: normalizedType,
       registration_id: registrationId,
       user_id: memberIdNum,
@@ -422,25 +422,34 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       attendance_conflict,
       conflict_id,
       priority_tier,
-    });
+    };
 
-    if (request?.conflict_id) {
-      const conflictSession = await findBySessionId(request.conflict_id);
-      if (conflictSession) {
-        const conflictEvent = conflictSession.event_id
-          ? await findByEventId(conflictSession.event_id)
-          : null;
-        request = {
-          ...request,
-          conflict_session_name: conflictSession.session_name || null,
-          conflict_session_start: conflictSession.datetime_start || null,
-          conflict_session_end: conflictSession.datetime_end || null,
-          conflict_event_name: conflictEvent?.event_name || null,
-        };
+    const result = await createRequest(payload);
+
+    // Notify admins about the new request
+    try {
+      const admins = await findUserByRole('ADMIN');
+      const requestor = await findByUserId(req.user.sub);
+      const student = memberIdNum ? await findByUserId(memberIdNum) : requestor;
+
+      const subject = `新的 ${requestType} 申請`;
+      const description = `由 ${requestor.name} 為 ${student.name} 提交了新的 ${requestType} 申請。`;
+
+      for (const admin of admins) {
+        await createNotification({
+          user_id: admin.user_id,
+          template: subject,
+          description,
+          created_by_id: req.user.sub,
+        });
       }
+    } catch (notificationError) {
+      console.error('Failed to send request notification to admins:', notificationError);
+      // Do not block the response for notification failure
     }
 
-    return res.status(201).json({ message: '申請已送出', request });
+
+    res.status(201).json(result);
   } catch (error) {
     console.error('Create request failed:', error);
     return res.status(500).json({ message: '伺服器錯誤，請稍後再試' });

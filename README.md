@@ -114,6 +114,7 @@ Open browser and go to http://localhost:3000
    # Server Configuration
    PORT=4000
    NODE_ENV=development
+   EXPIRY_SYNC_RUN_ON_START=true
    
    # Database Configuration
    DB_HOST=localhost

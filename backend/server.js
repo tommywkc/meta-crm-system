@@ -122,6 +122,10 @@ const bannersRouter = require('./handleAPI/banners');
 console.log('Banners router loaded');
 app.use('/api/banners', authMiddleware, bannersRouter);
 
+const kpiRouter = require('./handleAPI/kpi');
+console.log('KPI router loaded');
+app.use('/api', kpiRouter);
+
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');
@@ -186,3 +190,4 @@ async function startServer() {
 }
 
 startServer();
+

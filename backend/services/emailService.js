@@ -6,7 +6,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Minimal helper used by /api/email/send.
 // It sends one email when called; no extra features.
-async function sendEmail({ to, subject, text, html }) {
+async function sendEmail({ to, subject, text, html, attachments }) {
   const from = process.env.SENDGRID_FROM || process.env.SENDGRID_VERIFIED_SENDER;
 
   const msg = {
@@ -14,7 +14,8 @@ async function sendEmail({ to, subject, text, html }) {
     from,
     subject,
     text,
-    html
+    html,
+    attachments,
   };
 
   try {
