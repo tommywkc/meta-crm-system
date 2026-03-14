@@ -65,7 +65,7 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
       return sheet[addr] || null;
     };
 
-    const parseHeaderDate = (val) => {
+    const parseBaseDate = (val) => {
       if (!val) return null;
       if (val instanceof Date && !Number.isNaN(val.getTime())) return val;
       if (typeof val === 'number') {
@@ -77,22 +77,67 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
         const trimmed = val.trim();
         if (!trimmed) return null;
         const datePart = trimmed.split(' ')[0];
-        const m1 = datePart.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+        const m2 = datePart.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (m2) {
+          return new Date(parseInt(m2[1], 10), parseInt(m2[2], 10) - 1, parseInt(m2[3], 10));
+        }
+        const m1 = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
         if (m1) {
-          const day = parseInt(m1[1], 10);
-          const month = parseInt(m1[2], 10);
-          let year = new Date().getFullYear();
-          if (m1[3]) {
-            year = parseInt(m1[3], 10);
-            if (year < 100) year += 2000;
-          }
-          return new Date(year, month - 1, day);
+          let year = parseInt(m1[3], 10);
+          if (year < 100) year += 2000;
+          return new Date(year, parseInt(m1[2], 10) - 1, parseInt(m1[1], 10));
         }
       }
       return null;
     };
 
-    const headerRowIndex = 0;
+    const resolveSessionDateByBase = (day, month, baseDate) => {
+      if (!baseDate || Number.isNaN(baseDate.getTime())) {
+        return new Date(new Date().getFullYear(), month - 1, day);
+      }
+      const base = new Date(baseDate);
+      base.setHours(0, 0, 0, 0);
+      const baseYear = base.getFullYear();
+      const candidate = new Date(baseYear, month - 1, day);
+      if (candidate >= base) return candidate;
+      return new Date(baseYear + 1, month - 1, day);
+    };
+
+    const parseHeaderDate = (val, baseDate) => {
+      if (!val) return null;
+      if (val instanceof Date && !Number.isNaN(val.getTime())) {
+        const day = val.getDate();
+        const month = val.getMonth() + 1;
+        return resolveSessionDateByBase(day, month, baseDate);
+      }
+      if (typeof val === 'number') {
+        const parsed = xlsx.SSF.parse_date_code(val);
+        if (!parsed?.y) return null;
+        return resolveSessionDateByBase(parsed.d, parsed.m, baseDate);
+      }
+      if (typeof val === 'string') {
+        const trimmed = val.trim();
+        if (!trimmed) return null;
+        const datePart = trimmed.split(' ')[0];
+        const m2 = datePart.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (m2) {
+          const month = parseInt(m2[2], 10);
+          const day = parseInt(m2[3], 10);
+          return resolveSessionDateByBase(day, month, baseDate);
+        }
+        const m1 = datePart.match(/^(\d{1,2})\/(\d{1,2})(?:\/\d{2,4})?$/);
+        if (m1) {
+          const day = parseInt(m1[1], 10);
+          const month = parseInt(m1[2], 10);
+          return resolveSessionDateByBase(day, month, baseDate);
+        }
+      }
+      return null;
+    };
+
+    const baseCell = getCell('A', 2);
+    const baseRaw = baseCell?.v ?? baseCell?.w ?? null;
+    const baseDate = parseBaseDate(baseRaw);
 
     const formatDateTimeLocal = (dateObj) => {
       const pad = (n) => String(n).padStart(2, '0');
@@ -103,9 +148,9 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
     for (const set of columnSets) {
       for (let i = 0; i < set.cols.length; i += 1) {
         const col = set.cols[i];
-        const cell = getCell(col, headerRowIndex);
+        const cell = getCell(col, 0);
         const rawVal = cell?.w ?? cell?.v ?? null;
-        const date = parseHeaderDate(rawVal);
+        const date = parseHeaderDate(rawVal, baseDate);
         if (!date) continue;
 
         const start = new Date(date);
