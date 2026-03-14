@@ -633,7 +633,10 @@ router.delete('/session-registrations/:id', authMiddleware, async (req, res) => 
     await removeByRegistrationId(registrationId);
 
     const sessionId = registration.session_id;
+    let promotedFromWaitlist = false;
+    let sessionBeforeUpdate = null;
     if (sessionId) {
+      sessionBeforeUpdate = await findBySessionId(sessionId);
       const waitlistRow = await waitlistDao.findBySessionId(sessionId);
       const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
 
@@ -648,10 +651,26 @@ router.delete('/session-registrations/:id', authMiddleware, async (req, res) => 
               channel: 'WEB',
               registration_by_id: req.user?.sub || null,
             });
+            promotedFromWaitlist = true;
             const remainingList = list.slice(1);
             await waitlistDao.updateBySessionId(sessionId, JSON.stringify(remainingList));
           }
         }
+      }
+
+      if (sessionBeforeUpdate?.remaining_seats != null) {
+        const currentRemaining = Number(sessionBeforeUpdate.remaining_seats);
+        const capacity = sessionBeforeUpdate?.capacity != null ? Number(sessionBeforeUpdate.capacity) : null;
+        let nextRemaining = Number.isNaN(currentRemaining) ? 0 : currentRemaining + 1;
+
+        if (promotedFromWaitlist) {
+          nextRemaining = Math.max(0, nextRemaining - 1);
+        }
+        if (capacity != null && !Number.isNaN(capacity)) {
+          nextRemaining = Math.min(capacity, nextRemaining);
+        }
+
+        await updateSessionById(sessionId, { remaining_seats: nextRemaining });
       }
     }
     return res.status(200).json({ message: '場次報名已刪除' });
