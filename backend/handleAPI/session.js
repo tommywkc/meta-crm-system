@@ -219,6 +219,10 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
     // Prevent duplicate registrations for the same session and user
     const existing = await findBySessionAndUser(sessionId, userId);
     if (existing) {
+      const existingStatus = String(existing.status || '').toUpperCase();
+      if (existingStatus === 'CANCELLED') {
+        return res.status(400).json({ message: '客戶已請假或改期此場次' });
+      }
       return res.status(400).json({ message: '已報名此場次' });
     }
 

@@ -11,15 +11,31 @@ const {
   findRequestDetailById,
   updateRequestById,
 } = require('../dao/requestsDao');
-const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration } = require('../dao/sessionRegistrationsDao');
+const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration, updateRegistrationById } = require('../dao/sessionRegistrationsDao');
 const { findBySessionId, updateSessionById, listByEventId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
 const { createSuspension, findLatestSuspensionByUserId, updateSuspensionById } = require('../dao/suspensionDao');
-const { updateByUserId, findByUserId, findUserByRole } = require('../dao/usersDao');
+const eventAttendanceDao = require('../dao/eventAttendanceDao');
+const { updateByUserId } = require('../dao/usersDao');
 const { buildHolidaySet, countBusinessDays } = require('../utils/businessDays');
 const waitlistDao = require('../dao/waitlistDao');
-const { createNotification } = require('../dao/notificationsDao');
+
+const isActiveRegistration = (reg) => {
+  if (!reg) return false;
+  return String(reg.status || '').toUpperCase() === 'REGISTERED';
+};
+
+const isRegisteredOrCancelled = (reg) => {
+  if (!reg) return false;
+  const status = String(reg.status || '').toUpperCase();
+  return status === 'REGISTERED' || status === 'CANCELLED';
+};
+
+const isCancelledRegistration = (reg) => {
+  if (!reg) return false;
+  return String(reg.status || '').toUpperCase() === 'CANCELLED';
+};
 
 const getWaitlistPriority = (requestType, priorityTier = null) => {
   const type = (requestType || '').toUpperCase();
@@ -244,7 +260,7 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
 
     if (targetSessionIdNum) {
       const existingTarget = await findBySessionAndUser(targetSessionIdNum, memberIdNum);
-      if (existingTarget) {
+      if (isActiveRegistration(existingTarget)) {
         return res.status(400).json({ message: '此會員已報名目標場次，無法提交補堂／覆課申請' });
       }
     }
@@ -255,14 +271,22 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       if (targetSession?.event_id && targetSession?.session_name) {
         const sameEventSessions = await listByEventId(targetSession.event_id);
         let hasSameNameRegistration = false;
+        let hasCancelledSameName = false;
         for (const session of sameEventSessions || []) {
           if (!session?.session_id) continue;
           if (session.session_name !== targetSession.session_name) continue;
           const existingReg = await findBySessionAndUser(session.session_id, memberIdNum);
-          if (existingReg) {
+          if (isCancelledRegistration(existingReg)) {
+            hasCancelledSameName = true;
+          }
+          if (isRegisteredOrCancelled(existingReg)) {
             hasSameNameRegistration = true;
             break;
           }
+        }
+
+        if (normalizedType === 'RETAKE' && hasCancelledSameName) {
+          return res.status(400).json({ message: '客戶未有其他場次的確認紀錄，請改用補堂申請' });
         }
 
         if (!hasSameNameRegistration) {
@@ -281,7 +305,7 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
           if (String(session.session_id) === String(targetSessionIdNum)) continue;
           if (session.session_name !== targetSession.session_name) continue;
           const reg = await findBySessionAndUser(session.session_id, memberIdNum);
-          if (reg) {
+          if (isActiveRegistration(reg)) {
             existingSameName = session.session_id;
             break;
           }
@@ -350,7 +374,12 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
     }
 
     let time_conflict = null;
+    let attendance_conflict = null;
     let conflict_id = null;
+    if ((normalizedType === 'LEAVE' || normalizedType === 'RESCHEDULE') && registrationId) {
+      const latestAttendance = await eventAttendanceDao.findLatestByRegistrationId(registrationId);
+      attendance_conflict = Boolean(latestAttendance);
+    }
     if (targetSessionIdNum) {
       const targetSession = await findBySessionId(targetSessionIdNum);
       if (targetSession?.datetime_start) {
@@ -390,6 +419,7 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       remarks,
       under_3bday,
       time_conflict,
+      attendance_conflict,
       conflict_id,
       priority_tier,
     };
@@ -514,9 +544,15 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       }
 
       if (registrationId) {
-        await removeByRegistrationId(registrationId);
+        await updateRegistrationById(registrationId, { status: 'CANCELLED' });
 
         if (leaveSessionId) {
+          const leaveSession = await findBySessionId(leaveSessionId);
+          const currentRemaining = leaveSession?.remaining_seats != null ? Number(leaveSession.remaining_seats) : null;
+          if (currentRemaining != null && !Number.isNaN(currentRemaining)) {
+            await updateSessionById(leaveSessionId, { remaining_seats: currentRemaining + 1 });
+          }
+
           const waitlistRow = await waitlistDao.findBySessionId(leaveSessionId);
           const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
 
@@ -531,6 +567,9 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
                   channel: 'WEB',
                   registration_by_id: req.user?.sub || null,
                 });
+                if (currentRemaining != null && !Number.isNaN(currentRemaining)) {
+                  await updateSessionById(leaveSessionId, { remaining_seats: Math.max(0, currentRemaining) });
+                }
               }
             }
 
@@ -592,9 +631,15 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       }
 
       if (registrationId) {
-        await removeByRegistrationId(registrationId);
+        await updateRegistrationById(registrationId, { status: 'CANCELLED' });
 
         if (oldSessionId) {
+          const oldSession = await findBySessionId(oldSessionId);
+          const currentRemaining = oldSession?.remaining_seats != null ? Number(oldSession.remaining_seats) : null;
+          if (currentRemaining != null && !Number.isNaN(currentRemaining)) {
+            await updateSessionById(oldSessionId, { remaining_seats: currentRemaining + 1 });
+          }
+
           const waitlistRow = await waitlistDao.findBySessionId(oldSessionId);
           const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
 
@@ -609,6 +654,9 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
                   channel: 'WEB',
                   registration_by_id: req.user?.sub || null,
                 });
+                if (currentRemaining != null && !Number.isNaN(currentRemaining)) {
+                  await updateSessionById(oldSessionId, { remaining_seats: Math.max(0, currentRemaining) });
+                }
               }
             }
 

@@ -108,6 +108,7 @@ async function listUpcomingSessionsByUser(user_id, limit = 5, offset = 0) {
     LEFT JOIN EVENTS e ON s.event_id = e.event_id
     LEFT JOIN USERS u ON sr.user_id = u.user_id
     WHERE sr.user_id = $1
+      AND (sr.status = 'REGISTERED' OR sr.status IS NULL)
       AND s.datetime_end > NOW() - INTERVAL '30 minutes'
     ORDER BY s.datetime_start ASC
     LIMIT $2 OFFSET $3
@@ -134,7 +135,8 @@ async function listUpcomingSessionsAllUsers(limit = 100, offset = 0) {
     JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
     LEFT JOIN EVENTS e ON s.event_id = e.event_id
     LEFT JOIN USERS u ON sr.user_id = u.user_id
-    WHERE s.datetime_end > NOW() - INTERVAL '30 minutes'
+    WHERE (sr.status = 'REGISTERED' OR sr.status IS NULL)
+      AND s.datetime_end > NOW() - INTERVAL '30 minutes'
     ORDER BY s.datetime_start ASC
     LIMIT $1 OFFSET $2
   `;
@@ -165,6 +167,7 @@ async function searchUpcomingSessionsByUser(user_id, limit = 100, offset = 0, q 
     LEFT JOIN EVENTS e ON s.event_id = e.event_id
     LEFT JOIN USERS u ON sr.user_id = u.user_id
     WHERE sr.user_id = $1
+      AND (sr.status = 'REGISTERED' OR sr.status IS NULL)
       AND s.datetime_end > NOW() - INTERVAL '30 minutes'
       AND (
         CAST(e.event_id AS TEXT) ILIKE $4

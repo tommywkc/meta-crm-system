@@ -59,6 +59,10 @@ const eventRouter = require('./handleAPI/eventList');
 console.log('Event router loaded');
 app.use('/api', eventRouter); // Use the event router
 
+const eventImportRouter = require('./handleAPI/eventImport');
+console.log('Event import router loaded');
+app.use('/api', eventImportRouter);
+
 const userProfileRouter = require('./handleAPI/userProfile');
 console.log('User profile router loaded');
 app.use('/api', userProfileRouter); // Use the user profile router
