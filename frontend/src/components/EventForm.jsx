@@ -20,6 +20,8 @@ const EventForm = ({
   title = "活動表單",
   showEventId = false,
   showSessionForm = false,
+  extraFields = null,
+  requireName = true,
   onDelete = null
 }) => {
   const [name, setName] = useState(initialData.event_name || '');
@@ -91,7 +93,7 @@ const EventForm = ({
   e.preventDefault();
 
   // 驗證：必填欄位
-  if (!name.trim()) {
+  if (requireName && !name.trim()) {
     alert("請輸入活動名稱。");
     return;
   }
@@ -149,6 +151,7 @@ const EventForm = ({
         onBack={onCancel} 
       />
       <form onSubmit={handleSubmit} style={{ marginTop: 12, maxWidth: 700 }}>
+        {extraFields}
         {showEventId && initialData.event_id && (
           <div style={{ marginBottom: 16 }}>
             <p>
@@ -164,7 +167,7 @@ const EventForm = ({
             value={name}
             onChange={(e) => setName(e.target.value)}
             style={{ width: '100%', padding: 8 }}
-            required
+            required={requireName}
           />
         </div>
 

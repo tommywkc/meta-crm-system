@@ -100,6 +100,59 @@ async function createSession({
   return res.rows[0];
 }
 
+// Create a new session with explicit round (no auto-resequence)
+async function createSessionWithRound({
+  event_id,
+  session_name,
+  description = null,
+  capacity = null,
+  remaining_seats = null,
+  datetime_start = null,
+  datetime_end = null,
+  round = null,
+  created_by_id,
+}) {
+  const sql = `
+    INSERT INTO EVENT_SESSIONS (
+      event_id,
+      session_name,
+      description,
+      capacity,
+      remaining_seats,
+      datetime_start,
+      datetime_end,
+      round,
+      created_by_id
+    ) VALUES (
+      $1,
+      $2,
+      $3,
+      $4,
+      $5,
+      $6,
+      $7,
+      $8,
+      $9
+    )
+    RETURNING *
+  `;
+
+  const vals = [
+    event_id,
+    session_name,
+    description,
+    capacity,
+    remaining_seats,
+    datetime_start,
+    datetime_end,
+    round,
+    created_by_id,
+  ];
+
+  const res = await query(sql, vals);
+  return res.rows[0];
+}
+
 async function findBySessionId(id) {
   const res = await query('SELECT * FROM EVENT_SESSIONS WHERE session_id = $1', [id]);
   return res.rows[0] || null;
@@ -175,4 +228,4 @@ async function updateSessionById(id, fields = {}) {
   return updated;
 }
 
-module.exports = { createSession, findBySessionId, listByEventId, removeBySessionById, updateSessionById };
+module.exports = { createSession, createSessionWithRound, findBySessionId, listByEventId, removeBySessionById, updateSessionById };

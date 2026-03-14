@@ -133,10 +133,12 @@ export async function handleDeleteById(event_id) {
   }
 }
 
-export async function handleImportStudentsExcel(file) {
+export async function handleImportStudentsExcel(file, options = {}) {
   try {
     const formData = new FormData();
     formData.append('file', file);
+    if (options?.event_name) formData.append('event_name', options.event_name);
+    if (options?.price != null && options.price !== '') formData.append('price', options.price);
 
     const res = await fetch(apiUrl('/api/events/import-students'), {
       method: 'POST',

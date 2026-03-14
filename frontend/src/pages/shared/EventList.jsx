@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import EventsTable from '../../components/EventsTable';
 import { UpperSelectContainerStyle, LowerSelectContainerStyle, commonSelectStyle } from '../../styles/SelectStyles';
 import { searchInputStyle } from '../../styles/TableStyles';
-import { handleListEvents, handleDeleteById, handleImportStudentsExcel } from '../../api/eventListAPI';
+import { handleListEvents, handleDeleteById } from '../../api/eventListAPI';
 import { handleListMyActiveEnrolledEvents, handleConfirmEnrollmentByUser } from '../../api/enrollmentAPI';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
@@ -27,8 +27,6 @@ const EventList = () => {
 	const [events, setEvents] = useState([]);
 	const [enrolledEventIds, setEnrolledEventIds] = useState([]);
 	const [filteredEvents, setFilteredEvents] = useState([]);
-	const [importing, setImporting] = useState(false);
-	const fileInputRef = useRef(null);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -167,31 +165,6 @@ const EventList = () => {
 		}
 	};
 
-	const handleImportClick = () => {
-		if (fileInputRef.current) {
-			fileInputRef.current.value = '';
-			fileInputRef.current.click();
-		}
-	};
-
-	const handleImportFile = async (e) => {
-		const file = e.target.files && e.target.files[0];
-		if (!file) return;
-		try {
-			setImporting(true);
-			const res = await handleImportStudentsExcel(file);
-			const summary = res?.summary;
-			const msg = summary
-				? `匯入完成\n新增活動: ${res?.event?.event_name || '-'}\n新增用戶: ${summary.createdUsers}\n既有用戶: ${summary.existingUsers}\n新增報名: ${summary.createdEnrollments}\n略過筆數: ${summary.skippedRows?.length || 0}`
-				: '匯入完成';
-			alert(msg);
-			await fetchEvents();
-		} catch (err) {
-			alert(err?.message || '匯入失敗');
-		} finally {
-			setImporting(false);
-		}
-	};
 
 		return (
 		<PageContainer>
@@ -209,17 +182,10 @@ const EventList = () => {
 						<button onClick={() => navigate('/events/create')}>
 							新增講座與課堂
 						</button>
-						<button onClick={handleImportClick} disabled={importing}>
+						<button onClick={() => navigate('/events/import')}>
 							匯入活動Excel
 						</button>
-						<input
-							ref={fileInputRef}
-							type="file"
-							accept=".xlsx,.xls"
-							style={{ display: 'none' }}
-							onChange={handleImportFile}
-						/>
-        			</div>
+	        			</div>
 				)}
 
 			<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>

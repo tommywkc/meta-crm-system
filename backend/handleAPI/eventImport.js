@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { createEvent, findLatestEventId } = require('../dao/eventsDao');
+const { createSessionWithRound } = require('../dao/eventSessionsDao');
 const { createUser, findUserByMobile, findUserByEmail, findLatestId } = require('../dao/usersDao');
 const { createEnrollment, findIfExist, updateStatusByEnrollmentId } = require('../dao/eventEnrollmentsDao');
 const multer = require('multer');
@@ -36,18 +37,96 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
 
     const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
     const baseName = path.basename(originalName, path.extname(originalName));
+    const inputName = String(req.body?.event_name || '').trim();
+    const inputPriceRaw = req.body?.price;
+    const parsedPrice = inputPriceRaw === '' || inputPriceRaw == null ? null : Number(inputPriceRaw);
     const latestEventId = parseInt(await findLatestEventId(), 10);
     const event_id = (latestEventId || 100) + 1;
     const newEvent = {
       event_id,
-      event_name: baseName,
+      event_name: inputName || baseName,
       type: 'CLASS',
-      status: 'OPEN',
+      status: 'SCHEDULED',
       description: 'Imported from Excel',
+      price: Number.isFinite(parsedPrice) ? parsedPrice : null,
       capacity: null,
       remaining_seats: null,
     };
     const createdEvent = await createEvent(newEvent);
+    const columnSets = [
+      { round: 1, cols: ['X', 'Y', 'Z', 'AA'] },
+      { round: 2, cols: ['AB', 'AC', 'AD', 'AE'] },
+      { round: 3, cols: ['AF', 'AG', 'AH', 'AI'] },
+      { round: 4, cols: ['AJ', 'AK', 'AL', 'AM'] },
+    ];
+
+    const getCell = (col, rowIndex) => {
+      const addr = `${col}${rowIndex + 1}`;
+      return sheet[addr] || null;
+    };
+
+    const parseHeaderDate = (val) => {
+      if (!val) return null;
+      if (val instanceof Date && !Number.isNaN(val.getTime())) return val;
+      if (typeof val === 'number') {
+        const parsed = xlsx.SSF.parse_date_code(val);
+        if (!parsed?.y) return null;
+        return new Date(parsed.y, parsed.m - 1, parsed.d);
+      }
+      if (typeof val === 'string') {
+        const trimmed = val.trim();
+        if (!trimmed) return null;
+        const datePart = trimmed.split(' ')[0];
+        const m1 = datePart.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+        if (m1) {
+          const day = parseInt(m1[1], 10);
+          const month = parseInt(m1[2], 10);
+          let year = new Date().getFullYear();
+          if (m1[3]) {
+            year = parseInt(m1[3], 10);
+            if (year < 100) year += 2000;
+          }
+          return new Date(year, month - 1, day);
+        }
+      }
+      return null;
+    };
+
+    const headerRowIndex = 0;
+
+    const formatDateTimeLocal = (dateObj) => {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}:00`;
+    };
+
+    const sessionsCreated = [];
+    for (const set of columnSets) {
+      for (let i = 0; i < set.cols.length; i += 1) {
+        const col = set.cols[i];
+        const cell = getCell(col, headerRowIndex);
+        const rawVal = cell?.w ?? cell?.v ?? null;
+        const date = parseHeaderDate(rawVal);
+        if (!date) continue;
+
+        const start = new Date(date);
+        start.setHours(9, 0, 0, 0);
+        const end = new Date(start.getTime() + 30 * 60 * 1000);
+
+        const labNumber = i + 1;
+        const session = await createSessionWithRound({
+          event_id: createdEvent.event_id,
+          session_name: `lab${labNumber}`,
+          description: null,
+          capacity: 60,
+          remaining_seats: 60,
+          datetime_start: formatDateTimeLocal(start),
+          datetime_end: formatDateTimeLocal(end),
+          round: set.round,
+          created_by_id: req.user?.sub || null,
+        });
+        sessionsCreated.push(session);
+      }
+    }
 
     let nextUserId = parseInt(await findLatestId(), 10) || 49999;
 
@@ -85,7 +164,7 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
           name,
           mobile,
           email,
-          source: 'IMPORT',
+          source: 'Excel匯入',
         });
         user = created;
         summary.createdUsers += 1;
@@ -108,6 +187,7 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
     return res.status(201).json({
       message: '匯入完成',
       event: createdEvent,
+      sessions: sessionsCreated,
       summary,
     });
   } catch (error) {
