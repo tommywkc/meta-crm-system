@@ -62,7 +62,7 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) =
 					</>
 				}
 			>
-				<MobileCardRow label="建立日期" value={formatDateTimeForDisplay(p.paid_time || p.create_time)} />
+				<MobileCardRow label="建立日期" value={formatDateTimeForDisplay(p.create_time)} />
 				<MobileCardRow label="訂單編號" value={p.payment_id ?? '-'} valueStyle={{ wordBreak: 'break-all' }} />
 				{showUserColumn && (
 					<MobileCardRow label="用戶" value={userDisplay} />
@@ -87,7 +87,7 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) =
 				const eventIdDisplay = p.event_id == null ? '(Deleted Event)' : p.event_id;
 				return (
 					<tr key={p.payment_id}>
-						<td>{formatDateTimeForDisplay(p.paid_time || p.create_time)}</td>
+						<td>{formatDateTimeForDisplay(p.create_time)}</td>
 						<td>{p.payment_id ?? '-'}</td>
 						{showUserColumn && <td>{userDisplay}</td>}
 						<td>{eventIdDisplay}</td>
