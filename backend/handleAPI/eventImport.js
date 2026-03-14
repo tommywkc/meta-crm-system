@@ -383,7 +383,29 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
     // 根據匯入後的人數更新活動與場次的 remaining_seats
     const eventCapacity = Number(createdEvent.capacity) || 60;
     const eventRemainingSeats = Math.max(0, eventCapacity - summary.createdEnrollments);
-    await updateByEventId(createdEvent.event_id, { remaining_seats: eventRemainingSeats });
+    let eventStart = null;
+    let eventEnd = null;
+    if (sessionsCreated.length > 0) {
+      const starts = sessionsCreated
+        .map((s) => (s?.datetime_start ? new Date(s.datetime_start) : null))
+        .filter((d) => d && !Number.isNaN(d.getTime()));
+      const ends = sessionsCreated
+        .map((s) => (s?.datetime_end ? new Date(s.datetime_end) : null))
+        .filter((d) => d && !Number.isNaN(d.getTime()));
+
+      if (starts.length > 0) {
+        eventStart = new Date(Math.min(...starts.map((d) => d.getTime())));
+      }
+      if (ends.length > 0) {
+        eventEnd = new Date(Math.max(...ends.map((d) => d.getTime())));
+      }
+    }
+
+    await updateByEventId(createdEvent.event_id, {
+      remaining_seats: eventRemainingSeats,
+      datetime_start: eventStart ? formatDateTimeLocal(eventStart) : null,
+      datetime_end: eventEnd ? formatDateTimeLocal(eventEnd) : null,
+    });
 
     for (const session of sessionsCreated) {
       const sessionCapacity = Number(session.capacity) || 60;
