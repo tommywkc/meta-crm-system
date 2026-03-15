@@ -54,6 +54,7 @@ const formatValue = (value) => {
   return JSON.stringify(value);
 };
 
+
 const RequestViewTable = ({ request }) => {
   const fieldRows = useMemo(() => {
     if (!request) return [];
@@ -92,6 +93,9 @@ const RequestViewTable = ({ request }) => {
           if (request.under_3bday === true) {
             messages.push('申請低於三個工作天');
           }
+          if (request.user_suspension === true) {
+            messages.push(<span key="suspension" style={{ color: 'red' }}>會員目前停權</span>);
+          }
           if (request.time_conflict === true) {
             const conflictId = formatValue(request.conflict_id);
             const conflictEventName = formatValue(request.conflict_event_name);
@@ -112,6 +116,9 @@ const RequestViewTable = ({ request }) => {
             } else {
               messages.push(`與場次 ${conflictId} 時間衝突`);
             }
+          }
+          if (request.attendance_conflict === true) {
+            messages.push('此場次已有出席紀錄');
           }
           if (messages.length === 0) {
             return '無衝突';
@@ -159,6 +166,7 @@ const RequestViewTable = ({ request }) => {
       'user_email',
       'request_by_id',
       'request_by_name',
+      'user_suspension',
       'old_session_id',
       'old_session_name',
       'old_session_start',
@@ -177,6 +185,7 @@ const RequestViewTable = ({ request }) => {
       'conflict_session_end',
       'priority_tier',
       'time_conflict',
+      'attendance_conflict',
     ]);
 
     const extraRows = Object.entries(request)

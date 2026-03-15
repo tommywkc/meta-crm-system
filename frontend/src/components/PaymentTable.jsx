@@ -52,7 +52,8 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false, sor
 	const renderCard = (p, idx) => {
 		const userDisplay = p.user_name
 			? `${p.user_name} (${p.user_id})`
-			: '(Delected User)';
+			: '(Deleted User)';
+		const eventIdDisplay = p.event_id == null ? '(Deleted Event)' : p.event_id;
 
 		return (
 			<MobileCard
@@ -69,7 +70,7 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false, sor
 					</>
 				}
 			>
-				<MobileCardRow label="建立日期" value={formatDateTimeForDisplay(p.paid_time || p.create_time)} />
+				<MobileCardRow label="建立日期" value={formatDateTimeForDisplay(p.create_time)} />
 				<MobileCardRow label="訂單編號" value={p.payment_id ?? '-'} valueStyle={{ wordBreak: 'break-all' }} />
 				{showUserColumn && (
 					<>
@@ -79,7 +80,7 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false, sor
 						<MobileCardRow label="負責銷售" value={p.user_owner_sales_name || '-'} />
 					</>
 				)}
-				<MobileCardRow label="活動ID" value={p.event_id || '-'} />
+				<MobileCardRow label="活動ID" value={eventIdDisplay} />
 				<MobileCardRow label="金額" value={currency.format(Number(p.amount || 0))} />
 				<MobileCardRow label="已付金額" value={currency.format(Number((p.paid_amount ?? p.amount) || 0))} />
 				<MobileCardRow label="付款方式" value={methodLabel(p.method)} />
@@ -95,10 +96,11 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false, sor
 				// Display user as "Name (ID)"; if no name but has ID, show "(Deleted User) (ID)"; if neither, show '-'
 				const userDisplay = p.user_name
 					? `${p.user_name} (${p.user_id})`
-					: '(Delected User)';
+					: '(Deleted User)';
+				const eventIdDisplay = p.event_id == null ? '(Deleted Event)' : p.event_id;
 				return (
 					<tr key={p.payment_id}>
-						<td>{formatDateTimeForDisplay(p.paid_time || p.create_time)}</td>
+						<td>{formatDateTimeForDisplay(p.create_time)}</td>
 						<td>{p.payment_id ?? '-'}</td>
 						{showUserColumn && (
 							<>
@@ -108,7 +110,7 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false, sor
 								<td>{p.user_owner_sales_name || '-'}</td>
 							</>
 						)}
-						<td>{p.event_id || '-'}</td>
+						<td>{eventIdDisplay}</td>
 						<td>{currency.format(Number(p.amount || 0))}</td>
 						<td>{currency.format(Number((p.paid_amount ?? p.amount) || 0))}</td>
 						<td>{methodLabel(p.method)}</td>

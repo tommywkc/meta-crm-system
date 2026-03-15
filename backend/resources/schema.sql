@@ -20,7 +20,8 @@ DROP TABLE IF EXISTS NOTIFICATIONS;
 DROP TABLE IF EXISTS NOTICES;
 DROP TABLE IF EXISTS HOLIDAYS;
 DROP TABLE IF EXISTS FEEDBACKS;
-DROP TABLE IF EXISTS USERS;
+DROP TABLE IF EXISTS KPI_TARGETS;
+DROP TABLE IF EXISTS USERS CASCADE;
 DROP SEQUENCE IF EXISTS user_id_seq;
 DROP SEQUENCE IF EXISTS event_id_seq;
 
@@ -158,7 +159,7 @@ CREATE TABLE IF NOT EXISTS SESSION_REGISTRATIONS (
     FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     FOREIGN KEY (registration_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL,
     CONSTRAINT CHKCHANNEL_REG CHECK (channel IN ('WHATSAPP', 'LEADER', 'SALES', 'WEB')),
-    CONSTRAINT CHKSTATUS_REG CHECK (status IN ('REGISTERED', 'WAITLIST', 'SPECIAL', 'CANCELLED', 'CHANGED'))
+    CONSTRAINT CHKSTATUS_REG CHECK (status IN ('REGISTERED', 'CANCELLED'))
 );
 
 CREATE TABLE IF NOT EXISTS WAITLIST (
@@ -214,6 +215,7 @@ CREATE TABLE IF NOT EXISTS UPLOADS (
     PRIMARY KEY (upload_id)
 );
 
+
 CREATE TABLE IF NOT EXISTS ASSIGNMENTS (
     assignment_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
     event_id BIGINT,
@@ -260,6 +262,7 @@ CREATE TABLE IF NOT EXISTS REQUESTS (
     remarks VARCHAR(255),
     under_3bday BOOLEAN,
     time_conflict BOOLEAN,
+    attendance_conflict BOOLEAN,
     conflict_id BIGINT,
     priority_tier INT,
     reject_reason VARCHAR(255),
@@ -322,6 +325,8 @@ CREATE TABLE IF NOT EXISTS NOTIFICATIONS (
     FOREIGN KEY (created_by_id) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
+
+
 CREATE TABLE HOLIDAYS (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   holiday_date DATE UNIQUE,
@@ -343,11 +348,11 @@ CREATE TABLE IF NOT EXISTS FEEDBACKS (
 );
 
 INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags) VALUES
-('50000', 'password', 'ADMIN', 'Admin User', '12345678', 'test@gmail.com', 'hewr2ur2kb2kf3f3', 'WhatsApp', NULL, 'Management', 'admin,super'),
+('50000', 'password', 'ADMIN', 'Admin User', '1', 'test@gmail.com', 'hewr2ur2kb2kf3f3', 'WhatsApp', NULL, 'Management', 'admin,super'),
 ('10000', 'password', 'ADMIN', 'System', '0', '', 'System', '', NULL, '', 'System'),
-('50001', 'password', 'SALES', 'Sales User', '23456789', 'test2@gmail.com', 'djqw3ji32nl23', 'WhatsApp', NULL, 'Sales A', 'sales,active'),
-('50002', 'password', 'LEADER', 'Leader User', '34567890', 'test3@gmail.com', '3h2oj2fekjbwfbjk ew', 'WhatsApp', NULL, 'Sales A', 'leader'),
-('50003', 'password', 'MEMBER', 'Member User', '45678901', 'test4@gmail.com', 'ehoi2dho3fnoen', 'WhatsApp', 50001, 'Sales A', 'member'),
+('50001', 'password', 'SALES', 'Sales User', '3', 'test2@gmail.com', 'djqw3ji32nl23', 'WhatsApp', NULL, 'Sales A', 'sales,active'),
+('50002', 'password', 'LEADER', 'Leader User', '2', 'test3@gmail.com', '3h2oj2fekjbwfbjk ew', 'WhatsApp', NULL, 'Sales A', 'leader'),
+('50003', 'password', 'MEMBER', 'Member User', '4', 'test4@gmail.com', 'ehoi2dho3fnoen', 'WhatsApp', 50001, 'Sales A', 'member'),
 ('50004', 'password', 'MEMBER', '陳大明', '51111111', 'chen.daming@email.com', 'qr_chen_daming', '網頁', 50001, 'Sales A', 'vip,active'),
 ('50005', 'password', 'MEMBER', '李小華', '52222222', 'li.xiaohua@email.com', 'qr_li_xiaohua', 'Facebook', 50001, 'Sales A', 'new'),
 ('50006', 'password', 'MEMBER', '王美玲', '53333333', 'wang.meiling@email.com', 'qr_wang_meiling', 'Instagram', 50001, 'Sales A', 'active'),
@@ -358,26 +363,8 @@ INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, sourc
 ('50011', 'password', 'MEMBER', '周雅婷', '58888888', 'zhou.yating@email.com', 'qr_zhou_yating', 'WhatsApp', 50009, 'Sales B', 'active'),
 ('50012', 'password', 'MEMBER', '吳文傑', '59999999', 'wu.wenjie@email.com', 'qr_wu_wenjie', '網頁', 50009, 'Sales C', 'member'),
 ('50013', 'password', 'MEMBER', '鄭佩君', '60000000', 'zheng.peijun@email.com', 'qr_zheng_peijun', 'Facebook', 50009, 'Sales C', 'vip'),
-('50014', 'password', 'LEADER', '何主管', '61111111', 'he.leader@email.com', 'qr_he_leader', 'WhatsApp', NULL, 'Sales C', 'leader,senior'),
-('50015', 'password', 'MEMBER', '蔡明宏', '62222222', 'cai.minghong@email.com', 'qr_cai_minghong', 'Instagram', 50014, 'Sales C', 'active'),
-('50016', 'password', 'MEMBER', '許家豪', '63333333', 'xu.jiahao@email.com', 'qr_xu_jiahao', 'WhatsApp', 50014, 'Sales C', 'new'),
-('50017', 'password', 'MEMBER', '楊麗華', '64444444', 'yang.lihua@email.com', 'qr_yang_lihua', '網頁', 50014, 'Sales A', 'premium,active'),
-('50018', 'password', 'MEMBER', '馬志明', '65555555', 'ma.zhiming@email.com', 'qr_ma_zhiming', 'Google廣告', 50001, 'Sales A', 'member'),
-('50019', 'password', 'MEMBER', '趙小玉', '66666666', 'zhao.xiaoyu@email.com', 'qr_zhao_xiaoyu', 'Facebook', 50001, 'Sales A', 'vip,premium'),
-('50020', 'password', 'SALES', '孫經理', '67777777', 'sun.manager@email.com', 'qr_sun_manager', 'WhatsApp', NULL, 'Sales D', 'sales,senior'),
-('50021', 'password', 'MEMBER', '高偉強', '68888888', 'gao.weiqiang@email.com', 'qr_gao_weiqiang', 'WhatsApp', 50020, 'Sales D', 'active'),
-('50022', 'password', 'MEMBER', '胡秀英', '69999999', 'hu.xiuying@email.com', 'qr_hu_xiuying', 'Instagram', 50020, 'Sales D', 'new,trial'),
-('50023', 'password', 'MEMBER', '梁思琪', '70000000', 'liang.siqi@email.com', 'qr_liang_siqi', '網頁', 50020, 'Sales D', 'premium'),
-('50024', 'password', 'MEMBER', '羅志豪', '71111111', 'luo.zhihao@email.com', 'qr_luo_zhihao', 'Facebook', 50020, 'Sales D', 'member'),
-('50025', 'password', 'MEMBER', '鍾雅文', '72222222', 'zhong.yawen@email.com', 'qr_zhong_yawen', 'Google廣告', 50009, 'Sales B', 'active'),
-('50026', 'password', 'MEMBER', '宋建華', '73333333', 'song.jianhua@email.com', 'qr_song_jianhua', 'WhatsApp', 50009, 'Sales B', 'vip'),
-('50027', 'password', 'MEMBER', '唐美玲', '74444444', 'tang.meiling@email.com', 'qr_tang_meiling', '網頁', 50001, 'Sales A', 'new'),
-('50028', 'password', 'MEMBER', '韓志偉', '75555555', 'han.zhiwei@email.com', 'qr_han_zhiwei', 'Instagram', 50001, 'Sales A', 'active,premium'),
-('50029', 'password', 'MEMBER', '馮淑芬', '76666666', 'feng.shufen@email.com', 'qr_feng_shufen', 'Facebook', 50014, 'Sales C', 'member'),
-('50030', 'password', 'MEMBER', '葉文俊', '77777777', 'ye.wenjun@email.com', 'qr_ye_wenjun', 'Google廣告', 50014, 'Sales C', 'vip,active'),
-('50031', 'password', 'MEMBER', '蕭淑慧', '78888888', 'xiao.shuhui@email.com', 'qr_xiao_shuhui', 'WhatsApp', 50020, 'Sales D', 'premium'),
-('50032', 'password', 'MEMBER', '曾志強', '79999999', 'zeng.zhiqiang@email.com', 'qr_zeng_zhiqiang', '網頁', 50020, 'Sales D', 'active'),
-('50033', 'password', 'MEMBER', '彭雅雯', '80000000', 'peng.yawen@email.com', 'qr_peng_yawen', 'Facebook', 50009, 'Sales B', 'new,trial');
+('50014', 'password', 'LEADER', '何主管', '61111111', 'he.leader@email.com', 'qr_he_leader', 'WhatsApp', NULL, 'Sales C', 'leader,senior');
+
 
 INSERT INTO EVENTS (
     event_id, price, type, event_name, description, 
@@ -416,13 +403,15 @@ INSERT INTO EVENTS (
 INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datetime_start, datetime_end, created_by_id, remaining_seats, round) VALUES
 (101, 'Test1', 'CRM 基礎概念與重要性111', 30, '2024-07-01 10:00:00', '2027-07-01 12:00:00', 50000, 30, 1),
 (101, 'Test2', 'CRM 基礎概念與重要性111', 30, '2026-02-11 10:00:00', '2026-02-11 12:00:00', 50000, 30, 2),
-(101, '基礎理論', 'CRM 基礎概念與重要性', 30, '2026-07-01 10:00:00', '2026-07-01 12:00:00', 50000, 30, 1),
-(101, '基礎理論', 'CRM 基礎概念與重要性', 30, '2026-08-01 10:00:00', '2026-08-01 12:00:00', 50000, 30, 2),
+(101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2026-07-01 10:00:00', '2026-07-01 12:00:00', 50000, 30, 1),
+(101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2026-08-01 10:00:00', '2026-08-01 12:00:00', 50000, 1, 2),
 (101, '實作演練', 'CRM 系統操作實作', 30, '2029-07-08 10:00:00', '2029-07-08 12:00:00', 50000, 30, 1),
 (101, '實作演練', 'CRM 系統操作實作', 30, '2026-08-08 10:00:00', '2026-08-08 12:00:00', 50000, 30, 2),
 (102, 'Test1', '高效銷售策略分享', 100, '2026-02-02 14:00:00', '2026-02-02 16:00:00', 50001, 100, 1),
 (102, '主題演講', '高效銷售策略分享', 100, '2026-07-05 14:00:00', '2026-07-05 16:00:00', 50001, 100, 1),
-(101, 'Test3', 'CRM 基礎概念與重要性111', 1, '2026-02-14 10:00:00', '2026-02-14 12:00:00', 50000, 1, 2);
+(101, 'Test3', 'CRM 基礎概念與重要性111', 1, '2026-03-14 10:00:00', '2026-03-14 12:00:00', 50000, 1, 2),
+(101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2028-08-01 10:00:00', '2028-08-01 12:00:00', 50000, 0, 3),
+(101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2029-08-01 10:00:00', '2029-08-01 12:00:00', 50000, 0, 4);
 
 
 
@@ -433,7 +422,8 @@ INSERT INTO PAYMENTS (event_id, user_id, enrollment_id, amount, method, status, 
 (101, 50008, NULL, 5000.00, 'FPS', 'COMPLETED', '2025-11-15 10:30:00', '2025-11-16 14:20:00', '2025-11-18 23:59:59', 'RCP-2025-001', TRUE, FALSE, '已完成付款'),
 (102, 50008, NULL, 3000.00, 'CREDITCARD', 'COMPLETED', '2025-11-20 09:15:00', '2025-11-20 09:20:00', '2025-11-23 23:59:59', 'RCP-2025-002', TRUE, TRUE, '信用卡付款已確認'),
 (103, 50008, NULL, 4500.00, 'PAYME', 'PENDING', '2025-11-25 16:45:00', '2025-11-26 10:00:00', '2025-11-28 23:59:59', 'RCP-2025-003', TRUE, FALSE, 'PayMe 轉帳完成'),
-(104, 50008, NULL, 2500.00, 'CASH', 'CANCELLED', '2025-11-28 11:00:00', '2025-11-28 11:00:00', '2025-12-01 23:59:59', 'RCP-2025-004', TRUE, FALSE, '現金付款');
+(104, 50008, NULL, 2500.00, 'CASH', 'CANCELLED', '2025-11-28 11:00:00', '2025-11-28 11:00:00', '2025-12-01 23:59:59', 'RCP-2025-004', TRUE, FALSE, '現金付款'),
+(105, 50010, NULL, 2500.00, 'CASH', 'PENDING', '2021-11-28 11:00:00', NULL, '2021-12-01 23:59:59', NULL, FALSE, FALSE, '現金付款');
 
 
 
@@ -450,13 +440,18 @@ INSERT INTO EVENT_ENROLLMENTS (event_id, user_id, enroll_by_id, status, enroll_t
 
 
 
-INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id) VALUES
-    (1, 50008, 50008),
-    (2, 50008, 50008),
-    (3, 50008, 50008),
-    (6, 50008, 50008),
-    (7, 50008, 50008);
+INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id, status) VALUES
+    (1, 50008, 50008, 'REGISTERED'),
+    (2, 50008, 50008, 'REGISTERED'),
+    (6, 50008, 50008, 'REGISTERED'),
+    (7, 50008, 50008, 'REGISTERED');
 
+
+INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags, suspension) VALUES
+    ('50034', 'password', 'MEMBER', 'Test Suspension', '10101010', '10101.yawen@email.com', 'banned', 'Facebook', 50009, 'Sales B', 'new,trial', true);
+
+INSERT INTO SUSPENSION (user_id, reason, start_time, end_time, created_by) VALUES
+    (50034, '違反規定', '2025-12-01 00:00:00', '2025-12-31 23:59:59', 50000);
 
 CREATE TABLE IF NOT EXISTS BANNERS (
     banner_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
@@ -467,3 +462,6 @@ CREATE TABLE IF NOT EXISTS BANNERS (
     PRIMARY KEY (banner_id),
     FOREIGN KEY (created_by) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
+
+INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id, status) VALUES
+    (3, 50008, 50008, 'CANCELLED');

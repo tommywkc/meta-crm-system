@@ -65,7 +65,21 @@ async function findUserByQrToken(qr_token) {
 }
 
 async function findUserByRole(role) {
-  const res = await query('SELECT * FROM USERS WHERE role = $1', [role]);
+  if (Array.isArray(role)) {
+    const normalizedRoles = role
+      .map((r) => String(r || '').trim().toUpperCase())
+      .filter(Boolean);
+    if (normalizedRoles.length === 0) return [];
+    const res = await query(
+      'SELECT * FROM USERS WHERE UPPER(role) = ANY($1::text[])',
+      [normalizedRoles]
+    );
+    return res.rows;
+  }
+
+  const normalizedRole = String(role || '').trim().toUpperCase();
+  if (!normalizedRole) return [];
+  const res = await query('SELECT * FROM USERS WHERE UPPER(role) = $1', [normalizedRole]);
   return res.rows;
 }
 

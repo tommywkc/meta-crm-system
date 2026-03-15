@@ -1,10 +1,10 @@
 // Payments DAO — handles payment records and queries
 const { query } = require('../db/pool');
 
-async function createPayment({ event_id, user_id, enrollment_id, amount, method, status = 'PENDING', paid_time = null, expire_time = null, receipt_number = null, issued_receipt = false, issued_certificate = false }) {
-  const sql = `INSERT INTO PAYMENTS (event_id, user_id, enrollment_id, amount, method, status, paid_time, expire_time, receipt_number, issued_receipt, issued_certificate)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`;
-  const vals = [event_id, user_id, enrollment_id, amount, method, status, paid_time, expire_time, receipt_number, issued_receipt, issued_certificate];
+async function createPayment({ event_id, user_id, enrollment_id, amount, paid_amount = 0, method, status = 'PENDING', paid_time = null, expire_time = null, receipt_number = null, issued_receipt = false, issued_certificate = false }) {
+  const sql = `INSERT INTO PAYMENTS (event_id, user_id, enrollment_id, amount, paid_amount, method, status, paid_time, expire_time, receipt_number, issued_receipt, issued_certificate)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`;
+  const vals = [event_id, user_id, enrollment_id, amount, paid_amount, method, status, paid_time, expire_time, receipt_number, issued_receipt, issued_certificate];
   const res = await query(sql, vals);
   return res.rows[0];
 }

@@ -11,14 +11,105 @@ const {
   findRequestDetailById,
   updateRequestById,
 } = require('../dao/requestsDao');
-const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration } = require('../dao/sessionRegistrationsDao');
-const { findBySessionId, updateSessionById } = require('../dao/eventSessionsDao');
+const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration, updateRegistrationById } = require('../dao/sessionRegistrationsDao');
+const { findBySessionId, updateSessionById, listByEventId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
-const { createSuspension } = require('../dao/suspensionDao');
+const { createSuspension, findLatestSuspensionByUserId, updateSuspensionById } = require('../dao/suspensionDao');
+const eventAttendanceDao = require('../dao/eventAttendanceDao');
 const { updateByUserId } = require('../dao/usersDao');
 const { buildHolidaySet, countBusinessDays } = require('../utils/businessDays');
 const waitlistDao = require('../dao/waitlistDao');
+
+const isActiveRegistration = (reg) => {
+  if (!reg) return false;
+  return String(reg.status || '').toUpperCase() === 'REGISTERED';
+};
+
+const isRegisteredOrCancelled = (reg) => {
+  if (!reg) return false;
+  const status = String(reg.status || '').toUpperCase();
+  return status === 'REGISTERED' || status === 'CANCELLED';
+};
+
+const isCancelledRegistration = (reg) => {
+  if (!reg) return false;
+  return String(reg.status || '').toUpperCase() === 'CANCELLED';
+};
+
+const getWaitlistPriority = (requestType, priorityTier = null) => {
+  const type = (requestType || '').toUpperCase();
+  if (type === 'MAKEUP') return 1;
+  if (type === 'RETAKE') {
+    if (priorityTier === 3) return 3;
+    return 2;
+  }
+  return null;
+};
+
+const computeRetakePriorityTier = async (userId, targetSessionId, excludeRequestId = null) => {
+  if (!userId || !targetSessionId) return null;
+  const targetSession = await findBySessionId(targetSessionId);
+  if (!targetSession?.event_id || !targetSession?.session_name) return null;
+
+  const userRequests = await listByUserId(userId);
+  let retakeCount = 0;
+
+  for (const req of userRequests || []) {
+    if ((req?.request_type || '').toUpperCase() !== 'RETAKE') continue;
+    const status = (req?.status || '').toUpperCase();
+    if (status !== 'APPROVED') continue;
+    if (excludeRequestId != null && String(req.request_id) === String(excludeRequestId)) continue;
+    if (!req?.new_session_id) continue;
+
+    const session = await findBySessionId(req.new_session_id);
+    if (session?.event_id === targetSession.event_id && session?.session_name === targetSession.session_name) {
+      retakeCount += 1;
+    }
+  }
+
+  if (retakeCount <= 0) return 2;
+  return 3;
+};
+
+const ensurePriorityTier = async (req) => {
+  if (!req) return req;
+  const typeKey = (req.request_type || '').toUpperCase();
+  if (typeKey !== 'MAKEUP' && typeKey !== 'RETAKE') return req;
+  if (req.priority_tier != null) return req;
+
+  let priority_tier = null;
+  if (typeKey === 'MAKEUP') {
+    priority_tier = 1;
+  } else if (typeKey === 'RETAKE' && req.new_session_id) {
+    priority_tier = await computeRetakePriorityTier(req.user_id, req.new_session_id, req.request_id);
+  }
+
+  if (priority_tier == null) return req;
+
+  const updated = await updateRequestById(req.request_id, { priority_tier });
+  return updated ? { ...req, priority_tier: updated.priority_tier } : { ...req, priority_tier };
+};
+
+const updatePendingRetakePriorities = async (userId, targetSessionId, excludeRequestId = null) => {
+  if (!userId || !targetSessionId) return;
+  const targetSession = await findBySessionId(targetSessionId);
+  if (!targetSession?.event_id || !targetSession?.session_name) return;
+
+  const userRequests = await listByUserId(userId);
+  for (const req of userRequests || []) {
+    if ((req?.request_type || '').toUpperCase() !== 'RETAKE') continue;
+    const status = (req?.status || '').toUpperCase();
+    if (status !== 'PENDING') continue;
+    if (excludeRequestId != null && String(req.request_id) === String(excludeRequestId)) continue;
+    if (!req?.new_session_id) continue;
+
+    const session = await findBySessionId(req.new_session_id);
+    if (session?.event_id === targetSession.event_id && session?.session_name === targetSession.session_name) {
+      await updateRequestById(req.request_id, { priority_tier: 3 });
+    }
+  }
+};
 
 const recalcPendingRequestConflicts = async (userId, excludeRequestId = null) => {
   if (!userId) return;
@@ -93,14 +184,16 @@ const attachConflictDetails = async (requests = []) => {
   if (!Array.isArray(requests) || requests.length === 0) return requests;
 
   const enriched = await Promise.all(requests.map(async (req) => {
-    if (!req?.conflict_id) return req;
-    const conflictSession = await findBySessionId(req.conflict_id);
-    if (!conflictSession) return req;
+    const withPriority = await ensurePriorityTier(req);
+    const sourceReq = withPriority || req;
+    if (!sourceReq?.conflict_id) return sourceReq;
+    const conflictSession = await findBySessionId(sourceReq.conflict_id);
+    if (!conflictSession) return sourceReq;
     const conflictEvent = conflictSession.event_id
       ? await findByEventId(conflictSession.event_id)
       : null;
     return {
-      ...req,
+      ...sourceReq,
       conflict_session_name: conflictSession.session_name || null,
       conflict_session_start: conflictSession.datetime_start || null,
       conflict_session_end: conflictSession.datetime_end || null,
@@ -167,13 +260,92 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
 
     if (targetSessionIdNum) {
       const existingTarget = await findBySessionAndUser(targetSessionIdNum, memberIdNum);
-      if (existingTarget) {
+      if (isActiveRegistration(existingTarget)) {
         return res.status(400).json({ message: '此會員已報名目標場次，無法提交補堂／覆課申請' });
+      }
+    }
+
+    const requiresPriorSameName = (normalizedType === 'MAKEUP' || normalizedType === 'RETAKE') && targetSessionIdNum;
+    if (requiresPriorSameName) {
+      const targetSession = await findBySessionId(targetSessionIdNum);
+      if (targetSession?.event_id && targetSession?.session_name) {
+        const sameEventSessions = await listByEventId(targetSession.event_id);
+        let hasSameNameRegistration = false;
+        let hasCancelledSameName = false;
+        for (const session of sameEventSessions || []) {
+          if (!session?.session_id) continue;
+          if (session.session_name !== targetSession.session_name) continue;
+          const existingReg = await findBySessionAndUser(session.session_id, memberIdNum);
+          if (isCancelledRegistration(existingReg)) {
+            hasCancelledSameName = true;
+          }
+          if (isRegisteredOrCancelled(existingReg)) {
+            hasSameNameRegistration = true;
+            break;
+          }
+        }
+
+        if (normalizedType === 'RETAKE' && hasCancelledSameName) {
+          return res.status(400).json({ message: '客戶未有其他場次的確認紀錄，請改用補堂申請' });
+        }
+
+        if (!hasSameNameRegistration) {
+          return res.status(400).json({ message: '此會員尚未報名同活動其他場次，可以直接在活動頁報名' });
+        }
+      }
+    }
+
+    if (normalizedType === 'MAKEUP' && targetSessionIdNum) {
+      const targetSession = await findBySessionId(targetSessionIdNum);
+      if (targetSession?.event_id && targetSession?.session_name) {
+        const sameEventSessions = await listByEventId(targetSession.event_id);
+        let existingSameName = null;
+        for (const session of sameEventSessions || []) {
+          if (!session?.session_id) continue;
+          if (String(session.session_id) === String(targetSessionIdNum)) continue;
+          if (session.session_name !== targetSession.session_name) continue;
+          const reg = await findBySessionAndUser(session.session_id, memberIdNum);
+          if (isActiveRegistration(reg)) {
+            existingSameName = session.session_id;
+            break;
+          }
+        }
+
+        if (existingSameName) {
+          return res.status(400).json({ message: '此會員已報名目標活動其他場次，無法提交補堂申請，請選擇覆課申請' });
+        }
+
+        const userRequests = await listByUserId(memberIdNum);
+        const hasPendingMakeup = (userRequests || []).some((req) => {
+          if ((req?.status || '').toUpperCase() !== 'PENDING') return false;
+          if ((req?.request_type || '').toUpperCase() !== 'MAKEUP') return false;
+          if (!req?.new_session_id) return false;
+          return String(req.new_session_id) !== String(targetSessionIdNum);
+        });
+
+        if (hasPendingMakeup) {
+          for (const req of userRequests || []) {
+            if ((req?.status || '').toUpperCase() !== 'PENDING') continue;
+            if ((req?.request_type || '').toUpperCase() !== 'MAKEUP') continue;
+            if (!req?.new_session_id || String(req.new_session_id) === String(targetSessionIdNum)) continue;
+            const session = await findBySessionId(req.new_session_id);
+            if (session?.event_id === targetSession.event_id && session?.session_name === targetSession.session_name) {
+              return res.status(400).json({ message: '此會員已有目標活動其他場次的補堂申請，無法再提交其他場次' });
+            }
+          }
+        }
       }
     }
 
     const remarksInput = typeof reason === 'string' ? reason.trim() : '';
     const remarks = remarksInput ? remarksInput.slice(0, 255) : null;
+
+    let priority_tier = null;
+    if (normalizedType === 'MAKEUP') {
+      priority_tier = 1;
+    } else if (normalizedType === 'RETAKE' && targetSessionIdNum) {
+      priority_tier = await computeRetakePriorityTier(memberIdNum, targetSessionIdNum);
+    }
 
     const duplicateOldSessionId = ['RESCHEDULE', 'LEAVE'].includes(normalizedType) ? sessionIdNum : null;
     const duplicateNewSessionId = ['RESCHEDULE', 'MAKEUP', 'RETAKE'].includes(normalizedType) ? targetSessionIdNum : null;
@@ -202,7 +374,12 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
     }
 
     let time_conflict = null;
+    let attendance_conflict = null;
     let conflict_id = null;
+    if ((normalizedType === 'LEAVE' || normalizedType === 'RESCHEDULE') && registrationId) {
+      const latestAttendance = await eventAttendanceDao.findLatestByRegistrationId(registrationId);
+      attendance_conflict = Boolean(latestAttendance);
+    }
     if (targetSessionIdNum) {
       const targetSession = await findBySessionId(targetSessionIdNum);
       if (targetSession?.datetime_start) {
@@ -231,7 +408,7 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       }
     }
 
-    let request = await createRequest({
+    const payload = {
       request_type: normalizedType,
       registration_id: registrationId,
       user_id: memberIdNum,
@@ -242,26 +419,37 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       remarks,
       under_3bday,
       time_conflict,
+      attendance_conflict,
       conflict_id,
-    });
+      priority_tier,
+    };
 
-    if (request?.conflict_id) {
-      const conflictSession = await findBySessionId(request.conflict_id);
-      if (conflictSession) {
-        const conflictEvent = conflictSession.event_id
-          ? await findByEventId(conflictSession.event_id)
-          : null;
-        request = {
-          ...request,
-          conflict_session_name: conflictSession.session_name || null,
-          conflict_session_start: conflictSession.datetime_start || null,
-          conflict_session_end: conflictSession.datetime_end || null,
-          conflict_event_name: conflictEvent?.event_name || null,
-        };
+    const result = await createRequest(payload);
+
+    // Notify admins about the new request
+    try {
+      const admins = await findUserByRole('ADMIN');
+      const requestor = await findByUserId(req.user.sub);
+      const student = memberIdNum ? await findByUserId(memberIdNum) : requestor;
+
+      const subject = `新的 ${requestType} 申請`;
+      const description = `由 ${requestor.name} 為 ${student.name} 提交了新的 ${requestType} 申請。`;
+
+      for (const admin of admins) {
+        await createNotification({
+          user_id: admin.user_id,
+          template: subject,
+          description,
+          created_by_id: req.user.sub,
+        });
       }
+    } catch (notificationError) {
+      console.error('Failed to send request notification to admins:', notificationError);
+      // Do not block the response for notification failure
     }
 
-    return res.status(201).json({ message: '申請已送出', request });
+
+    res.status(201).json(result);
   } catch (error) {
     console.error('Create request failed:', error);
     return res.status(500).json({ message: '伺服器錯誤，請稍後再試' });
@@ -356,14 +544,20 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       }
 
       if (registrationId) {
-        await removeByRegistrationId(registrationId);
+        await updateRegistrationById(registrationId, { status: 'CANCELLED' });
 
         if (leaveSessionId) {
+          const leaveSession = await findBySessionId(leaveSessionId);
+          const currentRemaining = leaveSession?.remaining_seats != null ? Number(leaveSession.remaining_seats) : null;
+          if (currentRemaining != null && !Number.isNaN(currentRemaining)) {
+            await updateSessionById(leaveSessionId, { remaining_seats: currentRemaining + 1 });
+          }
+
           const waitlistRow = await waitlistDao.findBySessionId(leaveSessionId);
           const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
 
           if (Array.isArray(list) && list.length > 0) {
-            const nextUserId = parseInt(list[0], 10);
+            const nextUserId = parseInt(list[0]?.user_id ?? list[0], 10);
             if (!Number.isNaN(nextUserId)) {
               const existingRegistration = await findBySessionAndUser(leaveSessionId, nextUserId);
               if (!existingRegistration) {
@@ -373,6 +567,9 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
                   channel: 'WEB',
                   registration_by_id: req.user?.sub || null,
                 });
+                if (currentRemaining != null && !Number.isNaN(currentRemaining)) {
+                  await updateSessionById(leaveSessionId, { remaining_seats: Math.max(0, currentRemaining) });
+                }
               }
             }
 
@@ -395,14 +592,26 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
               const startTime = existing.request_time ? new Date(existing.request_time) : new Date();
               const endTime = new Date(startTime);
               endTime.setMonth(endTime.getMonth() + 2);
+              endTime.setHours(23, 59, 0, 0);
               const reason = `請假申請（低於 3 個工作天）: request_id ${existing.request_id}`;
-              await createSuspension({
-                user_id: leaveUserId,
-                reason,
-                start_time: startTime,
-                end_time: endTime,
-                created_by: req.user.sub,
-              });
+              const latest = await findLatestSuspensionByUserId(leaveUserId);
+              const now = new Date();
+              if (latest && (!latest.end_time || new Date(latest.end_time) >= now)) {
+                const latestEnd = latest.end_time ? new Date(latest.end_time) : null;
+                const nextEnd = latestEnd && latestEnd > endTime ? latestEnd : endTime;
+                await updateSuspensionById(latest.suspension_id, {
+                  end_time: nextEnd,
+                  reason,
+                });
+              } else {
+                await createSuspension({
+                  user_id: leaveUserId,
+                  reason,
+                  start_time: startTime,
+                  end_time: endTime,
+                  created_by: req.user.sub,
+                });
+              }
               await updateByUserId(leaveUserId, { suspension: true });
             }
           }
@@ -422,14 +631,20 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       }
 
       if (registrationId) {
-        await removeByRegistrationId(registrationId);
+        await updateRegistrationById(registrationId, { status: 'CANCELLED' });
 
         if (oldSessionId) {
+          const oldSession = await findBySessionId(oldSessionId);
+          const currentRemaining = oldSession?.remaining_seats != null ? Number(oldSession.remaining_seats) : null;
+          if (currentRemaining != null && !Number.isNaN(currentRemaining)) {
+            await updateSessionById(oldSessionId, { remaining_seats: currentRemaining + 1 });
+          }
+
           const waitlistRow = await waitlistDao.findBySessionId(oldSessionId);
           const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
 
           if (Array.isArray(list) && list.length > 0) {
-            const nextUserId = parseInt(list[0], 10);
+            const nextUserId = parseInt(list[0]?.user_id ?? list[0], 10);
             if (!Number.isNaN(nextUserId)) {
               const existingRegistration = await findBySessionAndUser(oldSessionId, nextUserId);
               if (!existingRegistration) {
@@ -439,6 +654,9 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
                   channel: 'WEB',
                   registration_by_id: req.user?.sub || null,
                 });
+                if (currentRemaining != null && !Number.isNaN(currentRemaining)) {
+                  await updateSessionById(oldSessionId, { remaining_seats: Math.max(0, currentRemaining) });
+                }
               }
             }
 
@@ -454,7 +672,7 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
           const remainingSeats = targetSession.remaining_seats != null ? Number(targetSession.remaining_seats) : null;
           if (remainingSeats != null && !Number.isNaN(remainingSeats)) {
             if (remainingSeats <= 0) {
-              await waitlistDao.appendUserToWaitlist(newSessionId, userId);
+              await waitlistDao.appendUserToWaitlist(newSessionId, userId, null);
             } else {
               await createRegistration({
                 session_id: newSessionId,
@@ -474,6 +692,49 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
           }
         }
       }
+    }
+
+    if (incomingStatus === 'APPROVED' && (((existing.request_type || '').toUpperCase() === 'MAKEUP') || (existing.request_type || '').toUpperCase() === 'RETAKE')) {
+      const newSessionId = existing.new_session_id;
+      const userId = existing.user_id;
+
+      if (newSessionId && userId) {
+        const alreadyRegistered = await findBySessionAndUser(newSessionId, userId);
+        if (!alreadyRegistered) {
+          const targetSession = await findBySessionId(newSessionId);
+          if (targetSession) {
+            const remainingSeats = targetSession.remaining_seats != null ? Number(targetSession.remaining_seats) : null;
+            if (remainingSeats != null && !Number.isNaN(remainingSeats)) {
+              if (remainingSeats <= 0) {
+                await waitlistDao.appendUserToWaitlist(
+                  newSessionId,
+                  userId,
+                  getWaitlistPriority(existing.request_type, existing.priority_tier)
+                );
+              } else {
+                await createRegistration({
+                  session_id: newSessionId,
+                  user_id: userId,
+                  channel: 'WEB',
+                  registration_by_id: req.user?.sub || null,
+                });
+                await updateSessionById(newSessionId, { remaining_seats: remainingSeats - 1 });
+              }
+            } else {
+              await createRegistration({
+                session_id: newSessionId,
+                user_id: userId,
+                channel: 'WEB',
+                registration_by_id: req.user?.sub || null,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (incomingStatus === 'APPROVED' && (existing.request_type || '').toUpperCase() === 'RETAKE') {
+      await updatePendingRetakePriorities(existing.user_id, existing.new_session_id, requestId);
     }
 
     
@@ -501,6 +762,56 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
     return res.json({ message: '申請已更新', request: updated });
   } catch (error) {
     console.error('Update request failed:', error);
+    return res.status(500).json({ message: '伺服器錯誤，請稍後再試' });
+  }
+});
+
+router.put('/requests/:requestId/cancel', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
+  try {
+    const requestId = parseInt(req.params.requestId, 10);
+    if (Number.isNaN(requestId)) {
+      return res.status(400).json({ message: '申請編號有誤' });
+    }
+
+    const existing = await findByRequestId(requestId);
+    if (!existing) {
+      return res.status(404).json({ message: '找不到申請資料' });
+    }
+
+    const requesterRole = (req.user.role || '').toUpperCase();
+    if (requesterRole === 'MEMBER' && String(existing.user_id) !== String(req.user.sub)) {
+      return res.status(403).json({ message: '沒有權限取消此申請' });
+    }
+
+    if ((existing.status || '').toUpperCase() !== 'PENDING') {
+      return res.status(409).json({ message: '僅可取消待審核申請' });
+    }
+
+    let updated = await updateRequestById(requestId, {
+      status: 'CANCELLED',
+      determine_by_id: req.user.sub,
+      determine_time: new Date(),
+    });
+
+    if (updated?.conflict_id) {
+      const conflictSession = await findBySessionId(updated.conflict_id);
+      if (conflictSession) {
+        const conflictEvent = conflictSession.event_id
+          ? await findByEventId(conflictSession.event_id)
+          : null;
+        updated = {
+          ...updated,
+          conflict_session_name: conflictSession.session_name || null,
+          conflict_session_start: conflictSession.datetime_start || null,
+          conflict_session_end: conflictSession.datetime_end || null,
+          conflict_event_name: conflictEvent?.event_name || null,
+        };
+      }
+    }
+
+    return res.json({ message: '申請已取消', request: updated });
+  } catch (error) {
+    console.error('Cancel request failed:', error);
     return res.status(500).json({ message: '伺服器錯誤，請稍後再試' });
   }
 });

@@ -12,12 +12,13 @@ async function createRequest({
   remarks = null,
   under_3bday = null,
   time_conflict = null,
+  attendance_conflict = null,
   conflict_id = null,
   priority_tier = null,
 }) {
-  const sql = `INSERT INTO requests (request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, time_conflict, conflict_id, priority_tier)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`;
-  const vals = [request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, time_conflict, conflict_id, priority_tier];
+  const sql = `INSERT INTO requests (request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, time_conflict, attendance_conflict, conflict_id, priority_tier)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`;
+  const vals = [request_type, registration_id, user_id, old_session_id, new_session_id, request_by_id, status, remarks, under_3bday, time_conflict, attendance_conflict, conflict_id, priority_tier];
   const res = await query(sql, vals);
   return res.rows[0];
 }
@@ -100,11 +101,13 @@ async function listAllRequests() {
       r.reject_reason,
       r.under_3bday,
       r.time_conflict,
+      r.attendance_conflict,
       r.conflict_id,
       r.user_id,
       u.name AS user_name,
       u.mobile AS user_mobile,
       u.email AS user_email,
+      u.suspension AS user_suspension,
       r.request_by_id,
       req_by.name AS request_by_name,
       r.old_session_id,
@@ -141,11 +144,13 @@ async function findRequestDetailById(requestId) {
       r.reject_reason,
       r.under_3bday,
       r.time_conflict,
+      r.attendance_conflict,
       r.conflict_id,
       r.user_id,
       u.name AS user_name,
       u.mobile AS user_mobile,
       u.email AS user_email,
+      u.suspension AS user_suspension,
       r.request_by_id,
       req_by.name AS request_by_name,
       r.old_session_id,
@@ -183,11 +188,13 @@ async function listRequestsByUser(userId) {
       r.reject_reason,
       r.under_3bday,
       r.time_conflict,
+      r.attendance_conflict,
       r.conflict_id,
       r.user_id,
       u.name AS user_name,
       u.mobile AS user_mobile,
       u.email AS user_email,
+      u.suspension AS user_suspension,
       r.request_by_id,
       req_by.name AS request_by_name,
       r.old_session_id,

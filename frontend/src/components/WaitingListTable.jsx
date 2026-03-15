@@ -36,9 +36,10 @@ const WaitingListTable = ({ data = [], onApprove, onNotify, onReject, onUpdateRa
 		role: r.role ?? 'MEMBER',
 		mobile: r.mobile ?? r.contact ?? '',
 		email: r.email ?? '',
+		priority: r.priority ?? null,
 	}));
 
-	const headers = ['排名', '用戶編號', '姓名', '角色', '電話', '電子郵件', '操作'];
+	const headers = ['排名', '優先度', '用戶編號', '姓名', '角色', '電話', '電子郵件', '操作'];
 
 	const renderCard = (row, idx) => (
 		<MobileCard
@@ -69,6 +70,7 @@ const WaitingListTable = ({ data = [], onApprove, onNotify, onReject, onUpdateRa
 			}
 		>
 			<MobileCardRow label="排名" value={row._rank || '-'} />
+			<MobileCardRow label="優先度" value={row.priority ?? '-'} />
 			<MobileCardRow label="用戶編號" value={row.user_id} />
 			<MobileCardRow label="姓名" value={row.name} />
 			<MobileCardRow label="角色" value={row.role} />
@@ -84,6 +86,7 @@ const WaitingListTable = ({ data = [], onApprove, onNotify, onReject, onUpdateRa
 			{normalized.map((row, idx) => (
 				<tr key={row.user_id || idx}>
 					<td>{row._rank || '-'}</td>
+					<td>{row.priority ?? '-'}</td>
 					<td>{row.user_id}</td>
 					<td>{row.name}</td>
 					<td>{row.role}</td>

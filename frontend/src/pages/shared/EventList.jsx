@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import EventsTable from '../../components/EventsTable';
@@ -121,10 +121,7 @@ const EventList = () => {
 	const canNext = page < totalPages;
 	const totalResults = displayedEvents.length;
 	
-	const onCreate = () => {
-		// navigate to create page
-		navigate('/events/create');
-	};
+
 	const onEdit = (id) => {
 		// navigate to edit page
 		navigate(`/events/${id}/edit`);
@@ -161,6 +158,7 @@ const EventList = () => {
 		}
 	};
 
+
 		return (
 		<PageContainer>
 			<PageHeader
@@ -173,9 +171,14 @@ const EventList = () => {
 		
 
 				{isAdmin && (
-					<button onClick={onCreate}>
-						新增講座與課堂
-					</button>
+					<div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+						<button onClick={() => navigate('/events/create')}>
+							新增講座與課堂
+						</button>
+						<button onClick={() => navigate('/events/import')}>
+							匯入活動Excel
+						</button>
+	        			</div>
 				)}
 
 			<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>

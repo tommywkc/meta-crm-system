@@ -81,7 +81,7 @@ const PaymentDetailsTable = ({
 						</tr>
 						<tr>
 							<td><strong>活動：</strong></td>
-							<td>{payment.event_name || payment.event_id}</td>
+							<td>{payment.event_name || (payment.event_id == null ? '(DELETED EVENT)' : payment.event_id)}</td>
 						</tr>
 						<tr>
 							<td><strong>金額：</strong></td>

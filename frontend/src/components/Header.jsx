@@ -195,6 +195,9 @@ const Header = () => {
   // Do not render header when no user
   if (!user) return null;
 
+  // Normalize role (prevents issues like "ADMIN ")
+  const roleKey = user?.role ? user.role.trim().toLowerCase() : '';
+
   // Show Banner only on main dashboard pages
   const showBanner = ['/admin', '/sales', '/member', '/leader'].includes(location.pathname);
 
@@ -207,6 +210,8 @@ const Header = () => {
     waiting: { path: '/waiting', label: '等待清單' },
     notifications: { path: '/notifications', label: '通知中心' },
     requests_admin: { path: '/admin/requests', label: '申請列表' },
+
+    admin_kpi: { path: '/admin-kpi', label: 'KPI' },
 
     sales_kpi: { path: '/sales-kpi', label: '團隊&個人 KPI' },
 
@@ -221,13 +226,13 @@ const Header = () => {
   // Which pages each role should see (order matters)
   const rolePages = {
     // new admin order requested by user
-    admin: ['customers','events','payments','requests_admin','reports','scan','notifications','feedback'],
+    admin: ['customers','events','payments','requests_admin','admin_kpi','reports','scan','notifications','feedback'],
     sales: ['customers','events','payments','requests','sales_kpi','notifications','feedback'],
     leader: ['customers','events','payments','requests','sales_kpi','notifications','feedback'], // LEADER 角色與 sales 相同權限
     member: ['myevents','events','payments','receipts','requests','notifications','myqrcode','feedback']
   };
   
-  const pages = rolePages[user.role?.toLowerCase()] || [];
+  const pages = rolePages[roleKey] || [];
 
 
   const go = (key) => {
@@ -273,11 +278,11 @@ const Header = () => {
           onClick={() => {
             // Navigate to role-specific main page (admin/sales/member).
             // Fallback to '/' if role is unexpected.
-            if (!user || !user.role) {
+            if (!roleKey) {
               navigate('/');
               return;
             }
-            let r = user.role.toLowerCase();
+            let r = roleKey;
             // leader maps to /sales as per App.js route config
             if (r === 'leader') r = 'sales';
             navigate(`/${r}`);

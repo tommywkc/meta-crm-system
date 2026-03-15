@@ -204,9 +204,25 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: '使用者尚未報名此場次所屬的活動，無法進行場次報名' });
     }
 
+    // 若同一活動、同一堂別已報名其他輪次，請改走補堂/覆課流程
+    const sameEventSessions = await listByEventId(eventId);
+    const sameNameSessions = (sameEventSessions || []).filter(
+      (s) => s?.session_name === session.session_name && String(s.session_id) !== String(sessionId)
+    );
+    for (const s of sameNameSessions) {
+      const existingSameName = await findBySessionAndUser(s.session_id, userId);
+      if (existingSameName) {
+        return res.status(400).json({ message: '此會員已報名同活動其他輪次，請改用補堂或覆課申請' });
+      }
+    }
+
     // Prevent duplicate registrations for the same session and user
     const existing = await findBySessionAndUser(sessionId, userId);
     if (existing) {
+      const existingStatus = String(existing.status || '').toUpperCase();
+      if (existingStatus === 'CANCELLED') {
+        return res.status(400).json({ message: '客戶已請假或改期此場次' });
+      }
       return res.status(400).json({ message: '已報名此場次' });
     }
 
@@ -617,12 +633,15 @@ router.delete('/session-registrations/:id', authMiddleware, async (req, res) => 
     await removeByRegistrationId(registrationId);
 
     const sessionId = registration.session_id;
+    let promotedFromWaitlist = false;
+    let sessionBeforeUpdate = null;
     if (sessionId) {
+      sessionBeforeUpdate = await findBySessionId(sessionId);
       const waitlistRow = await waitlistDao.findBySessionId(sessionId);
       const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
 
       if (Array.isArray(list) && list.length > 0) {
-        const nextUserId = parseInt(list[0], 10);
+        const nextUserId = parseInt(list[0]?.user_id ?? list[0], 10);
         if (!Number.isNaN(nextUserId)) {
           const existing = await findBySessionAndUser(sessionId, nextUserId);
           if (!existing) {
@@ -632,10 +651,26 @@ router.delete('/session-registrations/:id', authMiddleware, async (req, res) => 
               channel: 'WEB',
               registration_by_id: req.user?.sub || null,
             });
+            promotedFromWaitlist = true;
             const remainingList = list.slice(1);
             await waitlistDao.updateBySessionId(sessionId, JSON.stringify(remainingList));
           }
         }
+      }
+
+      if (sessionBeforeUpdate?.remaining_seats != null) {
+        const currentRemaining = Number(sessionBeforeUpdate.remaining_seats);
+        const capacity = sessionBeforeUpdate?.capacity != null ? Number(sessionBeforeUpdate.capacity) : null;
+        let nextRemaining = Number.isNaN(currentRemaining) ? 0 : currentRemaining + 1;
+
+        if (promotedFromWaitlist) {
+          nextRemaining = Math.max(0, nextRemaining - 1);
+        }
+        if (capacity != null && !Number.isNaN(capacity)) {
+          nextRemaining = Math.min(capacity, nextRemaining);
+        }
+
+        await updateSessionById(sessionId, { remaining_seats: nextRemaining });
       }
     }
     return res.status(200).json({ message: '場次報名已刪除' });

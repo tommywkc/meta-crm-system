@@ -14,10 +14,12 @@ import EventCreate from './pages/admin/EventCreate';
 import EventsEdit from './pages/admin/EventsEdit';
 import SessionEdit from './pages/admin/SessionEdit';
 import SessionCreate from './pages/admin/SessionCreate';
+import EventImport from './pages/admin/EventImport';
 import EventView from './pages/shared/EventView';
 import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
 import Waiting from './pages/admin/Waiting';
+import KPIAdmin from './pages/admin/KPIAdmin';
 
 // SalesCustomers removed in favor of shared CustomersList
 import KPI from './pages/sales/KPI';
@@ -158,6 +160,11 @@ function App() {
               <EventCreate />
             </ProtectedRoute>
           } />
+          <Route path="/events/import" element={
+            <ProtectedRoute allowedRole="admin">
+              <EventImport />
+            </ProtectedRoute>
+          } />
           <Route path="/events/:id/edit" element={
             <ProtectedRoute allowedRole="admin">
               <EventsEdit />
@@ -199,7 +206,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/requests/history" element={
-            <ProtectedRoute allowedRoles={["member","sales","leader"]}>
+            <ProtectedRoute allowedRoles={["admin","member","sales","leader"]}>
               <RequestList />
             </ProtectedRoute>
           } />
@@ -212,6 +219,11 @@ function App() {
           <Route path="/sales-kpi" element={
             <ProtectedRoute allowedRoles={["sales","leader"]}>
               <KPI />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin-kpi" element={
+            <ProtectedRoute allowedRole="admin">
+              <KPIAdmin />
             </ProtectedRoute>
           } />
           <Route path="/sales-customers" element={

@@ -5,7 +5,6 @@ const { query } = require('./db/pool');
 async function runSchema() {
   try {
     const schema = fs.readFileSync('./resources/schema.sql', 'utf8');
-    // Split by semicolon and execute each statement
     const statements = schema.split(';').filter(stmt => stmt.trim().length > 0);
     
     for (const statement of statements) {

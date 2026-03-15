@@ -101,7 +101,7 @@ const onView = (p) => {
 				<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 16 }}>
 					<input 
 						type="text" 
-						placeholder="輸入[訂單編號/姓名/活動ID/付款方式/狀態]來搜尋." 
+						placeholder="輸入[訂單編號/姓名/活動ID]來搜尋." 
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 						onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}

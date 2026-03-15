@@ -59,6 +59,10 @@ const eventRouter = require('./handleAPI/eventList');
 console.log('Event router loaded');
 app.use('/api', eventRouter); // Use the event router
 
+const eventImportRouter = require('./handleAPI/eventImport');
+console.log('Event import router loaded');
+app.use('/api', eventImportRouter);
+
 const userProfileRouter = require('./handleAPI/userProfile');
 console.log('User profile router loaded');
 app.use('/api', userProfileRouter); // Use the user profile router
@@ -177,6 +181,12 @@ async function startServer() {
       startHolidaySchedules();
     } catch (e) {
       console.error('Failed to start Holidays Scheduler:', e);
+    }
+    try {
+      const { startExpirySchedules } = require('./services/expiryScheduler');
+      startExpirySchedules();
+    } catch (e) {
+      console.error('Failed to start Expiry Scheduler:', e);
     }
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
