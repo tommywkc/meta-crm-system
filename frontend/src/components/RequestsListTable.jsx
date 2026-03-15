@@ -89,11 +89,12 @@ const renderRequestContent = (typeKey, oldSession, newSession) => {
   );
 };
 
-const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
+const RequestsTable = ({ requests = [], loading = false, onApprove, isHistoryView = false }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = (user?.role || '').toLowerCase() === 'admin';
   const hasData = requests && requests.length > 0;
+  const emptyMessage = isAdmin && !isHistoryView ? '暫無需批核申請' : '暫無申請紀錄';
 
   const handleApprove = (req) => {
     if (!isAdmin) return;
@@ -169,7 +170,7 @@ const RequestsTable = ({ requests = [], loading = false, onApprove }) => {
   };
 
   return (
-    <CommonTable headers={headers} data={loading ? null : requests} emptyMessage="暫無申請紀錄" renderCard={renderCard}>
+    <CommonTable headers={headers} data={loading ? null : requests} emptyMessage={emptyMessage} renderCard={renderCard}>
       {loading && (
         <tr>
           <td colSpan={8}>載入中…</td>
