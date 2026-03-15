@@ -27,35 +27,36 @@ const EventList = () => {
 	const [events, setEvents] = useState([]);
 	const [enrolledEventIds, setEnrolledEventIds] = useState([]);
 	const [filteredEvents, setFilteredEvents] = useState([]);
+        const [sortBy, setSortBy] = useState('event_id');
+        const [sortOrder, setSortOrder] = useState('asc');
 
-	useEffect(() => {
-		const fetchData = async () => {
-			const params = new URLSearchParams(location.search || '');
-			const userIdParam = (params.get('user_id') || '').trim();
-			if (userIdParam) {
-				try {
-					const payload = await handleConfirmEnrollmentByUser(userIdParam, 200, 0);
-					const enrolledEvents = payload.enrollments || [];
-					setEvents(enrolledEvents);
-					setFilteredEvents(enrolledEvents);
-					setIsSearching(false);
-					setSearchTerm('');
-					setPage(1);
-					return;
-				} catch (err) {
-					console.error('Failed to load enrolled events for user', err);
-				}
-			}
-			const payload = await handleListEvents({ limit: 100, offset: 0, q: '' });
-			setEvents(payload.events || []);
-			setFilteredEvents(payload.events || []);
-		};
-		fetchData();
-	}, [location.search]);
+        useEffect(() => {
+                const fetchData = async () => {
+                        const params = new URLSearchParams(location.search || '');
+                        const userIdParam = (params.get('user_id') || '').trim();
+                        if (userIdParam) {
+                                try {
+                                        const payload = await handleConfirmEnrollmentByUser(userIdParam, 200, 0);
+                                        const enrolledEvents = payload.enrollments || [];
+                                        setEvents(enrolledEvents);
+                                        setFilteredEvents(enrolledEvents);      
+                                        setIsSearching(false);
+                                        setSearchTerm('');
+                                        setPage(1);
+                                        return;
+                                } catch (err) {
+                                        console.error('Failed to load enrolled events for user', err);
+                                }
+                        }
+                        const payload = await handleListEvents({ limit: 100, offset: 0, q: '', sortBy, sortOrder });
+                        setEvents(payload.events || []);
+                        setFilteredEvents(payload.events || []);
+                };
+                fetchData();
+        }, [location.search, sortBy, sortOrder]);
 
-	// 從後端讀取目前登入會員已報名 (PENDING / CONFIRMED) 的活動 ID
-		useEffect(() => {
-			if (!isMember) {
+        useEffect(() => {
+                if (!isMember) {
 				setEnrolledEventIds([]);
 				return;
 			}
@@ -72,24 +73,23 @@ const EventList = () => {
 		}, [isMember]);
 	
 	const fetchEvents = async () => {
-		const payload = await handleListEvents({ limit: 100, offset: 0, q: '' });
-		setEvents(payload.events || []);
-		setFilteredEvents(payload.events || []);
-	};
+                const payload = await handleListEvents({ limit: 100, offset: 0, q: '', sortBy, sortOrder });
+                setEvents(payload.events || []);
+                setFilteredEvents(payload.events || []);
+        };
 
-	// 搜尋邏輯 - 搜尋活動編號、名稱、類型、狀態
-	const performSearch = async (term) => {
-		if (!term || !term.trim()) {
-			// clear search: reload
-			await fetchEvents();
-			setIsSearching(false);
-			setPage(1);
-			return;
-		}
+        // 搜尋邏輯 - 搜尋活動編號、名稱、類型、狀態
+        const performSearch = async (term) => {
+                if (!term || !term.trim()) {
+                        // clear search: reload
+                        await fetchEvents();
+                        setIsSearching(false);
+                        setPage(1);
+                        return;
+                }
 
-		try {
-			const payload = await handleListEvents({ limit: 100, offset: 0, q: term });
-			setEvents(payload.events || []);
+                try {
+                        const payload = await handleListEvents({ limit: 100, offset: 0, q: term, sortBy, sortOrder });
 			setFilteredEvents(payload.events || []);
 			setIsSearching(true);
 			setPage(1);
@@ -111,18 +111,11 @@ const EventList = () => {
 		}
 	};
 
-	// 分頁計算 - 基於過濾後的活動,並依活動 ID 升冪排序
-	const displayedEvents = isSearching ? filteredEvents : events;
-	
-	// 對顯示的活動進行排序
-	const sortedEvents = (displayedEvents || []).slice().sort((a, b) => {
-		const aId = Number(a?.event_id) || 0;
-		const bId = Number(b?.event_id) || 0;
-		return aId - bId;
-	});
-	
-	const startIndex = (page - 1) * limit;
-	const pagedEvents = sortedEvents.slice(startIndex, startIndex + limit);
+// 分頁計算 - 基於過濾後的活動
+        const displayedEvents = isSearching ? filteredEvents : events;
+
+        const startIndex = (page - 1) * limit;
+        const pagedEvents = displayedEvents.slice(startIndex, startIndex + limit); 
 	const totalPages = Math.max(1, Math.ceil(displayedEvents.length / limit));
 	const canPrev = page > 1;
 	const canNext = page < totalPages;
@@ -248,16 +241,26 @@ const EventList = () => {
 					onEdit={onEdit}
 					onDelete={onDelete}
 					onEnroll={onEnroll}
-				/>
+                                        sortBy={sortBy}
+                                        sortOrder={sortOrder}
+                                        onSort={(newSortBy) => {
+                                                if (sortBy === newSortBy) {
+                                                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                                                } else {
+                                                        setSortBy(newSortBy);
+                                                        setSortOrder('asc');
+                                                }
+                                        }}
+                                />
 
-				<div style={LowerSelectContainerStyle}>
-					<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-						<label>
-							頁數:&nbsp;
-							<select 
-								value={page} 
-								onChange={(e) => setPage(Number(e.target.value))}
-								style={commonSelectStyle}
+                                <div style={LowerSelectContainerStyle}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <label>
+                                                        頁數:&nbsp;
+                                                        <select
+                                                                value={page}
+                                                                onChange={(e) => setPage(Number(e.target.value))}
+                                                                style={commonSelectStyle}
 							>
 								{Array.from({ length: totalPages }, (_, i) => (
 									<option key={i + 1} value={i + 1}>{i + 1}</option>

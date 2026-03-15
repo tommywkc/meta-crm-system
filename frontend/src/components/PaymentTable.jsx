@@ -27,17 +27,25 @@ const statusLabel = (s) => {
 	}
 };
 
-const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) => {
+const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false, sortBy, sortOrder, onSort }) => {
+    const renderSortIcon = (columnKey) => {
+        if (sortBy !== columnKey) return <span style={{ color: '#ccc', marginLeft: 4 }}>↕</span>;
+        return sortOrder === 'asc' ? <span style={{ marginLeft: 4 }}>↑</span> : <span style={{ marginLeft: 4 }}>↓</span>;
+    };
+
     const headers = [
-        '建立日期',
-        '訂單編號',
-        showUserColumn ? '姓名 (用戶編號)' : null,
-        '活動ID',
-        '金額 (HKD)',
-        '已付金額 (HKD)',
-        '付款方式',
-        '狀態',
-        '付款期限',
+        <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('created_at')}>建立日期 {renderSortIcon('created_at')}</span>,
+        <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('payment_id')}>訂單編號 {renderSortIcon('payment_id')}</span>,
+        showUserColumn ? <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('name')}>姓名 (用戶編號) {renderSortIcon('name')}</span> : null,
+        showUserColumn ? <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('phone')}>電話 {renderSortIcon('phone')}</span> : null,
+        showUserColumn ? <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('referrer')}>介紹人 {renderSortIcon('referrer')}</span> : null,
+        showUserColumn ? <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('sales_rep')}>負責銷售 {renderSortIcon('sales_rep')}</span> : null,
+        <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('event_id')}>活動ID {renderSortIcon('event_id')}</span>,
+        <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('amount')}>金額 (HKD) {renderSortIcon('amount')}</span>,
+        <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('paid_amount')}>已付金額 (HKD) {renderSortIcon('paid_amount')}</span>,
+        <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('method')}>付款方式 {renderSortIcon('method')}</span>,
+        <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('status')}>狀態 {renderSortIcon('status')}</span>,
+        <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('expire_time')}>付款期限 {renderSortIcon('expire_time')}</span>,
         '操作'
     ].filter(Boolean);
 
@@ -64,7 +72,12 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) =
 				<MobileCardRow label="建立日期" value={formatDateTimeForDisplay(p.paid_time || p.create_time)} />
 				<MobileCardRow label="訂單編號" value={p.payment_id ?? '-'} valueStyle={{ wordBreak: 'break-all' }} />
 				{showUserColumn && (
-					<MobileCardRow label="用戶" value={userDisplay} />
+					<>
+						<MobileCardRow label="用戶" value={userDisplay} />
+						<MobileCardRow label="電話" value={p.user_mobile || '-'} />
+						<MobileCardRow label="介紹人" value={p.user_referrer_name || '-'} />
+						<MobileCardRow label="負責銷售" value={p.user_owner_sales_name || '-'} />
+					</>
 				)}
 				<MobileCardRow label="活動ID" value={p.event_id || '-'} />
 				<MobileCardRow label="金額" value={currency.format(Number(p.amount || 0))} />
@@ -87,7 +100,14 @@ const PaymentTable = ({ payments, onView, onProcess, showUserColumn = false }) =
 					<tr key={p.payment_id}>
 						<td>{formatDateTimeForDisplay(p.paid_time || p.create_time)}</td>
 						<td>{p.payment_id ?? '-'}</td>
-						{showUserColumn && <td>{userDisplay}</td>}
+						{showUserColumn && (
+							<>
+								<td>{userDisplay}</td>
+								<td>{p.user_mobile || '-'}</td>
+								<td>{p.user_referrer_name || '-'}</td>
+								<td>{p.user_owner_sales_name || '-'}</td>
+							</>
+						)}
 						<td>{p.event_id || '-'}</td>
 						<td>{currency.format(Number(p.amount || 0))}</td>
 						<td>{currency.format(Number((p.paid_amount ?? p.amount) || 0))}</td>

@@ -3,15 +3,26 @@ import CommonTable from './CommonTable';
 import { MobileCard, MobileCardRow } from './MobileCard';
 import { getStatusDisplay, getTypeDisplay, formatForDisplay } from '../utils/dateFormatter';
 
-const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit, onDelete, onEnroll, onHomework, viewButtonLabel = '詳情' }) => {
+const EventsTable = ({ events = [], role, enrolledEventIds = [], onView, onEdit, onDelete, onEnroll, onHomework, viewButtonLabel = '詳情', sortBy, sortOrder, onSort }) => {
   const userRole = role?.toLowerCase();
   const isAdmin = userRole === 'admin';
   const isMember = userRole === 'member';
-  const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';
+  const isSalesOrLeader = userRole === 'sales' || userRole === 'leader';        
+
+  const renderSortIcon = (columnKey) => {
+    if (sortBy !== columnKey) return <span style={{ color: '#ccc', marginLeft: 4 }}>↕</span>;
+    return sortOrder === 'asc' ? <span style={{ marginLeft: 4 }}>↑</span> : <span style={{ marginLeft: 4 }}>↓</span>;
+  };
 
   const headers = [
-    '活動編號', '活動名稱', '類型', '開始日期', '結束日期', '名額', '價格',
-    !isMember ? '狀態' : null,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('event_id')}>活動編號 {renderSortIcon('event_id')}</span>,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('event_name')}>活動名稱 {renderSortIcon('event_name')}</span>,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('type')}>類型 {renderSortIcon('type')}</span>,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('datetime_start')}>開始日期 {renderSortIcon('datetime_start')}</span>,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('datetime_end')}>結束日期 {renderSortIcon('datetime_end')}</span>,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('capacity')}>名額 {renderSortIcon('capacity')}</span>,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('price')}>價格 {renderSortIcon('price')}</span>,
+    !isMember ? <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('status')}>狀態 {renderSortIcon('status')}</span> : null,
     '操作'
   ].filter(Boolean);
 

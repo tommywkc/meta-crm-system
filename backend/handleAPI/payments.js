@@ -30,6 +30,8 @@ router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
     const q = req.query.q || '';
     const method = req.query.method ? (Array.isArray(req.query.method) ? req.query.method : [req.query.method]) : null;
     const status = req.query.status ? (Array.isArray(req.query.status) ? req.query.status : [req.query.status]) : null;
+    const sortBy = req.query.sortBy || 'payment_id';
+    const sortOrder = req.query.sortOrder || 'asc';
 
     if (!userId) {
       return res.status(400).json({ message: '缺少使用者ID' });
@@ -38,11 +40,11 @@ router.get('/users/:userId/payments', authMiddleware, async (req, res) => {
     // Use search if q, method or status filters are provided
     let payments;
     if (q || method || status) {
-      payments = await listByUserWithSearch(userId, limit, offset, q, false, method, status);
+      payments = await listByUserWithSearch(userId, limit, offset, q, false, method, status, sortBy, sortOrder);
     } else {
-      payments = await listByUser(userId, limit, offset);
+      payments = await listByUser(userId, limit, offset, sortBy, sortOrder);
     }
-    
+
     return res.json({ payments });
   } catch (error) {
     console.error('List payments failed:', error);
@@ -58,18 +60,19 @@ router.get('/payments', authMiddleware, async (req, res) => {
     const q = req.query.q || '';
     const method = req.query.method ? (Array.isArray(req.query.method) ? req.query.method : [req.query.method]) : null;
     const status = req.query.status ? (Array.isArray(req.query.status) ? req.query.status : [req.query.status]) : null;
+    const sortBy = req.query.sortBy || 'payment_id';
+    const sortOrder = req.query.sortOrder || 'asc';
 
     // Use search if q, method or status filters are provided
     let payments;
     if (q || method || status) {
-      payments = await searchPayments(limit, offset, q, method, status);
+      payments = await searchPayments(limit, offset, q, method, status, sortBy, sortOrder);
     } else {
-      payments = await listByPaymentId(limit, offset);
+      payments = await listByPaymentId(limit, offset, sortBy, sortOrder);
     }
-    
     return res.json({ payments });
   } catch (error) {
-    console.error('List payments failed:', error);
+    console.error('Get payments list failed:', error);
     return res.status(500).json({ message: '伺服器錯誤' });
   }
 });

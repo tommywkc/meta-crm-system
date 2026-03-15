@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { getCustomerReport, getCourseSessionReport, getMonthlyPromotions, createMonthlyPromotion, deleteMonthlyPromotion } = require('../dao/reportsDao');
+const { getCustomerReport, getCourseSessionReport, getMonthlyPromotions, createMonthlyPromotion, deleteMonthlyPromotion, getUnpaidCustomersReport, getFinancialReport } = require('../dao/reportsDao');
 const { findByEventId, updateByEventId, getEventsWithPromotion } = require('../dao/eventsDao');
 const { Parser } = require('json2csv');
 const multer = require('multer');
@@ -43,6 +43,32 @@ router.get('/reports/customers', authMiddleware, roleMiddleware('admin', 'sales'
   } catch (error) {
     console.error('Failed to get customer report:', error);
     res.status(500).json({ message: '获取报表数据失败' });
+  }
+});
+
+// 获取未付款客人名单
+router.get('/reports/unpaid-customers', authMiddleware, roleMiddleware('admin', 'sales'), async (req, res) => {
+  try {
+    const data = await getUnpaidCustomersReport();
+    res.json(data);
+  } catch (error) {
+    console.error('Failed to get unpaid customers report:', error);
+    res.status(500).json({ message: '获取未付款客人名单失败' });
+  }
+});
+
+// 获取财务报表
+router.get('/reports/financial', authMiddleware, roleMiddleware('admin', 'sales'), async (req, res) => {
+  try {
+    const { eventId, monthStr } = req.query;
+    if (!eventId || !monthStr) {
+      return res.status(400).json({ message: '缺少 eventId 或 monthStr 参数' });
+    }
+    const data = await getFinancialReport(eventId, monthStr);
+    res.json(data);
+  } catch (error) {
+    console.error('Failed to get financial report:', error);
+    res.status(500).json({ message: '获取财务报表失败' });
   }
 });
 

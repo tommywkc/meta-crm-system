@@ -39,12 +39,14 @@ router.get('/customers', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
     const q = req.query.q || '';
+    const sortBy = req.query.sortBy || 'user_id';
+    const sortOrder = req.query.sortOrder || 'ASC';
 
     let customers;
     if (q && q.trim()) {
-      customers = await searchUsers(limit, offset, q);
+      customers = await searchUsers(limit, offset, q, sortBy, sortOrder);
     } else {
-      customers = await listByUsersId(limit, offset);
+      customers = await listByUsersId(limit, offset, sortBy, sortOrder);
     }
 
     console.log(`Retrieved ${customers.length} customer records (search q=${q})`);

@@ -73,31 +73,41 @@ async function removeByEventId(id) {
   return true;
 }
 
-async function listbyEventsId(limit = 100, offset = 0) {
-  const res = await query('SELECT * FROM EVENTS ORDER BY event_id ASC LIMIT $1 OFFSET $2', [limit, offset]);
+async function listbyEventsId(limit = 100, offset = 0, sortBy = 'event_id', sortOrder = 'asc') {
+  const allowedSortColumns = ['event_id', 'event_name', 'type', 'status', 'datetime_start', 'datetime_end', 'capacity', 'remaining_seats', 'price'];
+  const actualSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'event_id';
+  const actualSortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+  const res = await query(`SELECT * FROM EVENTS ORDER BY ${actualSortBy} ${actualSortOrder} LIMIT $1 OFFSET $2`, [limit, offset]);
   return res.rows;
 }
 
-async function searchEvents(limit = 100, offset = 0, q = '') {
-  if (!q || !q.trim()) return listbyEventsId(limit, offset);
+async function searchEvents(limit = 100, offset = 0, q = '', sortBy = 'event_id', sortOrder = 'asc') {
+  if (!q || !q.trim()) return listbyEventsId(limit, offset, sortBy, sortOrder);
   const pattern = `%${q}%`;
+  const allowedSortColumns = ['event_id', 'event_name', 'type', 'status', 'datetime_start', 'datetime_end', 'capacity', 'remaining_seats', 'price'];
+  const actualSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'event_id';
+  const actualSortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
   const sql = `
     SELECT * FROM EVENTS
     WHERE CAST(event_id AS TEXT) ILIKE $3
        OR event_name ILIKE $3
        OR type ILIKE $3
        OR status ILIKE $3
-    ORDER BY event_id ASC
+    ORDER BY ${actualSortBy} ${actualSortOrder}
     LIMIT $1 OFFSET $2
   `;
   const res = await query(sql, [limit, offset, pattern]);
   return res.rows;
 }
 
-async function searchEventsByStatus(status, limit = 100, offset = 0, q = '') {
+async function searchEventsByStatus(status, limit = 100, offset = 0, q = '', sortBy = 'event_id', sortOrder = 'asc') {  
   const pattern = q && q.trim() ? `%${q}%` : null;
+  const allowedSortColumns = ['event_id', 'event_name', 'type', 'status', 'datetime_start', 'datetime_end', 'capacity', 'remaining_seats', 'price'];
+  const actualSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'event_id';
+  const actualSortOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+
   if (!pattern) {
-    const sql = `SELECT * FROM EVENTS WHERE status = $1 ORDER BY event_id ASC LIMIT $2 OFFSET $3`;
+    const sql = `SELECT * FROM EVENTS WHERE status = $1 ORDER BY ${actualSortBy} ${actualSortOrder} LIMIT $2 OFFSET $3`;
     const res = await query(sql, [status, limit, offset]);
     return res.rows;
   }
@@ -111,7 +121,7 @@ async function searchEventsByStatus(status, limit = 100, offset = 0, q = '') {
         OR type ILIKE $4
         OR status ILIKE $4
       )
-    ORDER BY event_id ASC
+    ORDER BY ${actualSortBy} ${actualSortOrder}
     LIMIT $2 OFFSET $3
   `;
   const res = await query(sql, [status, limit, offset, pattern]);

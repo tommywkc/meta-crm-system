@@ -187,6 +187,112 @@ module.exports = {
     const sql = `DELETE FROM MONTHLY_PROMOTIONS WHERE id = $1`;
     await query(sql, [id]);
     return true;
+  },
+
+  async getUnpaidCustomersReport() {
+    const sql = `
+      WITH UnpaidEvents AS (
+        SELECT e.event_id, e.event_name, ee.user_id
+        FROM EVENT_ENROLLMENTS ee
+        JOIN EVENTS e ON ee.event_id = e.event_id
+        WHERE e.type = 'CLASS'
+          AND NOT EXISTS (
+            SELECT 1 FROM PAYMENTS p 
+            WHERE p.event_id = ee.event_id 
+              AND p.user_id = ee.user_id 
+              AND p.status = 'COMPLETED'
+          )
+      ),
+      SeminarAttendance AS (
+        SELECT r.user_id, string_agg(DISTINCT TO_CHAR(a.attend_time, 'YYYY-MM-DD'), ', ') as attend_dates
+        FROM EVENT_ATTENDANCE a
+        JOIN SESSION_REGISTRATIONS r ON a.registration_id = r.registration_id
+        JOIN EVENT_SESSIONS s ON r.session_id = s.session_id
+        JOIN EVENTS e ON s.event_id = e.event_id
+        WHERE e.type = 'SEMINAR' AND a.status IN ('Y', 'G')
+        GROUP BY r.user_id
+      )
+      SELECT 
+        ue.event_id,
+        ue.event_name as course_name,
+        u.user_id,
+        u.name,
+        u.mobile,
+        u.email,
+        sa.attend_dates,
+        CASE WHEN sa.user_id IS NOT NULL THEN true ELSE false END as attended_seminar
+      FROM UnpaidEvents ue
+      JOIN USERS u ON ue.user_id = u.user_id
+      LEFT JOIN SeminarAttendance sa ON ue.user_id = sa.user_id
+      ORDER BY ue.event_id, u.user_id
+    `;
+    const result = await query(sql);
+    return result.rows;
+  },
+
+  async getFinancialReport(eventId, monthStr) {
+    const sql = `
+      WITH TargetUsers AS (
+        SELECT DISTINCT r.user_id
+        FROM EVENT_ATTENDANCE a
+        JOIN SESSION_REGISTRATIONS r ON a.registration_id = r.registration_id
+        JOIN EVENT_SESSIONS s ON r.session_id = s.session_id
+        WHERE s.event_id = $1
+          AND TO_CHAR(a.attend_time, 'YYYY-MM') = $2
+          AND a.status IN ('Y', 'G')
+      ),
+      PaymentData AS (
+        SELECT 
+          p.amount, 
+          p.method,
+          u.referrer,
+          u.owner_sales
+        FROM PAYMENTS p
+        JOIN USERS u ON p.user_id = u.user_id
+        WHERE p.event_id = $1
+          AND p.status = 'COMPLETED'
+          AND p.user_id IN (SELECT user_id FROM TargetUsers)
+      ),
+      EventCosts AS (
+        SELECT 
+          COALESCE(room_cost, 0) as room_cost, 
+          COALESCE(promotion_cost, 0) as promotion_cost, 
+          COALESCE(misc_cost, 0) as misc_cost, 
+          COALESCE(salary_cost, 0) as salary_cost,
+          COALESCE(freight_cost, 0) as freight_cost,
+          COALESCE(utilities_cost, 0) as utilities_cost,
+          COALESCE(telecom_cost, 0) as telecom_cost,
+          COALESCE(cog_cost, 0) as cog_cost
+        FROM EVENTS
+        WHERE event_id = $1
+      )
+      SELECT 
+        (SELECT COUNT(*) FROM TargetUsers) as enrollment_count,
+        (SELECT COALESCE(SUM(amount), 0) FROM PaymentData) as total_sales,
+        (SELECT COALESCE(SUM(
+          CASE 
+            WHEN method = 'CREDITCARD' THEN amount * 0.034
+            WHEN method = 'PAYME' THEN amount * 0.012
+            ELSE 0 
+          END
+        ), 0) FROM PaymentData) as payment_fees,
+        (SELECT COALESCE(SUM(
+          CASE WHEN referrer IS NOT NULL THEN 500 ELSE 0 END
+        ), 0) FROM PaymentData) as referral_fees,
+        (SELECT COALESCE(SUM(
+          CASE WHEN owner_sales IS NOT NULL THEN amount * 0.1 ELSE 0 END
+        ), 0) FROM PaymentData) as sales_commissions,
+        (SELECT room_cost FROM EventCosts) as room_cost,
+        (SELECT promotion_cost FROM EventCosts) as promotion_cost,
+        (SELECT misc_cost FROM EventCosts) as misc_cost,
+        (SELECT salary_cost FROM EventCosts) as salary_cost,
+        (SELECT freight_cost FROM EventCosts) as freight_cost,
+        (SELECT utilities_cost FROM EventCosts) as utilities_cost,
+        (SELECT telecom_cost FROM EventCosts) as telecom_cost,
+        (SELECT cog_cost FROM EventCosts) as cog_cost
+    `;
+    const result = await query(sql, [eventId, monthStr]);
+    return result.rows[0];
   }
 };
 

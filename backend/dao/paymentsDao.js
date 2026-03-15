@@ -12,11 +12,14 @@ async function createPayment({ event_id, user_id, enrollment_id, amount, method,
 async function findByPaymentId(id) {
   const sql = `
     SELECT p.*, 
-           u.name as user_name, u.email as user_email, 
+           u.name as user_name, u.email as user_email, u.mobile as user_mobile, 
+           ref.name as user_referrer_name, sales.name as user_owner_sales_name,
            e.event_name,
            c.name as casher_name
     FROM PAYMENTS p
     LEFT JOIN USERS u ON p.user_id = u.user_id
+    LEFT JOIN USERS ref ON u.referrer = ref.user_id
+    LEFT JOIN USERS sales ON u.owner_sales = sales.user_id
     LEFT JOIN EVENTS e ON p.event_id = e.event_id
     LEFT JOIN USERS c ON p.casher_id = c.user_id
     WHERE p.payment_id = $1
@@ -37,12 +40,31 @@ async function findPaymentByEventAndUser(event_id, user_id) {
   return res.rows[0] || null;
 }
 
-async function listByUser(user_id, limit = 100, offset = 0) {
-  const res = await query('SELECT * FROM PAYMENTS WHERE user_id = $1 ORDER BY payment_id DESC LIMIT $2 OFFSET $3', [user_id, limit, offset]);
+async function listByUser(user_id, limit = 100, offset = 0, sortBy = 'payment_id', sortOrder = 'desc') {
+  const allowedSortColumns = ['payment_id', 'event_id', 'amount', 'method', 'status', 'paid_time', 'receipt_number'];
+  const actualSortBy = allowedSortColumns.includes(sortBy) ? `p.${sortBy}` : 'p.payment_id';
+  const actualSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+  const sql = `
+    SELECT p.*,
+           u.name as user_name, u.email as user_email, u.mobile as user_mobile, 
+           ref.name as user_referrer_name, sales.name as user_owner_sales_name,
+           e.event_name,
+           c.name as casher_name
+    FROM PAYMENTS p
+    LEFT JOIN USERS u ON p.user_id = u.user_id
+    LEFT JOIN USERS ref ON u.referrer = ref.user_id
+    LEFT JOIN USERS sales ON u.owner_sales = sales.user_id
+    LEFT JOIN EVENTS e ON p.event_id = e.event_id
+    LEFT JOIN USERS c ON p.casher_id = c.user_id
+    WHERE p.user_id = $1
+    ORDER BY ${actualSortBy} ${actualSortOrder}
+    LIMIT $2 OFFSET $3
+  `;
+  const res = await query(sql, [user_id, limit, offset]);
   return res.rows;
 }
 
-async function listByUserWithSearch(user_id, limit = 100, offset = 0, q = '', completedOnly = false, method = null, status = null) {
+async function listByUserWithSearch(user_id, limit = 100, offset = 0, q = '', completedOnly = false, method = null, status = null, sortBy = 'payment_id', sortOrder = 'desc') {
   const params = [];
   params.push(user_id); // $1
 
@@ -88,17 +110,24 @@ async function listByUserWithSearch(user_id, limit = 100, offset = 0, q = '', co
   params.push(limit);
   params.push(offset);
 
+  const allowedSortColumns = ['payment_id', 'event_id', 'amount', 'method', 'status', 'paid_time', 'receipt_number'];
+  const actualSortBy = allowedSortColumns.includes(sortBy) ? `p.${sortBy}` : 'p.payment_id';
+  const actualSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
   const sql = `
-    SELECT p.*, 
-           u.name as user_name, u.email as user_email,
+    SELECT p.*,
+           u.name as user_name, u.email as user_email, u.mobile as user_mobile, 
+           ref.name as user_referrer_name, sales.name as user_owner_sales_name, 
            e.event_name,
            c.name as casher_name
     FROM PAYMENTS p
     LEFT JOIN USERS u ON p.user_id = u.user_id
+    LEFT JOIN USERS ref ON u.referrer = ref.user_id
+    LEFT JOIN USERS sales ON u.owner_sales = sales.user_id
     LEFT JOIN EVENTS e ON p.event_id = e.event_id
     LEFT JOIN USERS c ON p.casher_id = c.user_id
     WHERE ${where.join(' AND ')}
-    ORDER BY p.payment_id DESC
+    ORDER BY ${actualSortBy} ${actualSortOrder}
     LIMIT $${params.length - 1} OFFSET $${params.length}
   `;
 
@@ -106,7 +135,7 @@ async function listByUserWithSearch(user_id, limit = 100, offset = 0, q = '', co
   return res.rows;
 }
 
-async function searchPayments(limit = 100, offset = 0, q = '', method = null, status = null) {
+async function searchPayments(limit = 100, offset = 0, q = '', method = null, status = null, sortBy = 'payment_id', sortOrder = 'desc') {
   const params = [];
   const where = [];
 
@@ -144,19 +173,26 @@ async function searchPayments(limit = 100, offset = 0, q = '', method = null, st
   params.push(limit);
   params.push(offset);
 
-  const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';       
+
+  const allowedSortColumns = ['payment_id', 'event_id', 'amount', 'method', 'status', 'paid_time', 'receipt_number'];
+  const actualSortBy = allowedSortColumns.includes(sortBy) ? `p.${sortBy}` : 'p.payment_id';
+  const actualSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
   const sql = `
-    SELECT p.*, 
-           u.name as user_name, u.email as user_email,
+    SELECT p.*,
+           u.name as user_name, u.email as user_email, u.mobile as user_mobile, 
+           ref.name as user_referrer_name, sales.name as user_owner_sales_name, 
            e.event_name,
            c.name as casher_name
     FROM PAYMENTS p
     LEFT JOIN USERS u ON p.user_id = u.user_id
+    LEFT JOIN USERS ref ON u.referrer = ref.user_id
+    LEFT JOIN USERS sales ON u.owner_sales = sales.user_id
     LEFT JOIN EVENTS e ON p.event_id = e.event_id
     LEFT JOIN USERS c ON p.casher_id = c.user_id
     ${whereClause}
-    ORDER BY p.payment_id DESC
+    ORDER BY ${actualSortBy} ${actualSortOrder}
     LIMIT $${params.length - 1} OFFSET $${params.length}
   `;
 
@@ -164,15 +200,23 @@ async function searchPayments(limit = 100, offset = 0, q = '', method = null, st
   return res.rows;
 }
 
-async function listByPaymentId(limit = 100, offset = 0) {
+async function listByPaymentId(limit = 100, offset = 0, sortBy = 'payment_id', sortOrder = 'desc') {
+  const allowedSortColumns = ['payment_id', 'event_id', 'amount', 'method', 'status', 'paid_time', 'receipt_number'];
+  const actualSortBy = allowedSortColumns.includes(sortBy) ? `p.${sortBy}` : 'p.payment_id';
+  const actualSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
   const sql = `
-    SELECT p.*, 
-           u.name as user_name, u.email as user_email,
+    SELECT p.*,
+           u.name as user_name, u.email as user_email, u.mobile as user_mobile, 
+           ref.name as user_referrer_name, sales.name as user_owner_sales_name, 
+           e.event_name,
            c.name as casher_name
     FROM PAYMENTS p
     LEFT JOIN USERS u ON p.user_id = u.user_id
+    LEFT JOIN USERS ref ON u.referrer = ref.user_id
+    LEFT JOIN USERS sales ON u.owner_sales = sales.user_id
+    LEFT JOIN EVENTS e ON p.event_id = e.event_id
     LEFT JOIN USERS c ON p.casher_id = c.user_id
-    ORDER BY p.payment_id DESC
+    ORDER BY ${actualSortBy} ${actualSortOrder}
     LIMIT $1 OFFSET $2
   `;
   const res = await query(sql, [limit, offset]);

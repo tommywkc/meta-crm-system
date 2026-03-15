@@ -85,8 +85,12 @@ async function removeByUserId(id) {
   return true;
 }
 
-async function listByUsersId(limit = 100, offset = 0) {
-  const res = await query('SELECT * FROM USERS ORDER BY user_id ASC LIMIT $1 OFFSET $2', [limit, offset]);
+async function listByUsersId(limit = 100, offset = 0, sortBy = 'user_id', sortOrder = 'ASC') {
+  const allowedSortColumns = ['user_id', 'name', 'role', 'mobile', 'email'];
+  const actualSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'user_id';
+  const actualSortOrder = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+  
+  const res = await query(`SELECT * FROM USERS ORDER BY ${actualSortBy} ${actualSortOrder} LIMIT $1 OFFSET $2`, [limit, offset]);
   return res.rows;
 }
 
@@ -96,16 +100,21 @@ async function listByUserIds(userIds = []) {
   return res.rows || [];
 }
 
-async function searchUsers(limit = 100, offset = 0, q = '') {
-  if (!q || !q.trim()) return listByUsersId(limit, offset);
+async function searchUsers(limit = 100, offset = 0, q = '', sortBy = 'user_id', sortOrder = 'ASC') {
+  if (!q || !q.trim()) return listByUsersId(limit, offset, sortBy, sortOrder);
   const pattern = `%${q}%`;
+  
+  const allowedSortColumns = ['user_id', 'name', 'role', 'mobile', 'email'];
+  const actualSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'user_id';
+  const actualSortOrder = sortOrder.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
   const sql = `
     SELECT * FROM USERS
     WHERE CAST(user_id AS TEXT) ILIKE $3
        OR name ILIKE $3
        OR mobile ILIKE $3
        OR email ILIKE $3
-    ORDER BY user_id ASC
+    ORDER BY ${actualSortBy} ${actualSortOrder}
     LIMIT $1 OFFSET $2
   `;
   const res = await query(sql, [limit, offset, pattern]);

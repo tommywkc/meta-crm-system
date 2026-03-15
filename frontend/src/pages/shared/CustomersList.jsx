@@ -16,17 +16,19 @@ const CustomersList = () => {
   console.log('Current authRole:', authRole);
 
   const [customers, setCustomers] = useState([]);
+  const [sortBy, setSortBy] = useState('user_id');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   useEffect(() => {
     const fetchData = async () => {
-      const payload = await handleList(100, 0, '');
+      const payload = await handleList(100, 0, '', sortBy, sortOrder);
       setCustomers(payload.customers || []);
     };
     fetchData();
-  }, []);
+  }, [sortBy, sortOrder]);
 
   const fetchCustomers = async () => {
-    const payload = await handleList(100, 0, '');
+    const payload = await handleList(100, 0, '', sortBy, sortOrder);
     setCustomers(payload.customers || []);
   };
 
@@ -60,7 +62,7 @@ const CustomersList = () => {
   const handleSearch = async () => {
     try {
       console.log('Searching for:', searchTerm);
-      const payload = await handleList(100, 0, searchTerm || '');
+      const payload = await handleList(100, 0, searchTerm || '', sortBy, sortOrder);
       setCustomers(payload.customers || []);
       setPage(1);
     } catch (err) {
@@ -138,8 +140,16 @@ const CustomersList = () => {
         role={authRole}
         onEdit={handleEdit}
         onView={handleView}
-        onDelete={handleDelete}
-      />
+        onDelete={handleDelete}        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={(newSortBy) => {
+          if (sortBy === newSortBy) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+          } else {
+            setSortBy(newSortBy);
+            setSortOrder('asc');
+          }
+        }}      />
 
       <div style={ LowerSelectContainerStyle }>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

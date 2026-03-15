@@ -54,7 +54,7 @@ export async function handleListPaymentByUserId(user_id, { limit, offset, q, met
   }
 }
 
-export async function handleListAllPayment(limit, offset, q, method, status) {
+export async function handleListAllPayment(limit, offset, q, method, status, sortBy = 'payment_id', sortOrder = 'asc') {  
   try {
     console.log('Attempting to fetch payments list...');
 
@@ -72,6 +72,8 @@ export async function handleListAllPayment(limit, offset, q, method, status) {
       else if (String(status).includes(',')) String(status).split(',').map(s => s.trim()).forEach(s => params.append('status', s));
       else params.append('status', status);
     }
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
 
     const url = apiUrl('/api/payments') + (params.toString() ? `?${params.toString()}` : '');
     const res = await fetch(url, {

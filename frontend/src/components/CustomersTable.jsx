@@ -2,13 +2,18 @@ import React from 'react';
 import CommonTable from './CommonTable';
 import { MobileCard, MobileCardRow } from './MobileCard';
 
-const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, renderActions, showAdminActions = true, extraColumns = [] }) => {
+const CustomersTable = ({ customers = [], role, onEdit, onView, onDelete, renderActions, showAdminActions = true, extraColumns = [], sortBy, sortOrder, onSort }) => {
+  const renderSortIcon = (columnKey) => {
+    if (sortBy !== columnKey) return <span style={{ color: '#ccc', marginLeft: 4 }}>↕</span>;
+    return sortOrder === 'asc' ? <span style={{ marginLeft: 4 }}>↑</span> : <span style={{ marginLeft: 4 }}>↓</span>;
+  };
+
   const headers = [
-    '用戶編號',
-    '姓名',
-    '角色',
-    '電話',
-    '電子郵件',
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('user_id')}>用戶編號 {renderSortIcon('user_id')}</span>,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('name')}>姓名 {renderSortIcon('name')}</span>,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('role')}>角色 {renderSortIcon('role')}</span>,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('mobile')}>電話 {renderSortIcon('mobile')}</span>,
+    <span style={{ cursor: 'pointer' }} onClick={() => onSort && onSort('email')}>電子郵件 {renderSortIcon('email')}</span>,
     ...extraColumns.map(col => col.header),
     '操作'
   ];
