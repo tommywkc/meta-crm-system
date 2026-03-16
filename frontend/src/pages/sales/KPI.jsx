@@ -49,6 +49,16 @@ const KPI = () => {
 	const [error, setError] = useState(null);
     const [date, setDate] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
 
+	const shiftMonth = (delta) => {
+		setDate((prev) => {
+			const baseIndex = (prev.year * 12) + (prev.month - 1);
+			const nextIndex = baseIndex + delta;
+			const nextYear = Math.floor(nextIndex / 12);
+			const nextMonth = (nextIndex % 12) + 1;
+			return { year: nextYear, month: nextMonth };
+		});
+	};
+
 	const userRole = user?.role?.toLowerCase();
 	const isLeader = userRole === 'leader';
 	const isSales = userRole === 'sales';
@@ -136,17 +146,11 @@ const KPI = () => {
 	return (
 		<div style={{ padding: 20 }}>
 			<h2>業務 KPI {isLeader ? '(Leader)' : '(Sales)'}</h2>
-
-            <div style={{ marginBottom: 20 }}>
-                <input 
-                    type="month" 
-                    value={`${date.year}-${String(date.month).padStart(2, '0')}`}
-                    onChange={(e) => {
-                        const [year, month] = e.target.value.split('-');
-                        setDate({ year: parseInt(year), month: parseInt(month) });
-                    }}
-                />
-            </div>
+			<div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+				<button onClick={() => shiftMonth(-1)} style={{ margin: 0 }}>上月</button>
+				<button onClick={() => shiftMonth(1)} style={{ margin: 0 }}>下月</button>
+				<div style={{ marginLeft: 8, color: '#666' }}>{date.year}年{date.month}月</div>
+			</div>
 
 			{isLeader ? (
 				<>
