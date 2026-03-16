@@ -6,6 +6,7 @@ const UnpaidCustomersReport = ({ onBack }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('attended'); // 'attended' or 'not_attended'
+    const [selectedCourse, setSelectedCourse] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -26,10 +27,15 @@ const UnpaidCustomersReport = ({ onBack }) => {
         fetchData();
     }, []);
 
-    // Filter data based on active tab
-    const filteredData = data.filter(item => 
-        activeTab === 'attended' ? item.attended_seminar : !item.attended_seminar
-    );
+    // Get unique courses for the dropdown
+    const uniqueCourses = [...new Set(data.map(item => item.course_name))].filter(Boolean);
+
+    // Filter data based on active tab and selected course
+    const filteredData = data.filter(item => {
+        const tabMatch = activeTab === 'attended' ? item.attended_seminar : !item.attended_seminar;
+        const courseMatch = selectedCourse ? item.course_name === selectedCourse : true;
+        return tabMatch && courseMatch;
+    });
 
     // Group by course
     const groupedData = filteredData.reduce((acc, item) => {
@@ -61,6 +67,20 @@ const UnpaidCustomersReport = ({ onBack }) => {
             </button>
             
             <h2 style={{ marginBottom: '20px' }}>未付款客人名單</h2>
+
+            <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontWeight: 'bold' }}>依課程搜索：</span>
+                <select 
+                    value={selectedCourse} 
+                    onChange={e => setSelectedCourse(e.target.value)}
+                    style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', minWidth: '200px' }}
+                >
+                    <option value="">全部課程</option>
+                    {uniqueCourses.map(course => (
+                        <option key={course} value={course}>{course}</option>
+                    ))}
+                </select>
+            </div>
 
             <div style={{ display: 'flex', marginBottom: '20px', borderBottom: '1px solid #ddd' }}>
                 <button 

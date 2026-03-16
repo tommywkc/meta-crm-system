@@ -134,6 +134,11 @@ const kpiRouter = require('./handleAPI/kpi');
 console.log('KPI router loaded');
 app.use('/api', kpiRouter);
 
+const expensesRouter = require('./handleAPI/expenses');
+console.log('Expenses router loaded');
+// Notice expensesRouter handles its own authMiddleware inside handleAPI/expenses.js
+app.use('/api/expenses', expensesRouter);
+
 // Logout endpoint
 app.post('/api/logout', (req, res) => {
   res.clearCookie('token');

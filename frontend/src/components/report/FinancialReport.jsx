@@ -59,18 +59,10 @@ const FinancialReport = ({ onBack }) => {
         const referralFees = Number(reportData.referral_fees) || 0;
         const promotionCost = Number(reportData.promotion_cost) || 0;
         const roomCost = Number(reportData.room_cost) || 0;
-        const salesCommissions = Number(reportData.sales_commissions) || 0;
-        const salaryCost = Number(reportData.salary_cost) || 0;
         const miscCost = Number(reportData.misc_cost) || 0;
-        const freightCost = Number(reportData.freight_cost) || 0;
-        const utilitiesCost = Number(reportData.utilities_cost) || 0;
-        const telecomCost = Number(reportData.telecom_cost) || 0;
-        const cogCost = Number(reportData.cog_cost) || 0;
 
-        const directExpenses = referralFees + promotionCost + roomCost + salesCommissions + salaryCost + miscCost + freightCost + utilitiesCost + telecomCost + cogCost;
-        const grossProfit = netReceived - directExpenses;
-        const gpPercentage = totalSales > 0 ? ((grossProfit / totalSales) * 100).toFixed(2) + '%' : '0.00%';
-
+        const directExpenses = promotionCost + roomCost + miscCost;
+        
         return (
             <div style={{ marginTop: '30px', background: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                 <h3 style={{ borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '20px' }}>報表結果</h3>
@@ -94,10 +86,6 @@ const FinancialReport = ({ onBack }) => {
                             <td style={{ padding: '12px', fontWeight: 'bold', color: '#1976d2' }}>{formatCurrency(netReceived)}</td>
                         </tr>
                         <tr style={{ borderBottom: '1px solid #eee' }}>
-                            <td style={{ padding: '12px', fontWeight: 'bold' }}>介紹費</td>
-                            <td style={{ padding: '12px', color: '#d32f2f' }}>- {formatCurrency(referralFees)}</td>
-                        </tr>
-                        <tr style={{ borderBottom: '1px solid #eee' }}>
                             <td style={{ padding: '12px', fontWeight: 'bold' }}>宣傳費</td>
                             <td style={{ padding: '12px', color: '#d32f2f' }}>- {formatCurrency(promotionCost)}</td>
                         </tr>
@@ -106,32 +94,12 @@ const FinancialReport = ({ onBack }) => {
                             <td style={{ padding: '12px', color: '#d32f2f' }}>- {formatCurrency(roomCost)}</td>
                         </tr>
                         <tr style={{ borderBottom: '1px solid #eee' }}>
-                            <td style={{ padding: '12px', fontWeight: 'bold' }}>銷售佣金分成</td>
-                            <td style={{ padding: '12px', color: '#d32f2f' }}>- {formatCurrency(salesCommissions)}</td>
-                        </tr>
-                        <tr style={{ borderBottom: '1px solid #eee' }}>
-                            <td style={{ padding: '12px', fontWeight: 'bold' }}>日曆成本 (Salary Cost)</td>
-                            <td style={{ padding: '12px', color: '#d32f2f' }}>- {formatCurrency(salaryCost)}</td>
-                        </tr>
-                        <tr style={{ borderBottom: '1px solid #eee' }}>
                             <td style={{ padding: '12px', fontWeight: 'bold' }}>雜費 (Misc Cost)</td>
                             <td style={{ padding: '12px', color: '#d32f2f' }}>- {formatCurrency(miscCost)}</td>
                         </tr>
                         <tr style={{ borderBottom: '2px solid #ccc', backgroundColor: '#f9f9f9' }}>
                             <td style={{ padding: '12px', fontWeight: 'bold' }}>直接支出 (Total Expenses)</td>
                             <td style={{ padding: '12px', fontWeight: 'bold', color: '#d32f2f' }}>- {formatCurrency(directExpenses)}</td>
-                        </tr>
-                        <tr style={{ borderBottom: '1px solid #eee' }}>
-                            <td style={{ padding: '12px', fontWeight: 'bold', fontSize: '1.2rem' }}>GP (Gross Profit)</td>
-                            <td style={{ padding: '12px', fontWeight: 'bold', fontSize: '1.2rem', color: grossProfit >= 0 ? '#2e7d32' : '#d32f2f' }}>
-                                {formatCurrency(grossProfit)}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style={{ padding: '12px', fontWeight: 'bold', fontSize: '1.2rem' }}>GP%</td>
-                            <td style={{ padding: '12px', fontWeight: 'bold', fontSize: '1.2rem', color: grossProfit >= 0 ? '#2e7d32' : '#d32f2f' }}>
-                                {gpPercentage}
-                            </td>
                         </tr>
                     </tbody>
                 </table>

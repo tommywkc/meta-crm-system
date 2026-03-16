@@ -32,7 +32,25 @@ async function createEvent({
 }
 
 async function findByEventId(id) {
-  const res = await query('SELECT * FROM EVENTS WHERE event_id = $1', [id]);
+  const sql = `
+    SELECT
+      e.*,
+      p.total_promotion_cost AS promotion_cost,
+      m.total_misc_cost AS misc_cost
+    FROM EVENTS e
+    LEFT JOIN (
+      SELECT event_id, SUM(amount) AS total_promotion_cost
+      FROM PROMOTIONS
+      GROUP BY event_id
+    ) p ON p.event_id = e.event_id
+    LEFT JOIN (
+      SELECT event_id, SUM(amount) AS total_misc_cost
+      FROM MISC_EXPENSES
+      GROUP BY event_id
+    ) m ON m.event_id = e.event_id
+    WHERE e.event_id = $1
+  `;
+  const res = await query(sql, [id]);
   return res.rows[0] || null;
 }
 

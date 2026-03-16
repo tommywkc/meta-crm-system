@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getPromotions, createPromotion, deletePromotion } from '../../api/expensesAPI';
+import { getMiscExpenses, createMiscExpense, deleteMiscExpense } from '../../api/expensesAPI';
 import { handleListEvents } from '../../api/eventListAPI';
 import { PageContainer, PageHeader } from '../CommonPage';
 import { formatDateTimeForDisplay } from '../../utils/dateFormatter';
 
-const MonthlyPromotionReport = ({ onBack }) => {
-    const [promotions, setPromotions] = useState([]);
+const MonthlyMiscExpenseReport = ({ onBack }) => {
+    const [misc, setMisc] = useState([]);
     const [events, setEvents] = useState([]);
     const [selectedEventId, setSelectedEventId] = useState('');
     const [filterEventId, setFilterEventId] = useState('all');
@@ -17,7 +17,7 @@ const MonthlyPromotionReport = ({ onBack }) => {
     const [viewImage, setViewImage] = useState(null);
 
     useEffect(() => {
-        fetchPromotions();
+        fetchMiscExpenses();
         fetchEvents();
     }, []);
 
@@ -30,14 +30,14 @@ const MonthlyPromotionReport = ({ onBack }) => {
         }
     };
 
-    const fetchPromotions = async () => {
+    const fetchMiscExpenses = async () => {
         setLoading(true);
         try {
-            const data = await getPromotions();
-            setPromotions(Array.isArray(data) ? data : []);
+            const data = await getMiscExpenses();
+            setMisc(Array.isArray(data) ? data : []);
         } catch (error) {
-            console.error('Failed to fetch promotions:', error);
-            setPromotions([]);
+            console.error('Failed to fetch misc expenses:', error);
+            setMisc([]);
         }
         setLoading(false);
     };
@@ -85,16 +85,16 @@ const MonthlyPromotionReport = ({ onBack }) => {
         }
 
         try {
-            await createPromotion(formData);
+            await createMiscExpense(formData);
             alert('新增成功');
             setExpenseDate('');
             setAmount('');
             setDescription('');
             setFile(null);
-            document.getElementById('file-input').value = null;
-            fetchPromotions();
+            document.getElementById('file-input-misc').value = null;
+            fetchMiscExpenses();
         } catch (error) {
-            console.error('Error creating promotion:', error);
+            console.error('Error creating misc expense:', error);
             const msg = error.response?.data?.error || error.message || '發生錯誤';
             alert('新增失敗: ' + msg);
         }
@@ -103,22 +103,22 @@ const MonthlyPromotionReport = ({ onBack }) => {
     const handleDelete = async (id) => {
         if (window.confirm('確定要刪除此記錄嗎？')) {
             try {
-                await deletePromotion(id);
-                fetchPromotions();
+                await deleteMiscExpense(id);
+                fetchMiscExpenses();
             } catch (error) {
-                console.error('Error deleting promotion:', error);
+                console.error('Error deleting misc expense:', error);
                 alert('刪除失敗');
             }
         }
     };
 
-    const displayedPromotions = promotions.filter(p => {
+    const displayedMisc = misc.filter(p => {
         if (filterEventId === 'all') return true;
         if (filterEventId === 'general') return !p.event_id;
         return String(p.event_id) === String(filterEventId);
     });
 
-    const summary = displayedPromotions.reduce((acc, curr) => {
+    const summary = displayedMisc.reduce((acc, curr) => {
         const dateObj = new Date(curr.expense_date);
         const monthKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
         if (!acc[monthKey]) acc[monthKey] = 0;
@@ -132,11 +132,11 @@ const MonthlyPromotionReport = ({ onBack }) => {
                 <button onClick={onBack} style={{ marginRight: '16px', padding: '8px 16px', cursor: 'pointer' }}>
                     &larr; 返回
                 </button>
-                <h2 style={{ margin: 0 }}>宣傳費月報表 (Monthly Promotion Expenses)</h2>
+                <h2 style={{ margin: 0 }}>雜費月報表 (Monthly Misc Expenses)</h2>
             </div>
             
             <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '8px', marginBottom: '30px', background: '#f9f9f9' }}>
-                <h3>新增宣傳費記錄</h3>
+                <h3>新增雜費記錄</h3>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                     <div>
                         <label style={{ display: 'block', marginBottom: '5px' }}>關聯活動 (可選):</label>
@@ -157,11 +157,11 @@ const MonthlyPromotionReport = ({ onBack }) => {
                     </div>
                     <div>
                         <label style={{ display: 'block', marginBottom: '5px' }}>描述:</label>
-                        <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="例：廣告費用" style={{ padding: '8px', width: '200px' }} />
+                        <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="例：辦公用品、水電" style={{ padding: '8px', width: '200px' }} />
                     </div>
                     <div>
                         <label style={{ display: 'block', marginBottom: '5px' }}>上傳單據 (支援各種格式):</label>
-                        <input id="file-input" type="file" onChange={handleFileChange} style={{ padding: '8px 0' }} />
+                        <input id="file-input-misc" type="file" onChange={handleFileChange} style={{ padding: '8px 0' }} />
                     </div>
                     <button type="submit" style={{ padding: '8px 20px', background: '#1890ff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                         提交 (Submit)
@@ -198,7 +198,7 @@ const MonthlyPromotionReport = ({ onBack }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {displayedPromotions.map(p => {
+                            {displayedMisc.map(p => {
                                 const fDate = new Date(p.expense_date);
                                 return (
                                     <tr key={p.id}>
@@ -228,7 +228,7 @@ const MonthlyPromotionReport = ({ onBack }) => {
                                     </tr>
                                 );
                             })}
-                            {displayedPromotions.length === 0 && (
+                            {displayedMisc.length === 0 && (
                                 <tr>
                                     <td colSpan="8" style={{ padding: '20px', textAlign: 'center', color: '#999' }}>暫無記錄</td>
                                 </tr>
@@ -284,4 +284,4 @@ const MonthlyPromotionReport = ({ onBack }) => {
     );
 };
 
-export default MonthlyPromotionReport;
+export default MonthlyMiscExpenseReport;

@@ -58,7 +58,7 @@ const RequestList = () => {
       )}
 
       <div style={{ marginTop: 16 }}>
-        <RequestsTable requests={requests} loading={loading} onApprove={handleApprove} />
+        <RequestsTable requests={requests} loading={loading} onApprove={handleApprove} isHistoryView={isHistoryView} />
       </div>
     </PageContainer>
   );

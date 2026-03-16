@@ -3,6 +3,7 @@ import AllCustomerReport from '../../components/report/AllCustomerReport';
 import CourseInfoSummary from '../../components/report/CourseInfoSummary';
 import MonthlyPromotionReport from '../../components/report/MonthlyPromotionReport';
 import CourseCustomerDataReport from '../../components/report/CourseCustomerDataReport';
+import MonthlyMiscExpenseReport from '../../components/report/MonthlyMiscExpenseReport';
 import UnpaidCustomersReport from '../../components/report/UnpaidCustomersReport';
 import FinancialReport from '../../components/report/FinancialReport';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
@@ -107,9 +108,13 @@ const Reports = () => {
                             2. 宣傳費 (Monthly Promotion)
                             <span style={{ marginTop: '8px', fontSize: '0.95rem', color: '#666' }}>按月輸入金額並上載單據，列表＋彙總</span>
                         </div>
+                        <div style={{ ...cardStyle }} {...hoverHandlers} onClick={() => setView('monthlyMiscExpenseReport')}>
+                            2.5 雜費 (Monthly Misc Expenses)
+                            <span style={{ marginTop: '8px', fontSize: '0.95rem', color: '#666' }}>按月輸入金額並上載單據，列表＋總結</span>
+                        </div>
                         <div style={{ ...cardStyle }} {...hoverHandlers} onClick={() => setView('courseCustomerData')}>
                             3. 課程的客戶資料名單
-                            <span style={{ marginTop: '8px', fontSize: '0.95rem', color: '#666' }}>付款日、尾款日、姓名、付款金額、付款手段、電話、找數月、介紹人、負責銷售、收據是否已出、證書是否已出</span>
+                            <span style={{ marginTop: '8px', fontSize: '0.95rem', color: '#666' }}>付款日、尾款日、姓名、付款金額、付款手段、電話、找數月、負責銷售、收據是否已出、證書是否已出</span>
                         </div>
                     </div>
                 </div>
@@ -121,6 +126,10 @@ const Reports = () => {
 
             {view === 'monthlyPromotionReport' && (
                 <MonthlyPromotionReport onBack={() => setView('courseGroupMenu')} />
+            )}
+
+            {view === 'monthlyMiscExpenseReport' && (
+                <MonthlyMiscExpenseReport onBack={() => setView('courseGroupMenu')} />
             )}
 
             {view === 'courseCustomerData' && (

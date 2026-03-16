@@ -30,8 +30,7 @@ const AllCustomerReport = ({ onBack }) => {
     const fetchOptions = async () => {
       try {
         const [eventsRes, salesRes] = await Promise.all([
-          api.get('/api/events?status=OPEN,SCHEDULED,COMPLETED'), 
-          // Fetch Sales users
+          api.get('/api/events'),
           api.get('/api/customers/role/SALES') 
         ]);
         
@@ -123,32 +122,30 @@ const AllCustomerReport = ({ onBack }) => {
 
         <select 
           value={filters.source} 
-          onChange={(e) => setFilters({...filters, source: e.target.value})}
-          style={{ padding: '5px' }}
-        >
-          <option value="">依來源 (全部)</option>
-          <option value="WhatsApp">WhatsApp</option>
-          <option value="Facebook">Facebook</option>
-          <option value="Instagram">Instagram</option>
-          <option value="Friend">Friend</option>
-          <option value="Google">Google</option>
-          <option value="Other">Other</option>
-        </select>
+            onChange={(e) => setFilters({...filters, source: e.target.value})}
+            style={{ padding: '5px' }}
+          >
+            <option value="">依來源 (全部)</option>
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="網頁">網頁</option>
+            <option value="Instagram">Instagram</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Google廣告">Google廣告</option>
+          </select>
 
-        <select 
-          value={filters.salesId} 
-          onChange={(e) => setFilters({...filters, salesId: e.target.value})}
-          style={{ padding: '5px' }}
-        >
-          <option value="">依銷售 (全部)</option>
-          {sales.map(s => (
-            <option key={s.user_id} value={s.user_id}>{s.name || s.username}</option>
-          ))}
-        </select>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span>期間:</span>
-          <DatePicker 
+          <select
+            value={filters.salesId}
+            onChange={(e) => setFilters({...filters, salesId: e.target.value})}
+            style={{ padding: '5px' }}
+          >
+            <option value="">依銷售 (全部)</option>
+            {sales.map(s => (
+              <option key={s.user_id} value={s.user_id}>{s.name || s.username}</option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span>期間:</span>
+            <DatePicker
             selected={filters.startDate} 
             onChange={date => setFilters({...filters, startDate: date})} 
             placeholderText="開始日期"

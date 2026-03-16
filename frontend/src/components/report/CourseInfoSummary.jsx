@@ -11,6 +11,7 @@ const CourseInfoSummary = ({ onBack }) => {
     const [error, setError] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [editValue, setEditValue] = useState('');
+    const [filterType, setFilterType] = useState('ALL');
 
     const fetchCourses = async () => {
         setLoading(true);
@@ -74,8 +75,12 @@ const CourseInfoSummary = ({ onBack }) => {
         setEditValue('');
     };
 
+    const filteredCourses = courses.filter(c => filterType === 'ALL' || c.type === filterType);
+    const totalRent = filteredCourses.reduce((sum, c) => sum + (parseFloat(c.room_cost) || 0), 0);
+    const pendingRent = filteredCourses.filter(c => c.room_cost === null || c.room_cost === undefined).length;
+
     return (
-        <div style={{ padding: '20px', background: '#fff', minHeight: '80vh' }}>
+        <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
                 <button onClick={onBack} style={{ marginRight: '16px', padding: '8px 16px', cursor: 'pointer' }}>
                     &larr; 返回
@@ -87,8 +92,24 @@ const CourseInfoSummary = ({ onBack }) => {
             {error && <p style={{ color: 'red' }}>錯誤: {error}</p>}
 
             {!loading && !error && (
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+                <div>
+                    <div style={{ marginBottom: '20px' }}>
+                        <p><strong>當前清單總租場費用:</strong> ${totalRent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (未記錄: {pendingRent} 筆)</p>
+                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                            <span>篩選:</span>
+                            <label>
+                                <input type="radio" checked={filterType === 'ALL'} onChange={() => setFilterType('ALL')} /> 全部 ({courses.length})
+                            </label>
+                            <label>
+                                <input type="radio" checked={filterType === 'SEMINAR'} onChange={() => setFilterType('SEMINAR')} /> 講座 ({courses.filter(c => c.type === 'SEMINAR').length})
+                            </label>
+                            <label>
+                                <input type="radio" checked={filterType === 'COURSE'} onChange={() => setFilterType('COURSE')} /> 課堂 ({courses.filter(c => c.type === 'COURSE').length})
+                            </label>
+                        </div>
+                    </div>
+
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ background: '#f5f5f5', borderBottom: '2px solid #ddd' }}>
                                 <th style={thStyle}>活動名稱 / 類型</th>
@@ -98,13 +119,10 @@ const CourseInfoSummary = ({ onBack }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {courses.map(course => {
-                                // Decide what date/time to show. 
-                                // If sessions exist, list them? Or just range?
-                                // Requirement: "Date/Time/Location"
-                                // Let's list sessions if available, else event time.
-                                
+                            {filteredCourses.map(course => {
                                 const hasSessions = course.sessions && course.sessions.length > 0;
+                                const firstSession = hasSessions ? course.sessions[0] : null;
+                                const lastSession = hasSessions ? course.sessions[course.sessions.length - 1] : null;
 
                                 return (
                                     <tr key={course.event_id} style={{ borderBottom: '1px solid #eee' }}>
@@ -117,25 +135,42 @@ const CourseInfoSummary = ({ onBack }) => {
                                         </td>
                                         <td style={tdStyle}>
                                             {hasSessions ? (
-                                                <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                                                    {course.sessions.map(s => (
-                                                        <li key={s.session_id} style={{ marginBottom: 4 }}>
-                                                            {/* {s.session_name}:  */}
-                                                            {formatDateTimeForDisplay(s.datetime_start)} 
-                                                            {/* - {formatDateTimeForDisplay(s.datetime_end)} */}
-                                                        </li>
-                                                    ))}
-                                                </ul>
+                                                <div>
+                                                    {firstSession === lastSession ? (
+                                                        <span>
+                                                            {formatDateTimeForDisplay(firstSession.datetime_start).split(' ')[0]}
+                                                        </span>
+                                                    ) : (
+                                                        <span>
+                                                           {formatDateTimeForDisplay(firstSession.datetime_start).split(' ')[0]} 
+                                                           {' 至 '} 
+                                                           {formatDateTimeForDisplay(lastSession.datetime_start).split(' ')[0]}
+                                                        </span>
+                                                    )}
+                                                    <div style={{ fontSize: '0.85em', color: '#666' }}>
+                                                        共 {course.sessions.length} 堂課
+                                                    </div>
+                                                    <details style={{ marginTop: '5px', cursor: 'pointer', fontSize:'0.85em' }}>
+                                                        <summary>查看詳細時間</summary>
+                                                        <ul style={{ margin: '5px 0 0 0', paddingLeft: '20px' }}>
+                                                            {course.sessions.map(s => (
+                                                                <li key={s.session_id} style={{ marginBottom: 4 }}>
+                                                                    {formatDateTimeForDisplay(s.datetime_start)}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </details>
+                                                </div>
                                             ) : (
                                                 <div>
                                                     {course.event_datetime_start 
                                                         ? formatDateTimeForDisplay(course.event_datetime_start) 
-                                                        : '未定'}
+                                                        : <span style={{color: '#999'}}>未定</span>}
                                                 </div>
                                             )}
                                         </td>
                                         <td style={tdStyle}>
-                                            {course.location || '未定'}
+                                            {course.location || <span style={{color: '#999'}}>未定</span>}
                                         </td>
                                         <td style={tdStyle}>
                                             {editingId === course.event_id ? (
@@ -146,8 +181,8 @@ const CourseInfoSummary = ({ onBack }) => {
                                                         onChange={e => setEditValue(e.target.value)}
                                                         style={{ width: '80px', padding: 4 }}
                                                     />
-                                                    <button onClick={() => handleSaveClick(course.event_id)} style={{ padding: '4px 8px', cursor: 'pointer' }}>保存</button>
-                                                    <button onClick={handleCancelClick} style={{ padding: '4px 8px', cursor: 'pointer' }}>取消</button>
+                                                    <button onClick={() => handleSaveClick(course.event_id)} style={{ padding: '2px 6px', cursor: 'pointer' }}>保存</button>
+                                                    <button onClick={handleCancelClick} style={{ padding: '2px 6px', cursor: 'pointer' }}>取消</button>
                                                 </div>
                                             ) : (
                                                 <div 
@@ -155,15 +190,22 @@ const CourseInfoSummary = ({ onBack }) => {
                                                     style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
                                                     title="點擊編輯"
                                                 >
-                                                    <span>{course.room_cost !== null ? `$${course.room_cost}` : '-'}</span>
-                                                    <span style={{ fontSize: '0.8em', color: '#999' }}>✏️</span>
+                                                    {course.room_cost !== null && course.room_cost !== undefined ? (
+                                                        <span>
+                                                            ${course.room_cost} <span style={{ fontSize: '0.8em', color: '#999' }}>✏️</span>
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ fontSize: '0.9em', color: '#0066cc', textDecoration: 'underline' }}>
+                                                            [+] 記錄費用
+                                                        </span>
+                                                    )}
                                                 </div>
                                             )}
                                         </td>
                                     </tr>
                                 );
                             })}
-                            {!loading && courses.length === 0 && (
+                            {!loading && filteredCourses.length === 0 && (
                                 <tr>
                                     <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>暫無資料</td>
                                 </tr>
