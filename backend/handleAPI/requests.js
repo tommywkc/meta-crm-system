@@ -263,6 +263,17 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
       if (isActiveRegistration(existingTarget)) {
         return res.status(400).json({ message: '此會員已報名目標場次，無法提交補堂／覆課申請' });
       }
+
+      if (normalizedType === 'MAKEUP' || normalizedType === 'RETAKE') {
+        const waitlistRow = await waitlistDao.findBySessionId(targetSessionIdNum);
+        const waitlist = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+        const alreadyInWaitlist = Array.isArray(waitlist)
+          && waitlist.some((item) => String(item?.user_id) === String(memberIdNum));
+
+        if (alreadyInWaitlist) {
+          return res.status(400).json({ message: '此會員已在目標場次候補名單，無法重複提交補堂／覆課申請' });
+        }
+      }
     }
 
     const requiresPriorSameName = (normalizedType === 'MAKEUP' || normalizedType === 'RETAKE') && targetSessionIdNum;
@@ -302,6 +313,16 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
           if (session.session_name !== targetSession.session_name) continue;
           const reg = await findBySessionAndUser(session.session_id, memberIdNum);
           if (isActiveRegistration(reg)) {
+            existingSameName = session.session_id;
+            break;
+          }
+
+          const waitlistRow = await waitlistDao.findBySessionId(session.session_id);
+          const waitlist = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+          const inWaitlist = Array.isArray(waitlist)
+            && waitlist.some((item) => String(item?.user_id) === String(memberIdNum));
+
+          if (inWaitlist) {
             existingSameName = session.session_id;
             break;
           }
