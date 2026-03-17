@@ -7,6 +7,7 @@ const {
   createRegistration,
   findByRegistrationId,
   findBySessionAndUser,
+  findActiveBySessionAndUser,
   listSessionsByUserWithTimes,
   listUpcomingSessionsByUser,
   listUpcomingSessionsAllUsers,
@@ -210,19 +211,15 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
       (s) => s?.session_name === session.session_name && String(s.session_id) !== String(sessionId)
     );
     for (const s of sameNameSessions) {
-      const existingSameName = await findBySessionAndUser(s.session_id, userId);
+      const existingSameName = await findActiveBySessionAndUser(s.session_id, userId);
       if (existingSameName) {
         return res.status(400).json({ message: '此會員已報名同活動其他輪次，請改用補堂或覆課申請' });
       }
     }
 
     // Prevent duplicate registrations for the same session and user
-    const existing = await findBySessionAndUser(sessionId, userId);
+    const existing = await findActiveBySessionAndUser(sessionId, userId);
     if (existing) {
-      const existingStatus = String(existing.status || '').toUpperCase();
-      if (existingStatus === 'CANCELLED') {
-        return res.status(400).json({ message: '客戶已請假或改期此場次' });
-      }
       return res.status(400).json({ message: '已報名此場次' });
     }
 

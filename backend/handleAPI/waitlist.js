@@ -6,7 +6,7 @@ const { listByUserIds } = require('../dao/usersDao');
 const { findBySessionId, listByEventId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
-const { findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
+const { findActiveBySessionAndUser } = require('../dao/sessionRegistrationsDao');
 
 const parseWaitlist = (raw) => waitlistDao.parseWaitlist(raw);
 
@@ -98,7 +98,7 @@ router.post('/waitlist/apply', authMiddleware, roleMiddleware(['admin', 'sales']
       return res.status(400).json({ message: '使用者尚未報名此場次所屬的活動，無法加入候補' });
     }
 
-    const existingRegistration = await findBySessionAndUser(sessionId, userId);
+    const existingRegistration = await findActiveBySessionAndUser(sessionId, userId);
     if (existingRegistration) {
       return res.status(400).json({ message: '使用者已報名此場次' });
     }
@@ -109,7 +109,7 @@ router.post('/waitlist/apply', authMiddleware, roleMiddleware(['admin', 'sales']
       (s) => s?.session_name === session.session_name && String(s.session_id) !== String(sessionId)
     );
     for (const s of sameNameSessions) {
-      const existingSameName = await findBySessionAndUser(s.session_id, userId);
+      const existingSameName = await findActiveBySessionAndUser(s.session_id, userId);
       if (existingSameName) {
         return res.status(400).json({ message: '使用者已報名同活動其他輪次，請改用補堂或覆課申請' });
       }
