@@ -285,10 +285,6 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
           }
         }
 
-        if (normalizedType === 'RETAKE' && hasCancelledSameName) {
-          return res.status(400).json({ message: '客戶未有其他場次的確認紀錄，請改用補堂申請' });
-        }
-
         if (!hasSameNameRegistration) {
           return res.status(400).json({ message: '此會員尚未報名同活動其他場次，可以直接在活動頁報名' });
         }
@@ -699,8 +695,8 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       const userId = existing.user_id;
 
       if (newSessionId && userId) {
-        const alreadyRegistered = await findBySessionAndUser(newSessionId, userId);
-        if (!alreadyRegistered) {
+        const existingRegistration = await findBySessionAndUser(newSessionId, userId);
+        if (!isActiveRegistration(existingRegistration)) {
           const targetSession = await findBySessionId(newSessionId);
           if (targetSession) {
             const remainingSeats = targetSession.remaining_seats != null ? Number(targetSession.remaining_seats) : null;
