@@ -212,8 +212,23 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
     );
     for (const s of sameNameSessions) {
       const existingSameName = await findActiveBySessionAndUser(s.session_id, userId);
-      if (existingSameName) {
-        return res.status(400).json({ message: '此會員已報名同活動其他輪次，請改用補堂或覆課申請' });
+      const waitlistRow = await waitlistDao.findBySessionId(s.session_id);
+      const sameNameWaitlist = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+      const inSameNameWaitlist = Array.isArray(sameNameWaitlist)
+        && sameNameWaitlist.some((item) => String(item?.user_id) === String(userId));
+      if (existingSameName || inSameNameWaitlist) {
+        return res.status(400).json({
+          message: inSameNameWaitlist
+            ? `此會員已在候補名單（場次 #${s.session_id} ${s.session_name || ''}），請改用補堂或覆課申請`
+            : `此會員已報名同活動其他輪次（場次 #${s.session_id} ${s.session_name || ''}），請改用補堂或覆課申請`,
+          session: {
+            session_id: s.session_id,
+            session_name: s.session_name || null,
+            datetime_start: s.datetime_start || null,
+            datetime_end: s.datetime_end || null,
+          },
+          in_waitlist: Boolean(inSameNameWaitlist),
+        });
       }
     }
 
