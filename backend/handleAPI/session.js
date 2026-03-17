@@ -3,10 +3,12 @@ const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { createSession, listByEventId, findBySessionId, removeBySessionById, updateSessionById } = require('../dao/eventSessionsDao');
+const { findByEventId } = require('../dao/eventsDao');
 const {
   createRegistration,
   findByRegistrationId,
   findBySessionAndUser,
+  findActiveBySessionAndUser,
   listSessionsByUserWithTimes,
   listUpcomingSessionsByUser,
   listUpcomingSessionsAllUsers,
@@ -19,6 +21,65 @@ const {
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 const eventAttendanceDao = require('../dao/eventAttendanceDao');
 const waitlistDao = require('../dao/waitlistDao');
+
+const matchSessionKeyword = (session, keyword) => {
+  const q = String(keyword || '').trim().toLowerCase();
+  if (!q) return true;
+
+  const values = [
+    session?.event_name,
+    session?.session_name,
+    session?.location,
+    session?.user_name,
+    session?.event_id,
+    session?.session_id,
+    session?.user_id,
+  ];
+
+  return values.some((v) => String(v ?? '').toLowerCase().includes(q));
+};
+
+const listUpcomingWaitlistSessionsByUser = async (userId) => {
+  if (!userId) return [];
+
+  const rows = await waitlistDao.listAll();
+  const nowMinus30 = new Date(Date.now() - (30 * 60 * 1000));
+  const result = [];
+
+  for (const row of rows || []) {
+    const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(row?.waitlist) : [];
+    const rankIndex = Array.isArray(list)
+      ? list.findIndex((entry) => String(entry?.user_id) === String(userId))
+      : -1;
+
+    if (rankIndex === -1) continue;
+
+    const session = await findBySessionId(row.session_id);
+    if (!session) continue;
+
+    const sessionEnd = session.datetime_end ? new Date(session.datetime_end) : (session.datetime_start ? new Date(session.datetime_start) : null);
+    if (sessionEnd && sessionEnd <= nowMinus30) continue;
+
+    const event = session.event_id ? await findByEventId(session.event_id) : null;
+
+    result.push({
+      registration_id: null,
+      session_id: session.session_id,
+      user_id: Number(userId),
+      user_name: null,
+      registration_status: 'WAITLIST',
+      event_id: session.event_id,
+      session_name: session.session_name,
+      datetime_start: session.datetime_start,
+      datetime_end: session.datetime_end,
+      event_name: event?.event_name || null,
+      location: event?.location || null,
+      waitlist_rank: rankIndex + 1,
+    });
+  }
+
+  return result;
+};
 
 //handle get sessions by event_id
 router.get('/events/:event_id/sessions', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
@@ -210,19 +271,30 @@ router.post('/session-registrations', authMiddleware, async (req, res) => {
       (s) => s?.session_name === session.session_name && String(s.session_id) !== String(sessionId)
     );
     for (const s of sameNameSessions) {
-      const existingSameName = await findBySessionAndUser(s.session_id, userId);
-      if (existingSameName) {
-        return res.status(400).json({ message: '此會員已報名同活動其他輪次，請改用補堂或覆課申請' });
+      const existingSameName = await findActiveBySessionAndUser(s.session_id, userId);
+      const waitlistRow = await waitlistDao.findBySessionId(s.session_id);
+      const sameNameWaitlist = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+      const inSameNameWaitlist = Array.isArray(sameNameWaitlist)
+        && sameNameWaitlist.some((item) => String(item?.user_id) === String(userId));
+      if (existingSameName || inSameNameWaitlist) {
+        return res.status(400).json({
+          message: inSameNameWaitlist
+            ? `此會員已在候補名單（場次 #${s.session_id} ${s.session_name || ''}），請改用補堂或覆課申請`
+            : `此會員已報名同活動其他輪次（場次 #${s.session_id} ${s.session_name || ''}），請改用補堂或覆課申請`,
+          session: {
+            session_id: s.session_id,
+            session_name: s.session_name || null,
+            datetime_start: s.datetime_start || null,
+            datetime_end: s.datetime_end || null,
+          },
+          in_waitlist: Boolean(inSameNameWaitlist),
+        });
       }
     }
 
     // Prevent duplicate registrations for the same session and user
-    const existing = await findBySessionAndUser(sessionId, userId);
+    const existing = await findActiveBySessionAndUser(sessionId, userId);
     if (existing) {
-      const existingStatus = String(existing.status || '').toUpperCase();
-      if (existingStatus === 'CANCELLED') {
-        return res.status(400).json({ message: '客戶已請假或改期此場次' });
-      }
       return res.status(400).json({ message: '已報名此場次' });
     }
 
@@ -341,9 +413,37 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
       } else {
         sessions = await listUpcomingSessionsByUser(userId, limit, offset);
       }
+
+      let waitlistSessions = await listUpcomingWaitlistSessionsByUser(userId);
+      if (q && q.trim()) {
+        waitlistSessions = waitlistSessions.filter((s) => matchSessionKeyword(s, q));
+      }
+
+      const registeredIds = new Set((sessions || []).map((s) => String(s.session_id)));
+      const merged = [...(sessions || [])];
+      for (const ws of waitlistSessions) {
+        if (!registeredIds.has(String(ws.session_id))) {
+          merged.push(ws);
+        }
+      }
+      sessions = merged;
     } else if (['ADMIN', 'SALES', 'LEADER'].includes(role)) {
       if (userIdParam) {
         sessions = await searchUpcomingSessionsByUser(userIdParam, limit, offset, q);
+
+        let waitlistSessions = await listUpcomingWaitlistSessionsByUser(userIdParam);
+        if (q && q.trim()) {
+          waitlistSessions = waitlistSessions.filter((s) => matchSessionKeyword(s, q));
+        }
+
+        const registeredIds = new Set((sessions || []).map((s) => String(s.session_id)));
+        const merged = [...(sessions || [])];
+        for (const ws of waitlistSessions) {
+          if (!registeredIds.has(String(ws.session_id))) {
+            merged.push(ws);
+          }
+        }
+        sessions = merged;
       } else {
         sessions = await listUpcomingSessionsAllUsers(limit, offset);
       }
@@ -355,6 +455,12 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
     if (eventIdNum) {
       sessions = sessions.filter((s) => Number(s.event_id) === eventIdNum);
     }
+
+    sessions.sort((a, b) => {
+      const aTime = a?.datetime_start ? new Date(a.datetime_start).getTime() : Number.MAX_SAFE_INTEGER;
+      const bTime = b?.datetime_start ? new Date(b.datetime_start).getTime() : Number.MAX_SAFE_INTEGER;
+      return aTime - bTime;
+    });
 
     return res.status(200).json({ sessions });
   } catch (error) {
