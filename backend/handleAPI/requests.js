@@ -47,6 +47,14 @@ const getWaitlistPriority = (requestType, priorityTier = null) => {
   return null;
 };
 
+const isUserInSessionWaitlist = async (sessionId, userId) => {
+  if (!sessionId || !userId) return false;
+  const waitlistRow = await waitlistDao.findBySessionId(sessionId);
+  const waitlist = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+  return Array.isArray(waitlist)
+    && waitlist.some((item) => String(item?.user_id) === String(userId));
+};
+
 const computeRetakePriorityTier = async (userId, targetSessionId, excludeRequestId = null) => {
   if (!userId || !targetSessionId) return null;
   const targetSession = await findBySessionId(targetSessionId);
@@ -64,7 +72,13 @@ const computeRetakePriorityTier = async (userId, targetSessionId, excludeRequest
 
     const session = await findBySessionId(req.new_session_id);
     if (session?.event_id === targetSession.event_id && session?.session_name === targetSession.session_name) {
-      retakeCount += 1;
+      const reg = await findBySessionAndUser(req.new_session_id, userId);
+      const inWaitlist = await isUserInSessionWaitlist(req.new_session_id, userId);
+
+      // Ignore records that are cancelled and not currently in waitlist.
+      if (isActiveRegistration(reg) || inWaitlist) {
+        retakeCount += 1;
+      }
     }
   }
 
