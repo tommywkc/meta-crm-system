@@ -11,7 +11,7 @@ const {
   findRequestDetailById,
   updateRequestById,
 } = require('../dao/requestsDao');
-const { findBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration, updateRegistrationById } = require('../dao/sessionRegistrationsDao');
+const { findBySessionAndUser, findActiveBySessionAndUser, listSessionsByUserWithTimes, removeByRegistrationId, createRegistration, updateRegistrationById } = require('../dao/sessionRegistrationsDao');
 const { findBySessionId, updateSessionById, listByEventId } = require('../dao/eventSessionsDao');
 const { findByEventId } = require('../dao/eventsDao');
 const { listHolidays } = require('../dao/holidaysDao');
@@ -53,6 +53,19 @@ const isUserInSessionWaitlist = async (sessionId, userId) => {
   const waitlist = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
   return Array.isArray(waitlist)
     && waitlist.some((item) => String(item?.user_id) === String(userId));
+};
+
+const removeUserFromSessionWaitlist = async (sessionId, userId) => {
+  if (!sessionId || !userId) return false;
+  const waitlistRow = await waitlistDao.findBySessionId(sessionId);
+  const waitlist = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(waitlistRow?.waitlist) : [];
+  if (!Array.isArray(waitlist) || waitlist.length === 0) return false;
+
+  const filtered = waitlist.filter((item) => String(item?.user_id) !== String(userId));
+  if (filtered.length === waitlist.length) return false;
+
+  await waitlistDao.updateBySessionId(sessionId, JSON.stringify(filtered));
+  return true;
 };
 
 const computeRetakePriorityTier = async (userId, targetSessionId, excludeRequestId = null) => {
@@ -253,11 +266,15 @@ router.post('/requests', authMiddleware, roleMiddleware(['admin', 'sales', 'lead
 
     let registrationId = null;
     if (sessionIdNum) {
-      const registration = await findBySessionAndUser(sessionIdNum, memberIdNum);
+      const registration = await findActiveBySessionAndUser(sessionIdNum, memberIdNum);
       if (!registration) {
-        return res.status(400).json({ message: '找不到此會員的場次報名紀錄' });
+        const inWaitlist = await isUserInSessionWaitlist(sessionIdNum, memberIdNum);
+        if (!inWaitlist) {
+          return res.status(400).json({ message: '找不到此會員的場次報名或候補紀錄' });
+        }
+      } else {
+        registrationId = registration.registration_id;
       }
-      registrationId = registration.registration_id;
     }
 
     let targetSessionIdNum = null;
@@ -569,6 +586,10 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       const leaveUserId = existing.user_id;
       let registrationId = existing.registration_id || null;
 
+      if (leaveSessionId && leaveUserId) {
+        await removeUserFromSessionWaitlist(leaveSessionId, leaveUserId);
+      }
+
       if (!registrationId && leaveSessionId && leaveUserId) {
         const reg = await findBySessionAndUser(leaveSessionId, leaveUserId);
         registrationId = reg?.registration_id || null;
@@ -655,6 +676,10 @@ router.put('/requests/:requestId', authMiddleware, roleMiddleware(['admin']), as
       const newSessionId = existing.new_session_id;
       const userId = existing.user_id;
       let registrationId = existing.registration_id || null;
+
+      if (oldSessionId && userId) {
+        await removeUserFromSessionWaitlist(oldSessionId, userId);
+      }
 
       if (!registrationId && oldSessionId && userId) {
         const reg = await findBySessionAndUser(oldSessionId, userId);

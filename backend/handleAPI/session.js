@@ -3,6 +3,7 @@ const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const { emptyToNull } = require('../function/dataSanitizer');
 const { createSession, listByEventId, findBySessionId, removeBySessionById, updateSessionById } = require('../dao/eventSessionsDao');
+const { findByEventId } = require('../dao/eventsDao');
 const {
   createRegistration,
   findByRegistrationId,
@@ -20,6 +21,65 @@ const {
 const { checkIsConfirmedEnrolled } = require('../dao/eventEnrollmentsDao');
 const eventAttendanceDao = require('../dao/eventAttendanceDao');
 const waitlistDao = require('../dao/waitlistDao');
+
+const matchSessionKeyword = (session, keyword) => {
+  const q = String(keyword || '').trim().toLowerCase();
+  if (!q) return true;
+
+  const values = [
+    session?.event_name,
+    session?.session_name,
+    session?.location,
+    session?.user_name,
+    session?.event_id,
+    session?.session_id,
+    session?.user_id,
+  ];
+
+  return values.some((v) => String(v ?? '').toLowerCase().includes(q));
+};
+
+const listUpcomingWaitlistSessionsByUser = async (userId) => {
+  if (!userId) return [];
+
+  const rows = await waitlistDao.listAll();
+  const nowMinus30 = new Date(Date.now() - (30 * 60 * 1000));
+  const result = [];
+
+  for (const row of rows || []) {
+    const list = waitlistDao.parseWaitlist ? waitlistDao.parseWaitlist(row?.waitlist) : [];
+    const rankIndex = Array.isArray(list)
+      ? list.findIndex((entry) => String(entry?.user_id) === String(userId))
+      : -1;
+
+    if (rankIndex === -1) continue;
+
+    const session = await findBySessionId(row.session_id);
+    if (!session) continue;
+
+    const sessionEnd = session.datetime_end ? new Date(session.datetime_end) : (session.datetime_start ? new Date(session.datetime_start) : null);
+    if (sessionEnd && sessionEnd <= nowMinus30) continue;
+
+    const event = session.event_id ? await findByEventId(session.event_id) : null;
+
+    result.push({
+      registration_id: null,
+      session_id: session.session_id,
+      user_id: Number(userId),
+      user_name: null,
+      registration_status: 'WAITLIST',
+      event_id: session.event_id,
+      session_name: session.session_name,
+      datetime_start: session.datetime_start,
+      datetime_end: session.datetime_end,
+      event_name: event?.event_name || null,
+      location: event?.location || null,
+      waitlist_rank: rankIndex + 1,
+    });
+  }
+
+  return result;
+};
 
 //handle get sessions by event_id
 router.get('/events/:event_id/sessions', authMiddleware, roleMiddleware(['admin', 'sales', 'leader', 'member']), async (req, res) => {
@@ -353,9 +413,37 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
       } else {
         sessions = await listUpcomingSessionsByUser(userId, limit, offset);
       }
+
+      let waitlistSessions = await listUpcomingWaitlistSessionsByUser(userId);
+      if (q && q.trim()) {
+        waitlistSessions = waitlistSessions.filter((s) => matchSessionKeyword(s, q));
+      }
+
+      const registeredIds = new Set((sessions || []).map((s) => String(s.session_id)));
+      const merged = [...(sessions || [])];
+      for (const ws of waitlistSessions) {
+        if (!registeredIds.has(String(ws.session_id))) {
+          merged.push(ws);
+        }
+      }
+      sessions = merged;
     } else if (['ADMIN', 'SALES', 'LEADER'].includes(role)) {
       if (userIdParam) {
         sessions = await searchUpcomingSessionsByUser(userIdParam, limit, offset, q);
+
+        let waitlistSessions = await listUpcomingWaitlistSessionsByUser(userIdParam);
+        if (q && q.trim()) {
+          waitlistSessions = waitlistSessions.filter((s) => matchSessionKeyword(s, q));
+        }
+
+        const registeredIds = new Set((sessions || []).map((s) => String(s.session_id)));
+        const merged = [...(sessions || [])];
+        for (const ws of waitlistSessions) {
+          if (!registeredIds.has(String(ws.session_id))) {
+            merged.push(ws);
+          }
+        }
+        sessions = merged;
       } else {
         sessions = await listUpcomingSessionsAllUsers(limit, offset);
       }
@@ -367,6 +455,12 @@ router.get('/session-registrations/enrolled-upcoming', authMiddleware, async (re
     if (eventIdNum) {
       sessions = sessions.filter((s) => Number(s.event_id) === eventIdNum);
     }
+
+    sessions.sort((a, b) => {
+      const aTime = a?.datetime_start ? new Date(a.datetime_start).getTime() : Number.MAX_SAFE_INTEGER;
+      const bTime = b?.datetime_start ? new Date(b.datetime_start).getTime() : Number.MAX_SAFE_INTEGER;
+      return aTime - bTime;
+    });
 
     return res.status(200).json({ sessions });
   } catch (error) {
