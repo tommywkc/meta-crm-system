@@ -156,3 +156,27 @@ export async function handleImportStudentsExcel(file, options = {}) {
     throw err;
   }
 }
+
+export async function handleListImportLogs(limit = 100, offset = 0) {
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'IMPORT');
+    params.append('limit', String(limit));
+    params.append('offset', String(offset));
+
+    const res = await fetch(apiUrl(`/api/logs?${params.toString()}`), {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const payload = await res.json();
+    if (!res.ok) {
+      throw new Error(payload?.message || '無法載入匯入記錄');
+    }
+    return payload;
+  } catch (err) {
+    console.error('List import logs error:', err);
+    throw err;
+  }
+}

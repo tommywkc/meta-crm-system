@@ -8,6 +8,7 @@ const { createEnrollment, findIfExist, updateStatusByEnrollmentId } = require('.
 const { createRegistration, findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
 const { createAttendance, findLatestByRegistrationId } = require('../dao/eventAttendanceDao');
 const { createPayment } = require('../dao/paymentsDao');
+const { createLog } = require('../dao/logsDao');
 const multer = require('multer');
 const xlsx = require('xlsx');
 const path = require('path');
@@ -23,50 +24,50 @@ function normalizeMobileForStorage(mobile) {
   return digits;
 }
 
-// import enrolled students from Excel (sheet: 已報名學生) and create event by filename
+// import enrolled students from Excel/CSV and create event by filename
 router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), upload.single('file'), async (req, res) => {
+  const importedFileName = req.file?.originalname
+    ? Buffer.from(req.file.originalname, 'latin1').toString('utf8')
+    : null;
   try {
     if (!req.file) {
-      return res.status(400).json({ message: '請上傳 Excel 檔案' });
+      return res.status(400).json({ message: '請上傳檔案（.xlsx/.xls/.csv）' });
+    }
+
+    const ext = path.extname(importedFileName || req.file.originalname || '').toLowerCase();
+    const supportedExt = new Set(['.xlsx', '.xls', '.csv']);
+    if (!supportedExt.has(ext)) {
+      return res.status(400).json({ message: '僅支援 .xlsx、.xls、.csv 檔案' });
     }
 
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-    const sheet = workbook.Sheets['已報名學生'];
+    const sheetName = ext === '.csv'
+      ? (workbook.SheetNames && workbook.SheetNames[0])
+      : '已報名學生';
+    const sheet = workbook.Sheets[sheetName];
     if (!sheet) {
-      return res.status(400).json({ message: '找不到工作表「已報名學生」' });
+      return res.status(400).json({ message: ext === '.csv' ? 'CSV 檔案內容無法讀取' : '找不到工作表「已報名學生」' });
     }
 
     const rows = xlsx.utils.sheet_to_json(sheet, { defval: null });
+    const isCsv = ext === '.csv';
 
-    const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+    const getCell = (col, rowIndex) => {
+      const addr = `${col}${rowIndex + 1}`;
+      return sheet[addr] || null;
+    };
+
+    const originalName = importedFileName;
     const baseName = path.basename(originalName, path.extname(originalName));
     const inputName = String(req.body?.event_name || '').trim();
     const inputPriceRaw = req.body?.price;
     const parsedPrice = inputPriceRaw === '' || inputPriceRaw == null ? null : Number(inputPriceRaw);
-    const latestEventId = parseInt(await findLatestEventId(), 10);
-    const event_id = (latestEventId || 100) + 1;
-    const newEvent = {
-      event_id,
-      event_name: inputName || baseName,
-      type: 'CLASS',
-      status: 'SCHEDULED',
-      description: 'Imported from Excel',
-      price: Number.isFinite(parsedPrice) ? parsedPrice : null,
-      capacity: 60,
-      remaining_seats: 60,
-    };
-    const createdEvent = await createEvent(newEvent);
     const columnSets = [
       { round: 1, cols: ['X', 'Y', 'Z', 'AA'] },
       { round: 2, cols: ['AB', 'AC', 'AD', 'AE'] },
       { round: 3, cols: ['AF', 'AG', 'AH', 'AI'] },
       { round: 4, cols: ['AJ', 'AK', 'AL', 'AM'] },
     ];
-
-    const getCell = (col, rowIndex) => {
-      const addr = `${col}${rowIndex + 1}`;
-      return sheet[addr] || null;
-    };
 
     const parseBaseDate = (val) => {
       if (!val) return null;
@@ -164,6 +165,49 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
     const baseRaw = baseCell?.v ?? baseCell?.w ?? null;
     const baseDate = parseBaseDate(baseRaw);
 
+    // CSV 沒有工作表名稱可驗證，改用版面欄位驗證避免匯入錯誤檔案
+    if (isCsv) {
+      const headerK = String(getCell('K', 0)?.w ?? getCell('K', 0)?.v ?? '').trim();
+      const kHeaderLooksLikePhone = /(phone|mobile|電話|手機)/i.test(headerK);
+
+      let hasPhoneInK = false;
+      const sampleRows = Math.min(rows.length, 30);
+      for (let idx = 1; idx <= sampleRows; idx += 1) {
+        const kVal = getCell('K', idx)?.v ?? getCell('K', idx)?.w ?? null;
+        if (normalizeMobileForStorage(kVal)) {
+          hasPhoneInK = true;
+          break;
+        }
+      }
+
+      const sessionCols = ['X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM'];
+      const hasSessionHeader = sessionCols.some((col) => {
+        const cell = getCell(col, 0);
+        const rawVal = cell?.w ?? cell?.v ?? null;
+        return Boolean(parseHeaderDate(rawVal, baseDate));
+      });
+
+      if ((!kHeaderLooksLikePhone && !hasPhoneInK) || !hasSessionHeader) {
+        return res.status(400).json({
+          message: 'CSV 版面不符合「已報名學生」模板（需包含 K 欄電話與 X-AM 場次日期欄）',
+        });
+      }
+    }
+
+    const latestEventId = parseInt(await findLatestEventId(), 10);
+    const event_id = (latestEventId || 100) + 1;
+    const newEvent = {
+      event_id,
+      event_name: inputName || baseName,
+      type: 'CLASS',
+      status: 'SCHEDULED',
+      description: 'Imported from Excel',
+      price: Number.isFinite(parsedPrice) ? parsedPrice : null,
+      capacity: 60,
+      remaining_seats: 60,
+    };
+    const createdEvent = await createEvent(newEvent);
+
     const formatDateTimeLocal = (dateObj) => {
       const pad = (n) => String(n).padStart(2, '0');
       return `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}:00`;
@@ -253,11 +297,14 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
     };
 
     const sessionRegistrationUsers = {}; // { [sessionId]: Set<user_id> }
+    const seenMobilesInFile = new Set();
 
     for (let i = 0; i < rows.length; i += 1) {
       const row = rows[i] || {};
       const name = row.Name || row['名稱'] || row['姓名'] || '';
-      const rawMobile = row.Phone || row['電話'] || row['手機'] || '';
+      const mobileCell = getCell('K', i + 1);
+      const rawMobileFromK = mobileCell?.v ?? mobileCell?.w ?? null;
+      const rawMobile = rawMobileFromK ?? row.Phone ?? row['電話'] ?? row['手機'] ?? '';
       const email = row.Email || row['電郵'] || null;
       const mobile = normalizeMobileForStorage(rawMobile);
 
@@ -265,6 +312,12 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
         summary.skippedRows.push({ row: i + 2, reason: '缺少姓名或電話' });
         continue;
       }
+
+      if (seenMobilesInFile.has(mobile)) {
+        summary.skippedRows.push({ row: i + 2, reason: '同一檔案內重複電話', mobile });
+        continue;
+      }
+      seenMobilesInFile.add(mobile);
 
       let user = await findUserByMobile(mobile);
       if (!user && email) {
@@ -416,6 +469,20 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
 
     summary.eventRemainingSeats = eventRemainingSeats;
 
+    await createLog({
+      user_id: req.user?.sub || null,
+      action: 'IMPORT',
+      details: JSON.stringify({
+        type: 'EXCEL_IMPORT',
+        file_name: originalName,
+        event_id: createdEvent.event_id,
+        event_name: createdEvent.event_name,
+        summary,
+        skipped_rows: summary.skippedRows || [],
+        imported_at: new Date().toISOString(),
+      }),
+    });
+
     return res.status(201).json({
       message: '匯入完成',
       event: createdEvent,
@@ -424,6 +491,20 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
     });
   } catch (error) {
     console.error('Import students failed:', error);
+    try {
+      await createLog({
+        user_id: req.user?.sub || null,
+        action: 'IMPORT',
+        details: JSON.stringify({
+          type: 'EXCEL_IMPORT',
+          file_name: importedFileName,
+          error: error?.message || 'Unknown import error',
+          imported_at: new Date().toISOString(),
+        }),
+      });
+    } catch (logError) {
+      console.error('Create import log failed:', logError);
+    }
     return res.status(500).json({ message: '伺服器錯誤' });
   }
 });

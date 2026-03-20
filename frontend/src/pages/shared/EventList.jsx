@@ -185,6 +185,9 @@ const EventList = () => {
 						<button onClick={() => navigate('/events/import')}>
 							匯入活動Excel
 						</button>
+						<button onClick={() => navigate('/events/import-history')}>
+							匯入記錄
+						</button>
 	        			</div>
 				)}
 
