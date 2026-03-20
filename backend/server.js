@@ -110,6 +110,10 @@ const requestsRouter = require('./handleAPI/requests');
 console.log('Requests router loaded');
 app.use('/api', requestsRouter); // Use the requests router
 
+const logsRouter = require('./handleAPI/logs');
+console.log('Logs router loaded');
+app.use('/api', logsRouter);
+
 const waitlistRouter = require('./handleAPI/waitlist');
 console.log('Waitlist router loaded');
 app.use('/api', waitlistRouter);

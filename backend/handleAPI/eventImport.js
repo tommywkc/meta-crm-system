@@ -8,6 +8,7 @@ const { createEnrollment, findIfExist, updateStatusByEnrollmentId } = require('.
 const { createRegistration, findBySessionAndUser } = require('../dao/sessionRegistrationsDao');
 const { createAttendance, findLatestByRegistrationId } = require('../dao/eventAttendanceDao');
 const { createPayment } = require('../dao/paymentsDao');
+const { createLog } = require('../dao/logsDao');
 const multer = require('multer');
 const xlsx = require('xlsx');
 const path = require('path');
@@ -25,6 +26,9 @@ function normalizeMobileForStorage(mobile) {
 
 // import enrolled students from Excel (sheet: 已報名學生) and create event by filename
 router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), upload.single('file'), async (req, res) => {
+  const importedFileName = req.file?.originalname
+    ? Buffer.from(req.file.originalname, 'latin1').toString('utf8')
+    : null;
   try {
     if (!req.file) {
       return res.status(400).json({ message: '請上傳 Excel 檔案' });
@@ -38,7 +42,7 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
 
     const rows = xlsx.utils.sheet_to_json(sheet, { defval: null });
 
-    const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+    const originalName = importedFileName;
     const baseName = path.basename(originalName, path.extname(originalName));
     const inputName = String(req.body?.event_name || '').trim();
     const inputPriceRaw = req.body?.price;
@@ -253,11 +257,14 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
     };
 
     const sessionRegistrationUsers = {}; // { [sessionId]: Set<user_id> }
+    const seenMobilesInFile = new Set();
 
     for (let i = 0; i < rows.length; i += 1) {
       const row = rows[i] || {};
       const name = row.Name || row['名稱'] || row['姓名'] || '';
-      const rawMobile = row.Phone || row['電話'] || row['手機'] || '';
+      const mobileCell = getCell('K', i + 1);
+      const rawMobileFromK = mobileCell?.v ?? mobileCell?.w ?? null;
+      const rawMobile = rawMobileFromK ?? row.Phone ?? row['電話'] ?? row['手機'] ?? '';
       const email = row.Email || row['電郵'] || null;
       const mobile = normalizeMobileForStorage(rawMobile);
 
@@ -265,6 +272,12 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
         summary.skippedRows.push({ row: i + 2, reason: '缺少姓名或電話' });
         continue;
       }
+
+      if (seenMobilesInFile.has(mobile)) {
+        summary.skippedRows.push({ row: i + 2, reason: '同一檔案內重複電話', mobile });
+        continue;
+      }
+      seenMobilesInFile.add(mobile);
 
       let user = await findUserByMobile(mobile);
       if (!user && email) {
@@ -416,6 +429,20 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
 
     summary.eventRemainingSeats = eventRemainingSeats;
 
+    await createLog({
+      user_id: req.user?.sub || null,
+      action: 'IMPORT',
+      details: JSON.stringify({
+        type: 'EXCEL_IMPORT',
+        file_name: originalName,
+        event_id: createdEvent.event_id,
+        event_name: createdEvent.event_name,
+        summary,
+        skipped_rows: summary.skippedRows || [],
+        imported_at: new Date().toISOString(),
+      }),
+    });
+
     return res.status(201).json({
       message: '匯入完成',
       event: createdEvent,
@@ -424,6 +451,20 @@ router.post('/events/import-students', authMiddleware, roleMiddleware('admin'), 
     });
   } catch (error) {
     console.error('Import students failed:', error);
+    try {
+      await createLog({
+        user_id: req.user?.sub || null,
+        action: 'IMPORT',
+        details: JSON.stringify({
+          type: 'EXCEL_IMPORT',
+          file_name: importedFileName,
+          error: error?.message || 'Unknown import error',
+          imported_at: new Date().toISOString(),
+        }),
+      });
+    } catch (logError) {
+      console.error('Create import log failed:', logError);
+    }
     return res.status(500).json({ message: '伺服器錯誤' });
   }
 });

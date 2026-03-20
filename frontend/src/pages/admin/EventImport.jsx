@@ -83,7 +83,9 @@ const EventImport = () => {
         initialData={{ type: 'CLASS', status: 'SCHEDULED' }}
         extraFields={(
           <div style={{ marginBottom: 12 }}>
-            <label>Excel 檔案:</label><br />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <label>Excel 檔案:</label>
+            </div>
             <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} disabled={importing} />
           </div>
         )}
