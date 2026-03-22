@@ -256,15 +256,15 @@ module.exports = {
       EventCosts AS (
         SELECT 
           COALESCE(room_cost, 0) as room_cost, 
-          COALESCE(promotion_cost, 0) as promotion_cost, 
-          COALESCE(misc_cost, 0) as misc_cost, 
-          COALESCE(salary_cost, 0) as salary_cost,
-          COALESCE(freight_cost, 0) as freight_cost,
-          COALESCE(utilities_cost, 0) as utilities_cost,
-          COALESCE(telecom_cost, 0) as telecom_cost,
-          COALESCE(cog_cost, 0) as cog_cost
+          COALESCE(promotion_cost, 0) as total_promotion_cost, 
+          COALESCE(misc_cost, 0) as total_misc_cost
         FROM EVENTS
         WHERE event_id = $1
+      ),
+      MonthCosts AS (
+        SELECT
+          (SELECT COALESCE(SUM(amount), 0) FROM PROMOTIONS WHERE event_id = $1 AND TO_CHAR(expense_date, 'YYYY-MM') = $2) as month_promotion_cost,
+          (SELECT COALESCE(SUM(amount), 0) FROM MISC_EXPENSES WHERE event_id = $1 AND TO_CHAR(expense_date, 'YYYY-MM') = $2) as month_misc_cost
       )
       SELECT 
         (SELECT COUNT(*) FROM TargetUsers) as enrollment_count,
@@ -283,16 +283,47 @@ module.exports = {
           CASE WHEN owner_sales IS NOT NULL THEN amount * 0.1 ELSE 0 END
         ), 0) FROM PaymentData) as sales_commissions,
         (SELECT room_cost FROM EventCosts) as room_cost,
-        (SELECT promotion_cost FROM EventCosts) as promotion_cost,
-        (SELECT misc_cost FROM EventCosts) as misc_cost,
-        (SELECT salary_cost FROM EventCosts) as salary_cost,
-        (SELECT freight_cost FROM EventCosts) as freight_cost,
-        (SELECT utilities_cost FROM EventCosts) as utilities_cost,
-        (SELECT telecom_cost FROM EventCosts) as telecom_cost,
-        (SELECT cog_cost FROM EventCosts) as cog_cost
+        (SELECT total_promotion_cost FROM EventCosts) as total_promotion_cost,
+        (SELECT total_misc_cost FROM EventCosts) as total_misc_cost,
+        (SELECT month_promotion_cost FROM MonthCosts) as month_promotion_cost,
+        (SELECT month_misc_cost FROM MonthCosts) as month_misc_cost
     `;
     const result = await query(sql, [eventId, monthStr]);
     return result.rows[0];
+  },
+
+  async getActiveMonths(eventId) {
+    const sql = `
+      SELECT DISTINCT month_str FROM (
+        SELECT TO_CHAR(a.attend_time, 'YYYY-MM') AS month_str
+        FROM EVENT_ATTENDANCE a
+        JOIN SESSION_REGISTRATIONS r ON a.registration_id = r.registration_id
+        JOIN EVENT_SESSIONS s ON r.session_id = s.session_id
+        WHERE s.event_id = $1 AND a.status IN ('Y', 'G') AND a.attend_time IS NOT NULL
+        
+        UNION
+        
+        SELECT TO_CHAR(expense_date, 'YYYY-MM') AS month_str
+        FROM PROMOTIONS
+        WHERE event_id = $1 AND expense_date IS NOT NULL
+        
+        UNION
+        
+        SELECT TO_CHAR(expense_date, 'YYYY-MM') AS month_str
+        FROM MISC_EXPENSES
+        WHERE event_id = $1 AND expense_date IS NOT NULL
+        
+        UNION
+
+        SELECT TO_CHAR(paid_time, 'YYYY-MM') AS month_str
+        FROM PAYMENTS
+        WHERE event_id = $1 AND paid_time IS NOT NULL AND status IN ('COMPLETED', 'REFUNDED')
+      ) AS combined_months
+      WHERE month_str IS NOT NULL
+      ORDER BY month_str DESC
+    `;
+    const result = await query(sql, [eventId]);
+    return result.rows.map(row => row.month_str);
   }
 };
 

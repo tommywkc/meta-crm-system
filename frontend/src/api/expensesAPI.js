@@ -10,10 +10,9 @@ export const getPromotions = async (eventId, month) => {
     return response.data;
 };
 
-export const createPromotion = async (formData) => {
-    const response = await axios.post(apiUrl('/api/expenses/promotions'), formData, {
-        withCredentials: true,
-        headers: { 'Content-Type': 'multipart/form-data' }
+export const createPromotion = async (data) => {
+    const response = await axios.post(apiUrl('/api/expenses/promotions'), data, {
+        withCredentials: true
     });
     return response.data;
 };
@@ -32,10 +31,9 @@ export const getMiscExpenses = async (eventId, month) => {
     return response.data;
 };
 
-export const createMiscExpense = async (formData) => {
-    const response = await axios.post(apiUrl('/api/expenses/misc'), formData, {
-        withCredentials: true,
-        headers: { 'Content-Type': 'multipart/form-data' }
+export const createMiscExpense = async (data) => {
+    const response = await axios.post(apiUrl('/api/expenses/misc'), data, {
+        withCredentials: true
     });
     return response.data;
 };

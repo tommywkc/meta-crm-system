@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
-const { getCustomerReport, getCourseSessionReport, getUnpaidCustomersReport, getFinancialReport } = require('../dao/reportsDao');
+const { getCustomerReport, getCourseSessionReport, getUnpaidCustomersReport, getFinancialReport, getActiveMonths } = require('../dao/reportsDao');
 const { findByEventId, updateByEventId, getEventsWithPromotion } = require('../dao/eventsDao');
 const { Parser } = require('json2csv');
 const multer = require('multer');
@@ -54,6 +54,21 @@ router.get('/reports/unpaid-customers', authMiddleware, roleMiddleware('admin', 
   } catch (error) {
     console.error('Failed to get unpaid customers report:', error);
     res.status(500).json({ message: '获取未付款客人名单失败' });
+  }
+});
+
+// 获取活跃月份
+router.get('/reports/financial/active-months', authMiddleware, roleMiddleware('admin', 'sales'), async (req, res) => {
+  try {
+    const { eventId } = req.query;
+    if (!eventId) {
+      return res.status(400).json({ message: '缺少 eventId 参数' });
+    }
+    const months = await getActiveMonths(eventId);
+    res.json({ months });
+  } catch (error) {
+    console.error('Failed to get active months:', error);
+    res.status(500).json({ message: '获取活跃月份失败' });
   }
 });
 
