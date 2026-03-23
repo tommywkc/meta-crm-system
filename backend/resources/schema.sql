@@ -1,32 +1,30 @@
--- DROP TABLE IF EXISTS EVENT_FINANCIALS CASCADE;
--- DROP TABLE IF EXISTS BANNERS;
--- DROP TABLE IF EXISTS STUDENT_WORKS;
--- DROP TABLE IF EXISTS SUSPENSION;
--- DROP TABLE IF EXISTS SUBSCRIPTIONS;
--- DROP TABLE IF EXISTS SERVICES;
--- DROP TABLE IF EXISTS REQUESTS;
--- DROP TABLE IF EXISTS ASSIGNMENT_SUBMISSIONS;
--- DROP TABLE IF EXISTS ASSIGNMENTS;
--- DROP TABLE IF EXISTS UPLOADS;
--- DROP TABLE IF EXISTS PAYMENTS;
--- DROP TABLE IF EXISTS EVENT_ATTENDANCE;
--- DROP TABLE IF EXISTS WAITLIST;
--- DROP TABLE IF EXISTS SESSION_REGISTRATIONS;
--- DROP TABLE IF EXISTS EVENT_SESSIONS CASCADE;
--- DROP TABLE IF EXISTS EVENT_FINANCIALS CASCADE;
--- DROP TABLE IF EXISTS EVENT_ENROLLMENTS CASCADE;
--- DROP TABLE IF EXISTS EVENTS CASCADE;
--- DROP TABLE IF EXISTS NOTIFICATIONS;
--- DROP TABLE IF EXISTS NOTICES;
--- DROP TABLE IF EXISTS HOLIDAYS;
--- DROP TABLE IF EXISTS FEEDBACKS;
--- DROP TABLE IF EXISTS KPI_TARGETS;
--- DROP TABLE IF EXISTS MONTHLY_PROMOTIONS;
--- DROP TABLE IF EXISTS PROMOTIONS;
--- DROP TABLE IF EXISTS MISC_EXPENSES;
--- DROP TABLE IF EXISTS USERS CASCADE;
--- DROP SEQUENCE IF EXISTS user_id_seq;
--- DROP SEQUENCE IF EXISTS event_id_seq;
+DROP TABLE IF EXISTS EVENT_FINANCIALS CASCADE;
+DROP TABLE IF EXISTS BANNERS;
+DROP TABLE IF EXISTS STUDENT_WORKS;
+DROP TABLE IF EXISTS SUSPENSION;
+DROP TABLE IF EXISTS SUBSCRIPTIONS;
+DROP TABLE IF EXISTS SERVICES;
+DROP TABLE IF EXISTS REQUESTS;
+DROP TABLE IF EXISTS ASSIGNMENT_SUBMISSIONS;
+DROP TABLE IF EXISTS ASSIGNMENTS;
+DROP TABLE IF EXISTS UPLOADS;
+DROP TABLE IF EXISTS PAYMENTS;
+DROP TABLE IF EXISTS EVENT_ATTENDANCE;
+DROP TABLE IF EXISTS WAITLIST;
+DROP TABLE IF EXISTS SESSION_REGISTRATIONS;
+DROP TABLE IF EXISTS EVENT_SESSIONS CASCADE;
+DROP TABLE IF EXISTS EVENT_FINANCIALS CASCADE;
+DROP TABLE IF EXISTS EVENT_ENROLLMENTS CASCADE;
+DROP TABLE IF EXISTS EVENTS CASCADE;
+DROP TABLE IF EXISTS NOTIFICATIONS;
+DROP TABLE IF EXISTS NOTICES;
+DROP TABLE IF EXISTS HOLIDAYS;
+DROP TABLE IF EXISTS FEEDBACKS;
+DROP TABLE IF EXISTS KPI_TARGETS;
+DROP TABLE IF EXISTS MONTHLY_PROMOTIONS;
+DROP TABLE IF EXISTS PROMOTIONS;
+DROP TABLE IF EXISTS MISC_EXPENSES;
+DROP TABLE IF EXISTS USERS CASCADE;
 
 
 CREATE TABLE IF NOT EXISTS USERS (
@@ -376,111 +374,111 @@ CREATE TABLE IF NOT EXISTS FEEDBACKS (
     CONSTRAINT CHKROLE_FEED CHECK (testing_role IN ('ADMIN', 'SALES', 'LEADER', 'MEMBER', 'N/A'))
 );
 
--- INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags) VALUES
--- ('50000', 'password', 'ADMIN', 'Admin User', '1', 'test@gmail.com', 'hewr2ur2kb2kf3f3', 'WhatsApp', NULL, 'Management', 'admin,super'),
--- ('10000', 'password', 'ADMIN', 'System', '0', '', 'System', '', NULL, '', 'System'),
--- ('50001', 'password', 'SALES', 'Sales User', '3', 'test2@gmail.com', 'djqw3ji32nl23', 'WhatsApp', NULL, 'Sales A', 'sales,active'),
--- ('50002', 'password', 'LEADER', 'Leader User', '2', 'test3@gmail.com', '3h2oj2fekjbwfbjk ew', 'WhatsApp', NULL, 'Sales A', 'leader'),
--- ('50003', 'password', 'MEMBER', 'Member User', '4', 'test4@gmail.com', 'ehoi2dho3fnoen', 'WhatsApp', 50001, 'Sales A', 'member'),
--- ('50004', 'password', 'MEMBER', '陳大明', '51111111', 'chen.daming@email.com', 'qr_chen_daming', '網頁', 50001, 'Sales A', 'vip,active'),
--- ('50005', 'password', 'MEMBER', '李小華', '52222222', 'li.xiaohua@email.com', 'qr_li_xiaohua', 'Facebook', 50001, 'Sales A', 'new'),
--- ('50006', 'password', 'MEMBER', '王美玲', '53333333', 'wang.meiling@email.com', 'qr_wang_meiling', 'Instagram', 50001, 'Sales A', 'active'),
--- ('50007', 'password', 'MEMBER', '張志強', '54444444', 'zhang.zhiqiang@email.com', 'qr_zhang_zhiqiang', 'WhatsApp', 50001, 'Sales B', 'member'),
--- ('50008', 'password', 'MEMBER', '林淑芬', '55555555', 'lin.shufen@email.com', 'qr_lin_shufen', '網頁', 50001, 'Sales B', 'premium'),
--- ('50009', 'password', 'SALES', '黃業務', '56666666', 'huang.sales@email.com', 'qr_huang_sales', 'WhatsApp', NULL, 'Sales B', 'sales'),
--- ('50010', 'password', 'MEMBER', '劉建國', '57777777', 'liu.jianguo@email.com', 'qr_liu_jianguo', 'Google廣告', 50009, 'Sales B', 'new'),
--- ('50011', 'password', 'MEMBER', '周雅婷', '58888888', 'zhou.yating@email.com', 'qr_zhou_yating', 'WhatsApp', 50009, 'Sales B', 'active'),
--- ('50012', 'password', 'MEMBER', '吳文傑', '59999999', 'wu.wenjie@email.com', 'qr_wu_wenjie', '網頁', 50009, 'Sales C', 'member'),
--- ('50013', 'password', 'MEMBER', '鄭佩君', '60000000', 'zheng.peijun@email.com', 'qr_zheng_peijun', 'Facebook', 50009, 'Sales C', 'vip'),
--- ('50014', 'password', 'LEADER', '何主管', '61111111', 'he.leader@email.com', 'qr_he_leader', 'WhatsApp', NULL, 'Sales C', 'leader,senior');
+INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags) VALUES
+('50000', 'password', 'ADMIN', 'Admin User', '1', 'test@gmail.com', 'hewr2ur2kb2kf3f3', 'WhatsApp', NULL, 'Management', 'admin,super'),
+('10000', 'password', 'ADMIN', 'System', '0', '', 'System', '', NULL, '', 'System'),
+('50001', 'password', 'SALES', 'Sales User', '3', 'test2@gmail.com', 'djqw3ji32nl23', 'WhatsApp', NULL, 'Sales A', 'sales,active'),
+('50002', 'password', 'LEADER', 'Leader User', '2', 'test3@gmail.com', '3h2oj2fekjbwfbjk ew', 'WhatsApp', NULL, 'Sales A', 'leader'),
+('50003', 'password', 'MEMBER', 'Member User', '4', 'test4@gmail.com', 'ehoi2dho3fnoen', 'WhatsApp', 50001, 'Sales A', 'member'),
+('50004', 'password', 'MEMBER', '陳大明', '51111111', 'chen.daming@email.com', 'qr_chen_daming', '網頁', 50001, 'Sales A', 'vip,active'),
+('50005', 'password', 'MEMBER', '李小華', '52222222', 'li.xiaohua@email.com', 'qr_li_xiaohua', 'Facebook', 50001, 'Sales A', 'new'),
+('50006', 'password', 'MEMBER', '王美玲', '53333333', 'wang.meiling@email.com', 'qr_wang_meiling', 'Instagram', 50001, 'Sales A', 'active'),
+('50007', 'password', 'MEMBER', '張志強', '54444444', 'zhang.zhiqiang@email.com', 'qr_zhang_zhiqiang', 'WhatsApp', 50001, 'Sales B', 'member'),
+('50008', 'password', 'MEMBER', '林淑芬', '55555555', 'lin.shufen@email.com', 'qr_lin_shufen', '網頁', 50001, 'Sales B', 'premium'),
+('50009', 'password', 'SALES', '黃業務', '56666666', 'huang.sales@email.com', 'qr_huang_sales', 'WhatsApp', NULL, 'Sales B', 'sales'),
+('50010', 'password', 'MEMBER', '劉建國', '57777777', 'liu.jianguo@email.com', 'qr_liu_jianguo', 'Google廣告', 50009, 'Sales B', 'new'),
+('50011', 'password', 'MEMBER', '周雅婷', '58888888', 'zhou.yating@email.com', 'qr_zhou_yating', 'WhatsApp', 50009, 'Sales B', 'active'),
+('50012', 'password', 'MEMBER', '吳文傑', '59999999', 'wu.wenjie@email.com', 'qr_wu_wenjie', '網頁', 50009, 'Sales C', 'member'),
+('50013', 'password', 'MEMBER', '鄭佩君', '60000000', 'zheng.peijun@email.com', 'qr_zheng_peijun', 'Facebook', 50009, 'Sales C', 'vip'),
+('50014', 'password', 'LEADER', '何主管', '61111111', 'he.leader@email.com', 'qr_he_leader', 'WhatsApp', NULL, 'Sales C', 'leader,senior');
 
 
--- INSERT INTO EVENTS (
---     event_id, price, type, event_name, description, 
---     datetime_start, datetime_end, capacity, remaining_seats, 
---     location, status, room_cost, 
---     promotion_cost, misc_cost, salary_cost, freight_cost, utilities_cost, telecom_cost, cog_cost,
---     speaker_id
--- ) VALUES
--- ('101', 10000, 'CLASS', '客戶關係管理入門', '客戶關係管理系統的基礎介紹課程', 
---  '2024-07-01 10:00:00', '2026-07-01 12:00:00', 60, 20, 
---  'Room 101', 'OPEN', 200, 
---  1500, 500, 8000, 200, 300, 150, 4000,
---  50009),
--- ('102', NULL, 'SEMINAR', '進階銷售技巧講座', '深入探討高效銷售策略的講座', 
---  '2026-07-05 14:00:00', '2026-07-05 16:00:00', 100, 100, 
---  'Zoom', 'OPEN', 500, 
---  1000, 200, 5000, 0, 100, 50, 1000,
---  50009),
--- ('103', 8000, 'CLASS', 'Python 基礎課程', '從零開始學習 Python 程式設計', 
---  '2026-08-10 09:00:00', '2026-08-10 17:00:00', 30, 15, 
---  'Room 201', 'SCHEDULED', 300, 
---  500, 100, 3000, 0, 150, 80, 2000,
---  50009),
--- ('104', NULL, 'SEMINAR', '數位行銷趨勢分享會2024', '最新數位行銷趨勢與案例分享', 
---  '2024-08-20 14:00:00', '2024-08-20 17:00:00', 100, 50, 
---  'Main Hall', 'CANCELLED', 500, 
---  0, 0, 0, 0, 0, 0, 0,
---  50009),
--- ('105', NULL, 'SEMINAR', '數位行銷趨勢分享會2026', '最新數位行銷趨勢與案例分享', 
---  '2026-08-20 14:00:00', '2026-08-20 17:00:00', 100, 50, 
---  'Main Hall', 'OPEN', 500, 
---  800, 150, 4000, 50, 120, 60, 1500,
---  50009);
+INSERT INTO EVENTS (
+    event_id, price, type, event_name, description, 
+    datetime_start, datetime_end, capacity, remaining_seats, 
+    location, status, room_cost, 
+    promotion_cost, misc_cost, salary_cost, freight_cost, utilities_cost, telecom_cost, cog_cost,
+    speaker_id
+) VALUES
+('101', 10000, 'CLASS', '客戶關係管理入門', '客戶關係管理系統的基礎介紹課程', 
+ '2024-07-01 10:00:00', '2026-07-01 12:00:00', 60, 20, 
+ 'Room 101', 'OPEN', 200, 
+ 1500, 500, 8000, 200, 300, 150, 4000,
+ 50009),
+('102', NULL, 'SEMINAR', '進階銷售技巧講座', '深入探討高效銷售策略的講座', 
+ '2026-07-05 14:00:00', '2026-07-05 16:00:00', 100, 100, 
+ 'Zoom', 'OPEN', 500, 
+ 1000, 200, 5000, 0, 100, 50, 1000,
+ 50009),
+('103', 8000, 'CLASS', 'Python 基礎課程', '從零開始學習 Python 程式設計', 
+ '2026-08-10 09:00:00', '2026-08-10 17:00:00', 30, 15, 
+ 'Room 201', 'SCHEDULED', 300, 
+ 500, 100, 3000, 0, 150, 80, 2000,
+ 50009),
+('104', NULL, 'SEMINAR', '數位行銷趨勢分享會2024', '最新數位行銷趨勢與案例分享', 
+ '2024-08-20 14:00:00', '2024-08-20 17:00:00', 100, 50, 
+ 'Main Hall', 'CANCELLED', 500, 
+ 0, 0, 0, 0, 0, 0, 0,
+ 50009),
+('105', NULL, 'SEMINAR', '數位行銷趨勢分享會2026', '最新數位行銷趨勢與案例分享', 
+ '2026-08-20 14:00:00', '2026-08-20 17:00:00', 100, 50, 
+ 'Main Hall', 'OPEN', 500, 
+ 800, 150, 4000, 50, 120, 60, 1500,
+ 50009);
 
 
--- INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datetime_start, datetime_end, created_by_id, remaining_seats, round) VALUES
--- (101, 'Test1', 'CRM 基礎概念與重要性111', 30, '2024-07-01 10:00:00', '2027-07-01 12:00:00', 50000, 30, 1),
--- (101, 'Test2', 'CRM 基礎概念與重要性111', 30, '2026-02-11 10:00:00', '2026-02-11 12:00:00', 50000, 30, 2),
--- (101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2026-07-01 10:00:00', '2026-07-01 12:00:00', 50000, 30, 1),
--- (101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2026-08-01 10:00:00', '2026-08-01 12:00:00', 50000, 1, 2),
--- (101, '實作演練', 'CRM 系統操作實作', 30, '2029-07-08 10:00:00', '2029-07-08 12:00:00', 50000, 30, 1),
--- (101, '實作演練', 'CRM 系統操作實作', 30, '2026-08-08 10:00:00', '2026-08-08 12:00:00', 50000, 30, 2),
--- (102, 'Test1', '高效銷售策略分享', 100, '2026-02-02 14:00:00', '2026-02-02 16:00:00', 50001, 100, 1),
--- (102, '主題演講', '高效銷售策略分享', 100, '2026-07-05 14:00:00', '2026-07-05 16:00:00', 50001, 100, 1),
--- (101, 'Test3', 'CRM 基礎概念與重要性111', 1, '2026-03-14 10:00:00', '2026-03-14 12:00:00', 50000, 1, 2),
--- (101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2028-08-01 10:00:00', '2028-08-01 12:00:00', 50000, 0, 3),
--- (101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2029-08-01 10:00:00', '2029-08-01 12:00:00', 50000, 0, 4);
-
-
-
-
--- -- Insert sample payment records
--- INSERT INTO PAYMENTS (event_id, user_id, enrollment_id, amount, method, status, create_time, paid_time, expire_time, receipt_number, issued_receipt, issued_certificate, remarks) VALUES
--- -- Completed payments
--- (101, 50008, NULL, 5000.00, 'FPS', 'COMPLETED', '2025-11-15 10:30:00', '2025-11-16 14:20:00', '2025-11-18 23:59:59', 'RCP-2025-001', TRUE, FALSE, '已完成付款'),
--- (102, 50008, NULL, 3000.00, 'CREDITCARD', 'COMPLETED', '2025-11-20 09:15:00', '2025-11-20 09:20:00', '2025-11-23 23:59:59', 'RCP-2025-002', TRUE, TRUE, '信用卡付款已確認'),
--- (103, 50008, NULL, 4500.00, 'PAYME', 'PENDING', '2025-11-25 16:45:00', '2025-11-26 10:00:00', '2025-11-28 23:59:59', 'RCP-2025-003', TRUE, FALSE, 'PayMe 轉帳完成'),
--- (104, 50008, NULL, 2500.00, 'CASH', 'CANCELLED', '2025-11-28 11:00:00', '2025-11-28 11:00:00', '2025-12-01 23:59:59', 'RCP-2025-004', TRUE, FALSE, '現金付款'),
--- (105, 50010, NULL, 2500.00, 'CASH', 'PENDING', '2021-11-28 11:00:00', NULL, '2021-12-01 23:59:59', NULL, FALSE, FALSE, '現金付款');
+INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datetime_start, datetime_end, created_by_id, remaining_seats, round) VALUES
+(101, 'Test1', 'CRM 基礎概念與重要性111', 30, '2024-07-01 10:00:00', '2027-07-01 12:00:00', 50000, 30, 1),
+(101, 'Test2', 'CRM 基礎概念與重要性111', 30, '2026-02-11 10:00:00', '2026-02-11 12:00:00', 50000, 30, 2),
+(101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2026-07-01 10:00:00', '2026-07-01 12:00:00', 50000, 30, 1),
+(101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2026-08-01 10:00:00', '2026-08-01 12:00:00', 50000, 1, 2),
+(101, '實作演練', 'CRM 系統操作實作', 30, '2029-07-08 10:00:00', '2029-07-08 12:00:00', 50000, 30, 1),
+(101, '實作演練', 'CRM 系統操作實作', 30, '2026-08-08 10:00:00', '2026-08-08 12:00:00', 50000, 30, 2),
+(102, 'Test1', '高效銷售策略分享', 100, '2026-02-02 14:00:00', '2026-02-02 16:00:00', 50001, 100, 1),
+(102, '主題演講', '高效銷售策略分享', 100, '2026-07-05 14:00:00', '2026-07-05 16:00:00', 50001, 100, 1),
+(101, 'Test3', 'CRM 基礎概念與重要性111', 1, '2026-03-14 10:00:00', '2026-03-14 12:00:00', 50000, 1, 2),
+(101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2028-08-01 10:00:00', '2028-08-01 12:00:00', 50000, 0, 3),
+(101, '基礎理論', 'CRM 基礎概念與重要性', 1, '2029-08-01 10:00:00', '2029-08-01 12:00:00', 50000, 0, 4);
 
 
 
--- INSERT INTO EVENT_ENROLLMENTS (event_id, user_id, enroll_by_id, status, enroll_time) VALUES
---     -- Completed -> CONFIRMED
---     (101, 50008, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
---     (102, 50008, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
---     (103, 50008, 50000, 'PENDING', '2025-11-25 16:45:00'),
---     (104, 50008, 50000, 'CANCELLED', '2025-11-28 11:00:00'),
---         (101, 50011, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
---         (101, 50012, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
---         (101, 50010, 50000, 'CONFIRMED', '2025-11-15 10:30:00');
+
+-- Insert sample payment records
+INSERT INTO PAYMENTS (event_id, user_id, enrollment_id, amount, method, status, create_time, paid_time, expire_time, receipt_number, issued_receipt, issued_certificate, remarks) VALUES
+-- Completed payments
+(101, 50008, NULL, 5000.00, 'FPS', 'COMPLETED', '2025-11-15 10:30:00', '2025-11-16 14:20:00', '2025-11-18 23:59:59', 'RCP-2025-001', TRUE, FALSE, '已完成付款'),
+(102, 50008, NULL, 3000.00, 'CREDITCARD', 'COMPLETED', '2025-11-20 09:15:00', '2025-11-20 09:20:00', '2025-11-23 23:59:59', 'RCP-2025-002', TRUE, TRUE, '信用卡付款已確認'),
+(103, 50008, NULL, 4500.00, 'PAYME', 'PENDING', '2025-11-25 16:45:00', '2025-11-26 10:00:00', '2025-11-28 23:59:59', 'RCP-2025-003', TRUE, FALSE, 'PayMe 轉帳完成'),
+(104, 50008, NULL, 2500.00, 'CASH', 'CANCELLED', '2025-11-28 11:00:00', '2025-11-28 11:00:00', '2025-12-01 23:59:59', 'RCP-2025-004', TRUE, FALSE, '現金付款'),
+(105, 50010, NULL, 2500.00, 'CASH', 'PENDING', '2021-11-28 11:00:00', NULL, '2021-12-01 23:59:59', NULL, FALSE, FALSE, '現金付款');
+
+
+
+INSERT INTO EVENT_ENROLLMENTS (event_id, user_id, enroll_by_id, status, enroll_time) VALUES
+    -- Completed -> CONFIRMED
+    (101, 50008, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
+    (102, 50008, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
+    (103, 50008, 50000, 'PENDING', '2025-11-25 16:45:00'),
+    (104, 50008, 50000, 'CANCELLED', '2025-11-28 11:00:00'),
+        (101, 50011, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
+        (101, 50012, 50000, 'CONFIRMED', '2025-11-15 10:30:00'),
+        (101, 50010, 50000, 'CONFIRMED', '2025-11-15 10:30:00');
     
 
 
 
--- INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id, status) VALUES
---     (1, 50008, 50008, 'REGISTERED'),
---     (2, 50008, 50008, 'REGISTERED'),
---     (6, 50008, 50008, 'REGISTERED'),
---     (7, 50008, 50008, 'REGISTERED');
+INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id, status) VALUES
+    (1, 50008, 50008, 'REGISTERED'),
+    (2, 50008, 50008, 'REGISTERED'),
+    (6, 50008, 50008, 'REGISTERED'),
+    (7, 50008, 50008, 'REGISTERED');
 
 
--- INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags, suspension) VALUES
---     ('50034', 'password', 'MEMBER', 'Test Suspension', '10101010', '10101.yawen@email.com', 'banned', 'Facebook', 50009, 'Sales B', 'new,trial', true);
+INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, source, owner_sales, team, tags, suspension) VALUES
+    ('50034', 'password', 'MEMBER', 'Test Suspension', '10101010', '10101.yawen@email.com', 'banned', 'Facebook', 50009, 'Sales B', 'new,trial', true);
 
--- INSERT INTO SUSPENSION (user_id, reason, start_time, end_time, created_by) VALUES
---     (50034, '違反規定', '2025-12-01 00:00:00', '2025-12-31 23:59:59', 50000);
+INSERT INTO SUSPENSION (user_id, reason, start_time, end_time, created_by) VALUES
+    (50034, '違反規定', '2025-12-01 00:00:00', '2025-12-31 23:59:59', 50000);
 
 CREATE TABLE IF NOT EXISTS BANNERS (
     banner_id BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
@@ -492,5 +490,5 @@ CREATE TABLE IF NOT EXISTS BANNERS (
     FOREIGN KEY (created_by) REFERENCES USERS(user_id) ON DELETE SET NULL
 );
 
--- INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id, status) VALUES
---     (3, 50008, 50008, 'CANCELLED');
+INSERT INTO SESSION_REGISTRATIONS (session_id, user_id, registration_by_id, status) VALUES
+    (3, 50008, 50008, 'CANCELLED');

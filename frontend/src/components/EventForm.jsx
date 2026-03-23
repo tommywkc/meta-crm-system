@@ -335,70 +335,7 @@ const EventForm = ({
             )}
           </div>
 
-          <div style={{ flex: 1, marginBottom: 8 }}>
-                  <label>宣傳費 (自動計算):</label><br/>
-                  <div style={{ position: 'relative' }}>
-                    <span
-                      style={{
-                        position: 'absolute',
-                        left: 8,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        color: '#aaa'
-                      }}
-                    >
-                      $
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={promotionCost ?? ''}
-                      onChange={(e) => setPromotionCost(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '8px 8px 8px 20px',
-                        background: '#f0f0f0',
-                        color: '#666',
-                        cursor: 'not-allowed'
-                      }}
-                      readOnly
-                      disabled
-                      title="請至活動詳情的「宣傳費明細」新增"
-                    />
-                  </div>
-                </div>
-
-                <div style={{ flex: 1, marginBottom: 8 }}>
-                  <label>雜費 (自動計算):</label><br/>
-                  <div style={{ position: 'relative' }}>
-                    <span
-                      style={{
-                        position: 'absolute',
-                        left: 8,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        color: '#aaa'
-                      }}
-                    >
-                      $
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={initialData.misc_cost || ''}
-                      style={{
-                        width: '100%',
-                        padding: '8px 8px 8px 20px',
-                        background: '#f0f0f0',
-                        color: '#666',
-                        cursor: 'not-allowed'
-                      }}
-                      readOnly
-                      disabled
-                      title="請至活動詳情的「雜費明細」新增"
-                    />
-            </div>
-          </div>
+          
 
           <div style={{ flex: 1, marginBottom: 8 }}>
             <label>狀態:</label><br />
