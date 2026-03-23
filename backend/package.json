@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "import:holidays": "node scripts/import-holidays.js"
+    "import:holidays": "node scripts/import-holidays.js",
+    "migrate:expense": "node scripts/migrate_expense_schema.js"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.29.1",
