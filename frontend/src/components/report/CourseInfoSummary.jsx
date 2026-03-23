@@ -104,7 +104,7 @@ const CourseInfoSummary = ({ onBack }) => {
                                 <input type="radio" checked={filterType === 'SEMINAR'} onChange={() => setFilterType('SEMINAR')} /> 講座 ({courses.filter(c => c.type === 'SEMINAR').length})
                             </label>
                             <label>
-                                <input type="radio" checked={filterType === 'COURSE'} onChange={() => setFilterType('COURSE')} /> 課堂 ({courses.filter(c => c.type === 'COURSE').length})
+                                <input type="radio" checked={filterType === 'CLASS'} onChange={() => setFilterType('CLASS')} /> 課堂 ({courses.filter(c => c.type === 'CLASS').length})
                             </label>
                         </div>
                     </div>
