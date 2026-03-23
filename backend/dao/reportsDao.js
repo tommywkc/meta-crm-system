@@ -233,13 +233,11 @@ module.exports = {
   async getFinancialReport(eventId, monthStr) {
     const sql = `
       WITH TargetUsers AS (
-        SELECT DISTINCT r.user_id
-        FROM EVENT_ATTENDANCE a
-        JOIN SESSION_REGISTRATIONS r ON a.registration_id = r.registration_id
-        JOIN EVENT_SESSIONS s ON r.session_id = s.session_id
-        WHERE s.event_id = $1
-          AND TO_CHAR(a.attend_time, 'YYYY-MM') = $2
-          AND a.status IN ('Y', 'G')
+        SELECT DISTINCT p.user_id
+        FROM PAYMENTS p
+        WHERE p.event_id = $1
+          AND p.status = 'COMPLETED'
+          AND TO_CHAR(COALESCE(p.paid_time, p.create_time), 'YYYY-MM') = $2
       ),
       PaymentData AS (
         SELECT 
@@ -251,7 +249,7 @@ module.exports = {
         JOIN USERS u ON p.user_id = u.user_id
         WHERE p.event_id = $1
           AND p.status = 'COMPLETED'
-          AND p.user_id IN (SELECT user_id FROM TargetUsers)
+          AND TO_CHAR(COALESCE(p.paid_time, p.create_time), 'YYYY-MM') = $2
       ),
       EventCosts AS (
         SELECT 
@@ -315,9 +313,9 @@ module.exports = {
         
         UNION
 
-        SELECT TO_CHAR(paid_time, 'YYYY-MM') AS month_str
+        SELECT TO_CHAR(COALESCE(paid_time, create_time), 'YYYY-MM') AS month_str
         FROM PAYMENTS
-        WHERE event_id = $1 AND paid_time IS NOT NULL AND status IN ('COMPLETED', 'REFUNDED')
+        WHERE event_id = $1 AND status IN ('COMPLETED', 'REFUNDED')
       ) AS combined_months
       WHERE month_str IS NOT NULL
       ORDER BY month_str DESC
