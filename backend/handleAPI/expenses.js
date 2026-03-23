@@ -8,8 +8,8 @@ const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 // Get promotions (optionally filter by eventId or monthStr)
 router.get('/promotions', authMiddleware, roleMiddleware(['ADMIN', 'SALES']), async (req, res) => {
     try {
-        const { eventId, month } = req.query;
-        const promotions = await expensesDao.getPromotions(eventId, month);
+        const { eventId, month, general } = req.query;
+        const promotions = await expensesDao.getPromotions(eventId, month, general === 'true');
         
         res.status(200).json(promotions);
     } catch (error) {
@@ -54,8 +54,8 @@ router.delete('/promotions/:id', authMiddleware, roleMiddleware(['ADMIN']), asyn
 // Get misc expenses
 router.get('/misc', authMiddleware, roleMiddleware(['ADMIN', 'SALES']), async (req, res) => {
     try {
-        const { eventId, month } = req.query;
-        const misc = await expensesDao.getMiscExpenses(eventId, month);
+        const { eventId, month, general } = req.query;
+        const misc = await expensesDao.getMiscExpenses(eventId, month, general === 'true');
         
         res.status(200).json(misc);
     } catch (error) {

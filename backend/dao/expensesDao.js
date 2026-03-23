@@ -29,12 +29,14 @@ const addPromotion = async (eventId, expenseDate, amount, description, receiptPa
 };
 
 // Get promotions with optional filtering by event_id or month (YYYY-MM)
-const getPromotions = async (eventId, monthStr) => {
+const getPromotions = async (eventId, monthStr, general = false) => {
     let query = `SELECT * FROM PROMOTIONS WHERE 1=1`;
     const params = [];
     let paramIndex = 1;
 
-    if (eventId) {
+    if (general) {
+        query += ` AND event_id IS NULL`;
+    } else if (eventId) {
         query += ` AND event_id = $${paramIndex}`;
         params.push(eventId);
         paramIndex++;
@@ -126,12 +128,14 @@ const addMiscExpense = async (eventId, expenseDate, amount, description, receipt
 };
 
 // Get misc expenses
-const getMiscExpenses = async (eventId, monthStr) => {
+const getMiscExpenses = async (eventId, monthStr, general = false) => {
     let query = `SELECT * FROM MISC_EXPENSES WHERE 1=1`;
     const params = [];
     let paramIndex = 1;
 
-    if (eventId) {
+    if (general) {
+        query += ` AND event_id IS NULL`;
+    } else if (eventId) {
         query += ` AND event_id = $${paramIndex}`;
         params.push(eventId);
         paramIndex++;

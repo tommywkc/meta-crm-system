@@ -15,9 +15,12 @@ const MonthlyPromotionReport = ({ onBack }) => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        fetchPromotions();
         fetchEvents();
     }, []);
+
+    useEffect(() => {
+        fetchPromotions(filterEventId);
+    }, [filterEventId]);
 
     const fetchEvents = async () => {
         try {
@@ -28,10 +31,17 @@ const MonthlyPromotionReport = ({ onBack }) => {
         }
     };
 
-    const fetchPromotions = async () => {
+    const fetchPromotions = async (filterVal = 'all') => {
         setLoading(true);
         try {
-            const data = await getPromotions();
+            let data;
+            if (filterVal === 'general') {
+                data = await getPromotions(null, null, true);
+            } else if (filterVal && filterVal !== 'all') {
+                data = await getPromotions(filterVal);
+            } else {
+                data = await getPromotions();
+            }
             setPromotions(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Failed to fetch promotions:', error);
@@ -85,7 +95,7 @@ const MonthlyPromotionReport = ({ onBack }) => {
             setExpenseDate('');
             setAmount('');
             setDescription('');
-            fetchPromotions();
+            fetchPromotions(filterEventId);
         } catch (error) {
             console.error('Error creating promotion:', error);
             const msg = error.response?.data?.error || error.message || '發生錯誤';
@@ -97,7 +107,7 @@ const MonthlyPromotionReport = ({ onBack }) => {
         if (window.confirm('確定要刪除此記錄嗎？')) {
             try {
                 await deletePromotion(id);
-                fetchPromotions();
+                fetchPromotions(filterEventId);
             } catch (error) {
                 console.error('Error deleting promotion:', error);
                 alert('刪除失敗');
@@ -105,11 +115,18 @@ const MonthlyPromotionReport = ({ onBack }) => {
         }
     };
 
-    const displayedPromotions = promotions.filter(p => {
-        if (filterEventId === 'all') return true;
-        if (filterEventId === 'general') return !p.event_id;
-        return String(p.event_id) === String(filterEventId);
-    });
+    const selectedEventForDate = selectedEventId ? events.find(ev => String(ev.event_id) === String(selectedEventId)) : null;
+    const dateMin = (() => {
+        if (!selectedEventForDate?.datetime_start) return '';
+        const d = new Date(selectedEventForDate.datetime_start);
+        d.setMonth(d.getMonth() - 6);
+        return d.toISOString().split('T')[0];
+    })();
+    const dateMax = selectedEventForDate?.datetime_start
+        ? new Date(selectedEventForDate.datetime_start).toISOString().split('T')[0]
+        : '';
+
+    const displayedPromotions = promotions;
 
     const summary = displayedPromotions.reduce((acc, curr) => {
         const dateObj = new Date(curr.expense_date);
@@ -142,7 +159,7 @@ const MonthlyPromotionReport = ({ onBack }) => {
                     </div>
                     <div>
                         <label style={{ display: 'block', marginBottom: '5px' }}>日期 (YYYY-MM-DD):</label>
-                        <input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} style={{ padding: '8px' }} required />
+                        <input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} min={dateMin || undefined} max={dateMax || undefined} style={{ padding: '8px' }} required />
                     </div>
                     <div>
                         <label style={{ display: 'block', marginBottom: '5px' }}>金額 (HKD):</label>

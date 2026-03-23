@@ -15,9 +15,12 @@ const MonthlyMiscExpenseReport = ({ onBack }) => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        fetchMiscExpenses();
         fetchEvents();
     }, []);
+
+    useEffect(() => {
+        fetchMiscExpenses(filterEventId);
+    }, [filterEventId]);
 
     const fetchEvents = async () => {
         try {
@@ -28,10 +31,17 @@ const MonthlyMiscExpenseReport = ({ onBack }) => {
         }
     };
 
-    const fetchMiscExpenses = async () => {
+    const fetchMiscExpenses = async (filterVal = 'all') => {
         setLoading(true);
         try {
-            const data = await getMiscExpenses();
+            let data;
+            if (filterVal === 'general') {
+                data = await getMiscExpenses(null, null, true);
+            } else if (filterVal && filterVal !== 'all') {
+                data = await getMiscExpenses(filterVal);
+            } else {
+                data = await getMiscExpenses();
+            }
             setMisc(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Failed to fetch misc expenses:', error);
@@ -78,7 +88,7 @@ const MonthlyMiscExpenseReport = ({ onBack }) => {
             setExpenseDate('');
             setAmount('');
             setDescription('');
-            fetchMiscExpenses();
+            fetchMiscExpenses(filterEventId);
         } catch (error) {
             console.error('Error creating misc expense:', error);
             const msg = error.response?.data?.error || error.message || '發生錯誤';
@@ -90,7 +100,7 @@ const MonthlyMiscExpenseReport = ({ onBack }) => {
         if (window.confirm('確定要刪除此記錄嗎？')) {
             try {
                 await deleteMiscExpense(id);
-                fetchMiscExpenses();
+                fetchMiscExpenses(filterEventId);
             } catch (error) {
                 console.error('Error deleting misc expense:', error);
                 alert('刪除失敗');
@@ -98,11 +108,15 @@ const MonthlyMiscExpenseReport = ({ onBack }) => {
         }
     };
 
-    const displayedMisc = misc.filter(p => {
-        if (filterEventId === 'all') return true;
-        if (filterEventId === 'general') return !p.event_id;
-        return String(p.event_id) === String(filterEventId);
-    });
+    const selectedEventForDate = selectedEventId ? events.find(ev => String(ev.event_id) === String(selectedEventId)) : null;
+    const dateMin = selectedEventForDate?.datetime_start
+        ? new Date(selectedEventForDate.datetime_start).toISOString().split('T')[0]
+        : '';
+    const dateMax = selectedEventForDate?.datetime_end
+        ? new Date(selectedEventForDate.datetime_end).toISOString().split('T')[0]
+        : '';
+
+    const displayedMisc = misc;
 
     const summary = displayedMisc.reduce((acc, curr) => {
         const dateObj = new Date(curr.expense_date);
@@ -135,7 +149,7 @@ const MonthlyMiscExpenseReport = ({ onBack }) => {
                     </div>
                     <div>
                         <label style={{ display: 'block', marginBottom: '5px' }}>日期 (YYYY-MM-DD):</label>
-                        <input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} style={{ padding: '8px' }} required />
+                        <input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} min={dateMin || undefined} max={dateMax || undefined} style={{ padding: '8px' }} required />
                     </div>
                     <div>
                         <label style={{ display: 'block', marginBottom: '5px' }}>金額 (HKD):</label>

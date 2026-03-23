@@ -1,12 +1,13 @@
 import axios from 'axios';
 import { apiUrl } from './apiBase';
 
-export const getPromotions = async (eventId, month) => {
-    let query = '';
-    if (eventId) query += `?eventId=${eventId}`;
-    if (month) query += query ? `&month=${month}` : `?month=${month}`;
-    
-    const response = await axios.get(apiUrl(`/api/expenses/promotions${query}`), { withCredentials: true });
+export const getPromotions = async (eventId, month, general) => {
+    const params = new URLSearchParams();
+    if (general) params.append('general', 'true');
+    else if (eventId) params.append('eventId', eventId);
+    if (month) params.append('month', month);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await axios.get(apiUrl(`/api/expenses/promotions${qs}`), { withCredentials: true });
     return response.data;
 };
 
@@ -22,12 +23,13 @@ export const deletePromotion = async (id) => {
     return response.data;
 };
 
-export const getMiscExpenses = async (eventId, month) => {
-    let query = '';
-    if (eventId) query += `?eventId=${eventId}`;
-    if (month) query += query ? `&month=${month}` : `?month=${month}`;
-    
-    const response = await axios.get(apiUrl(`/api/expenses/misc${query}`), { withCredentials: true });
+export const getMiscExpenses = async (eventId, month, general) => {
+    const params = new URLSearchParams();
+    if (general) params.append('general', 'true');
+    else if (eventId) params.append('eventId', eventId);
+    if (month) params.append('month', month);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await axios.get(apiUrl(`/api/expenses/misc${qs}`), { withCredentials: true });
     return response.data;
 };
 
