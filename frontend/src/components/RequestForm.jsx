@@ -24,6 +24,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
   const [members, setMembers] = useState([]);
   const [memberInput, setMemberInput] = useState('');
   const [memberError, setMemberError] = useState(null);
+  const [memberEventsReloadTick, setMemberEventsReloadTick] = useState(0);
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventInput, setEventInput] = useState('');
@@ -116,7 +117,7 @@ const RequestForm = ({ onSubmitted, requestType }) => {
       }
     };
     loadEvents();
-  }, [form.memberId]);
+  }, [form.memberId, memberEventsReloadTick]);
 
   const isCancel = form.type === '取消申請';
   const isLeave = form.type === '請假申請';
@@ -527,10 +528,22 @@ const RequestForm = ({ onSubmitted, requestType }) => {
   };
 
   const handleClear = () => {
-    setForm({ ...baseForm, type: requestType || baseForm.type });
-    setMemberInput('');
+    const preserveMember = isMemberUser;
+    setForm((prev) => ({
+      ...baseForm,
+      type: requestType || baseForm.type,
+      memberId: preserveMember ? prev.memberId : '',
+      memberName: preserveMember ? prev.memberName : '',
+    }));
+    if (!preserveMember) {
+      setMemberInput('');
+    }
     setMemberError(null);
-    setEvents([]);
+    if (!preserveMember) {
+      setEvents([]);
+    } else {
+      setMemberEventsReloadTick((v) => v + 1);
+    }
     setEventInput('');
     setEventError(null);
     setSessions([]);
@@ -539,7 +552,9 @@ const RequestForm = ({ onSubmitted, requestType }) => {
     resetRescheduleSelection({ clearOptions: true });
     setCancelInput('');
     setCancelError(null);
-    setCancelOptions([]);
+    if (!preserveMember) {
+      setCancelOptions([]);
+    }
   };
 
   return (

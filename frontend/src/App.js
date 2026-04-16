@@ -15,6 +15,7 @@ import EventsEdit from './pages/admin/EventsEdit';
 import SessionEdit from './pages/admin/SessionEdit';
 import SessionCreate from './pages/admin/SessionCreate';
 import EventImport from './pages/admin/EventImport';
+import ImportHistory from './pages/admin/ImportHistory';
 import EventView from './pages/shared/EventView';
 import Reports from './pages/admin/Reports';
 import Notifications from './pages/shared/Notifications';
@@ -163,6 +164,11 @@ function App() {
           <Route path="/events/import" element={
             <ProtectedRoute allowedRole="admin">
               <EventImport />
+            </ProtectedRoute>
+          } />
+          <Route path="/events/import-history" element={
+            <ProtectedRoute allowedRole="admin">
+              <ImportHistory />
             </ProtectedRoute>
           } />
           <Route path="/events/:id/edit" element={

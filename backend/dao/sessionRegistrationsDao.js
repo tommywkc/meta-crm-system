@@ -15,6 +15,20 @@ async function findBySessionAndUser(session_id, user_id) {
   return res.rows[0] || null;
 }
 
+async function findActiveBySessionAndUser(session_id, user_id) {
+  const sql = `
+    SELECT *
+    FROM SESSION_REGISTRATIONS
+    WHERE session_id = $1
+      AND user_id = $2
+      AND (status = 'REGISTERED' OR status IS NULL)
+    ORDER BY registration_id DESC
+    LIMIT 1
+  `;
+  const res = await query(sql, [session_id, user_id]);
+  return res.rows[0] || null;
+}
+
 async function findByRegistrationId(id) {
   const res = await query('SELECT * FROM SESSION_REGISTRATIONS WHERE registration_id = $1', [id]);
   return res.rows[0] || null;
@@ -84,6 +98,7 @@ async function listRegisteredSessionIdsByUserAndEvent(user_id, event_id) {
     JOIN EVENT_SESSIONS s ON sr.session_id = s.session_id
     WHERE sr.user_id = $1
       AND s.event_id = $2
+      AND (sr.status = 'REGISTERED' OR sr.status IS NULL)
   `;
   const res = await query(sql, [user_id, event_id]);
   return res.rows || [];
@@ -245,6 +260,7 @@ module.exports = {
   listSessionsByUserAndYear,
   removeByRegistrationId,
   findBySessionAndUser,
+  findActiveBySessionAndUser,
   listRegisteredSessionIdsByUserAndEvent,
   updateRegistrationById,
   listRegistrationsWithUserBySessionId,

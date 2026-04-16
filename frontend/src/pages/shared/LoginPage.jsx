@@ -138,7 +138,7 @@ const LoginPage = () => {
         </form>
 
         <div style={{ marginTop: '20px', color: '#999', fontSize: '12px' }}>
-          <small>Test accounts: 50000/password [admin], 50001/password [sales], 50002/password [leader], 50003/password [member], 50008/password [member]</small>
+          <small>Test accounts: 50000/password [admin], 50001/password [sales], 50002/password [leader], 50003/password [member], 50005/password [member]</small>
         </div>
       </div>
     </div>

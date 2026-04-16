@@ -18,7 +18,7 @@ const EventImport = () => {
 
   const handleSubmit = async (formData) => {
     if (!file) {
-      alert('請選擇 Excel 檔案');
+      alert('請選擇匯入檔案（.xlsx/.xls/.csv）');
       return;
     }
     let timer = null;
@@ -26,12 +26,12 @@ const EventImport = () => {
     try {
       setImporting(true);
       setProgress(10);
-      setImportStatus('讀取 Excel 中...');
+      setImportStatus('讀取檔案中...');
       timer = setInterval(() => {
         setProgress((prev) => {
           const next = prev >= 90 ? prev : prev + 5;
           if (next < 25) {
-            setImportStatus('讀取 Excel 中...');
+            setImportStatus('讀取檔案中...');
           } else if (next < 50) {
             setImportStatus('匯入活動與場次中...');
           } else if (next < 75) {
@@ -74,7 +74,7 @@ const EventImport = () => {
   return (
     <>
       <EventForm
-        title="活動 Excel 匯入"
+        title="活動檔案匯入"
         submitButtonText={importing ? '匯入中...' : '開始匯入'}
         onSubmit={handleSubmit}
         onCancel={() => navigate('/events')}
@@ -83,8 +83,10 @@ const EventImport = () => {
         initialData={{ type: 'CLASS', status: 'SCHEDULED' }}
         extraFields={(
           <div style={{ marginBottom: 12 }}>
-            <label>Excel 檔案:</label><br />
-            <input type="file" accept=".xlsx,.xls" onChange={handleFileChange} disabled={importing} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <label>匯入檔案:</label>
+            </div>
+            <input type="file" accept=".xlsx,.xls,.csv,text/csv" onChange={handleFileChange} disabled={importing} />
           </div>
         )}
       />
