@@ -29,47 +29,49 @@ const Payments = () => {
 	const [appliedStatus, setAppliedStatus] = useState([]);
 	const [lastPageReached, setLastPageReached] = useState(false);
 	const [filtersOpen, setFiltersOpen] = useState(false);
+        const [sortBy, setSortBy] = useState('payment_id');
+        const [sortOrder, setSortOrder] = useState('desc');
 
-	// Fetch page whenever user, page, limit, or appliedQ changes
-	useEffect(() => {
-		const load = async () => {
-			setLoading(true);
-			setError(null);
-			if (!user?.id) { setLoading(false); return; }
-			try {
-				const offset = (page - 1) * limit;
-				if (!isSalesOrLeader && !isAdmin) {
-					// member: only fetch own completed payments (backend enforces)
-					const res = await handleListPaymentByUserId(user.id, { limit, offset, q: appliedQ, method: appliedMethod, status: appliedStatus });
-					const list = Array.isArray(res) ? res : (res.payments || []);
-					setPayments(list);
-					setLastPageReached(list.length < limit);
-				} else {
-					const res = await handleListAllPayment(limit, offset, appliedQ, appliedMethod, appliedStatus);
-					const list = Array.isArray(res) ? res : (res.payments || []);
-					setPayments(list);
-					setLastPageReached(list.length < limit);
-				}
-			} catch (e) {
-				setError(e?.message || '載入失敗');
-			} finally {
-				setLoading(false);
-			}
-		};
+        // Fetch page whenever user, page, limit, or appliedQ changes
+        useEffect(() => {
+                const load = async () => {
+                        setLoading(true);
+                        setError(null);
+                        if (!user?.id) { setLoading(false); return; }
+                        try {
+                                const offset = (page - 1) * limit;
+                                if (!isSalesOrLeader && !isAdmin) {
+                                        // member: only fetch own completed payments (backend enforces)
+                                        const res = await handleListPaymentByUserId(user.id, { limit, offset, q: appliedQ, method: appliedMethod, status: appliedStatus, sortBy, sortOrder });
+                                        const list = Array.isArray(res) ? res : (res.payments || []);
+                                        setPayments(list);
+                                        setLastPageReached(list.length < limit);
+                                } else {
+                                        const res = await handleListAllPayment(limit, offset, appliedQ, appliedMethod, appliedStatus, sortBy, sortOrder);
+                                        const list = Array.isArray(res) ? res : (res.payments || []);
+                                        setPayments(list);
+                                        setLastPageReached(list.length < limit);
+                                }
+                        } catch (e) {
+                                setError(e?.message || '載入失敗');
+                        } finally {
+                                setLoading(false);
+                        }
+                };
 
-		load();
-	}, [user?.id, page, limit, appliedQ, appliedMethod, appliedStatus]);
+                load();
+        }, [user?.id, page, limit, appliedQ, appliedMethod, appliedStatus, sortBy, sortOrder]);
 
-	const onView = (p) => {
-		navigate(`/payments/${p.payment_id}`);
-	};
-	
-	const onDownload = (p) => {
-		alert(`下載收據（模擬）: ${p.receipt_number || '暫無'}`);
-	};
+const onView = (p) => {
+                navigate(`/payments/${p.payment_id}`);
+        };
 
-	const onProcess = (p) => {
-		navigate(`/payments/${p.payment_id}/process`);
+        const onDownload = (p) => {
+                alert(`下載收據（模擬）: ${p.receipt_number || '暫無'}`);
+        };
+
+        const onProcess = (p) => {
+                navigate(`/payments/${p.payment_id}/process`);
 	};
 
 	const handleSearch = () => {
@@ -108,37 +110,35 @@ const Payments = () => {
 					<button onClick={handleSearch}>
 						搜尋
 					</button>
-					<button onClick={() => { setSearchTerm(''); setAppliedQ(''); setPage(1); }}>
+					<button onClick={() => { 
+						setSearchTerm(''); 
+						setAppliedQ(''); 
+						setMethodFilter([]);
+						setAppliedMethod([]);
+						setStatusFilter([]);
+						setAppliedStatus([]);
+						setPage(1); 
+					}}>
 						清除
 					</button>
-                    <button 
-                        onClick={() => setFiltersOpen(!filtersOpen)}
-                        title="篩選條件"
-                        style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            padding: '4px 8px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#093e73',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                        </svg>
-                    </button>
-                    {/* Note: Total count not available from backend API for payments yet */}
 				</div>
 
 				{/* Filter list */}
-                {filtersOpen && (
 				<div style={{ marginBottom: 16, padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
                         {/* Method filters */}
                         <div style={{ marginBottom: 12 }}>
                             <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: 6 }}>付款方式</div>
                             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <input type="checkbox" checked={methodFilter.includes('CASH')} onChange={(e) => {
+                                        if (e.target.checked) setMethodFilter(prev => [...prev, 'CASH']); else setMethodFilter(prev => prev.filter(x => x !== 'CASH'));
+                                    }} /> 現金
+                                </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <input type="checkbox" checked={methodFilter.includes('PAYME')} onChange={(e) => {
+                                        if (e.target.checked) setMethodFilter(prev => [...prev, 'PAYME']); else setMethodFilter(prev => prev.filter(x => x !== 'PAYME'));
+                                    }} /> PayMe
+                                </label>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                     <input type="checkbox" checked={methodFilter.includes('CREDITCARD')} onChange={(e) => {
                                         if (e.target.checked) setMethodFilter(prev => [...prev, 'CREDITCARD']); else setMethodFilter(prev => prev.filter(x => x !== 'CREDITCARD'));
@@ -148,16 +148,6 @@ const Payments = () => {
                                     <input type="checkbox" checked={methodFilter.includes('FPS')} onChange={(e) => {
                                         if (e.target.checked) setMethodFilter(prev => [...prev, 'FPS']); else setMethodFilter(prev => prev.filter(x => x !== 'FPS'));
                                     }} /> 轉數快
-                                </label>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <input type="checkbox" checked={methodFilter.includes('PAYME')} onChange={(e) => {
-                                        if (e.target.checked) setMethodFilter(prev => [...prev, 'PAYME']); else setMethodFilter(prev => prev.filter(x => x !== 'PAYME'));
-                                    }} /> PayMe
-                                </label>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <input type="checkbox" checked={methodFilter.includes('CASH')} onChange={(e) => {
-                                        if (e.target.checked) setMethodFilter(prev => [...prev, 'CASH']); else setMethodFilter(prev => prev.filter(x => x !== 'CASH'));
-                                    }} /> 現金
                                 </label>
                             </div>
                         </div>
@@ -181,10 +171,14 @@ const Payments = () => {
                                         if (e.target.checked) setStatusFilter(prev => [...prev, 'EXPIRED']); else setStatusFilter(prev => prev.filter(x => x !== 'EXPIRED'));
                                     }} /> 已過期
                                 </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <input type="checkbox" checked={statusFilter.includes('CANCELLED')} onChange={(e) => {
+                                        if (e.target.checked) setStatusFilter(prev => [...prev, 'CANCELLED']); else setStatusFilter(prev => prev.filter(x => x !== 'CANCELLED'));
+                                    }} /> 已取消
+                                </label>
                             </div>
                         </div>
 				</div>
-                )}
 
 				<div style={UpperSelectContainerStyle}>
                     <label>
@@ -222,10 +216,20 @@ const Payments = () => {
 						onDownload={onDownload}
 						onProcess={onProcess}
 						showUserColumn={isAdmin || isSalesOrLeader}
-					/>
+                                                sortBy={sortBy}
+                                                sortOrder={sortOrder}
+                                                onSort={(newSortBy) => {
+                                                        if (sortBy === newSortBy) {
+                                                                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                                                        } else {
+                                                                setSortBy(newSortBy);
+                                                                setSortOrder('asc');
+                                                        }
+                                                }}
+                                        />
 
-					<div style={LowerSelectContainerStyle}>
-						<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <div style={LowerSelectContainerStyle}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <label>
                                 頁數:&nbsp;
                                 <select 

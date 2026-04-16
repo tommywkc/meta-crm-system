@@ -68,6 +68,18 @@ const PaymentDetailsTable = ({
 							</td>
 						</tr>
 						<tr>
+							<td><strong>電話：</strong></td>
+							<td>{payment.user_mobile || '-'}</td>
+						</tr>
+						<tr>
+							<td><strong>介紹人：</strong></td>
+							<td>{payment.user_referrer_name || '-'}</td>
+						</tr>
+						<tr>
+							<td><strong>負責銷售：</strong></td>
+							<td>{payment.user_owner_sales_name || '-'}</td>
+						</tr>
+						<tr>
 							<td><strong>活動：</strong></td>
 							<td>{payment.event_name || (payment.event_id == null ? '(DELETED EVENT)' : payment.event_id)}</td>
 						</tr>

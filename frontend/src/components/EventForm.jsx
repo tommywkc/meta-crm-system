@@ -32,6 +32,7 @@ const EventForm = ({
   const [location, setLocation] = useState(initialData.location || '');
   const [description, setDescription] = useState(initialData.description || '');
   const [roomCost, setRoomCost] = useState(initialData.room_cost || '');
+  const [promotionCost, setPromotionCost] = useState(initialData.promotion_cost || '');
   const [speakerId, setSpeakerId] = useState(initialData.speaker_id || '');
   const [speakerInput, setSpeakerInput] = useState('');
   const [speakerError, setSpeakerError] = useState(null);
@@ -53,6 +54,7 @@ const EventForm = ({
       setLocation(initialData.location || '');
       setDescription(initialData.description || '');
       setRoomCost(initialData.room_cost || '');
+      setPromotionCost(initialData.promotion_cost || '');
       setSpeakerId(initialData.speaker_id || '');
       setPrice(initialData.price || '');
       setSessions(backendSessionsToFormState(initialData.sessions));
@@ -332,6 +334,8 @@ const EventForm = ({
               <small style={{ color: 'red' }}>請輸入有效的金額（僅限數字）。</small>
             )}
           </div>
+
+          
 
           <div style={{ flex: 1, marginBottom: 8 }}>
             <label>狀態:</label><br />

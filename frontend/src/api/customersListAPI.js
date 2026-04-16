@@ -9,13 +9,15 @@ async function readBackendErrorMessage(res) {
   }
 }
 
-export async function handleList(limit = 100, offset = 0, q = '') {
+export async function handleList(limit = 100, offset = 0, q = '', sortBy = 'user_id', sortOrder = 'asc') {
   try {
-    console.log('Attempting to fetch customers list...', { limit, offset, q });
+    console.log('Attempting to fetch customers list...', { limit, offset, q, sortBy, sortOrder }); 
     const params = new URLSearchParams();
     params.append('limit', limit);
     params.append('offset', offset);
     if (q && q.trim()) params.append('q', q);
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
     const res = await fetch(apiUrl(`/api/customers?${params.toString()}`), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },

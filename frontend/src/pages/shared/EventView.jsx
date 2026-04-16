@@ -11,6 +11,7 @@ import WaitingListTable from '../../components/WaitingListTable';
 import SessionListTable from '../../components/SessionListTable';
 import { commonSelectStyle } from '../../styles/SelectStyles';
 import { PageContainer, PageHeader } from '../../components/CommonPage';
+import EventExpenseList from '../../components/EventExpenseList';
 
 const EventView = () => {
   const { id } = useParams();
@@ -28,6 +29,7 @@ const EventView = () => {
   const [speakerName, setSpeakerName] = useState('');
   const [selectedSessionName, setSelectedSessionName] = useState('all');
   const [selectedRound, setSelectedRound] = useState('all');
+  const [activeTab, setActiveTab] = useState('students');
   // Note: isEnrolling is for future enrollment loading state
   const [isEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
@@ -178,7 +180,18 @@ const EventView = () => {
     navigate(`/events/${id}/enrollsession?session_id=${session_id}`);
   };
 
-
+  const tabStyle = (tabName) => ({
+    padding: '10px 20px',
+    cursor: 'pointer',
+    borderBottom: activeTab === tabName ? '2px solid #007bff' : '2px solid transparent',
+    fontWeight: activeTab === tabName ? 'bold' : 'normal',
+    color: activeTab === tabName ? '#007bff' : '#666',
+    background: 'none',
+    borderTop: 'none',
+    borderLeft: 'none',
+    borderRight: 'none',
+    fontSize: '16px'
+  });
 
   if (!event || !event.event_id) {
     return (
@@ -231,14 +244,36 @@ const EventView = () => {
     : `HK$ ${event.price}`}</div>
         {isAdmin && (
           <>
-      <div><strong>房間費用:</strong> {event.room_cost == null || Number(event.room_cost) === 0
-    ? 'N/A'
-    : `HK$ ${event.room_cost}`}</div>
+            <div><strong>房間費用:</strong> {event.room_cost == null || Number(event.room_cost) === 0
+              ? 'N/A'
+              : `HK$ ${event.room_cost}`}</div>
+            <div><strong>宣傳費用:</strong> {event.promotion_cost == null || Number(event.promotion_cost) === 0
+              ? 'N/A'
+              : `HK$ ${event.promotion_cost}`}</div>
+            <div><strong>雜費:</strong> {event.misc_cost == null || Number(event.misc_cost) === 0
+              ? 'N/A'
+              : `HK$ ${event.misc_cost}`}</div>
             <div><strong>建立時間:</strong> {formatDateTimeForDisplay(event.create_time)|| 'N/A'}</div>
           </>
         )}
       </div>
-      
+
+      {isAdmin && (
+        <div style={{ display: 'flex', borderBottom: '1px solid #ccc', margin: '20px 0' }}>
+          <button style={tabStyle('students')} onClick={() => setActiveTab('students')}>
+            學生及場次
+          </button>
+          <button style={tabStyle('promotions')} onClick={() => setActiveTab('promotions')}>
+            宣傳費明細
+          </button>
+          <button style={tabStyle('misc')} onClick={() => setActiveTab('misc')}>
+            雜費明細
+          </button>
+        </div>
+      )}
+
+      {(!isAdmin || activeTab === 'students') && (
+        <>
       <div style={{ marginTop: 20 }}>
         {(isAdmin || isSalesOrLeader) && (
           <button
@@ -349,8 +384,17 @@ const EventView = () => {
 				registeredSessionIds={registeredSessionIds}
         />
       </div>
+        </>
+      )}
 
-  
+      {isAdmin && activeTab === 'promotions' && (
+        <EventExpenseList eventId={id} expenseType="promotions" readOnly={true} />
+      )}
+
+      {isAdmin && activeTab === 'misc' && (
+        <EventExpenseList eventId={id} expenseType="misc" readOnly={true} />
+      )}
+
     </PageContainer>
   );
 };

@@ -48,6 +48,8 @@ router.get('/events', authMiddleware, roleMiddleware(['admin', 'sales', 'leader'
     const offset = parseInt(req.query.offset) || 0;
     const q = req.query.q || '';
     const requestedStatus = (req.query.status || '').trim().toUpperCase();
+    const sortBy = req.query.sortBy || 'event_id';
+    const sortOrder = req.query.sortOrder || 'asc';
 
     const role = (req.user.role || '').toLowerCase();
     let events = [];
@@ -55,18 +57,18 @@ router.get('/events', authMiddleware, roleMiddleware(['admin', 'sales', 'leader'
     if (role === 'member') {
       // member: force OPEN when status not explicitly provided
       const effectiveStatus = requestedStatus || 'OPEN';
-      events = await searchEventsByStatus(effectiveStatus, limit, offset, q);
+      events = await searchEventsByStatus(effectiveStatus, limit, offset, q, sortBy, sortOrder);   
       console.log(`Member role - returning ${effectiveStatus} events (q=${q}): ${events.length}`);
     } else if (requestedStatus) {
       // explicit status filter for privileged roles
-      events = await searchEventsByStatus(requestedStatus, limit, offset, q);
+      events = await searchEventsByStatus(requestedStatus, limit, offset, q, sortBy, sortOrder);   
       console.log(`Status-filtered events (${requestedStatus}, q=${q}): ${events.length}`);
     } else {
       // non-member: search across all events when q provided
       if (q && q.trim()) {
-        events = await searchEvents(limit, offset, q);
+        events = await searchEvents(limit, offset, q, sortBy, sortOrder);
       } else {
-        events = await listbyEventsId(limit, offset);
+        events = await listbyEventsId(limit, offset, sortBy, sortOrder);
       }
       console.log(`Non-member role - returning events (q=${q}): ${events.length}`);
     }
