@@ -1,33 +1,3 @@
-DROP TABLE IF EXISTS EVENT_FINANCIALS CASCADE;
-DROP TABLE IF EXISTS BANNERS;
-DROP TABLE IF EXISTS STUDENT_WORKS;
-DROP TABLE IF EXISTS SUSPENSION;
-DROP TABLE IF EXISTS SUBSCRIPTIONS;
-DROP TABLE IF EXISTS SERVICES;
-DROP TABLE IF EXISTS REQUESTS;
-DROP TABLE IF EXISTS ASSIGNMENT_SUBMISSIONS;
-DROP TABLE IF EXISTS ASSIGNMENTS;
-DROP TABLE IF EXISTS UPLOADS;
-DROP TABLE IF EXISTS PAYMENTS;
-DROP TABLE IF EXISTS EVENT_ATTENDANCE;
-DROP TABLE IF EXISTS WAITLIST;
-DROP TABLE IF EXISTS SESSION_REGISTRATIONS;
-DROP TABLE IF EXISTS EVENT_SESSIONS CASCADE;
-DROP TABLE IF EXISTS EVENT_FINANCIALS CASCADE;
-DROP TABLE IF EXISTS EVENT_ENROLLMENTS CASCADE;
-DROP TABLE IF EXISTS EVENTS CASCADE;
-DROP TABLE IF EXISTS NOTIFICATIONS;
-DROP TABLE IF EXISTS NOTICES;
-DROP TABLE IF EXISTS HOLIDAYS;
-DROP TABLE IF EXISTS FEEDBACKS;
-DROP TABLE IF EXISTS KPI_TARGETS;
-DROP TABLE IF EXISTS MONTHLY_PROMOTIONS;
-DROP TABLE IF EXISTS PROMOTIONS;
-DROP TABLE IF EXISTS MISC_EXPENSES;
-DROP TABLE IF EXISTS LOGS;
-DROP TABLE IF EXISTS USERS CASCADE;
-
-
 CREATE TABLE IF NOT EXISTS USERS (
     user_id BIGINT NOT NULL UNIQUE,
     password VARCHAR(50) NOT NULL,
@@ -401,25 +371,5 @@ INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, sourc
 ('10000', 'password', 'ADMIN', 'System', '0', '', 'System', '', NULL, '', 'System'),
 ('50001', 'password', 'SALES', 'Sales User', '3', 'test2@gmail.com', 'djqw3ji32nl23', 'WhatsApp', NULL, 'Sales A', 'sales,active'),
 ('50002', 'password', 'LEADER', 'Leader User', '2', 'test3@gmail.com', '3h2oj2fekjbwfbjk ew', 'WhatsApp', NULL, 'Sales A', 'leader'),
-('50003', 'password', 'MEMBER', 'Member User', '4', 'test4@gmail.com', 'ehoi2dho3fnoen', 'WhatsApp', 50001, 'Sales A', 'member'),
-('50004', 'password', 'MEMBER', '林淑芬', '55555555', 'lin.shufen@email.com', 'qr_lin_shufen', '網頁', 50001, 'Sales B', 'premium'),
-('50005', 'password', 'SALES', '黃業務', '56666666', 'huang.sales@email.com', 'qr_huang_sales', 'WhatsApp', NULL, 'Sales B', 'sales');
-
-INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
-('101', 10000, 'CLASS', '客戶關係管理入門', '客戶關係管理系統的基礎介紹課程', '2024-07-01 10:00:00', '2029-08-01 12:00:00', 60, 60, 'Room 101', 'OPEN', 200, 50005),
-('102', NULL, 'SEMINAR', '進階銷售技巧講座', '深入探討高效銷售策略的講座', '2026-07-05 14:00:00', '2026-07-05 16:00:00', 100, 100, 'Zoom', 'OPEN', 500, 50005);
-
-INSERT INTO EVENT_SESSIONS (event_id, session_name, description, capacity, datetime_start, datetime_end, created_by_id, remaining_seats, round) VALUES
-(101, 'Test1', 'CRM 基礎概念與重要性1', 30, '2024-07-01 10:00:00', '2027-07-01 12:00:00', 50000, 30, 1),
-(101, 'Test2', 'CRM 基礎概念與重要性2', 30, '2026-02-11 10:00:00', '2026-02-11 12:00:00', 50000, 30, 2),
-(101, 'Lab1', 'CRM 基礎概念與重要性', 30, '2026-04-20 10:00:00', '2026-07-01 12:00:00', 50000, 0, 1),
-(101, 'Lab1', 'CRM 基礎概念與重要性', 30, '2026-08-01 10:00:00', '2026-08-01 12:00:00', 50000, 30, 2),
-(101, 'Lab2', 'CRM 系統操作實作', 30, '2029-07-08 10:00:00', '2029-07-08 12:00:00', 50000, 30, 1),
-(101, 'Lab2', 'CRM 系統操作實作', 30, '2026-08-08 10:00:00', '2026-08-08 12:00:00', 50000, 30, 2),
-(101, 'Test3', 'CRM 基礎概念與重要性111', 30, '2026-03-14 10:00:00', '2026-03-14 12:00:00', 50000, 30, 2),
-(101, 'Lab1', 'CRM 基礎概念與重要性', 30, '2028-08-01 10:00:00', '2028-08-01 12:00:00', 50000, 30, 3),
-(101, 'Lab1', 'CRM 基礎概念與重要性', 30, '2029-08-01 10:00:00', '2029-08-01 12:00:00', 50000, 30, 4),
-(102, 'Lab1', '高效銷售策略分享1', 100, '2026-02-02 14:00:00', '2026-02-02 16:00:00', 50001, 100, 1),
-(102, 'Lab2', '高效銷售策略分享2', 100, '2026-07-05 14:00:00', '2026-07-05 16:00:00', 50001, 100, 1),
-(102, 'Lab2', '高效銷售策略分享2', 100, '2026-04-17 12:00:00', '2028-02-02 16:00:00', 50001, 100, 2);
-
+('50003', 'password', 'MEMBER', 'Member User', '4', 'test4@gmail.com', 'ehoi2dho3fnoen', 'WhatsApp', 50001, 'Sales A', 'member')
+on conflict (user_id) do nothing;
