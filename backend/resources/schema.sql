@@ -373,3 +373,8 @@ INSERT INTO USERS (user_id, password, role, name, mobile, email, qr_token, sourc
 ('50002', 'password', 'LEADER', 'Leader User', '2', 'test3@gmail.com', '3h2oj2fekjbwfbjk ew', 'WhatsApp', NULL, 'Sales A', 'leader'),
 ('50003', 'password', 'MEMBER', 'Member User', '4', 'test4@gmail.com', 'ehoi2dho3fnoen', 'WhatsApp', 50001, 'Sales A', 'member')
 on conflict (user_id) do nothing;
+
+INSERT INTO EVENTS (event_id, price, type, event_name, description, datetime_start, datetime_end, capacity, remaining_seats, location, status, room_cost, speaker_id) VALUES
+('101', 10000, 'CLASS', '客戶關係管理入門', '客戶關係管理系統的基礎介紹課程', '2024-07-01 10:00:00', '2029-08-01 12:00:00', 60, 60, 'Room 101', 'CANCELLED', 200, 50001),
+('102', NULL, 'SEMINAR', '進階銷售技巧講座', '深入探討高效銷售策略的講座', '2026-07-05 14:00:00', '2026-07-05 16:00:00', 100, 100, 'Zoom', 'CANCELLED', 500, 50001)
+on conflict (event_id) do nothing;
